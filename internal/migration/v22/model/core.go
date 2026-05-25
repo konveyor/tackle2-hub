@@ -144,6 +144,7 @@ type Task struct {
 	Platform      *Platform
 	TaskGroupID   *uint `gorm:"<-:create;index"`
 	TaskGroup     *TaskGroup
+	Tokens        []Token `gorm:"constraint:OnDelete:CASCADE"`
 }
 
 func (m *Task) BeforeCreate(db *gorm.DB) (err error) {
@@ -211,12 +212,13 @@ type Identity struct {
 
 type User struct {
 	Model
-	Subject  string `gorm:"<-:create;index;not null"`
-	Login    string `gorm:"<-:create;uniqueIndex;not null"`
-	Name     string `gorm:""`
-	Password string `gorm:"not null" secret:"hashed"`
-	Email    string `gorm:"index;not null"`
-	Roles    []Role `gorm:"many2many:UserRole;constraint:OnDelete:CASCADE"`
+	Subject  string  `gorm:"<-:create;index;not null"`
+	Login    string  `gorm:"<-:create;uniqueIndex;not null"`
+	Name     string  `gorm:""`
+	Password string  `gorm:"not null" secret:"hashed"`
+	Email    string  `gorm:"index;not null"`
+	Roles    []Role  `gorm:"many2many:UserRole;constraint:OnDelete:CASCADE"`
+	Tokens   []Token `gorm:"constraint:OnDelete:CASCADE"`
 }
 
 // BeforeCreate sets the Subject field to a unique UUID.
@@ -246,6 +248,7 @@ type IdpClient struct {
 	Grants          []string `gorm:"type:json;serializer:json"`
 	RedirectURIs    []string `gorm:"type:json;serializer:json"`
 	Scopes          []string `gorm:"type:json;serializer:json"`
+	Tokens          []Token  `gorm:"constraint:OnDelete:CASCADE"`
 }
 
 // BeforeCreate sets the Subject field to a unique UUID.
@@ -271,6 +274,7 @@ type IdpIdentity struct {
 	Login             string
 	Name              string
 	Email             string
+	Tokens            []Token `gorm:"constraint:OnDelete:CASCADE"`
 }
 
 type RsaKey struct {
@@ -307,6 +311,8 @@ type Token struct {
 	User          *User        `gorm:"constraint:OnDelete:CASCADE"`
 	IdpIdentityID *uint        `gorm:"index"`
 	IdpIdentity   *IdpIdentity `gorm:"constraint:OnDelete:CASCADE"`
+	IdpClientID   *uint        `gorm:"index"`
+	IdpClient     *IdpClient   `gorm:"constraint:OnDelete:CASCADE"`
 	TaskID        *uint        `gorm:"index"`
 	Task          *Task        `gorm:"constraint:OnDelete:CASCADE"`
 }

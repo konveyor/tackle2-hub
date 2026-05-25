@@ -3297,6 +3297,29 @@ func TestTask_With_and_Patch_and_userPriority(t *testing.T) {
 	g.Expect(m2.Priority).To(gomega.Equal(15))
 }
 
+// TestTask_With_Tokens tests Task.With() with tokens
+func TestTask_With_Tokens(t *testing.T) {
+	g := gomega.NewWithT(t)
+
+	m := &model.Task{
+		Model: model.Model{ID: 1},
+		Name:  "test-task",
+		Kind:  "analysis",
+		State: "Running",
+		Tokens: []model.Token{
+			{Model: model.Model{ID: 400}},
+		},
+	}
+
+	r := &Task{}
+	r.With(m)
+
+	g.Expect(r.ID).To(gomega.Equal(uint(1)))
+	g.Expect(r.Name).To(gomega.Equal("test-task"))
+	g.Expect(len(r.Tokens)).To(gomega.Equal(1))
+	g.Expect(r.Tokens[0].ID).To(gomega.Equal(uint(400)))
+}
+
 // FactKey: Qualify/Source/Name semantics.
 func TestFactKey_Semantics(t *testing.T) {
 	g := gomega.NewWithT(t)
@@ -3371,6 +3394,32 @@ func TestIdpIdentity_Model(t *testing.T) {
 	g.Expect(m.Expiration).To(gomega.Equal(expiration))
 	g.Expect(m.LastAuthenticated).To(gomega.Equal(lastAuth))
 	g.Expect(m.LastRefreshed).To(gomega.Equal(lastRefresh))
+}
+
+// TestIdpIdentity_With_Tokens tests IdpIdentity.With() with tokens
+func TestIdpIdentity_With_Tokens(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	m := &model.IdpIdentity{
+		Model: model.Model{
+			ID:         1,
+			CreateUser: "user1",
+		},
+		Issuer:  "google",
+		Subject: "user@example.com",
+		Tokens: []model.Token{
+			{Model: model.Model{ID: 300}},
+			{Model: model.Model{ID: 301}},
+		},
+	}
+
+	r := &IdpIdentity{}
+	r.With(m)
+
+	g.Expect(r.ID).To(gomega.Equal(uint(1)))
+	g.Expect(len(r.Tokens)).To(gomega.Equal(2))
+	g.Expect(r.Tokens[0].ID).To(gomega.Equal(uint(300)))
+	g.Expect(r.Tokens[1].ID).To(gomega.Equal(uint(301)))
 }
 
 // TestUser_With tests the User.With() method
@@ -3454,6 +3503,33 @@ func TestUser_Model_EmptyRoles(t *testing.T) {
 	g.Expect(len(m.Roles)).To(gomega.Equal(0))
 }
 
+// TestUser_With_Tokens tests User.With() with tokens
+func TestUser_With_Tokens(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	m := &model.User{
+		Model: model.Model{
+			ID:         1,
+			CreateUser: "admin",
+		},
+		Login:   "john.doe",
+		Subject: "1234",
+		Email:   "john.doe@example.com",
+		Tokens: []model.Token{
+			{Model: model.Model{ID: 100}},
+			{Model: model.Model{ID: 101}},
+		},
+	}
+
+	r := &User{}
+	r.With(m)
+
+	g.Expect(r.ID).To(gomega.Equal(uint(1)))
+	g.Expect(len(r.Tokens)).To(gomega.Equal(2))
+	g.Expect(r.Tokens[0].ID).To(gomega.Equal(uint(100)))
+	g.Expect(r.Tokens[1].ID).To(gomega.Equal(uint(101)))
+}
+
 // TestIdpClient_With tests the IdpClient.With() method
 func TestIdpClient_With(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
@@ -3507,6 +3583,34 @@ func TestIdpClient_Model(t *testing.T) {
 	g.Expect(m.Grants).To(gomega.Equal([]string{"device_code"}))
 	g.Expect(m.RedirectURIs).To(gomega.Equal([]string{}))
 	g.Expect(m.Scopes).To(gomega.Equal([]string{"openid"}))
+}
+
+// TestIdpClient_With_Tokens tests IdpClient.With() with tokens
+func TestIdpClient_With_Tokens(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	m := &model.IdpClient{
+		Model: model.Model{
+			ID:         1,
+			CreateUser: "admin",
+		},
+		ClientId:        "web-ui",
+		ApplicationType: "web",
+		Grants:          []string{"authorization_code"},
+		Scopes:          []string{"openid"},
+		Tokens: []model.Token{
+			{Model: model.Model{ID: 200}},
+			{Model: model.Model{ID: 201}},
+		},
+	}
+
+	r := &IdpClient{}
+	r.With(m)
+
+	g.Expect(r.ID).To(gomega.Equal(uint(1)))
+	g.Expect(len(r.Tokens)).To(gomega.Equal(2))
+	g.Expect(r.Tokens[0].ID).To(gomega.Equal(uint(200)))
+	g.Expect(r.Tokens[1].ID).To(gomega.Equal(uint(201)))
 }
 
 // TestRole_With tests the Role.With() method
@@ -3739,4 +3843,40 @@ func TestToken_With_NilUser(t *testing.T) {
 	r.With(m)
 
 	g.Expect(r.User).To(gomega.BeNil())
+}
+
+// TestToken_With_IdpClient tests the Token.With() method with IdpClient.
+func TestToken_With_IdpClient(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	clientID := uint(10)
+	issued := time.Now()
+	expiration := issued.Add(1 * time.Hour)
+
+	m := &model.Token{
+		Model: model.Model{
+			ID:         1,
+			CreateUser: "user1",
+		},
+		Kind:        "access_token",
+		Subject:     "client-subject-123",
+		Scopes:      "openid profile",
+		Issued:      issued,
+		Expiration:  expiration,
+		IdpClientID: &clientID,
+		IdpClient: &model.IdpClient{
+			Model:    model.Model{ID: 10},
+			ClientId: "web-ui",
+		},
+	}
+
+	r := &Token{}
+	r.With(m)
+
+	g.Expect(r.ID).To(gomega.Equal(uint(1)))
+	g.Expect(r.Kind).To(gomega.Equal("access_token"))
+	g.Expect(r.Subject).To(gomega.Equal("client-subject-123"))
+	g.Expect(r.Scopes).To(gomega.Equal("openid profile"))
+	g.Expect(r.IdpClient).ToNot(gomega.BeNil())
+	g.Expect(r.IdpClient.ID).To(gomega.Equal(uint(10)))
 }

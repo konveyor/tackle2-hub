@@ -95,18 +95,18 @@ func (r *Cache) UserDeleted(id uint) {
 	})
 }
 
-// TaskSaved updates the cache when a task is saved.
-func (r *Cache) TaskSaved(m *Task) {
+// TaskGranted task token granted.
+func (r *Cache) TaskGranted(id uint) {
 	_ = r.Transaction(func(tx *Tx) (_ error) {
-		tx.TaskSaved(m)
+		tx.TaskGranted(id)
 		return
 	})
 }
 
-// TaskDeleted removes a task from the cache.
-func (r *Cache) TaskDeleted(id uint) {
+// TaskRevoked removes a task from the cache.
+func (r *Cache) TaskRevoked(id uint) {
 	_ = r.Transaction(func(tx *Tx) (_ error) {
-		tx.TaskDeleted(id)
+		tx.TaskRevoked(id)
 		return
 	})
 }
@@ -549,6 +549,20 @@ func (r *Cache) getToken(token string) (m *Token, err error) {
 		}
 		m.Subject = identity.Subject
 		m.Scopes = identity.Scopes
+		return
+	}
+	// IdP client binding.
+	if m.IdpClientID != nil {
+		client, found := r.clientById[*m.IdpClientID]
+		if !found {
+			err = &NotFound{
+				Resource: "client",
+				Id:       strconv.Itoa(int(*m.IdpClientID)),
+			}
+			return
+		}
+		m.Subject = client.Subject
+		m.Scopes = strings.Join(client.GetScopes(), " ")
 		return
 	}
 	return

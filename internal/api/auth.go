@@ -135,7 +135,8 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 func (h AuthHandler) IdpClientGet(ctx *gin.Context) {
 	m := &model.IdpClient{}
 	id := h.pk(ctx)
-	err := h.DB(ctx).First(m, id).Error
+	db := h.preLoad(h.DB(ctx), clause.Associations)
+	err := db.First(m, id).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -155,7 +156,8 @@ func (h AuthHandler) IdpClientGet(ctx *gin.Context) {
 // @router /auth/clients [get]
 func (h AuthHandler) IdpClientList(ctx *gin.Context) {
 	var list []model.IdpClient
-	err := h.DB(ctx).Find(&list).Error
+	db := h.preLoad(h.DB(ctx), clause.Associations)
+	err := db.Find(&list).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return

@@ -21,6 +21,10 @@ func (r *IdpIdentity) With(m *model.IdpIdentity) {
 	r.LastAuthenticated = m.LastAuthenticated
 	r.LastRefreshed = m.LastRefreshed
 	r.Scopes = m.Scopes
+	r.Tokens = []Ref{}
+	for _, token := range m.Tokens {
+		r.Tokens = append(r.Tokens, ref(token.ID, &token))
+	}
 }
 
 // Model converts REST resource to model.

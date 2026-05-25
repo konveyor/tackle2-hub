@@ -173,11 +173,14 @@ func (p *Builtin) NewPAT(subject string, lifespan time.Duration) (m Token, err e
 	if s.IsIdentity() {
 		m.IdpIdentityID = s.IdentityId
 	}
+	if s.IsClient() {
+		m.IdpClientID = s.ClientId
+	}
 	return
 }
 
-// NewTaskToken creates a new task api-key.
-func (p *Builtin) NewTaskToken(taskId uint) (m Token, err error) {
+// TaskGrant creates a new task api-key.
+func (p *Builtin) TaskGrant(taskId uint) (m Token, err error) {
 	m = p.newToken(0)
 	m.TaskID = &taskId
 	err = p.db.Create(&m).Error
@@ -186,6 +189,20 @@ func (p *Builtin) NewTaskToken(taskId uint) (m Token, err error) {
 		return
 	}
 	p.cache.TokenSaved(&m)
+	p.cache.TaskGranted(taskId)
+	return
+}
+
+// TaskRevoke revokes a task token.
+func (p *Builtin) TaskRevoke(taskId uint) {
+	p.cache.TaskRevoked(taskId)
+	err := p.db.Where("TaskID", taskId).Delete(&Token{}).Error
+	if err != nil {
+		Log.Error(err,
+			"Task revoke failed.",
+			"taskId",
+			taskId)
+	}
 	return
 }
 

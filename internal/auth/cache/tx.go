@@ -52,24 +52,28 @@ func (r *Tx) UserDeleted(id uint) {
 		})
 }
 
-// TaskSaved updates the cache when a task is saved.
-// Cache only interested in state in (Pending|Running).
-func (r *Tx) TaskSaved(m *Task) {
-	if m.State == task.Pending || m.State == task.Running {
-		r.changes = append(
-			r.changes, func() {
-				r.cache.taskById[m.ID] = m
-			})
-	} else {
-		r.TaskDeleted(m.ID)
-	}
+// TaskGranted token granted.
+func (r *Tx) TaskGranted(id uint) {
+	r.changes = append(
+		r.changes, func() {
+			m := &Task{}
+			m.ID = id
+			m.State = task.Running
+			r.cache.taskById[id] = m
+		})
 }
 
-// TaskDeleted removes a task from the cache.
-func (r *Tx) TaskDeleted(id uint) {
+// TaskRevoked task token revoked.
+func (r *Tx) TaskRevoked(id uint) {
 	r.changes = append(
 		r.changes, func() {
 			delete(r.cache.taskById, id)
+			for _, m := range r.cache.tokenById {
+				if m.TaskID != nil && *m.TaskID == id {
+					delete(r.cache.tokenByDigest, m.Digest)
+					delete(r.cache.tokenById, m.ID)
+				}
+			}
 		})
 }
 

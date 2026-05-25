@@ -287,6 +287,7 @@ func (r *Storage) CreateAccessToken(
 	if s != nil {
 		m.UserID = s.UserId
 		m.IdpIdentityID = s.IdentityId
+		m.IdpClientID = s.ClientId
 	}
 	err = r.db.Create(m).Error
 	if err != nil {

@@ -25,4 +25,5 @@ func (r *Token) With(m *model.Token) {
 	r.Task = refPtr(m.TaskID, m.Task)
 	r.User = refPtr(m.UserID, m.User)
 	r.IdpIdentity = refPtr(m.IdpIdentityID, m.IdpIdentity)
+	r.IdpClient = refPtr(m.IdpClientID, m.IdpClient)
 }

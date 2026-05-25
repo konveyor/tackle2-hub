@@ -69,8 +69,10 @@ type Provider interface {
 	Login(w http.ResponseWriter, r *http.Request, reqId string) (err error)
 	// NewPAT creates a new personal access token.
 	NewPAT(subject string, lifespan time.Duration) (token Token, err error)
-	// NewTaskToken creates a new api-key.
-	NewTaskToken(taskId uint) (token Token, err error)
+	// TaskGrant creates a new api-key.
+	TaskGrant(taskId uint) (token Token, err error)
+	// TaskRevoke revokes task tokens.
+	TaskRevoke(taskId uint)
 	// Revoke a token.
 	Revoke(tokenId uint) (err error)
 	// Authenticate the request.

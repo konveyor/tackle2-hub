@@ -24,6 +24,10 @@ func (r *User) With(m *model.User) {
 	for _, role := range m.Roles {
 		r.Roles = append(r.Roles, Ref{ID: role.ID, Name: role.Name})
 	}
+	r.Tokens = []Ref{}
+	for _, token := range m.Tokens {
+		r.Tokens = append(r.Tokens, ref(token.ID, &token))
+	}
 }
 
 // Model converts REST resource to model.

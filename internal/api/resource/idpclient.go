@@ -17,6 +17,10 @@ func (r *IdpClient) With(m *model.IdpClient) {
 	r.Grants = m.Grants
 	r.RedirectURIs = m.RedirectURIs
 	r.Scopes = m.Scopes
+	r.Tokens = []Ref{}
+	for _, token := range m.Tokens {
+		r.Tokens = append(r.Tokens, ref(token.ID, &token))
+	}
 }
 
 // Model converts REST resource to model.

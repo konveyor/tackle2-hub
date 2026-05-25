@@ -367,11 +367,12 @@ func (m *Manager) Cancel(db *gorm.DB, id uint) (err error) {
 					snErr,
 					"Snapshot not created.")
 			}
+			auth.IdP.TaskRevoke(task.ID)
 			err = task.Cancel(m.Client)
 			if err != nil {
 				return
 			}
-			err = m.batchUpdate([]*Task{task})
+			err = m.DB.Save(task).Error
 			if err != nil {
 				err = liberr.Wrap(err)
 				return
@@ -868,6 +869,7 @@ func (m *Manager) updateRunning(ctx context.Context) {
 					"Task completed.",
 					"id",
 					task.ID)
+				auth.IdP.TaskRevoke(task.ID)
 				err = m.podSnapshot(task, pod)
 				if err != nil {
 					Log.Error(err, "")
@@ -1272,8 +1274,6 @@ func (m *Manager) advancePipeline(task *Task) (updated []*Task, err error) {
 // batchUpdate tasks.
 func (m *Manager) batchUpdate(tasks []*Task) (err error) {
 	digest := make(map[uint]string)
-	cache := auth.IdP.Cache()
-	cacheTx := cache.Begin()
 	err = m.DB.Transaction(
 		func(tx *gorm.DB) (err error) {
 			for _, task := range tasks {
@@ -1284,16 +1284,13 @@ func (m *Manager) batchUpdate(tasks []*Task) (err error) {
 						err = liberr.Wrap(err)
 						break
 					}
-					cacheTx.TaskSaved(task.Task)
 				}
 			}
 			return
 		})
 	if err == nil {
-		cacheTx.Commit()
 		return
 	}
-	cacheTx.Rollback()
 	for _, task := range tasks {
 		task.digest = digest[task.ID]
 		if task.hasChanged() {
@@ -1302,7 +1299,6 @@ func (m *Manager) batchUpdate(tasks []*Task) (err error) {
 				err = liberr.Wrap(err)
 				break
 			}
-			cache.TaskSaved(task.Task)
 		}
 	}
 	return

@@ -154,6 +154,7 @@ type IdpIdentity struct {
 	LastAuthenticated time.Time `json:"lastAuthenticated"`
 	LastRefreshed     time.Time `json:"lastRefreshed"`
 	Scopes            string    `json:"scopes"`
+	Tokens            []Ref     `json:"tokens"`
 }
 
 // IdpClient REST resource.
@@ -165,6 +166,7 @@ type IdpClient struct {
 	Grants          []string `json:"grants" binding:"required"`
 	RedirectURIs    []string `json:"redirectURIs,omitempty"`
 	Scopes          []string `json:"scopes" binding:"required"`
+	Tokens          []Ref    `json:"tokens"`
 }
 
 // User REST resource.
@@ -176,6 +178,7 @@ type User struct {
 	Password string `json:"password" binding:"required,max=72"`
 	Email    string `json:"email" binding:"required"`
 	Roles    []Ref  `json:"roles"`
+	Tokens   []Ref  `json:"tokens"`
 }
 
 // Role REST resource.
@@ -217,6 +220,7 @@ type Token struct {
 	Task        *Ref      `json:"task,omitempty" yaml:"task,omitempty"`
 	User        *Ref      `json:"user,omitempty" yaml:"user,omitempty"`
 	IdpIdentity *Ref      `json:"idpIdentity,omitempty" yaml:"idpIdentity,omitempty"`
+	IdpClient   *Ref      `json:"idpClient,omitempty" yaml:"idpClient,omitempty"`
 }
 
 // PAT REST resource.

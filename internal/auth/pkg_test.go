@@ -85,7 +85,7 @@ func TestUserGrant(t *testing.T) {
 	g.Expect(err).NotTo(BeNil())
 }
 
-// TestTaskKey tests creating and authenticating with task tokens.
+// TestTaskGrant tests creating and authenticating with task tokens.
 func TestTaskGrant(t *testing.T) {
 	g := NewGomegaWithT(t)
 
@@ -105,7 +105,7 @@ func TestTaskGrant(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Test creating task token
-	token, err := provider.NewTaskToken(task.ID)
+	token, err := provider.TaskGrant(task.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(token.Secret).NotTo(BeEmpty())
 
@@ -121,7 +121,7 @@ func TestTaskGrant(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Test creating key for non-existent task
-	_, err = provider.NewTaskToken(9999)
+	_, err = provider.TaskGrant(9999)
 	g.Expect(err).NotTo(BeNil())
 }
 
@@ -456,7 +456,7 @@ func TestKeyCacheWithTaskStates(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create token for running task - should work
-	key, err := provider.NewTaskToken(task.ID)
+	key, err := provider.TaskGrant(task.ID)
 	g.Expect(err).To(BeNil())
 
 	// Authenticate with key - should work
@@ -632,9 +632,9 @@ func TestNoAuthProvider(t *testing.T) {
 	})
 
 	// Notify cache about new task
-	provider.Builtin.cache.TaskSaved((*Task)(task))
+	provider.Builtin.cache.TaskGranted(task.ID)
 
-	key, err = provider.NewTaskToken(task.ID)
+	key, err = provider.TaskGrant(task.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(key.Secret).ToNot(BeEmpty())
 }
@@ -718,7 +718,389 @@ func TestCacheTokenDelete(t *testing.T) {
 	g.Expect(err.Error()).To(ContainSubstring("not-authenticated"))
 }
 
-// TestBuiltinDelete tests the Builtin Delete method removes key from cache and DB.
+// TestTaskRevoke tests revoking task tokens.
+func TestTaskRevoke(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Create test task
+	task := &model.Task{
+		Name:  "revoke-test-task",
+		State: "Running",
+	}
+	err = db.Create(task).Error
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Create task token
+	token, err := provider.TaskGrant(task.ID)
+	g.Expect(err).To(BeNil())
+
+	// Verify token works
+	request := &Request{}
+	request.With("Bearer " + token.Secret)
+	_, err = provider.Authenticate(request)
+	g.Expect(err).To(BeNil())
+
+	// Verify token exists in database
+	var count int64
+	db.Model(&model.Token{}).Where("TaskID = ?", task.ID).Count(&count)
+	g.Expect(count).To(Equal(int64(1)))
+
+	// Revoke task token
+	provider.TaskRevoke(task.ID)
+
+	// Verify token is deleted from database
+	db.Model(&model.Token{}).Where("TaskID = ?", task.ID).Count(&count)
+	g.Expect(count).To(Equal(int64(0)))
+
+	// Verify token no longer authenticates (removed from cache)
+	request = &Request{}
+	request.With("Bearer " + token.Secret)
+	_, err = provider.Authenticate(request)
+	g.Expect(err).NotTo(BeNil())
+	g.Expect(err.Error()).To(ContainSubstring("not-authenticated"))
+
+	// Verify task removed from task cache
+	_, err = provider.cache.FindTaskById(task.ID)
+	g.Expect(err).NotTo(BeNil())
+}
+
+// TestTaskRevokeMultipleTokens tests revoking when task has multiple tokens (edge case).
+func TestTaskRevokeMultipleTokens(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Create test task
+	task := &model.Task{
+		Name:  "multi-token-task",
+		State: "Running",
+	}
+	err = db.Create(task).Error
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Create first token
+	token1, err := provider.TaskGrant(task.ID)
+	g.Expect(err).To(BeNil())
+
+	// Manually create second token for same task (shouldn't normally happen)
+	token2Secret := "second-task-token"
+	token2 := &model.Token{
+		Kind:       KindAPIKey,
+		AuthId:     "second-auth-id",
+		Digest:     secret.Hash(token2Secret),
+		Expiration: time.Now().Add(24 * time.Hour),
+		TaskID:     &task.ID,
+	}
+	err = db.Create(token2).Error
+	g.Expect(err).To(BeNil())
+
+	// Refresh cache to pick up both tokens
+	err = provider.cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	// Verify both tokens work
+	request := &Request{}
+	request.With("Bearer " + token1.Secret)
+	_, err = provider.Authenticate(request)
+	g.Expect(err).To(BeNil())
+
+	request = &Request{}
+	request.With("Bearer " + token2Secret)
+	_, err = provider.Authenticate(request)
+	g.Expect(err).To(BeNil())
+
+	// Revoke all tokens for this task
+	provider.TaskRevoke(task.ID)
+
+	// Verify both tokens are deleted from database
+	var count int64
+	db.Model(&model.Token{}).Where("TaskID = ?", task.ID).Count(&count)
+	g.Expect(count).To(Equal(int64(0)))
+
+	// Verify neither token authenticates
+	request = &Request{}
+	request.With("Bearer " + token1.Secret)
+	_, err = provider.Authenticate(request)
+	g.Expect(err).NotTo(BeNil())
+
+	request = &Request{}
+	request.With("Bearer " + token2Secret)
+	_, err = provider.Authenticate(request)
+	g.Expect(err).NotTo(BeNil())
+}
+
+// TestTaskRevokeNoTokens tests revoking task with no tokens (should not error).
+func TestTaskRevokeNoTokens(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Create test task
+	task := &model.Task{
+		Name:  "no-token-task",
+		State: "Running",
+	}
+	err = db.Create(task).Error
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Add task to cache but don't create token
+	provider.cache.TaskGranted(task.ID)
+
+	// Revoke should not error even though no tokens exist
+	provider.TaskRevoke(task.ID)
+
+	// Verify no tokens exist for this task
+	var count int64
+	db.Model(&model.Token{}).Where("TaskID = ?", task.ID).Count(&count)
+	g.Expect(count).To(Equal(int64(0)))
+
+	// Note: Task may be reloaded into cache by ensureFresh() since it's still
+	// in Running state in the database. This is expected behavior.
+}
+
+// TestCascadeDeleteUser tests that deleting a user cascades to delete tokens.
+func TestCascadeDeleteUser(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Create user
+	user := &model.User{
+		Login:    "cascadeuser",
+		Password: secret.HashPassword("password"),
+		Email:    "cascade@example.com",
+	}
+	err = db.Create(user).Error
+	g.Expect(err).To(BeNil())
+
+	// Reload user to get subject
+	err = db.First(user, user.ID).Error
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Create token for user
+	token, err := provider.NewPAT(user.Subject, 24*time.Hour)
+	g.Expect(err).To(BeNil())
+
+	// Verify token exists
+	var count int64
+	db.Model(&model.Token{}).Where("UserID = ?", user.ID).Count(&count)
+	g.Expect(count).To(Equal(int64(1)))
+
+	// Delete user (should cascade delete token)
+	err = db.Delete(user).Error
+	g.Expect(err).To(BeNil())
+
+	// Verify token was cascade deleted
+	db.Model(&model.Token{}).Where("UserID = ?", user.ID).Count(&count)
+	g.Expect(count).To(Equal(int64(0)))
+
+	// Verify token no longer in database by ID
+	var deletedToken model.Token
+	err = db.First(&deletedToken, token.ID).Error
+	g.Expect(err).NotTo(BeNil())
+	g.Expect(errors.Is(err, gorm.ErrRecordNotFound)).To(BeTrue())
+}
+
+// TestCascadeDeleteTask tests that deleting a task cascades to delete tokens.
+func TestCascadeDeleteTask(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Create task
+	task := &model.Task{
+		Name:  "cascade-task",
+		State: "Running",
+	}
+	err = db.Create(task).Error
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Create token for task
+	token, err := provider.TaskGrant(task.ID)
+	g.Expect(err).To(BeNil())
+
+	// Verify token exists
+	var count int64
+	db.Model(&model.Token{}).Where("TaskID = ?", task.ID).Count(&count)
+	g.Expect(count).To(Equal(int64(1)))
+
+	// Delete task (should cascade delete token)
+	err = db.Delete(task).Error
+	g.Expect(err).To(BeNil())
+
+	// Verify token was cascade deleted
+	db.Model(&model.Token{}).Where("TaskID = ?", task.ID).Count(&count)
+	g.Expect(count).To(Equal(int64(0)))
+
+	// Verify token no longer in database by ID
+	var deletedToken model.Token
+	err = db.First(&deletedToken, token.ID).Error
+	g.Expect(err).NotTo(BeNil())
+	g.Expect(errors.Is(err, gorm.ErrRecordNotFound)).To(BeTrue())
+}
+
+// TestClientPAT tests creating and authenticating with client PAT.
+func TestClientPAT(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Create IdP client
+	client := &model.IdpClient{
+		ClientId:        "test-client",
+		ApplicationType: "web",
+		Grants:          []string{"client_credentials"},
+		Scopes:          []string{"openid", "profile"},
+	}
+	err = db.Create(client).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(client.Subject).NotTo(BeEmpty())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Create PAT for client
+	token, err := provider.NewPAT(client.Subject, 24*time.Hour)
+	g.Expect(err).To(BeNil())
+	g.Expect(token.Secret).NotTo(BeEmpty())
+	g.Expect(token.IdpClientID).NotTo(BeNil())
+	g.Expect(*token.IdpClientID).To(Equal(client.ID))
+
+	// Authenticate with the token
+	request := &Request{}
+	request.With("Bearer " + token.Secret)
+	jwToken, err := provider.Authenticate(request)
+	g.Expect(err).To(BeNil())
+	g.Expect(jwToken).NotTo(BeNil())
+
+	// Verify token claims contain client subject and scopes
+	claims := jwToken.Claims.(jwt.MapClaims)
+	g.Expect(claims[ClaimSub]).To(Equal(client.Subject))
+	scopeStr := claims[ClaimScope].(string)
+	g.Expect(scopeStr).To(ContainSubstring("openid"))
+	g.Expect(scopeStr).To(ContainSubstring("profile"))
+}
+
+// TestCascadeDeleteIdpClient tests that deleting an IdP client cascades to delete tokens.
+func TestCascadeDeleteIdpClient(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Create IdP client
+	client := &model.IdpClient{
+		ClientId:        "cascade-client",
+		ApplicationType: "web",
+		Grants:          []string{"client_credentials"},
+		Scopes:          []string{"openid"},
+	}
+	err = db.Create(client).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(client.Subject).NotTo(BeEmpty())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Create token for client (simulating client credentials grant)
+	token, err := provider.NewPAT(client.Subject, 24*time.Hour)
+	g.Expect(err).To(BeNil())
+	g.Expect(token.IdpClientID).NotTo(BeNil())
+	g.Expect(*token.IdpClientID).To(Equal(client.ID))
+
+	// Verify token exists
+	var count int64
+	db.Model(&model.Token{}).Where("IdpClientID = ?", client.ID).Count(&count)
+	g.Expect(count).To(Equal(int64(1)))
+
+	// Delete client (should cascade delete token)
+	err = db.Delete(client).Error
+	g.Expect(err).To(BeNil())
+
+	// Verify token was cascade deleted
+	db.Model(&model.Token{}).Where("IdpClientID = ?", client.ID).Count(&count)
+	g.Expect(count).To(Equal(int64(0)))
+
+	// Verify token no longer in database by ID
+	var deletedToken model.Token
+	err = db.First(&deletedToken, token.ID).Error
+	g.Expect(err).NotTo(BeNil())
+	g.Expect(errors.Is(err, gorm.ErrRecordNotFound)).To(BeTrue())
+}
+
+// TestCascadeDeleteIdpIdentity tests that deleting an IdP identity cascades to delete tokens.
+func TestCascadeDeleteIdpIdentity(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Create IdP identity
+	identity := &Identity{
+		Issuer:       "https://cascade.idp.com",
+		Subject:      "cascade-idp-subject",
+		RefreshToken: "refresh-token",
+		Expiration:   time.Now().Add(24 * time.Hour),
+		Scopes:       "openid profile",
+		Login:        "cascadeidentity",
+		Email:        "cascadeidentity@example.com",
+	}
+	err = secret.Encrypt(identity)
+	g.Expect(err).To(BeNil())
+	err = db.Create(identity).Error
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Create token for identity
+	token, err := provider.NewPAT(identity.Subject, 24*time.Hour)
+	g.Expect(err).To(BeNil())
+
+	// Verify token exists
+	var count int64
+	db.Model(&model.Token{}).Where("IdpIdentityID = ?", identity.ID).Count(&count)
+	g.Expect(count).To(Equal(int64(1)))
+
+	// Delete identity (should cascade delete token)
+	err = db.Delete(identity).Error
+	g.Expect(err).To(BeNil())
+
+	// Verify token was cascade deleted
+	db.Model(&model.Token{}).Where("IdpIdentityID = ?", identity.ID).Count(&count)
+	g.Expect(count).To(Equal(int64(0)))
+
+	// Verify token no longer in database by ID
+	var deletedToken model.Token
+	err = db.First(&deletedToken, token.ID).Error
+	g.Expect(err).NotTo(BeNil())
+	g.Expect(errors.Is(err, gorm.ErrRecordNotFound)).To(BeTrue())
+}
+
+// TestBuiltinRevoke tests the Builtin Revoke method removes key from cache and DB.
 func TestBuiltinRevoke(t *testing.T) {
 	g := NewGomegaWithT(t)
 
@@ -1521,7 +1903,7 @@ func TestTokenBindingEdgeCases(t *testing.T) {
 	err = cache.Refresh()
 	g.Expect(err).To(BeNil())
 
-	token, err := provider.NewTaskToken(pendingTask.ID)
+	token, err := provider.TaskGrant(pendingTask.ID)
 	g.Expect(err).To(BeNil())
 
 	request := &Request{}
@@ -1988,7 +2370,7 @@ func TestCacheGetTask(t *testing.T) {
 	found, err := provider.cache.FindTaskById(task.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(found).NotTo(BeNil())
-	g.Expect(found.Name).To(Equal("cache-test-task"))
+	g.Expect(found.ID).To(Equal(task.ID))
 	g.Expect(found.State).To(Equal("Running"))
 
 	// Get non-existent task
@@ -2025,14 +2407,14 @@ func TestCacheFindTaskByIdNotification(t *testing.T) {
 	g.Expect(err).NotTo(BeNil()) // NotFound
 	g.Expect(found).To(BeNil())
 
-	// Notify cache of task creation
-	provider.cache.TaskSaved((*Task)(task))
+	// Notify cache of task grant
+	provider.cache.TaskGranted(task.ID)
 
 	// Now it should be found immediately
 	found, err = provider.cache.FindTaskById(task.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(found).NotTo(BeNil())
-	g.Expect(found.Name).To(Equal("new-cache-task"))
+	g.Expect(found.State).To(Equal("Running")) // TaskGranted creates minimal Task{ID, State: Running}
 }
 
 // TestCacheGetTaskTimeRefresh tests time-based refresh for task lookup.
@@ -2064,7 +2446,8 @@ func TestCacheGetTaskTimeRefresh(t *testing.T) {
 	// Get successfully (cache is fresh)
 	found, err := provider.cache.FindTaskById(task.ID)
 	g.Expect(err).To(BeNil())
-	g.Expect(found.Name).To(Equal("time-task"))
+	g.Expect(found.ID).To(Equal(task.ID))
+	g.Expect(found.State).To(Equal("Running"))
 
 	// Wait for cache to expire
 	time.Sleep(150 * time.Millisecond)
@@ -2080,7 +2463,8 @@ func TestCacheGetTaskTimeRefresh(t *testing.T) {
 	// GetTask should trigger time-based refresh
 	found, err = provider.cache.FindTaskById(newTask.ID)
 	g.Expect(err).To(BeNil())
-	g.Expect(found.Name).To(Equal("new-time-task"))
+	g.Expect(found.ID).To(Equal(newTask.ID))
+	g.Expect(found.State).To(Equal("Pending"))
 }
 
 // TestCacheUserByUseridMaps tests that all userid maps are maintained.
@@ -2506,6 +2890,7 @@ func setupTestDB() (db *gorm.DB, err error) {
 		&IdpClient{},
 		&User{},
 		&Task{},
+		&model.Bucket{},
 		&Role{},
 		&Permission{},
 		&Token{},
