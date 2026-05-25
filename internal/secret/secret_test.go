@@ -653,17 +653,17 @@ func TestEncryptMixedTags(t *testing.T) {
 	// Encrypt should only encrypt "encrypted" tagged fields
 	err := Encrypt(&object)
 	g.Expect(err).To(BeNil())
-	g.Expect(object.Password).To(Equal("pass123"))  // hashed tag = no-op
-	g.Expect(object.ApiKey).ToNot(Equal("key456"))  // encrypted
+	g.Expect(object.Password).To(Equal("pass123")) // hashed tag = no-op
+	g.Expect(object.ApiKey).ToNot(Equal("key456")) // encrypted
 
 	encryptedKey := object.ApiKey
 
 	// Decrypt should only decrypt "encrypted" tagged fields
 	err = Decrypt(&object)
 	g.Expect(err).To(BeNil())
-	g.Expect(object.Password).To(Equal("pass123"))  // Still unchanged
-	g.Expect(object.ApiKey).To(Equal("key456"))     // Decrypted
-	g.Expect(encryptedKey).ToNot(Equal("key456"))   // Verify it was actually encrypted
+	g.Expect(object.Password).To(Equal("pass123")) // Still unchanged
+	g.Expect(object.ApiKey).To(Equal("key456"))    // Decrypted
+	g.Expect(encryptedKey).ToNot(Equal("key456"))  // Verify it was actually encrypted
 }
 
 // TestEncryptNonExportedFields tests that non-exported fields are ignored.
@@ -682,13 +682,13 @@ func TestEncryptNonExportedFields(t *testing.T) {
 
 	err := Encrypt(&object)
 	g.Expect(err).To(BeNil())
-	g.Expect(object.Public).ToNot(Equal("public-value"))  // Encrypted
-	g.Expect(object.private).To(Equal("private-value"))   // Unchanged (non-exported)
+	g.Expect(object.Public).ToNot(Equal("public-value")) // Encrypted
+	g.Expect(object.private).To(Equal("private-value"))  // Unchanged (non-exported)
 
 	err = Decrypt(&object)
 	g.Expect(err).To(BeNil())
-	g.Expect(object.Public).To(Equal("public-value"))    // Decrypted
-	g.Expect(object.private).To(Equal("private-value"))  // Still unchanged
+	g.Expect(object.Public).To(Equal("public-value"))   // Decrypted
+	g.Expect(object.private).To(Equal("private-value")) // Still unchanged
 }
 
 // TestEncodeNonExportedFields tests that Encode ignores non-exported fields.
@@ -707,10 +707,10 @@ func TestEncodeNonExportedFields(t *testing.T) {
 
 	fields, err := Encode(&object)
 	g.Expect(err).To(BeNil())
-	g.Expect(len(fields)).To(Equal(1))        // Only Public
+	g.Expect(len(fields)).To(Equal(1)) // Only Public
 	g.Expect(fields[0].name).To(Equal("Public"))
-	g.Expect(object.Public).ToNot(Equal("public-value"))  // Encrypted
-	g.Expect(object.private).To(Equal("private-value"))   // Unchanged
+	g.Expect(object.Public).ToNot(Equal("public-value")) // Encrypted
+	g.Expect(object.private).To(Equal("private-value"))  // Unchanged
 }
 
 // TestFieldFqnRoot tests Field.Fqn() and Root() for root-level fields.
@@ -791,12 +791,12 @@ func TestFieldSecretValueCapture(t *testing.T) {
 
 	// Verify Secret() returns ORIGINAL pre-transformation values
 	g.Expect(passwordField).ToNot(BeNil())
-	g.Expect(passwordField.Secret()).To(Equal(password))  // Original, not hash
-	g.Expect(object.Password).ToNot(Equal(password))      // But object IS transformed
+	g.Expect(passwordField.Secret()).To(Equal(password)) // Original, not hash
+	g.Expect(object.Password).ToNot(Equal(password))     // But object IS transformed
 
 	g.Expect(apiKeyField).ToNot(BeNil())
-	g.Expect(apiKeyField.Secret()).To(Equal(apiKey))  // Original, not encrypted
-	g.Expect(object.ApiKey).ToNot(Equal(apiKey))      // But object IS transformed
+	g.Expect(apiKeyField.Secret()).To(Equal(apiKey)) // Original, not encrypted
+	g.Expect(object.ApiKey).ToNot(Equal(apiKey))     // But object IS transformed
 }
 
 //
@@ -817,7 +817,7 @@ func TestDecryptCorruptedData(t *testing.T) {
 
 	//
 	// Valid base64 but corrupted ciphertext
-	s = "aGVsbG8gd29ybGQ="  // "hello world" in base64, not valid AES-GCM
+	s = "aGVsbG8gd29ybGQ=" // "hello world" in base64, not valid AES-GCM
 	err = Decrypt(&s)
 	g.Expect(err).ToNot(BeNil())
 
@@ -847,7 +847,7 @@ func TestDecryptWrongPassphrase(t *testing.T) {
 	Settings.Passphrase = "WRONG"
 	err = Decrypt(&s)
 	g.Expect(err).ToNot(BeNil())
-	g.Expect(s).To(Equal(encrypted))  // Value unchanged on error
+	g.Expect(s).To(Equal(encrypted)) // Value unchanged on error
 }
 
 // TestDecodeCorruptedData tests Decode with corrupted encrypted fields.
