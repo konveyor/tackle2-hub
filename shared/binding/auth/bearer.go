@@ -113,7 +113,7 @@ func (p *OIDC) Login() (err error) {
 func (p *OIDC) Header() (header string) {
 	p.mutex.RLock()
 	defer p.mutex.RUnlock()
-	header = "OIDC " + p.accessToken
+	header = "Bearer " + p.accessToken
 	return
 }
 
