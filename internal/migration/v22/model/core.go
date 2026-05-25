@@ -214,7 +214,7 @@ type User struct {
 	Subject  string `gorm:"<-:create;index;not null"`
 	Login    string `gorm:"<-:create;uniqueIndex;not null"`
 	Name     string `gorm:""`
-	Password string `gorm:"not null"` // hashed
+	Password string `gorm:"not null" secret:"hashed"`
 	Email    string `gorm:"index;not null"`
 	Roles    []Role `gorm:"many2many:UserRole;constraint:OnDelete:CASCADE"`
 }
@@ -241,7 +241,7 @@ type IdpClient struct {
 	Model
 	Subject         string   `gorm:"<-:create;index;not null"`
 	ClientId        string   `gorm:"<-:create;uniqueIndex;not null"`
-	Secret          string   `gorm:"" secret:""`
+	Secret          string   `gorm:"" secret:"encrypted"`
 	ApplicationType string   `gorm:"not null"`
 	Grants          []string `gorm:"type:json;serializer:json"`
 	RedirectURIs    []string `gorm:"type:json;serializer:json"`

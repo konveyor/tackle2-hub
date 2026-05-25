@@ -199,7 +199,7 @@ func (h AuthHandler) IdpClientCreate(ctx *gin.Context) {
 	}
 	m := r.Model()
 	m.CreateUser = h.CurrentUser(ctx)
-	err = secret.Encrypt(m)
+	_, err = secret.Encode(m)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -242,14 +242,15 @@ func (h AuthHandler) IdpClientUpdate(ctx *gin.Context) {
 	m.UpdateUser = h.CurrentUser(ctx)
 	db := h.DB(ctx)
 	db = db.Model(m)
-	if m.Secret != SecretMask {
-		err = secret.Encrypt(&m.Secret)
-		if err != nil {
-			_ = ctx.Error(err)
-			return
+	fields, err := secret.Encode(m)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	for _, f := range fields {
+		if f.Secret() == SecretMask {
+			db = db.Omit(f.Fqn())
 		}
-	} else {
-		db = db.Omit("Secret")
 	}
 	err = db.Save(m).Error
 	if err != nil {
@@ -514,8 +515,14 @@ func (h AuthHandler) UserCreate(ctx *gin.Context) {
 	}
 	m := r.Model()
 	m.CreateUser = h.CurrentUser(ctx)
-	m.Password = secret.HashPassword(r.Password)
-	err = h.DB(ctx).Omit(clause.Associations).Create(m).Error
+	_, err = secret.Encode(m)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	db := h.DB(ctx).Model(m)
+	db = db.Omit(clause.Associations)
+	err = db.Create(m).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -526,7 +533,7 @@ func (h AuthHandler) UserCreate(ctx *gin.Context) {
 		return
 	}
 
-	db := h.preLoad(h.DB(ctx), clause.Associations)
+	db = h.preLoad(h.DB(ctx), clause.Associations)
 	err = db.First(m).Error
 	if err != nil {
 		_ = ctx.Error(err)
@@ -567,10 +574,15 @@ func (h AuthHandler) UserUpdate(ctx *gin.Context) {
 	m.UpdateUser = h.CurrentUser(ctx)
 	db := h.DB(ctx).Model(m)
 	db = db.Omit(clause.Associations)
-	if m.Password != SecretMask {
-		m.Password = secret.HashPassword(r.Password)
-	} else {
-		db = db.Omit("Password")
+	fields, err := secret.Encode(m)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	for _, f := range fields {
+		if f.Secret() == SecretMask {
+			db = db.Omit(f.Fqn())
+		}
 	}
 	err = db.Save(m).Error
 	if err != nil {

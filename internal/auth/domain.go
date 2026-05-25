@@ -428,9 +428,10 @@ func (d *Domain) userPatch(existing map[string]User, wanted []seed.User) (patch 
 			newUser := User{
 				Login:    user.Login,
 				Subject:  uuid.New().String(),
-				Password: secret.HashPassword(user.Password),
+				Password: user.Password,
 			}
 			newUser.ID = user.ID
+			_, _ = secret.Encode(&newUser)
 			patch.toCreate = append(patch.toCreate, userWithRoles{
 				user:  newUser,
 				roles: roles,
