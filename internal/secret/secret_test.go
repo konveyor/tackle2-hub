@@ -357,3 +357,116 @@ func TestHashPasswordMultibyteCharacters(t *testing.T) {
 	matched := MatchPassword(password, hashed)
 	g.Expect(matched).To(BeTrue())
 }
+
+func TestEncode(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	cipher := AESGCM{}
+	cipher.Use("test")
+	secret := Secret{Cipher: &cipher}
+	password := "rabbit-slayer"
+	apiKey := "secret-key-123"
+
+	//
+	// struct
+	object := struct {
+		Name     string
+		Password string `secret:"hashed"`
+		ApiKey   string `secret:"encrypted"`
+		Token    string `secret:""` // defaults to encrypted
+		Age      int
+	}{
+		Name:     "elmer",
+		Password: password,
+		ApiKey:   apiKey,
+		Token:    "token-value",
+		Age:      52,
+	}
+	fields, err := secret.Encode(&object)
+	g.Expect(err).To(BeNil())
+	g.Expect(len(fields)).To(Equal(3))
+	g.Expect("elmer").To(Equal(object.Name))
+	g.Expect(password).ToNot(Equal(object.Password))
+	g.Expect(isHashedPassword(object.Password)).To(BeTrue())
+	g.Expect(apiKey).ToNot(Equal(object.ApiKey))
+	g.Expect("token-value").ToNot(Equal(object.Token))
+	err = secret.Decode(&object)
+	g.Expect(err).To(BeNil())
+	g.Expect("elmer").To(Equal(object.Name))
+	g.Expect(password).ToNot(Equal(object.Password)) // hashed stays hashed
+	g.Expect(apiKey).To(Equal(object.ApiKey))
+	g.Expect("token-value").To(Equal(object.Token))
+}
+
+func TestEncodePackage(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	Settings.Passphrase = "TEST"
+
+	password := "rabbit-slayer"
+	apiKey := "secret-key-123"
+
+	//
+	// struct
+	object := struct {
+		Name     string
+		Password string `secret:"hashed"`
+		ApiKey   string `secret:"encrypted"`
+		Token    string `secret:""` // defaults to encrypted
+		Age      int
+	}{
+		Name:     "elmer",
+		Password: password,
+		ApiKey:   apiKey,
+		Token:    "token-value",
+		Age:      52,
+	}
+	fields, err := Encode(&object)
+	g.Expect(err).To(BeNil())
+	g.Expect(len(fields)).To(Equal(3))
+	g.Expect("elmer").To(Equal(object.Name))
+	g.Expect(password).ToNot(Equal(object.Password))
+	g.Expect(isHashedPassword(object.Password)).To(BeTrue())
+	g.Expect(apiKey).ToNot(Equal(object.ApiKey))
+	g.Expect("token-value").ToNot(Equal(object.Token))
+	err = Decode(&object)
+	g.Expect(err).To(BeNil())
+	g.Expect("elmer").To(Equal(object.Name))
+	g.Expect(password).ToNot(Equal(object.Password)) // hashed stays hashed
+	g.Expect(apiKey).To(Equal(object.ApiKey))
+	g.Expect("token-value").To(Equal(object.Token))
+}
+
+func TestEncodeFields(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	Settings.Passphrase = "TEST"
+
+	//
+	// verify returned fields
+	object := struct {
+		Password string `secret:"hashed"`
+		ApiKey   string `secret:"encrypted"`
+		Token    string `secret:""`
+	}{
+		Password: "pass123",
+		ApiKey:   "key456",
+		Token:    "token789",
+	}
+	fields, err := Encode(&object)
+	g.Expect(err).To(BeNil())
+	g.Expect(len(fields)).To(Equal(3))
+
+	// Verify field names
+	g.Expect(fields[0].name).To(Equal("Password"))
+	g.Expect(fields[0].tag).To(Equal("hashed"))
+	g.Expect(fields[0].Root()).To(BeTrue())
+
+	g.Expect(fields[1].name).To(Equal("ApiKey"))
+	g.Expect(fields[1].tag).To(Equal("encrypted"))
+	g.Expect(fields[1].Root()).To(BeTrue())
+
+	g.Expect(fields[2].name).To(Equal("Token"))
+	g.Expect(fields[2].tag).To(Equal(""))
+	g.Expect(fields[2].Root()).To(BeTrue())
+}
