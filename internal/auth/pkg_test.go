@@ -41,7 +41,7 @@ func TestUserGrant(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Test creating token with valid subject
-	token, err := provider.NewPAT(user.Subject, 24*time.Hour)
+	token, err := provider.NewToken(user.Subject, 24*time.Hour)
 	g.Expect(err).To(BeNil())
 	g.Expect(token.Secret).NotTo(BeEmpty())
 
@@ -56,7 +56,7 @@ func TestUserGrant(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Test creating token with non-existent subject
-	_, err = provider.NewPAT("non-existent-subject", 24*time.Hour)
+	_, err = provider.NewToken("non-existent-subject", 24*time.Hour)
 	g.Expect(err).NotTo(BeNil())
 
 	// Test authenticating with the token
@@ -534,7 +534,7 @@ func TestRequestPermit(t *testing.T) {
 	IdP = provider
 
 	// Create token
-	key, err := provider.NewPAT(user.Subject, 24*time.Hour)
+	key, err := provider.NewToken(user.Subject, 24*time.Hour)
 	g.Expect(err).To(BeNil())
 
 	// Test authenticated and authorized (matching scope)
@@ -618,7 +618,7 @@ func TestNoAuthProvider(t *testing.T) {
 	// Notify cache about new user
 	provider.Builtin.cache.UserSaved((*User)(user))
 
-	key, err := provider.NewPAT(user.Subject, time.Hour)
+	key, err := provider.NewToken(user.Subject, time.Hour)
 	g.Expect(err).To(BeNil())
 	g.Expect(key.Secret).ToNot(BeEmpty())
 
@@ -693,7 +693,7 @@ func TestCacheTokenDelete(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create token
-	token, err := provider.NewPAT(user.Subject, 24*time.Hour)
+	token, err := provider.NewToken(user.Subject, 24*time.Hour)
 	g.Expect(err).To(BeNil())
 	g.Expect(token.ID).NotTo(Equal(uint(0)))
 
@@ -896,7 +896,7 @@ func TestCascadeDeleteUser(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create token for user
-	token, err := provider.NewPAT(user.Subject, 24*time.Hour)
+	token, err := provider.NewToken(user.Subject, 24*time.Hour)
 	g.Expect(err).To(BeNil())
 
 	// Verify token exists
@@ -983,7 +983,7 @@ func TestClientPAT(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create PAT for client
-	token, err := provider.NewPAT(client.Subject, 24*time.Hour)
+	token, err := provider.NewToken(client.Subject, 24*time.Hour)
 	g.Expect(err).To(BeNil())
 	g.Expect(token.Secret).NotTo(BeEmpty())
 	g.Expect(token.IdpClientID).NotTo(BeNil())
@@ -1026,7 +1026,7 @@ func TestCascadeDeleteIdpClient(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create token for client (simulating client credentials grant)
-	token, err := provider.NewPAT(client.Subject, 24*time.Hour)
+	token, err := provider.NewToken(client.Subject, 24*time.Hour)
 	g.Expect(err).To(BeNil())
 	g.Expect(token.IdpClientID).NotTo(BeNil())
 	g.Expect(*token.IdpClientID).To(Equal(client.ID))
@@ -1077,7 +1077,7 @@ func TestCascadeDeleteIdpIdentity(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create token for identity
-	token, err := provider.NewPAT(identity.Subject, 24*time.Hour)
+	token, err := provider.NewToken(identity.Subject, 24*time.Hour)
 	g.Expect(err).To(BeNil())
 
 	// Verify token exists
@@ -1139,7 +1139,7 @@ func TestBuiltinRevoke(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create token
-	token, err := provider.NewPAT(user.Subject, 1*time.Hour)
+	token, err := provider.NewToken(user.Subject, 1*time.Hour)
 	g.Expect(err).To(BeNil())
 
 	// Populate cache by authenticating
@@ -1599,10 +1599,10 @@ func TestCacheNotificationPropagation(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// User should be in cache (loaded during provider initialization)
-	token, err := provider.NewPAT(user.Subject, 24*time.Hour)
+	token, err := provider.NewToken(user.Subject, 24*time.Hour)
 	g.Expect(err).To(BeNil())
 
-	// Verify token works (NewPAT calls TokenSaved notification)
+	// Verify token works (NewToken calls TokenSaved notification)
 	request := &Request{}
 	request.With("Bearer " + token.Secret)
 	_, err = provider.Authenticate(request)
@@ -1648,7 +1648,7 @@ func TestCacheTimeBasedRefresh(t *testing.T) {
 	provider, err := NewBuiltin(db)
 	g.Expect(err).To(BeNil())
 
-	token, err := provider.NewPAT(user.Subject, 24*time.Hour)
+	token, err := provider.NewToken(user.Subject, 24*time.Hour)
 	g.Expect(err).To(BeNil())
 
 	// Authenticate successfully (cache is fresh)
@@ -1716,7 +1716,7 @@ func TestIdpIdentityTokenBinding(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create token bound to IdP identity
-	token, err := provider.NewPAT(identity.Subject, 24*time.Hour)
+	token, err := provider.NewToken(identity.Subject, 24*time.Hour)
 	g.Expect(err).To(BeNil())
 	g.Expect(token.IdpIdentityID).NotTo(BeNil())
 	g.Expect(*token.IdpIdentityID).To(Equal(identity.ID))
@@ -1756,7 +1756,7 @@ func TestScopeCalculation(t *testing.T) {
 	provider, err := NewBuiltin(db)
 	g.Expect(err).To(BeNil())
 
-	token, err := provider.NewPAT(userNoRoles.Subject, 24*time.Hour)
+	token, err := provider.NewToken(userNoRoles.Subject, 24*time.Hour)
 	g.Expect(err).To(BeNil())
 
 	request := &Request{}
@@ -1791,7 +1791,7 @@ func TestScopeCalculation(t *testing.T) {
 	err = provider.cache.Refresh()
 	g.Expect(err).To(BeNil())
 
-	token, err = provider.NewPAT(userEmptyRole.Subject, 24*time.Hour)
+	token, err = provider.NewToken(userEmptyRole.Subject, 24*time.Hour)
 	g.Expect(err).To(BeNil())
 
 	request = &Request{}
@@ -1845,7 +1845,7 @@ func TestScopeCalculation(t *testing.T) {
 	err = provider.cache.Refresh()
 	g.Expect(err).To(BeNil())
 
-	token, err = provider.NewPAT(userMultiRole.Subject, 24*time.Hour)
+	token, err = provider.NewToken(userMultiRole.Subject, 24*time.Hour)
 	g.Expect(err).To(BeNil())
 
 	request = &Request{}

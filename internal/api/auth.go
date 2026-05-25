@@ -970,7 +970,7 @@ func (h AuthHandler) TokenCreate(ctx *gin.Context) {
 	}
 	subject := h.CurrentSubject(ctx)
 	lifespan := time.Until(r.Expiration)
-	token, err := auth.IdP.NewPAT(subject, lifespan)
+	token, err := auth.IdP.NewToken(subject, lifespan)
 	if err != nil {
 		h.Respond(ctx,
 			http.StatusUnauthorized,

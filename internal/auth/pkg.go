@@ -67,8 +67,8 @@ type Provider interface {
 	Cache() *Cache
 	// Login begin OIDC auth.
 	Login(w http.ResponseWriter, r *http.Request, reqId string) (err error)
-	// NewPAT creates a new personal access token.
-	NewPAT(subject string, lifespan time.Duration) (token Token, err error)
+	// NewToken creates a new personal access token.
+	NewToken(subject string, lifespan time.Duration) (token Token, err error)
 	// TaskGrant creates a new api-key.
 	TaskGrant(taskId uint) (token Token, err error)
 	// TaskRevoke revokes task tokens.

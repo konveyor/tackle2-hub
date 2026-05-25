@@ -149,8 +149,8 @@ func (p *Builtin) Login(
 	return
 }
 
-// NewPAT creates a new personal access token.
-func (p *Builtin) NewPAT(subject string, lifespan time.Duration) (m Token, err error) {
+// NewToken creates a new personal access token.
+func (p *Builtin) NewToken(subject string, lifespan time.Duration) (m Token, err error) {
 	defer func() {
 		if err == nil {
 			err = p.db.Save(&m).Error
