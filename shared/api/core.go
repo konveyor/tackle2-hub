@@ -231,5 +231,10 @@ type PAT struct {
 	Token      string    `json:"token,omitempty" yaml:",omitempty"`
 }
 
+// String returns the token.
+func (p *PAT) String() string {
+	return p.Token
+}
+
 // APIKey alias.
 type APIKey = PAT

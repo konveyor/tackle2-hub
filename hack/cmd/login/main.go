@@ -24,11 +24,11 @@ const (
 
 // AuthMethod provides an example of how to extend
 // The OIDC auth method to automatically upgrade the token
-// to an APIKey (token) with the specified lifespan.
+// to an apikey (token) with the specified lifespan.
 // Header() is called for every request and provides an
 // opportunity to read a stored token.  Login() is called when
 // the binding client determines new token is needed. After login
-// succeeds, an api-key is requested using a separate binding. The token
+// succeeds, an apikey is requested using a separate binding. The token
 // is set in the embedded OIDC method and stored.
 type AuthMethod struct {
 	*auth.OIDC
@@ -38,7 +38,7 @@ type AuthMethod struct {
 }
 
 // Header returns the authorization header.
-// Reads the stored PAT/api-key as needed.
+// Reads the stored apikey as needed.
 func (m *AuthMethod) Header() (h string) {
 	if m.Token() == "" {
 		m.Use(m.getToken())
@@ -54,27 +54,32 @@ func (m *AuthMethod) Login() (err error) {
 		return
 	}
 
+	fmt.Printf("Logged in to %s\n", m.hubURL)
+	fmt.Printf("\nToken: %s\n", m.Token())
+
 	richClient := binding.New(m.hubURL)
 	richClient.Client.SetTransport(m.transport)
 	richClient.Client.Use(auth.NewBearer(m.OIDC.Token()))
-	key := &api.APIKey{Lifespan: m.lifespan}
-	err = richClient.Token.Create(key)
+	apikey := &api.APIKey{Lifespan: m.lifespan}
+	err = richClient.Token.Create(apikey)
 	if err != nil {
 		return
 	}
 
-	m.Use(key.Token)
-	m.storeToken(key.Token)
+	m.Use(apikey.String())
+	m.storeToken(apikey.String())
 	return
 }
 
-// getToken returns the stored api-key.
+// getToken returns the stored apikey.
 func (m *AuthMethod) getToken() (key string) {
+	fmt.Println("\nGet apikey.")
 	return
 }
 
-// storeToken stores the api-key.
+// storeToken stores the apikey.
 func (m *AuthMethod) storeToken(key string) {
+	fmt.Printf("\nStore apikey: %s\n", key)
 }
 
 // SetTransport sets the (optional) HTTP transport.
@@ -115,7 +120,7 @@ func main() {
 	patLifespan := flag.Int(
 		"h",
 		720,
-		"PAT lifespan (hours) Default: 30 days.")
+		"apikey lifespan (hours) Default: 30 days.")
 	token := flag.String(
 		"b",
 		"",
@@ -169,12 +174,6 @@ func main() {
 			lifespan: *patLifespan,
 		}
 		authMethod.SetTransport(tr)
-		err := authMethod.Login()
-		if err != nil {
-			panic(err)
-		}
-
-		fmt.Printf("\nAuth succeeded. token: %s\n", authMethod.Token())
 
 		richClient.UseAuth(authMethod)
 
