@@ -1111,7 +1111,7 @@ func Required(scope string) func(*gin.Context) {
 			return
 		}
 		if !result.Authorized {
-			ctx.AbortWithStatus(http.StatusUnauthorized)
+			ctx.AbortWithStatus(http.StatusForbidden)
 			return
 		}
 		rtx.User = result.User
