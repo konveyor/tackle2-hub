@@ -735,7 +735,6 @@ func (r *Client) send(rb func() (*http.Request, error)) (response *http.Response
 		if authHeader != "" {
 			request.Header.Set(api.Authorization, authHeader)
 		}
-		request.Header.Set(api.Authorization, r.auth.Header())
 		client := http.Client{Transport: r.transport}
 		response, err = client.Do(request)
 		if err != nil {
