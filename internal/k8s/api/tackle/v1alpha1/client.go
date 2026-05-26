@@ -30,21 +30,21 @@ type IdpClientSpec struct {
 	ID uint `json:"id"`
 	// ClientId is the OAuth client identifier (e.g., "web-ui", "kantra").
 	// This is used as the natural key for reconciliation.
-	ClientId string `json:"clientId,omitempty"`
+	ClientId string `json:"clientId"`
 	// ClientSecret references a Kubernetes Secret containing the OAuth client secret.
 	// The Secret must have a key named "clientSecret".
 	// This is optional - public clients (e.g., native apps) may not require a secret.
 	// +optional
 	ClientSecret *core.ObjectReference `json:"clientSecret,omitempty"`
 	// ApplicationType is the OAuth application type (e.g., "web", "native").
-	ApplicationType string `json:"applicationType,omitempty"`
+	ApplicationType string `json:"applicationType"`
 	// Grants are the OAuth grant types supported by this client.
-	Grants []string `json:"grants,omitempty"`
+	Grants []string `json:"grants"`
 	// RedirectURIs are the redirect URIs for OAuth flows.
 	// +optional
-	RedirectURIs []string `json:"redirectURIs,omitempty"`
+	RedirectURIs []string `json:"redirectURIs"`
 	// Scopes are the OAuth scopes requested by this client.
-	Scopes []string `json:"scopes,omitempty"`
+	Scopes []string `json:"scopes"`
 }
 
 // IdpClientStatus defines the observed state of IdpClient.
@@ -67,7 +67,7 @@ type IdpClient struct {
 	meta.TypeMeta   `json:",inline"`
 	meta.ObjectMeta `json:"metadata,omitempty"`
 	// Spec defines the desired state of the resource.
-	Spec IdpClientSpec `json:"spec,omitempty"`
+	Spec IdpClientSpec `json:"spec"`
 	// Status defines the observed state of the resource.
 	Status IdpClientStatus `json:"status,omitempty"`
 }

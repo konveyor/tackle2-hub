@@ -28,31 +28,35 @@ type RoleMapping struct {
 	// And patterns (AND condition).
 	And []string `json:"and,omitempty"`
 	// Role name to assign when matched.
-	Roles []string `json:"roles,omitempty"`
+	Roles []string `json:"roles"`
 }
 
 // LdapProviderSpec defines the desired state of the resource.
 type LdapProviderSpec struct {
 	// Provider name.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// LDAP kind (ACTIVEDIRECTORY, AD, or blank for standard LDAP).
+	// +optional
 	Kind string `json:"kind,omitempty"`
 	// LDAP server URL (e.g., ldap://ldap.example.com:389).
-	URL string `json:"url,omitempty"`
+	URL string `json:"url"`
 	// Base DN for LDAP searches (e.g., dc=example,dc=com).
-	BaseDN string `json:"baseDN,omitempty"`
+	BaseDN string `json:"baseDN"`
 	// Service account bind DN for LDAP authentication.
-	BindDN string `json:"bindDN,omitempty"`
+	BindDN string `json:"bindDN"`
 	// Password reference for service account authentication.
-	Password *core.ObjectReference `json:"password,omitempty"`
+	Password *core.ObjectReference `json:"password"`
 	// Custom user search filter (optional, defaults based on Kind).
+	// +optional
 	UserFilter string `json:"userFilter,omitempty"`
 	// Custom group search filter (optional, defaults based on Kind).
+	// +optional
 	GroupFilter string `json:"groupFilter,omitempty"`
 	// Use memberOf attribute for group membership (faster if available).
+	// +optional
 	HasMemberOf bool `json:"hasMemberOf,omitempty"`
 	// Role mappings from LDAP groups to application roles.
-	RoleMappings []RoleMapping `json:"roleMappings,omitempty"`
+	RoleMappings []RoleMapping `json:"roleMappings"`
 	// TLS connection settings.
 	// +optional
 	TLS TLS `json:"tls,omitempty"`

@@ -61,16 +61,18 @@ func (t TLS) AsConfig() (config *tls.Config, err error) {
 // IdentityProviderSpec defines the desired state of the resource.
 type IdentityProviderSpec struct {
 	// Provider name.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// Issuer URL.
-	Issuer string `json:"issuer,omitempty"`
+	Issuer string `json:"issuer"`
 	// Client ID.
-	ClientId string `json:"clientId,omitempty"`
-	// Client secret reference.
+	ClientId string `json:"clientId"`
+	// Client secret reference (optional for public clients).
+	// +optional
 	ClientSecret *core.ObjectReference `json:"clientSecret,omitempty"`
 	// Redirect URI.
-	RedirectURI string `json:"redirectURI,omitempty"`
-	// OAuth scopes.
+	RedirectURI string `json:"redirectURI"`
+	// OAuth scopes (optional, provider injects defaults if empty).
+	// +optional
 	Scopes []string `json:"scopes,omitempty"`
 	// TLS connection settings.
 	// +optional
