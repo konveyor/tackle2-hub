@@ -44,11 +44,9 @@ func init() {
 
 // New returns an auth provider.
 func New(db *gorm.DB) (p Provider, err error) {
-	if !Settings.Disconnected {
-		err = federated.Load(Settings.Namespace)
-		if err != nil {
-			return
-		}
+	err = federated.Load(Settings.Namespace)
+	if err != nil {
+		return
 	}
 	builtin, err := NewBuiltin(db)
 	if err != nil {
