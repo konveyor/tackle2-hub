@@ -45,7 +45,7 @@ func TestUser(t *testing.T) {
 
 	// Define the user to create with password and roles
 	user := &api.User{
-		Login:   "testuser",
+		Login:    "testuser",
 		Password: password,
 		Email:    "testuser@example.com",
 		Roles: []api.Ref{
@@ -79,7 +79,7 @@ func TestUser(t *testing.T) {
 
 	// Password should be hashed.
 	g.Expect(retrieved.Password).NotTo(BeEmpty())
-	g.Expect(retrieved.Password).NotTo(Equal(password)) // Should not equal plaintext
+	g.Expect(retrieved.Password).To(Equal(api.SecretMask)) // Should not equal plaintext
 
 	// Verify basic fields
 	g.Expect(retrieved.Login).To(Equal(user.Login))
@@ -106,7 +106,7 @@ func TestUser(t *testing.T) {
 	g.Expect(updated.Email).To(Equal(user.Email))
 	// Password should be hashed, not plaintext
 	g.Expect(updated.Password).NotTo(BeEmpty())
-	g.Expect(updated.Password).NotTo(Equal(newPassword)) // Should not equal plaintext
+	g.Expect(updated.Password).To(Equal(api.SecretMask)) // Should not equal plaintext
 
 	// DELETE: Remove the user
 	err = client.User.Delete(user.ID)
@@ -130,7 +130,7 @@ func TestUserPasswordTruncation(t *testing.T) {
 
 	// CREATE: User with 72-byte password (should succeed)
 	user72 := &api.User{
-		Login:   "user72",
+		Login:    "user72",
 		Password: password72,
 		Email:    "user72@example.com",
 	}
@@ -144,7 +144,7 @@ func TestUserPasswordTruncation(t *testing.T) {
 
 	// CREATE: User with 80-byte password (should fail validation)
 	user80 := &api.User{
-		Login:   "user80",
+		Login:    "user80",
 		Password: password80,
 		Email:    "user80@example.com",
 	}
@@ -155,7 +155,7 @@ func TestUserPasswordTruncation(t *testing.T) {
 	retrieved72, err := client.User.Get(user72.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved72.Password).NotTo(BeEmpty())
-	g.Expect(retrieved72.Password).NotTo(Equal(password72)) // Should be hashed, not plaintext
+	g.Expect(retrieved72.Password).To(Equal(api.SecretMask)) // Should not equal plaintext
 
 	// UPDATE: Update user with password > 72 bytes (should fail validation)
 	user72.Password = password80

@@ -57,7 +57,7 @@ func TestIdpClient(t *testing.T) {
 	g.Expect(eq).To(BeTrue(), report)
 
 	// Verify secret is not exposed in GET
-	g.Expect(retrieved.Secret).To(Equal(""))
+	g.Expect(retrieved.Secret).To(Equal(api.SecretMask))
 
 	// Verify other fields
 	g.Expect(retrieved.ClientId).To(Equal("test-client"))
