@@ -230,3 +230,6 @@ type PAT struct {
 	Expiration time.Time `json:"expiration,omitempty" yaml:",omitempty"`
 	Token      string    `json:"token,omitempty" yaml:",omitempty"`
 }
+
+// APIKey alias.
+type APIKey = PAT

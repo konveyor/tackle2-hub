@@ -22,6 +22,14 @@ const (
 	ClientId = "kantra"
 )
 
+// AuthMethod provides an example of how to extend
+// The OIDC auth method to automatically upgrade the token
+// to an APIKey (token) with the specified lifespan.
+// Header() is called for every request and provides an
+// opportunity to read a stored token.  Login() is called when
+// the binding client determines new token is needed. After login
+// succeeds, an api-key is requested using a separate binding. The token
+// is set in the embedded OIDC method and stored.
 type AuthMethod struct {
 	*auth.OIDC
 	hubURL    string
@@ -29,36 +37,47 @@ type AuthMethod struct {
 	transport *http.Transport
 }
 
+// Header returns the authorization header.
+// Reads the stored PAT/api-key as needed.
 func (m *AuthMethod) Header() (h string) {
-	//
-	// if m.OIDC.Token() == "" {
-	//   m.Use(readToken())
-	// }
-	//
+	if m.Token() == "" {
+		m.Use(m.getToken())
+	}
 	h = m.OIDC.Header()
 	return
 }
 
+// Login called as needed by the binding to get a new token.
 func (m *AuthMethod) Login() (err error) {
 	err = m.OIDC.Login()
 	if err != nil {
 		return
 	}
+
 	richClient := binding.New(m.hubURL)
 	richClient.Client.SetTransport(m.transport)
 	richClient.Client.Use(auth.NewBearer(m.OIDC.Token()))
-	pat := &api.PAT{Lifespan: m.lifespan}
-	err = richClient.Token.Create(pat)
+	key := &api.APIKey{Lifespan: m.lifespan}
+	err = richClient.Token.Create(key)
 	if err != nil {
 		return
 	}
-	m.Use(pat.Token)
-	//
-	// writeToken(pat.Token())
-	//
+
+	m.Use(key.Token)
+	m.storeToken(key.Token)
 	return
 }
 
+// getToken returns the stored api-key.
+func (m *AuthMethod) getToken() (key string) {
+	return
+}
+
+// storeToken stores the api-key.
+func (m *AuthMethod) storeToken(key string) {
+}
+
+// SetTransport sets the (optional) HTTP transport.
 func (m *AuthMethod) SetTransport(tr *http.Transport) {
 	m.transport = tr
 	m.OIDC.SetTransport(tr)
