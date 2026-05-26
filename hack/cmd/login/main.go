@@ -30,8 +30,10 @@ type AuthMethod struct {
 }
 
 func (m *AuthMethod) Header() (h string) {
-	// Read token.
-	// m.Use(token)
+	//
+	// if m.OIDC.Token() == "" {
+	//   m.Use(readToken())
+	// }
 	//
 	h = m.OIDC.Header()
 	return
@@ -51,7 +53,9 @@ func (m *AuthMethod) Login() (err error) {
 		return
 	}
 	m.Use(pat.Token)
-	// Write token.
+	//
+	// writeToken(pat.Token())
+	//
 	return
 }
 
