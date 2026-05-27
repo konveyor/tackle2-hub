@@ -352,8 +352,13 @@ func (r *Storage) TokenRequestByRefreshToken(
 		issued:   grant.Issued,
 	}
 	err = r.refreshIdentity(req)
-	if err != nil {
+	if err == nil {
 		return
+	}
+	if errors.Is(err, oidc.ErrInvalidGrant()) {
+		Log.Error(
+			r.deleteGrant(ctx, grant.AuthId),
+			"Grant delete failed.")
 	}
 	return
 }
