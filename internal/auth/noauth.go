@@ -24,7 +24,7 @@ func (r *NoAuth) Authenticate(request *Request) (jwToken *jwt.Token, err error) 
 	return
 }
 
-func (r *NoAuth) NewPAT(subject string, lifespan time.Duration) (token Token, err error) {
+func (r *NoAuth) NewToken(subject string, lifespan time.Duration) (token Token, err error) {
 	token = r.newToken(lifespan)
 	err = r.Builtin.db.Create(&token).Error
 	return
