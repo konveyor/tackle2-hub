@@ -567,12 +567,6 @@ func (h AuthHandler) UserCreate(ctx *gin.Context) {
 // @param user body api.User true "User data"
 func (h AuthHandler) UserUpdate(ctx *gin.Context) {
 	id := h.pk(ctx)
-	if id > 0 && id < auth.LastId {
-		_ = ctx.Error(&BadRequestError{
-			Reason: "id reserved",
-		})
-		return
-	}
 	r := &User{}
 	err := h.Bind(ctx, r)
 	if err != nil {
@@ -599,10 +593,12 @@ func (h AuthHandler) UserUpdate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	err = h.DB(ctx).Model(m).Association("Roles").Replace(m.Roles)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
+	if id > auth.LastId {
+		err = h.DB(ctx).Model(m).Association("Roles").Replace(m.Roles)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
 	}
 
 	auth.IdP.Cache().UserSaved((*auth.User)(m))
