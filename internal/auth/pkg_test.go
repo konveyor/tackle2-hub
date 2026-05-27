@@ -440,6 +440,77 @@ func TestBaseScopeParsing(t *testing.T) {
 	g.Expect(scope.String()).To(Equal("tags:write"))
 }
 
+// TestRequestPermit tests the Request.Permit() method.
+func TestRequestPermit(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Test with exact match
+	request := &Request{Method: "GET"}
+	granted := []Scope{
+		&BaseScope{Resource: "applications", Method: "GET"},
+	}
+	g.Expect(request.Permit(granted, "applications")).To(BeTrue())
+
+	// Test with no match
+	request = &Request{Method: "POST"}
+	granted = []Scope{
+		&BaseScope{Resource: "applications", Method: "GET"},
+	}
+	g.Expect(request.Permit(granted, "applications")).To(BeFalse())
+
+	// Test with wildcard scope
+	request = &Request{Method: "GET"}
+	granted = []Scope{
+		&BaseScope{Resource: "*", Method: "*"},
+	}
+	g.Expect(request.Permit(granted, "applications")).To(BeTrue())
+	g.Expect(request.Permit(granted, "tags")).To(BeTrue())
+
+	// Test with resource wildcard
+	request = &Request{Method: "POST"}
+	granted = []Scope{
+		&BaseScope{Resource: "applications", Method: "*"},
+	}
+	g.Expect(request.Permit(granted, "applications")).To(BeTrue())
+
+	// Test with method wildcard
+	request = &Request{Method: "GET"}
+	granted = []Scope{
+		&BaseScope{Resource: "*", Method: "GET"},
+	}
+	g.Expect(request.Permit(granted, "applications")).To(BeTrue())
+	g.Expect(request.Permit(granted, "tags")).To(BeTrue())
+
+	// Test with multiple granted scopes (first doesn't match, second does)
+	request = &Request{Method: "POST"}
+	granted = []Scope{
+		&BaseScope{Resource: "tags", Method: "GET"},
+		&BaseScope{Resource: "applications", Method: "POST"},
+		&BaseScope{Resource: "users", Method: "DELETE"},
+	}
+	g.Expect(request.Permit(granted, "applications")).To(BeTrue())
+
+	// Test with multiple granted scopes (none match)
+	request = &Request{Method: "DELETE"}
+	granted = []Scope{
+		&BaseScope{Resource: "tags", Method: "GET"},
+		&BaseScope{Resource: "applications", Method: "POST"},
+	}
+	g.Expect(request.Permit(granted, "users")).To(BeFalse())
+
+	// Test with empty granted list
+	request = &Request{Method: "GET"}
+	granted = []Scope{}
+	g.Expect(request.Permit(granted, "applications")).To(BeFalse())
+
+	// Test case insensitivity
+	request = &Request{Method: "get"}
+	granted = []Scope{
+		&BaseScope{Resource: "Applications", Method: "GET"},
+	}
+	g.Expect(request.Permit(granted, "applications")).To(BeTrue())
+}
+
 // TestKeyCacheWithTaskStates tests that keys for terminal tasks are rejected.
 func TestKeyCacheWithTaskStates(t *testing.T) {
 	g := NewGomegaWithT(t)
@@ -492,90 +563,6 @@ func TestKeyCacheWithTaskStates(t *testing.T) {
 	request.With("Bearer " + key.Secret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
-}
-
-// TestRequestPermit tests the complete authentication and authorization flow.
-func TestRequestPermit(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	db, err := setupTestDB()
-	g.Expect(err).To(BeNil())
-
-	// Create user with specific permissions
-	user := &model.User{
-		Subject:  "user-123",
-		Login:    "testuser",
-		Password: secret.HashPassword("password"),
-		Email:    "test@example.com",
-	}
-	err = db.Create(user).Error
-	g.Expect(err).To(BeNil())
-
-	// Create role with permissions
-	perm := &model.Permission{
-		Name:  "Read Applications",
-		Scope: "applications:GET",
-	}
-	err = db.Create(perm).Error
-	g.Expect(err).To(BeNil())
-
-	role := &model.Role{
-		Name: "ApplicationReader",
-	}
-	err = db.Create(role).Error
-	g.Expect(err).To(BeNil())
-
-	err = db.Model(role).Association("Permissions").Append(perm)
-	g.Expect(err).To(BeNil())
-
-	err = db.Model(user).Association("Roles").Append(role)
-	g.Expect(err).To(BeNil())
-
-	// Set up provider
-	provider, err := NewBuiltin(db)
-	g.Expect(err).To(BeNil())
-	IdP = provider
-
-	// Create token
-	key, err := provider.NewToken(user.Subject, 24*time.Hour)
-	g.Expect(err).To(BeNil())
-
-	// Test authenticated and authorized (matching scope)
-	request := &Request{
-		Scope:  "applications",
-		Method: "GET",
-		DB:     db,
-	}
-	request.With("Bearer " + key.Secret)
-	result, err := request.Permit()
-	g.Expect(err).To(BeNil())
-	g.Expect(result.Authenticated).To(BeTrue())
-	g.Expect(result.Authorized).To(BeTrue())
-	g.Expect(result.User).To(Equal("testuser"))
-
-	// Test authenticated but not authorized (wrong method)
-	request = &Request{
-		Scope:  "applications",
-		Method: "POST",
-		DB:     db,
-	}
-	request.With("Bearer " + key.Secret)
-	result, err = request.Permit()
-	g.Expect(err).To(BeNil())
-	g.Expect(result.Authenticated).To(BeTrue())
-	g.Expect(result.Authorized).To(BeFalse())
-
-	// Test not authenticated (invalid token)
-	request = &Request{
-		Scope:  "applications",
-		Method: "GET",
-		DB:     db,
-	}
-	request.With("Bearer invalid-token")
-	result, err = request.Permit()
-	g.Expect(err).To(BeNil())
-	g.Expect(result.Authenticated).To(BeFalse())
-	g.Expect(result.Authorized).To(BeFalse())
 }
 
 // TestNoAuthProvider tests the NoAuth provider fallback behavior.
@@ -974,7 +961,7 @@ func TestClientPAT(t *testing.T) {
 
 	// Create IdP client
 	client := &model.IdpClient{
-		Subject:  uuid.New().String(),
+		Subject:         uuid.New().String(),
 		ClientId:        "test-client",
 		ApplicationType: "web",
 		Grants:          []string{"client_credentials"},
@@ -1018,7 +1005,7 @@ func TestCascadeDeleteIdpClient(t *testing.T) {
 
 	// Create IdP client
 	client := &model.IdpClient{
-		Subject:  uuid.New().String(),
+		Subject:         uuid.New().String(),
 		ClientId:        "cascade-client",
 		ApplicationType: "web",
 		Grants:          []string{"client_credentials"},

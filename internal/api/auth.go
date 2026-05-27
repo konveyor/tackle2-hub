@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -121,7 +122,7 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.DELETE(api.AuthTokenRoute, h.TokenDelete)
 	// ME route
 	routeGroup = e.Group("/")
-	routeGroup.Use(Required(""))
+	routeGroup.Use(Authenticate())
 	routeGroup.GET(api.AuthMeRoute, h.GetMe)
 }
 
@@ -1091,29 +1092,32 @@ func (h AuthHandler) Login(ctx *gin.Context) {
 // @success 200 {object} AuthMe
 // @router /auth/me [get]
 func (h AuthHandler) GetMe(ctx *gin.Context) {
+	r := AuthMe{}
 	s := h.CurrentSubject(ctx)
-	me, err := auth.IdP.Cache().FindSubject(s)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	r := AuthMe{
-		Scopes: me.Scopes,
-	}
-	if me.IsUser() {
-		r.User = &User{}
-		m := model.User(*me.User)
-		r.User.With(&m)
-	}
-	if me.IsIdentity() {
-		r.Identity = &IdpIdentity{}
-		m := me.Identity
-		r.Identity.With(m)
-	}
-	if me.IsClient() {
-		r.Client = &IdpClient{}
-		m := model.IdpClient(*me.Client)
-		r.Client.With(&m)
+	subject, err := auth.IdP.Cache().FindSubject(s)
+	if err == nil {
+		if subject.IsUser() {
+			r.User = &User{}
+			m := model.User(*subject.User)
+			r.User.With(&m)
+		}
+		if subject.IsIdentity() {
+			r.Identity = &IdpIdentity{}
+			m := subject.Identity
+			r.Identity.With(m)
+		}
+		if subject.IsClient() {
+			r.Client = &IdpClient{}
+			m := model.IdpClient(*subject.Client)
+			r.Client.With(&m)
+		}
+
+		r.Scopes = subject.Scopes
+	} else {
+		if !errors.Is(err, &auth.NotFound{}) {
+			_ = ctx.Error(err)
+			return
+		}
 	}
 
 	h.Respond(ctx, http.StatusOK, r)
@@ -1137,22 +1141,22 @@ type AuthMe struct {
 	Scopes   []string     `json:"scopes"`
 }
 
-// Required enforces that the user (identified by a token) has
-// been granted the necessary scope to access a resource.
-// Automatically registers the scope for permission generation.
-func Required(scope string) func(*gin.Context) {
-	auth.RegisterScope(scope)
+// Authenticate the user.
+// Populates the auth fields in RichContext.
+func Authenticate() func(ctx *gin.Context) {
 	return func(ctx *gin.Context) {
+		if ctx.IsAborted() {
+			return
+		}
 		rtx := RichContext(ctx)
 		header := ctx.GetHeader(Authorization)
 		request := &auth.Request{
-			Scope:  scope,
 			Method: ctx.Request.Method,
 			DB:     rtx.DB,
 			CTX:    ctx,
 		}
 		request.With(header)
-		result, err := request.Permit()
+		result, err := request.Authenticate()
 		if err != nil {
 			_ = ctx.Error(err)
 			return
@@ -1161,15 +1165,31 @@ func Required(scope string) func(*gin.Context) {
 			ctx.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
-		if !result.Authorized {
-			ctx.AbortWithStatus(http.StatusForbidden)
-			return
-		}
 		rtx.User = result.User
 		rtx.Subject = result.Subject
 		rtx.Scope.Granted = result.Scopes
+	}
+}
+
+// Required authenticates the user and enforces that the user
+// (identified by a token) has been granted the necessary scope
+// to use a specified resource.
+func Required(scope string) func(*gin.Context) {
+	auth.RegisterScope(scope)
+	return func(ctx *gin.Context) {
+		Authenticate()(ctx)
+		if ctx.IsAborted() {
+			return
+		}
+		rtx := RichContext(ctx)
 		rtx.Scope.Required = append(
 			rtx.Scope.Required,
 			scope)
+		for _, granted := range rtx.Scope.Granted {
+			if granted.Match(scope, ctx.Request.Method) {
+				return
+			}
+		}
+		ctx.AbortWithStatus(http.StatusForbidden)
 	}
 }

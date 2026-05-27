@@ -2,64 +2,46 @@ package auth
 
 import (
 	"encoding/base64"
-	"errors"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"gorm.io/gorm"
 )
 
-// Request represents an authentication and authorization request.
+// Request represents an authentication request.
 type Request struct {
 	DB       *gorm.DB
 	CTX      *gin.Context
 	Token    string
 	Login    string
 	Password string
-	Scope    string
 	Method   string
 }
 
-// Permit authenticates and authorizes the request.
-func (r *Request) Permit() (result Result, err error) {
-	var (
-		jwToken *jwt.Token
-		p       Provider
-	)
-	for _, p = range []Provider{IdP} {
-		var pErr error
-		jwToken, pErr = p.Authenticate(r)
-		if pErr == nil {
-			result.Authenticated = true
-			break
-		}
-		if errors.Is(pErr, &NotAuthenticated{}) {
-			continue
-		}
-		if errors.Is(pErr, &NotValid{}) {
-			break
-		}
-		err = pErr
-		return
-
-	}
-	if result.Authenticated {
-		scopes := p.Scopes(jwToken)
-		for _, scope := range scopes {
-			if r.Scope == "" || scope.Match(r.Scope, r.Method) {
-				result.Scopes = scopes
-				result.User = p.User(jwToken)
-				result.Subject = p.Subject(jwToken)
-				result.Authorized = true
-				break
-			}
-		}
-	} else {
+// Authenticate authenticates the credentials presented in the request.
+func (r *Request) Authenticate() (result Result, err error) {
+	jwToken, err := IdP.Authenticate(r)
+	if err != nil {
 		Log.Info(
 			"Token not authenticated.",
 			"token",
 			r.Token)
+		return
+	}
+	result.Authenticated = true
+	result.Scopes = IdP.Scopes(jwToken)
+	result.User = IdP.User(jwToken)
+	result.Subject = IdP.Subject(jwToken)
+	return
+}
+
+// Permit determines if the request is permitted.
+func (r *Request) Permit(granted []Scope, required string) (permitted bool) {
+	for _, scope := range granted {
+		if scope.Match(required, r.Method) {
+			permitted = true
+			break
+		}
 	}
 	return
 }
@@ -93,7 +75,6 @@ func (r *Request) With(header string) {
 // Result - auth (request) result.
 type Result struct {
 	Authenticated bool
-	Authorized    bool
 	Subject       string
 	User          string
 	Scopes        []Scope

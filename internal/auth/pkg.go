@@ -164,8 +164,16 @@ func (r *BaseScope) With(s string) {
 
 // Match returns whether the scope is a match.
 func (r *BaseScope) Match(resource string, method string) (b bool) {
-	b = (r.Resource == "*" || strings.EqualFold(r.Resource, resource)) &&
-		(r.Method == "*" || strings.EqualFold(r.Method, method))
+	b = (r.Resource == "*" ||
+		r.Eq(r.Resource, resource)) &&
+		(r.Method == "*" ||
+			r.Eq(r.Method, method))
+	return
+}
+
+// Eq returns true when strings matched.
+func (r *BaseScope) Eq(a, b string) (eq bool) {
+	eq = strings.EqualFold(a, b)
 	return
 }
 
