@@ -337,7 +337,9 @@ func (r *Storage) TokenRequestByRefreshToken(
 	//
 	defer func() {
 		if err != nil {
-			Log.Error(err, "")
+			if !errors.Is(err, oidc.ErrInvalidGrant()) {
+				Log.Error(err, "")
+			}
 		}
 	}()
 	grant, err := r.grantByRefreshToken(ctx, refreshToken)
