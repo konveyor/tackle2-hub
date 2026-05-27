@@ -140,6 +140,7 @@ const (
 	AuthTokenRoute      = AuthTokensRoute + "/:" + ID
 	AuthDevAuthRoute    = AuthRoute + "/device"
 	AuthDevAuthCallback = AuthDevAuthRoute + "/callback"
+	AuthMeRoute         = AuthRoute + "/me"
 )
 
 // Routes - Batch

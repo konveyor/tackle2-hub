@@ -47,7 +47,7 @@ func (r *Request) Permit() (result Result, err error) {
 	if result.Authenticated {
 		scopes := p.Scopes(jwToken)
 		for _, scope := range scopes {
-			if scope.Match(r.Scope, r.Method) {
+			if r.Scope == "" || scope.Match(r.Scope, r.Method) {
 				result.Scopes = scopes
 				result.User = p.User(jwToken)
 				result.Subject = p.Subject(jwToken)

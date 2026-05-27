@@ -160,6 +160,7 @@ Complete list of authentication-related environment variables:
 | `AUTH_CACHE_LIFESPAN` | Integer | `5`                          | Cache refresh interval in minutes |
 | `AUTH_BASIC_AUTH_LIFESPAN` | Integer | `60`                         | Basic auth identity lifespan for LDAP users in seconds |
 | `OIDC_ISSUER` | String | `http://localhost:8080/oidc` | OIDC issuer URL (hub base URL) |
+| `OIDC_ISSUER` | String | `http://localhost:8080/oidc` | OIDC issuer URL (hub base URL) |
 | `OIDC_TOKEN_LIFESPAN` | Integer | `300`                        | OAuth access token lifespan in seconds (5 minutes) |
 | `OIDC_REFRESH_TOKEN_LIFESPAN` | Integer | `172800`                     | OAuth refresh token lifespan in seconds (2 days) |
 | `OIDC_KEY_ROTATION` | Integer | `90`                         | RSA signing key rotation interval in days |

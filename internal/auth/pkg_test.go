@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	as "github.com/konveyor/tackle2-hub/internal/auth/settings"
 	"github.com/konveyor/tackle2-hub/internal/database"
 	"github.com/konveyor/tackle2-hub/internal/model"
@@ -24,6 +25,7 @@ func TestUserGrant(t *testing.T) {
 
 	// Create test user
 	user := &model.User{
+		Subject:  uuid.New().String(),
 		Login:    "testuser",
 		Password: secret.HashPassword("testpassword"),
 		Email:    "test@example.com",
@@ -270,6 +272,7 @@ func TestUserExtraction(t *testing.T) {
 
 	// Create a user in the database
 	user := &model.User{
+		Subject:  uuid.New().String(),
 		Login:    "testuser456",
 		Password: secret.HashPassword("password"),
 		Email:    "testuser456@example.com",
@@ -881,6 +884,7 @@ func TestCascadeDeleteUser(t *testing.T) {
 
 	// Create user
 	user := &model.User{
+		Subject:  uuid.New().String(),
 		Login:    "cascadeuser",
 		Password: secret.HashPassword("password"),
 		Email:    "cascade@example.com",
@@ -970,6 +974,7 @@ func TestClientPAT(t *testing.T) {
 
 	// Create IdP client
 	client := &model.IdpClient{
+		Subject:  uuid.New().String(),
 		ClientId:        "test-client",
 		ApplicationType: "web",
 		Grants:          []string{"client_credentials"},
@@ -1013,6 +1018,7 @@ func TestCascadeDeleteIdpClient(t *testing.T) {
 
 	// Create IdP client
 	client := &model.IdpClient{
+		Subject:  uuid.New().String(),
 		ClientId:        "cascade-client",
 		ApplicationType: "web",
 		Grants:          []string{"client_credentials"},
@@ -1979,6 +1985,7 @@ func TestCacheFindSubject(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	user := &model.User{
+		Subject:  uuid.New().String(),
 		Login:    "testuser",
 		Password: secret.HashPassword("password"),
 		Email:    "user@example.com",
@@ -2109,6 +2116,7 @@ func TestCacheFindSubjectTimeBasedRefresh(t *testing.T) {
 	Settings.CacheLifespan = 100 * time.Millisecond
 
 	user := &model.User{
+		Subject:  uuid.New().String(),
 		Login:    "timesubjectuser",
 		Password: secret.HashPassword("password"),
 		Email:    "timesubject@example.com",
@@ -2161,6 +2169,7 @@ func TestStorageFindSubject(t *testing.T) {
 
 	// Create test data
 	user := &model.User{
+		Subject:  uuid.New().String(),
 		Login:    "storageuser",
 		Password: secret.HashPassword("password"),
 		Email:    "storage@example.com",
@@ -2220,6 +2229,7 @@ func TestCacheFindUserByLogin(t *testing.T) {
 
 	// Create test user
 	user := &model.User{
+		Subject:  uuid.New().String(),
 		Login:    "testuserid",
 		Password: secret.HashPassword("password"),
 		Email:    "userid@example.com",
@@ -2264,6 +2274,7 @@ func TestCacheFindUserByLoginNotification(t *testing.T) {
 
 	// Create user after cache is loaded (NOT notified)
 	user := &model.User{
+		Subject:  uuid.New().String(),
 		Login:    "newuserid",
 		Password: secret.HashPassword("password"),
 		Email:    "newuserid@example.com",
@@ -2307,6 +2318,7 @@ func TestCacheFindUserByLoginTimeRefresh(t *testing.T) {
 	Settings.CacheLifespan = 100 * time.Millisecond
 
 	user := &model.User{
+		Subject:  uuid.New().String(),
 		Login:    "timeuserid",
 		Password: secret.HashPassword("password"),
 		Email:    "timeuserid@example.com",

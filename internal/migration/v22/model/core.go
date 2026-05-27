@@ -221,12 +221,6 @@ type User struct {
 	Tokens   []Token `gorm:"constraint:OnDelete:CASCADE"`
 }
 
-// BeforeCreate sets the Subject field to a unique UUID.
-func (m *User) BeforeCreate(db *gorm.DB) (err error) {
-	m.Subject = uuid.New().String()
-	return
-}
-
 type Role struct {
 	Model
 	Name        string       `gorm:"index;not null"`
@@ -249,12 +243,6 @@ type IdpClient struct {
 	RedirectURIs    []string `gorm:"type:json;serializer:json"`
 	Scopes          []string `gorm:"type:json;serializer:json"`
 	Tokens          []Token  `gorm:"constraint:OnDelete:CASCADE"`
-}
-
-// BeforeCreate sets the Subject field to a unique UUID.
-func (m *IdpClient) BeforeCreate(db *gorm.DB) (err error) {
-	m.Subject = uuid.New().String()
-	return
 }
 
 //

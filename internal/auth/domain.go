@@ -40,7 +40,9 @@ func init() {
 
 // RegisterScope registers a resource scope for permission generation.
 func RegisterScope(scope string) {
-	registeredScopes[scope] = true
+	if scope != "" {
+		registeredScopes[scope] = true
+	}
 }
 
 // NewDomain returns a new RBAC domain manager.
@@ -650,6 +652,7 @@ func (d *Domain) clientPatch(existing map[string]IdpClient, wanted []as.IdpClien
 		} else {
 			newClient := IdpClient{}
 			newClient.With(&settingsClient)
+			newClient.Subject = uuid.New().String()
 			patch.toCreate = append(patch.toCreate, clientWithSettings{
 				client:   newClient,
 				settings: settingsClient,

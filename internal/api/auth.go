@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/konveyor/tackle2-hub/internal/api/resource"
 	"github.com/konveyor/tackle2-hub/internal/auth"
 	"github.com/konveyor/tackle2-hub/internal/auth/cache"
@@ -118,6 +119,10 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(api.AuthTokensRoute+"/", h.TokenList)
 	routeGroup.GET(api.AuthTokenRoute, h.TokenGet)
 	routeGroup.DELETE(api.AuthTokenRoute, h.TokenDelete)
+	// ME route
+	routeGroup = e.Group("/")
+	routeGroup.Use(Required(""))
+	routeGroup.GET(api.AuthMeRoute, h.GetMe)
 }
 
 //
@@ -200,6 +205,7 @@ func (h AuthHandler) IdpClientCreate(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
+	m.Subject = uuid.New().String()
 	m.CreateUser = h.CurrentUser(ctx)
 	_, err = secret.Encode(m)
 	if err != nil {
@@ -516,6 +522,7 @@ func (h AuthHandler) UserCreate(ctx *gin.Context) {
 		return
 	}
 	m := r.Model()
+	m.Subject = uuid.New().String()
 	m.CreateUser = h.CurrentUser(ctx)
 	_, err = secret.Encode(m)
 	if err != nil {
@@ -1076,6 +1083,42 @@ func (h AuthHandler) Login(ctx *gin.Context) {
 	}
 }
 
+// GetMe godoc
+// @summary Get current authenticated subject.
+// @description Get information about the currently authenticated user, identity, or client.
+// @tags auth
+// @produce json
+// @success 200 {object} AuthMe
+// @router /auth/me [get]
+func (h AuthHandler) GetMe(ctx *gin.Context) {
+	s := h.CurrentSubject(ctx)
+	me, err := auth.IdP.Cache().FindSubject(s)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	r := AuthMe{
+		Scopes: me.Scopes,
+	}
+	if me.IsUser() {
+		r.User = &User{}
+		m := model.User(*me.User)
+		r.User.With(&m)
+	}
+	if me.IsIdentity() {
+		r.Identity = &IdpIdentity{}
+		m := me.Identity
+		r.Identity.With(m)
+	}
+	if me.IsClient() {
+		r.Client = &IdpClient{}
+		m := model.IdpClient(*me.Client)
+		r.Client.With(&m)
+	}
+
+	h.Respond(ctx, http.StatusOK, r)
+}
+
 // Auth REST Resources.
 type IdpIdentity = resource.IdpIdentity
 type IdpClient = resource.IdpClient
@@ -1085,6 +1128,14 @@ type Permission = resource.Permission
 type Grant = resource.Grant
 type Token = resource.Token
 type PAT api.PAT
+
+// AuthMe REST resource.
+type AuthMe struct {
+	User     *User        `json:"user,omitempty" yaml:",omitempty"`
+	Identity *IdpIdentity `json:"identity,omitempty" yaml:",omitempty"`
+	Client   *IdpClient   `json:"client,omitempty" yaml:",omitempty"`
+	Scopes   []string     `json:"scopes"`
+}
 
 // Required enforces that the user (identified by a token) has
 // been granted the necessary scope to access a resource.
