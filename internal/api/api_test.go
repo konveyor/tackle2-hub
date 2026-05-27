@@ -282,3 +282,51 @@ type _errorWriter struct {
 func (f *_errorWriter) Write(p []byte) (int, error) {
 	return 0, f.err
 }
+
+func TestAuthenticateMiddleware(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	// Test that Authenticate returns a middleware function
+	middleware := Authenticate()
+	g.Expect(middleware).ToNot(gomega.BeNil())
+
+	// Test early abort - Authenticate should bail if context is already aborted
+	// and not modify the abort state
+	ctx := &gin.Context{
+		Request: &http.Request{
+			Header: http.Header{},
+			Method: http.MethodGet,
+		},
+	}
+	ctx.Abort()
+
+	middleware(ctx)
+
+	// Should still be aborted, but not have progressed further
+	g.Expect(ctx.IsAborted()).To(gomega.BeTrue())
+}
+
+func TestRequiredMiddleware(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	scope := "test.scope"
+
+	// Test that Required returns a middleware function
+	middleware := Required(scope)
+	g.Expect(middleware).ToNot(gomega.BeNil())
+
+	// Test early abort - Required should bail if context is already aborted
+	// and not modify the abort state
+	ctx := &gin.Context{
+		Request: &http.Request{
+			Header: http.Header{},
+			Method: http.MethodGet,
+		},
+	}
+	ctx.Abort()
+
+	middleware(ctx)
+
+	// Should still be aborted
+	g.Expect(ctx.IsAborted()).To(gomega.BeTrue())
+}

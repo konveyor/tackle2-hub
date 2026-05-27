@@ -35,17 +35,6 @@ func (r *Request) Authenticate() (result Result, err error) {
 	return
 }
 
-// Permit determines if the request is permitted.
-func (r *Request) Permit(granted []Scope, required string) (permitted bool) {
-	for _, scope := range granted {
-		if scope.Match(required, r.Method) {
-			permitted = true
-			break
-		}
-	}
-	return
-}
-
 // With populates the request from the Authorization header.
 func (r *Request) With(header string) {
 	part := strings.Fields(header)
