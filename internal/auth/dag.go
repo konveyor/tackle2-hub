@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
@@ -346,8 +347,9 @@ func (h *OIDCAuth) Callback(ctx *gin.Context) {
 		return
 	}
 
-	// Token exchange is server-to-server, use internal localhost URL
-	tokenURL := "http://localhost:8080" + api.OIDCRoutes + "/token"
+	issuer := Issuer(ctx.Request)
+	tokenURL, _ := url.Parse(issuer)
+	tokenURL.Path, _ = url.JoinPath(tokenURL.Path, "/token")
 
 	formData := url.Values{
 		"grant_type":    {"authorization_code"},
@@ -357,8 +359,13 @@ func (h *OIDCAuth) Callback(ctx *gin.Context) {
 		"code_verifier": {pkceState.verifier},
 	}
 
-	resp, err := http.Post(
-		tokenURL,
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
+	resp, err := client.Post(
+		tokenURL.String(),
 		"application/x-www-form-urlencoded",
 		bytes.NewBufferString(formData.Encode()))
 	if err != nil {
