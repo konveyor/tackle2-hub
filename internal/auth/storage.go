@@ -52,7 +52,7 @@ func (r *Storage) GetClientByClientID(_ context.Context, clientId string) (clien
 			subject:         "device-verifier-subject",
 			applicationType: op.ApplicationTypeWeb,
 			grantTypes:      []string{"authorization_code"},
-			redirectURIs:    []string{Settings.Auth.AppendIssuer(api.DeviceCbRoute)},
+			redirectURIs:    []string{"http://localhost:8080" + api.OIDCRoutes + api.DeviceCbRoute},
 			scopes:          []string{"openid"},
 		}
 		return
@@ -785,7 +785,7 @@ func (r *Login) updateAuthRequest() (err error) {
 
 // redirect redirects to the authorization callback.
 func (r *Login) redirect() {
-	issuer := Settings.Auth.AppendIssuer(api.AuthorizeCbRoute)
+	issuer := AppendIssuer(r.request, api.AuthorizeCbRoute)
 	cbURL := fmt.Sprintf("%s?id=%s", issuer, r.authReqId)
 	http.Redirect(r.writer, r.request, cbURL, http.StatusFound)
 }
@@ -794,7 +794,7 @@ func (r *Login) redirect() {
 func (r *Login) renderPage() (err error) {
 	idpButton := ""
 	if federated.Idp.Enabled {
-		loginURL := Settings.Auth.AppendIssuer(api.IdpLoginRoute)
+		loginURL := AppendIssuer(r.request, api.IdpLoginRoute)
 		parsedURL, pErr := url.Parse(loginURL)
 		if pErr != nil {
 			err = liberr.Wrap(pErr)
@@ -931,7 +931,7 @@ func (r *Login) renderPage() (err error) {
     <div class="container">
         <h1>Tackle Login</h1>
         <p class="subtitle">Sign in to continue</p>
-        <form action="` + Settings.Auth.AppendIssuer(api.LoginRoute) + `?authRequestID=` + r.authReqId + `" method="post">
+        <form action="` + AppendIssuer(r.request, api.LoginRoute) + `?authRequestID=` + r.authReqId + `" method="post">
             <label for="login">Login</label>
             <input type="text" id="login" name="login" required autofocus>
 
@@ -1413,9 +1413,7 @@ func (c *Client) GrantTypes() (types []oidc.GrantType) {
 
 // LoginURL returns the login URL.
 func (c *Client) LoginURL(id string) (s string) {
-	s = fmt.Sprintf(
-		"%s?authRequestID=%s",
-		Settings.Auth.AppendIssuer(api.LoginRoute), id)
+	s = fmt.Sprintf("%s%s?authRequestID=%s", api.OIDCRoutes, api.LoginRoute, id)
 	return
 }
 

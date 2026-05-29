@@ -146,7 +146,7 @@ func TestJWTAuthentication(t *testing.T) {
 	claims[ClaimSub] = "user-123"
 	claims[ClaimScope] = "openid profile email"
 	claims[ClaimExp] = float64(time.Now().Add(1 * time.Hour).Unix())
-	claims[ClaimIss] = Settings.IssuerURL
+	claims[ClaimIss] = InternalIssuer
 	claims[ClaimIat] = time.Now().Unix()
 
 	tokenString, err := token.SignedString(signingKey)
@@ -170,7 +170,7 @@ func TestJWTAuthentication(t *testing.T) {
 	expiredClaims[ClaimSub] = "user-123"
 	expiredClaims[ClaimScope] = "openid profile"
 	expiredClaims[ClaimExp] = float64(time.Now().Add(-1 * time.Hour).Unix()) // Expired
-	expiredClaims[ClaimIss] = Settings.IssuerURL
+	expiredClaims[ClaimIss] = InternalIssuer
 	expiredClaims[ClaimIat] = time.Now().Add(-2 * time.Hour).Unix()
 
 	expiredTokenString, err := expiredToken.SignedString(signingKey)
@@ -187,7 +187,7 @@ func TestJWTAuthentication(t *testing.T) {
 	noSubClaims := noSubToken.Claims.(jwt.MapClaims)
 	noSubClaims[ClaimScope] = "openid"
 	noSubClaims[ClaimExp] = float64(time.Now().Add(1 * time.Hour).Unix())
-	noSubClaims[ClaimIss] = Settings.IssuerURL
+	noSubClaims[ClaimIss] = InternalIssuer
 	noSubClaims[ClaimIat] = time.Now().Unix()
 
 	noSubTokenString, err := noSubToken.SignedString(signingKey)
@@ -204,7 +204,7 @@ func TestJWTAuthentication(t *testing.T) {
 	noScopeClaims := noScopeToken.Claims.(jwt.MapClaims)
 	noScopeClaims[ClaimSub] = "user-123"
 	noScopeClaims[ClaimExp] = float64(time.Now().Add(1 * time.Hour).Unix())
-	noScopeClaims[ClaimIss] = Settings.IssuerURL
+	noScopeClaims[ClaimIss] = InternalIssuer
 	noScopeClaims[ClaimIat] = time.Now().Unix()
 
 	noScopeTokenString, err := noScopeToken.SignedString(signingKey)
@@ -260,7 +260,7 @@ func TestLegacyHMACTokenAuthentication(t *testing.T) {
 	g.Expect(jwtClaims["task"]).To(Equal(float64(42)))
 
 	// Verify iss was injected
-	g.Expect(jwtClaims[ClaimIss]).To(Equal(Settings.IssuerURL))
+	g.Expect(jwtClaims[ClaimIss]).To(Equal(InternalIssuer))
 }
 
 // TestUserExtraction tests extracting user from token.
@@ -293,7 +293,7 @@ func TestUserExtraction(t *testing.T) {
 	claims[ClaimSub] = user.Subject
 	claims[ClaimScope] = "openid profile"
 	claims[ClaimExp] = float64(time.Now().Add(1 * time.Hour).Unix())
-	claims[ClaimIss] = Settings.IssuerURL
+	claims[ClaimIss] = InternalIssuer
 	claims[ClaimIat] = time.Now().Unix()
 
 	login := provider.User(token)
@@ -304,7 +304,7 @@ func TestUserExtraction(t *testing.T) {
 	noSubClaims := tokenNoSub.Claims.(jwt.MapClaims)
 	noSubClaims[ClaimScope] = "openid"
 	noSubClaims[ClaimExp] = float64(time.Now().Add(1 * time.Hour).Unix())
-	noSubClaims[ClaimIss] = Settings.IssuerURL
+	noSubClaims[ClaimIss] = InternalIssuer
 	noSubClaims[ClaimIat] = time.Now().Unix()
 
 	login = provider.User(tokenNoSub)
@@ -327,7 +327,7 @@ func TestScopesExtraction(t *testing.T) {
 	claims[ClaimSub] = "test-user"
 	claims[ClaimScope] = "applications:read applications:write tags:read"
 	claims[ClaimExp] = float64(time.Now().Add(1 * time.Hour).Unix())
-	claims[ClaimIss] = Settings.IssuerURL
+	claims[ClaimIss] = InternalIssuer
 	claims[ClaimIat] = time.Now().Unix()
 
 	scopes := provider.Scopes(token)
@@ -347,7 +347,7 @@ func TestScopesExtraction(t *testing.T) {
 	noScopeClaims := tokenNoScope.Claims.(jwt.MapClaims)
 	noScopeClaims[ClaimSub] = "test-user"
 	noScopeClaims[ClaimExp] = float64(time.Now().Add(1 * time.Hour).Unix())
-	noScopeClaims[ClaimIss] = Settings.IssuerURL
+	noScopeClaims[ClaimIss] = InternalIssuer
 	noScopeClaims[ClaimIat] = time.Now().Unix()
 
 	scopes = provider.Scopes(tokenNoScope)

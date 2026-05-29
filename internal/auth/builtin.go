@@ -4,7 +4,6 @@ import (
 	"crypto/rsa"
 	"errors"
 	"net/http"
-	"net/url"
 	"sort"
 	"strings"
 	"time"
@@ -17,6 +16,12 @@ import (
 	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/zitadel/oidc/v3/pkg/op"
 	"gorm.io/gorm"
+)
+
+const (
+	// InternalIssuer is the issuer claim for Hub-generated JWT tokens (Basic Auth, API keys).
+	// This is not the OIDC issuer (which is dynamic based on request headers).
+	InternalIssuer = "hub"
 )
 
 // NewBuiltin returns a configured provider.
@@ -40,9 +45,7 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		devAuthByUserCode:   make(map[string]string),
 		cache:               cache,
 	}
-	issuer := Settings.IssuerURL
-	deviceVerifyURL := Settings.Auth.AppendIssuer(api.DeviceRoute)
-	deviceVerifyPath, _ := url.Parse(deviceVerifyURL)
+	basePath := api.OIDCRoutes
 	config := &op.Config{
 		CodeMethodS256:          true,
 		AuthMethodPost:          true,
@@ -52,7 +55,7 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		DeviceAuthorization: op.DeviceAuthorizationConfig{
 			Lifetime:     15 * time.Minute,
 			PollInterval: 5 * time.Second,
-			UserFormPath: deviceVerifyPath.Path,
+			UserFormPath: basePath + api.DeviceRoute,
 			UserCode: op.UserCodeConfig{
 				CharSet:      "BCDFGHJKLMNPQRSTVWXZ0123456789", // No vowels, avoid words
 				CharAmount:   8,
@@ -63,7 +66,10 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 	builtin.provider, err = op.NewProvider(
 		config,
 		builtin.storage,
-		op.StaticIssuer(issuer),
+		op.IssuerFromForwardedOrHost(
+			basePath,
+			op.WithIssuerFromCustomHeaders("X-Forwarded-Host"),
+		),
 		op.WithAllowInsecure(),
 		op.WithCustomTokenEndpoint(op.NewEndpoint("token")),
 		op.WithCustomIntrospectionEndpoint(op.NewEndpoint("introspect")),
@@ -209,9 +215,18 @@ func (p *Builtin) TaskRevoke(taskId uint) {
 // Authenticate authenticates the user making the web request.
 func (p *Builtin) Authenticate(req *Request) (jwToken *jwt.Token, err error) {
 	defer func() {
-		if errors.Is(err, &NotValid{}) {
-			Log.V(2).Info("[builtin] " + err.Error())
+		if err == nil {
+			return
 		}
+		if !errors.Is(err, &NotAuthenticated{}) {
+			err = &NotAuthenticated{
+				Reason: err.Error(),
+			}
+		}
+		Log.V(2).Info(
+			"Authentication failed.",
+			"reason",
+			err.Error())
 	}()
 	if req.Token != "" {
 		jwToken, err = p.authToken(req)
@@ -231,9 +246,11 @@ func (p *Builtin) Authenticate(req *Request) (jwToken *jwt.Token, err error) {
 		}
 		return
 	}
-	err = liberr.Wrap(&NotAuthenticated{
-		Reason: "missing credentials",
-	})
+	//
+	err = liberr.Wrap(
+		&NotAuthenticated{
+			Reason: "missing credentials",
+		})
 	return
 }
 
@@ -304,7 +321,7 @@ func (p *Builtin) validToken(jwToken *jwt.Token) (err error) {
 	// Inject iss claim for legacy HMAC tokens.
 	if _, cast := jwToken.Method.(*jwt.SigningMethodHMAC); cast {
 		if _, found := claims[ClaimIss]; !found {
-			claims[ClaimIss] = Settings.IssuerURL
+			claims[ClaimIss] = InternalIssuer
 		}
 	}
 	v, found := claims[ClaimSub]
@@ -387,7 +404,7 @@ func (p *Builtin) validToken(jwToken *jwt.Token) (err error) {
 			})
 		return
 	}
-	if issuerStr != Settings.IssuerURL {
+	if issuerStr != InternalIssuer {
 		err = liberr.Wrap(
 			&NotValid{
 				Reason: "Iss mismatch.",
@@ -500,7 +517,7 @@ func (p *Builtin) authToken(req *Request) (jwToken *jwt.Token, err error) {
 		jwtClaims := jwToken.Claims.(jwt.MapClaims)
 		jwtClaims[ClaimSub] = pat.Subject
 		jwtClaims[ClaimScope] = pat.Scopes
-		jwtClaims[ClaimIss] = Settings.IssuerURL
+		jwtClaims[ClaimIss] = InternalIssuer
 		jwtClaims[ClaimIat] = time.Now().Unix()
 		jwtClaims[ClaimExp] = pat.Expiration.Unix()
 		return
@@ -544,7 +561,7 @@ func (p *Builtin) authUser(req *Request) (jwToken *jwt.Token, err error) {
 	jwtClaims := jwToken.Claims.(jwt.MapClaims)
 	jwtClaims[ClaimSub] = user.Subject
 	jwtClaims[ClaimScope] = strings.Join(scopes, " ")
-	jwtClaims[ClaimIss] = Settings.IssuerURL
+	jwtClaims[ClaimIss] = InternalIssuer
 	jwtClaims[ClaimIat] = time.Now().Unix()
 	jwtClaims[ClaimExp] = time.Now().Add(Settings.Auth.BasicAuthLifespan).Unix()
 	return
@@ -561,7 +578,7 @@ func (p *Builtin) authLdapUser(req *Request) (jwToken *jwt.Token, err error) {
 	jwtClaims := jwToken.Claims.(jwt.MapClaims)
 	jwtClaims[ClaimSub] = subject.Key
 	jwtClaims[ClaimScope] = strings.Join(subject.Scopes, " ")
-	jwtClaims[ClaimIss] = Settings.IssuerURL
+	jwtClaims[ClaimIss] = InternalIssuer
 	jwtClaims[ClaimIat] = time.Now().Unix()
 	jwtClaims[ClaimExp] = time.Now().Add(lifespan).Unix()
 	return

@@ -1,7 +1,6 @@
 package settings
 
 import (
-	"net/url"
 	"time"
 
 	"github.com/konveyor/tackle2-hub/shared/env"
@@ -16,7 +15,6 @@ const (
 	EnvCacheLifespan        = "AUTH_CACHE_LIFESPAN"
 	EnvBasicAuthLifespan    = "BASIC_AUTH_LIFESPAN"
 	EnvTokenKey             = "ADDON_TOKEN" // Deprecated
-	EnvOidcIssuer           = "OIDC_ISSUER"
 	EnvTokenLifespan        = "OIDC_TOKEN_LIFESPAN"
 	EnvRefreshTokenLifespan = "OIDC_REFRESH_TOKEN_LIFESPAN"
 	EnvKeyRotation          = "OIDC_KEY_ROTATION"
@@ -46,8 +44,6 @@ type Auth struct {
 	Key struct {
 		Rotation time.Duration
 	}
-	// OIDC Issuer
-	IssuerURL string
 }
 
 func (r *Auth) Load() (err error) {
@@ -60,22 +56,6 @@ func (r *Auth) Load() (err error) {
 	r.Token.Key = env.Get(EnvTokenKey, "tackle")
 	r.Token.Lifespan = env.GetSecond(EnvTokenLifespan, 300)                   // second: 5 minutes.
 	r.Token.RefreshLifespan = env.GetSecond(EnvRefreshTokenLifespan, 48*3600) // second: 2 days.
-	r.IssuerURL = env.Get(EnvOidcIssuer, "http://localhost:8080")
 	r.Key.Rotation = env.GetDay(EnvKeyRotation, 90)
-
-	_, err = url.Parse(r.IssuerURL)
-	if err != nil {
-		panic(err)
-	}
-
-	return
-}
-
-// AppendIssuer appends a path to the issuer URL.
-func (r *Auth) AppendIssuer(path string) (s string) {
-	issuerURL, _ := url.Parse(r.IssuerURL)
-	joined, _ := url.JoinPath(issuerURL.Path, path)
-	issuerURL.Path = joined
-	s = issuerURL.String()
 	return
 }

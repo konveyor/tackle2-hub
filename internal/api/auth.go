@@ -1154,11 +1154,7 @@ func Authenticate() func(ctx *gin.Context) {
 		request.With(header)
 		result, err := request.Authenticate()
 		if err != nil {
-			_ = ctx.Error(err)
-			return
-		}
-		if !result.Authenticated {
-			ctx.AbortWithStatus(http.StatusUnauthorized)
+			_ = ctx.AbortWithError(http.StatusUnauthorized, err)
 			return
 		}
 		rtx.User = result.User

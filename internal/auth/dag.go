@@ -1,21 +1,22 @@
 package auth
 
 import (
-	"context"
+	"bytes"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/konveyor/tackle2-hub/shared/api"
-	"github.com/zitadel/oidc/v3/pkg/client/rp"
 	httphelper "github.com/zitadel/oidc/v3/pkg/http"
-	"github.com/zitadel/oidc/v3/pkg/oidc"
 )
 
 const (
@@ -49,7 +50,7 @@ func (h *DagHandler) OIDCAuth() (auth *OIDCAuth) {
 //
 // Verify displays device authorization verification page.
 func (h *DagHandler) Verify(ctx *gin.Context) {
-	formAction := Settings.Auth.AppendIssuer(api.DeviceRoute)
+	formAction := AppendIssuer(ctx.Request, api.DeviceRoute)
 	html := `
 <!DOCTYPE html>
 <html>
@@ -283,7 +284,6 @@ func (h *DagHandler) currentUser(ctx *gin.Context) (user string) {
 // acts as both IdP and RP.
 type OIDCAuth struct {
 	mutex     sync.RWMutex
-	rpClient  rp.RelyingParty
 	cookies   *httphelper.CookieHandler
 	pkceState map[string]*PKCEState
 	initOnce  sync.Once
@@ -291,42 +291,40 @@ type OIDCAuth struct {
 
 // Login initiates the OIDC login flow with PKCE.
 func (h *OIDCAuth) Login(ctx *gin.Context) {
-	err := h.ensureRpClient()
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
+	h.ensureCookieHandler()
 
 	state := uuid.New().String()
 
-	// build verifier and challenge
 	b := make([]byte, 32)
 	_, _ = rand.Read(b)
 	codeVerifier := base64.RawURLEncoding.EncodeToString(b)
 	digest := sha256.Sum256([]byte(codeVerifier))
 	codeChallenge := base64.RawURLEncoding.EncodeToString(digest[:])
 
-	// Store state and verifier
 	h.storeState(state, codeVerifier)
 
-	// Build authorize URL with PKCE
-	authURL := rp.AuthURL(state, h.rpClient, rp.WithCodeChallenge(codeChallenge))
+	issuer := Issuer(ctx.Request)
+	authURL, _ := url.Parse(issuer)
+	authURL.Path, _ = url.JoinPath(authURL.Path, "/authorize")
 
-	http.Redirect(ctx.Writer, ctx.Request, authURL, http.StatusFound)
+	query := authURL.Query()
+	query.Set("client_id", DevVerifierClientId)
+	query.Set("response_type", "code")
+	query.Set("redirect_uri", AppendIssuer(ctx.Request, api.DeviceCbRoute))
+	query.Set("scope", "openid")
+	query.Set("state", state)
+	query.Set("code_challenge", codeChallenge)
+	query.Set("code_challenge_method", "S256")
+	authURL.RawQuery = query.Encode()
+
+	http.Redirect(ctx.Writer, ctx.Request, authURL.String(), http.StatusFound)
 }
 
 // Callback handles the OIDC callback and exchanges code for tokens.
 func (h *OIDCAuth) Callback(ctx *gin.Context) {
-	err := h.ensureRpClient()
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-
 	state := ctx.Query("state")
 	code := ctx.Query("code")
 
-	// Retrieve and validate state
 	var pkceState *PKCEState
 	var found bool
 	func() {
@@ -345,50 +343,72 @@ func (h *OIDCAuth) Callback(ctx *gin.Context) {
 		return
 	}
 
-	// Exchange code for tokens with PKCE verifier
-	tokens, err := rp.CodeExchange[*oidc.IDTokenClaims](
-		ctx.Request.Context(),
-		code,
-		h.rpClient,
-		rp.WithCodeVerifier(pkceState.verifier),
-	)
+	issuer := Issuer(ctx.Request)
+	tokenURL, _ := url.Parse(issuer)
+	tokenURL.Path, _ = url.JoinPath(tokenURL.Path, "/token")
+
+	formData := url.Values{
+		"grant_type":    {"authorization_code"},
+		"code":          {code},
+		"client_id":     {DevVerifierClientId},
+		"redirect_uri":  {AppendIssuer(ctx.Request, api.DeviceCbRoute)},
+		"code_verifier": {pkceState.verifier},
+	}
+
+	resp, err := http.Post(
+		tokenURL.String(),
+		"application/x-www-form-urlencoded",
+		bytes.NewBufferString(formData.Encode()))
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		_ = ctx.Error(&BadRequestError{Reason: "Token exchange failed"})
+		return
+	}
+
+	var tokenResp struct {
+		IDToken string `json:"id_token"`
+	}
+	err = json.NewDecoder(resp.Body).Decode(&tokenResp)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 
-	subject := tokens.IDTokenClaims.Subject
+	token, _, err := new(jwt.Parser).ParseUnverified(tokenResp.IDToken, jwt.MapClaims{})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 
-	// Store subject in cookie.
+	claims := token.Claims.(jwt.MapClaims)
+	subject := claims["sub"].(string)
+
 	err = h.cookies.SetCookie(ctx.Writer, OIDCSubject, subject)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 
-	// Redirect to device authorization page
-	http.Redirect(
-		ctx.Writer,
-		ctx.Request,
-		Settings.Auth.AppendIssuer(api.DeviceRoute),
-		http.StatusFound)
+	http.Redirect(ctx.Writer, ctx.Request, AppendIssuer(ctx.Request, api.DeviceRoute), http.StatusFound)
 }
 
 // AuthRequired checks for valid OIDC session.
 func (h *OIDCAuth) AuthRequired(ctx *gin.Context) {
-	err := h.ensureRpClient()
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
+	h.ensureCookieHandler()
 
-	// Check for session cookie
 	subject, err := h.cookies.CheckCookie(ctx.Request, OIDCSubject)
 	if err != nil || subject == "" {
 		// No session
 		ctx.Redirect(
 			http.StatusFound,
-			Settings.Auth.AppendIssuer(api.DeviceLoginRoute))
+			AppendIssuer(ctx.Request, api.DeviceLoginRoute))
 		ctx.Abort()
 		return
 	}
@@ -398,41 +418,20 @@ func (h *OIDCAuth) AuthRequired(ctx *gin.Context) {
 	ctx.Next()
 }
 
-// ensureRpClient initializes the RP client if not already done.
-func (h *OIDCAuth) ensureRpClient() (err error) {
+// ensureCookieHandler initializes the cookie handler if not already done.
+func (h *OIDCAuth) ensureCookieHandler() {
 	h.initOnce.Do(func() {
-		issuer := Settings.Auth.IssuerURL
-
-		// Derive keys
 		secret := Settings.Auth.APIKey.Secret
 		hashKey := h.hashKey256([]byte(secret + "-hash"))
 		encryptKey := h.hashKey256([]byte(secret + "-encrypt"))
 
-		// Create cookie handler for session management
 		h.cookies = httphelper.NewCookieHandler(
 			hashKey,
 			encryptKey,
 			httphelper.WithUnsecure(),
 			httphelper.WithSameSite(http.SameSiteLaxMode),
 		)
-
-		// Create OIDC RP client (no secret - internal client)
-		h.rpClient, err = rp.NewRelyingPartyOIDC(
-			context.Background(),
-			issuer,
-			DevVerifierClientId,
-			"",
-			Settings.Auth.AppendIssuer(api.DeviceCbRoute),
-			[]string{"openid"},
-			rp.WithHTTPClient(
-				&http.Client{
-					Transport: &http.Transport{
-						TLSClientConfig: federated.Idp.TLS,
-					},
-				}),
-		)
 	})
-	return
 }
 
 // storeState stores PKCE state and cleans up expired states.
