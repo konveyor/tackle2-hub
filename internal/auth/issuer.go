@@ -25,6 +25,13 @@ func Issuer(req *http.Request) (issuer string) {
 		}
 	}
 
+	Log.Info("Issuer construction",
+		"path", req.URL.Path,
+		"X-Forwarded-Host", req.Header.Get("X-Forwarded-Host"),
+		"X-Forwarded-Proto", req.Header.Get("X-Forwarded-Proto"),
+		"req.Host", req.Host,
+		"computed-issuer", fmt.Sprintf("%s://%s%s", proto, host, api.OIDCRoutes))
+
 	issuer = fmt.Sprintf("%s://%s%s", proto, host, api.OIDCRoutes)
 	return
 }

@@ -18,12 +18,6 @@ import (
 	"gorm.io/gorm"
 )
 
-const (
-	// InternalIssuer is the issuer claim for Hub-generated JWT tokens (Basic Auth, API keys).
-	// This is not the OIDC issuer (which is dynamic based on request headers).
-	InternalIssuer = "hub"
-)
-
 // NewBuiltin returns a configured provider.
 func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 	cache := cache2.New(db)
@@ -66,10 +60,7 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 	builtin.provider, err = op.NewProvider(
 		config,
 		builtin.storage,
-		op.IssuerFromForwardedOrHost(
-			basePath,
-			op.WithIssuerFromCustomHeaders("X-Forwarded-Host"),
-		),
+		op.IssuerFromForwardedOrHost(basePath),
 		op.WithAllowInsecure(),
 		op.WithCustomTokenEndpoint(op.NewEndpoint("token")),
 		op.WithCustomIntrospectionEndpoint(op.NewEndpoint("introspect")),
@@ -300,7 +291,7 @@ func (p *Builtin) Scopes(jwToken *jwt.Token) (scopes []Scope) {
 }
 
 // validToken returns an error if not valid.
-func (p *Builtin) validToken(jwToken *jwt.Token) (err error) {
+func (p *Builtin) validToken(jwToken *jwt.Token, req *Request) (err error) {
 	if !jwToken.Valid {
 		err = liberr.Wrap(&NotAuthenticated{
 			Reason: "token invalid",
@@ -316,13 +307,6 @@ func (p *Builtin) validToken(jwToken *jwt.Token) (err error) {
 				Token:  jwToken.Raw,
 			})
 		return
-	}
-	//
-	// Inject iss claim for legacy HMAC tokens.
-	if _, cast := jwToken.Method.(*jwt.SigningMethodHMAC); cast {
-		if _, found := claims[ClaimIss]; !found {
-			claims[ClaimIss] = InternalIssuer
-		}
 	}
 	v, found := claims[ClaimSub]
 	if !found {
@@ -404,7 +388,7 @@ func (p *Builtin) validToken(jwToken *jwt.Token) (err error) {
 			})
 		return
 	}
-	if issuerStr != InternalIssuer {
+	if issuerStr != Issuer(req.CTX.Request) {
 		err = liberr.Wrap(
 			&NotValid{
 				Reason: "Iss mismatch.",
@@ -501,12 +485,16 @@ func (p *Builtin) authToken(req *Request) (jwToken *jwt.Token, err error) {
 					return
 				}
 				secret = []byte(Settings.Token.Key)
+				claims, cast := jwToken.Claims.(jwt.MapClaims)
+				if cast {
+					claims[ClaimIss] = Issuer(req.CTX.Request)
+				}
 				return
 			},
 			jwt.WithoutClaimsValidation())
 	}
 	if err == nil {
-		err = p.validToken(jwToken)
+		err = p.validToken(jwToken, req)
 		return
 	}
 	//
@@ -517,7 +505,7 @@ func (p *Builtin) authToken(req *Request) (jwToken *jwt.Token, err error) {
 		jwtClaims := jwToken.Claims.(jwt.MapClaims)
 		jwtClaims[ClaimSub] = pat.Subject
 		jwtClaims[ClaimScope] = pat.Scopes
-		jwtClaims[ClaimIss] = InternalIssuer
+		jwtClaims[ClaimIss] = Issuer(req.CTX.Request)
 		jwtClaims[ClaimIat] = time.Now().Unix()
 		jwtClaims[ClaimExp] = pat.Expiration.Unix()
 		return
@@ -561,7 +549,7 @@ func (p *Builtin) authUser(req *Request) (jwToken *jwt.Token, err error) {
 	jwtClaims := jwToken.Claims.(jwt.MapClaims)
 	jwtClaims[ClaimSub] = user.Subject
 	jwtClaims[ClaimScope] = strings.Join(scopes, " ")
-	jwtClaims[ClaimIss] = InternalIssuer
+	jwtClaims[ClaimIss] = Issuer(req.CTX.Request)
 	jwtClaims[ClaimIat] = time.Now().Unix()
 	jwtClaims[ClaimExp] = time.Now().Add(Settings.Auth.BasicAuthLifespan).Unix()
 	return
@@ -578,7 +566,7 @@ func (p *Builtin) authLdapUser(req *Request) (jwToken *jwt.Token, err error) {
 	jwtClaims := jwToken.Claims.(jwt.MapClaims)
 	jwtClaims[ClaimSub] = subject.Key
 	jwtClaims[ClaimScope] = strings.Join(subject.Scopes, " ")
-	jwtClaims[ClaimIss] = InternalIssuer
+	jwtClaims[ClaimIss] = Issuer(req.CTX.Request)
 	jwtClaims[ClaimIat] = time.Now().Unix()
 	jwtClaims[ClaimExp] = time.Now().Add(lifespan).Unix()
 	return

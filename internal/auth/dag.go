@@ -307,10 +307,13 @@ func (h *OIDCAuth) Login(ctx *gin.Context) {
 	authURL, _ := url.Parse(issuer)
 	authURL.Path, _ = url.JoinPath(authURL.Path, "/authorize")
 
+	// Build redirect_uri from current request to match registered client URI
+	redirectURI := AppendIssuer(ctx.Request, api.DeviceCbRoute)
+
 	query := authURL.Query()
 	query.Set("client_id", DevVerifierClientId)
 	query.Set("response_type", "code")
-	query.Set("redirect_uri", AppendIssuer(ctx.Request, api.DeviceCbRoute))
+	query.Set("redirect_uri", redirectURI)
 	query.Set("scope", "openid")
 	query.Set("state", state)
 	query.Set("code_challenge", codeChallenge)
@@ -343,9 +346,8 @@ func (h *OIDCAuth) Callback(ctx *gin.Context) {
 		return
 	}
 
-	issuer := Issuer(ctx.Request)
-	tokenURL, _ := url.Parse(issuer)
-	tokenURL.Path, _ = url.JoinPath(tokenURL.Path, "/token")
+	// Token exchange is server-to-server, use internal localhost URL
+	tokenURL := "http://localhost:8080" + api.OIDCRoutes + "/token"
 
 	formData := url.Values{
 		"grant_type":    {"authorization_code"},
@@ -356,7 +358,7 @@ func (h *OIDCAuth) Callback(ctx *gin.Context) {
 	}
 
 	resp, err := http.Post(
-		tokenURL.String(),
+		tokenURL,
 		"application/x-www-form-urlencoded",
 		bytes.NewBufferString(formData.Encode()))
 	if err != nil {

@@ -16,6 +16,10 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	InternalIssuer = "TEST"
+)
+
 // TestUserGrant tests creating and authenticating with user tokens.
 func TestUserGrant(t *testing.T) {
 	g := NewGomegaWithT(t)

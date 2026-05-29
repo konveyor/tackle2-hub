@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"time"
@@ -33,6 +34,19 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	e.Any(
 		api.OIDCRoutes+"/*path",
 		func(ctx *gin.Context) {
+			// Debug logging - verify proxy sets RFC 7239 Forwarded header
+			Log.Info("OIDC request",
+				"path", ctx.Request.URL.Path,
+				"method", ctx.Request.Method,
+				"Host", ctx.Request.Host,
+				"Forwarded", ctx.Request.Header.Get("Forwarded"),
+				"X-Forwarded-Host", ctx.Request.Header.Get("X-Forwarded-Host"),
+				"X-Forwarded-Proto", ctx.Request.Header.Get("X-Forwarded-Proto"))
+
+			// Add request to context so GetClientByClientID can access headers
+			reqCtx := context.WithValue(ctx.Request.Context(), "http.request", ctx.Request)
+			ctx.Request = ctx.Request.WithContext(reqCtx)
+
 			path := ctx.Param("path")
 			switch path {
 			case api.LoginRoute:
