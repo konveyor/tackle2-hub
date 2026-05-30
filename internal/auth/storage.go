@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bmatcuk/doublestar/v4"
 	"github.com/go-jose/go-jose/v4"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/internal/secret"
@@ -38,7 +39,7 @@ type Storage struct {
 }
 
 // GetClientByClientID retrieves a client by ID from database.
-func (r *Storage) GetClientByClientID(ctx context.Context, clientId string) (client op.Client, err error) {
+func (r *Storage) GetClientByClientID(ctx context.Context, clientId string) (opClient op.Client, err error) {
 	defer func() {
 		if err != nil {
 			Log.Error(err, "")
@@ -46,7 +47,7 @@ func (r *Storage) GetClientByClientID(ctx context.Context, clientId string) (cli
 	}()
 	if clientId == DevVerifierClientId {
 		req := ctx.Value("http.request").(*http.Request)
-		client = &Client{
+		opClient = &Client{
 			id:              DevVerifierClientId,
 			subject:         "device-verifier-subject",
 			applicationType: op.ApplicationTypeWeb,
@@ -66,9 +67,10 @@ func (r *Storage) GetClientByClientID(ctx context.Context, clientId string) (cli
 		}
 		return
 	}
-	opClient := &Client{}
-	opClient.With(m)
-	client = opClient
+	client := &Client{}
+	client.With(m)
+	client.Inject(ctx)
+	opClient = client
 	return
 }
 
@@ -1469,6 +1471,8 @@ func (c *Client) ClockSkew() (d time.Duration) {
 }
 
 // With populates op.Client using the model.
+// Translate redirectURI wildcard (*) by injecting the requested
+// redirectURI into the supported URIs.
 func (c *Client) With(m *IdpClient) {
 	c.id = m.ClientId
 	c.subject = m.Subject
@@ -1481,6 +1485,33 @@ func (c *Client) With(m *IdpClient) {
 		c.applicationType = op.ApplicationTypeWeb
 	case "native":
 		c.applicationType = op.ApplicationTypeNative
+	}
+
+}
+
+// Inject template values:
+// - * wildcard matched against the requested URI.
+// - ${issuer}
+// - ${issuer.host}
+// - ${issuer.port}
+// - ${issuer.path}
+func (c *Client) Inject(ctx context.Context) {
+	req := ctx.Value("http.request").(*http.Request)
+	requested := req.URL.Query().Get("redirect_uri")
+	issuer := Issuer(req)
+	issuerURL, _ := url.Parse(issuer)
+	for i, u := range c.redirectURIs {
+		u = strings.Replace(u, "${issuer}", issuer, -1)
+		u = strings.Replace(u, "${issuer.host}", issuerURL.Host, -1)
+		u = strings.Replace(u, "${issuer.port}", issuerURL.Port(), -1)
+		u = strings.Replace(u, "${issuer.path}", issuerURL.Path, -1)
+		if strings.Contains(u, "*") {
+			matched, _ := doublestar.Match(u, requested)
+			if matched {
+				u = requested
+			}
+		}
+		c.redirectURIs[i] = u
 	}
 }
 
