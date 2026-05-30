@@ -23,6 +23,7 @@ require (
 	github.com/prometheus/client_golang v1.15.0
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
 	github.com/swaggo/swag v1.16.1
+	github.com/vfaronov/httpheader v0.1.0
 	github.com/zitadel/oidc/v3 v3.47.2
 	golang.org/x/crypto v0.49.0
 	gopkg.in/op/go-logging.v1 v1.0.0-20160211212156-b2cb9fa56473

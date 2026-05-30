@@ -44,32 +44,18 @@ func (r *Storage) GetClientByClientID(ctx context.Context, clientId string) (cli
 			Log.Error(err, "")
 		}
 	}()
-
-	// Handle internal device verifier client
-	// Build redirect_uri dynamically from request headers
 	if clientId == DevVerifierClientId {
-		// Extract HTTP request from context (set by our middleware)
-		req, ok := ctx.Value("http.request").(*http.Request)
-		redirectURIs := []string{
-			"http://localhost:8080" + api.OIDCRoutes + api.DeviceCbRoute, // Fallback for local testing
-		}
-		if ok && req != nil {
-			// Build redirect_uri from request headers
-			externalRedirect := AppendIssuer(req, api.DeviceCbRoute)
-			redirectURIs = append(redirectURIs, externalRedirect)
-		}
-
+		req := ctx.Value("http.request").(*http.Request)
 		client = &Client{
 			id:              DevVerifierClientId,
 			subject:         "device-verifier-subject",
 			applicationType: op.ApplicationTypeWeb,
 			grantTypes:      []string{"authorization_code"},
-			redirectURIs:    redirectURIs,
+			redirectURIs:    []string{AppendIssuer(req, api.DeviceCbRoute)},
 			scopes:          []string{"openid"},
 		}
 		return
 	}
-
 	m := &IdpClient{}
 	err = r.db.First(m, "ClientId", clientId).Error
 	if err != nil {

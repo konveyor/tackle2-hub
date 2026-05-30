@@ -1,38 +1,27 @@
 package auth
 
 import (
-	"fmt"
 	"net/http"
 	"net/url"
 
 	"github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/vfaronov/httpheader"
 )
 
-// Issuer constructs the issuer URL from request headers.
-// Checks X-Forwarded-Host, X-Forwarded-Proto, then falls back to r.Host.
+// Issuer constructs the issuer URL based on `Forward` header.
+// When not present, uses the request schema and host.
 func Issuer(req *http.Request) (issuer string) {
-	host := req.Header.Get("X-Forwarded-Host")
-	if host == "" {
-		host = req.Host
+	proto := "http"
+	if req.TLS != nil {
+		proto = "https"
 	}
-
-	proto := req.Header.Get("X-Forwarded-Proto")
-	if proto == "" {
-		if req.TLS != nil {
-			proto = "https"
-		} else {
-			proto = "http"
-		}
+	host := req.Host
+	forwarded := httpheader.Forwarded(req.Header)
+	if len(forwarded) > 0 {
+		proto = forwarded[0].Proto
+		host = forwarded[0].Host
 	}
-
-	Log.Info("Issuer construction",
-		"path", req.URL.Path,
-		"X-Forwarded-Host", req.Header.Get("X-Forwarded-Host"),
-		"X-Forwarded-Proto", req.Header.Get("X-Forwarded-Proto"),
-		"req.Host", req.Host,
-		"computed-issuer", fmt.Sprintf("%s://%s%s", proto, host, api.OIDCRoutes))
-
-	issuer = fmt.Sprintf("%s://%s%s", proto, host, api.OIDCRoutes)
+	issuer = proto + "://" + host + api.OIDCRoutes
 	return
 }
 

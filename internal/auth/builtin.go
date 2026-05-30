@@ -57,10 +57,14 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 			},
 		},
 	}
+	issuer := func(_ bool) (fn op.IssuerFromRequest, err error) {
+		fn = Issuer
+		return
+	}
 	builtin.provider, err = op.NewProvider(
 		config,
 		builtin.storage,
-		op.IssuerFromForwardedOrHost(basePath),
+		issuer,
 		op.WithAllowInsecure(),
 		op.WithCustomTokenEndpoint(op.NewEndpoint("token")),
 		op.WithCustomIntrospectionEndpoint(op.NewEndpoint("introspect")),
