@@ -1492,6 +1492,7 @@ func (c *Client) With(m *IdpClient) {
 // Inject template values:
 // - * wildcard matched against the requested URI.
 // - ${issuer}
+// - ${issuer.proto}
 // - ${issuer.host}
 // - ${issuer.port}
 // - ${issuer.path}
@@ -1502,6 +1503,7 @@ func (c *Client) Inject(ctx context.Context) {
 	issuerURL, _ := url.Parse(issuer)
 	for i, u := range c.redirectURIs {
 		u = strings.Replace(u, "${issuer}", issuer, -1)
+		u = strings.Replace(u, "${issuer.proto}", issuerURL.Scheme, -1)
 		u = strings.Replace(u, "${issuer.host}", issuerURL.Host, -1)
 		u = strings.Replace(u, "${issuer.port}", issuerURL.Port(), -1)
 		u = strings.Replace(u, "${issuer.path}", issuerURL.Path, -1)

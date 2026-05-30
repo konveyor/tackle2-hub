@@ -159,13 +159,13 @@ Complete list of authentication-related environment variables:
 | `AUTH_REQUIRED` | Boolean | `false`                      | Enforce authentication for all API requests |
 | `AUTH_CACHE_LIFESPAN` | Integer | `5`                          | Cache refresh interval in minutes |
 | `AUTH_BASIC_AUTH_LIFESPAN` | Integer | `60`                         | Basic auth identity lifespan for LDAP users in seconds |
-| `OIDC_ISSUER` | String | `http://localhost:8080/oidc` | OIDC issuer URL (hub base URL) |
-| `OIDC_ISSUER` | String | `http://localhost:8080/oidc` | OIDC issuer URL (hub base URL) |
 | `OIDC_TOKEN_LIFESPAN` | Integer | `300`                        | OAuth access token lifespan in seconds (5 minutes) |
 | `OIDC_REFRESH_TOKEN_LIFESPAN` | Integer | `172800`                     | OAuth refresh token lifespan in seconds (2 days) |
 | `OIDC_KEY_ROTATION` | Integer | `90`                         | RSA signing key rotation interval in days |
 | `APIKEY_SECRET` | String | `tackle`                     | Secret used for API key generation |
 | `APIKEY_LIFESPAN` | Integer | `87600`                      | Personal Access Token lifespan in hours (10 years) |
+
+**Note on OIDC Issuer:** The OIDC issuer is now **dynamically determined** from the incoming HTTP request rather than configured via environment variable. The issuer is constructed from the request's scheme, host, and path to `/oidc`. This enables the hub to work seamlessly across different deployment environments (localhost, OpenShift routes, custom domains) without configuration changes.
 
 **Note:** See [shared/settings/README.md](../../shared/settings/README.md) for complete settings documentation.
 
@@ -1781,6 +1781,102 @@ Tackle ships with three default clients:
 - **Use:** IDE extensions (VS Code, IntelliJ)
 - **Secret:** None (public client)
 
+### Redirect URI Templating and Wildcards
+
+To support dynamic deployment environments (localhost, OpenShift routes, custom domains), redirect URIs can use **template variables** and **wildcard patterns** instead of hardcoded values.
+
+#### Template Variables
+
+Template variables are substituted with values from the incoming HTTP request's issuer URL:
+
+| Variable | Substitution | Example Request | Result |
+|----------|-------------|-----------------|--------|
+| `${issuer}` | Full issuer URL | `https://hub.example.com:8080/oidc` | `https://hub.example.com:8080/oidc` |
+| `${issuer.host}` | Host and port | `https://hub.example.com:8080/oidc` | `hub.example.com:8080` |
+| `${issuer.port}` | Port only | `https://hub.example.com:8080/oidc` | `8080` |
+| `${issuer.path}` | Path only | `https://hub.example.com:8080/oidc` | `/oidc` |
+
+**Example template redirect URI:**
+```yaml
+redirectURIs:
+  - "${issuer}/callback"                    # Becomes https://hub.example.com:8080/oidc/callback
+  - "http://${issuer.host}/auth"            # Becomes http://hub.example.com:8080/auth
+  - "http://localhost:${issuer.port}/done"  # Becomes http://localhost:8080/done
+```
+
+#### Wildcard Patterns
+
+After template substitution, redirect URIs containing `*` wildcards are **matched against the requested redirect URI** using doublestar pattern matching:
+
+| Pattern | Requested Redirect URI | Match? | Result |
+|---------|----------------------|--------|--------|
+| `https://*.example.com/callback` | `https://app.example.com/callback` | ✅ Yes | Accept `https://app.example.com/callback` |
+| `http://localhost:*/callback` | `http://localhost:8080/callback` | ✅ Yes | Accept `http://localhost:8080/callback` |
+| `https://hub.io/*/callback` | `https://hub.io/auth/callback` | ✅ Yes | Accept `https://hub.io/auth/callback` |
+| `https://hub.io/**/callback` | `https://hub.io/auth/v1/callback` | ✅ Yes | Accept `https://hub.io/auth/v1/callback` |
+| `https://hub.example.com/*` | `https://different.com/callback` | ❌ No | Reject (host mismatch) |
+
+**Wildcard syntax:**
+- `*` matches any characters except `/` (single path segment or host component)
+- `**` matches any characters including `/` (multiple path segments)
+- Wildcards work in scheme, host, port, and path components
+
+#### Combined: Templates + Wildcards
+
+Templates are substituted **first**, then wildcard matching is performed. This enables powerful dynamic patterns:
+
+```yaml
+redirectURIs:
+  # OpenShift route pattern - matches any route in the cluster
+  - "https://*.${issuer.host}/callback"
+  
+  # Localhost with any port
+  - "http://localhost:*/callback"
+  
+  # Dynamic path matching
+  - "${issuer.host}/*/callback"
+```
+
+**OpenShift/Kubernetes Example:**
+
+For OpenShift routes following the pattern `<route-name>.<namespace>.apps.<cluster-domain>`:
+
+```yaml
+# Issuer: https://tackle-konveyor-tackle.apps.cluster1.example.com/oidc
+redirectURIs:
+  # Matches ANY route on the same cluster
+  - "https://*.apps.cluster1.example.com"
+  
+  # Better: Use template to make it portable across clusters
+  - "https://*.${issuer.host}"
+  
+  # This becomes: https://*.apps.cluster1.example.com
+  # And matches: https://other-route.apps.cluster1.example.com
+```
+
+#### Processing Order
+
+1. **Template substitution**: Replace `${issuer}`, `${issuer.host}`, `${issuer.port}`, `${issuer.path}`
+2. **Wildcard matching**: If result contains `*`, match against requested redirect URI
+3. **Result**:
+   - If wildcard matches: Accept the **requested redirect URI**
+   - If no wildcard or doesn't match: Use the **template-substituted value**
+   - If no template or wildcard: Use the **original fixed URI**
+
+#### Security Considerations
+
+**Wildcards are matched against the requested redirect URI**, not the issuer. This means:
+- ✅ Wildcards validate the redirect URI the client is requesting
+- ✅ Pattern must match for the redirect to be accepted
+- ✅ Prevents redirect to arbitrary domains
+- ❌ Don't use overly broad patterns like `https://*` (matches any host)
+
+**Best practices:**
+- Use specific patterns: `https://*.example.com/*` instead of `https://*`
+- Combine with templates for portability: `https://*.${issuer.host}`
+- Test patterns thoroughly before production deployment
+- Prefer fixed URIs when deployment URL is known and stable
+
 ### Troubleshooting
 
 **Client not found:**
@@ -1806,6 +1902,12 @@ Error: spec.id: Invalid value: 1000: spec.id in body should be less than or equa
 Error: UNIQUE constraint failed: IdpClients.clientId
 ```
 **Fix:** Each client must have a unique `clientId`. Check for duplicate CRs or existing database entries.
+
+**Redirect URI mismatch:**
+```
+Error: redirect_uri does not match any registered URIs
+```
+**Fix:** Check that your wildcard patterns or template variables correctly match the requested redirect URI. Use template variables like `${issuer.host}` for portable configurations.
 
 ---
 
