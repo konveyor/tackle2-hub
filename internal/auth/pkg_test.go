@@ -100,7 +100,7 @@ func TestUserGrant(t *testing.T) {
 	err = db.Create(expiredKey).Error
 	g.Expect(err).To(BeNil())
 
-	request = &Request{}
+	request = newTestRequest()
 	request.With("Bearer " + expiredSecret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
@@ -131,7 +131,7 @@ func TestTaskGrant(t *testing.T) {
 	g.Expect(token.Secret).NotTo(BeEmpty())
 
 	// Test authenticating with the task token
-	request := &Request{}
+	request := newTestRequest()
 	request.With("Bearer " + token.Secret)
 	jwToken, err := provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
@@ -384,25 +384,25 @@ func TestInvalidBearerToken(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Test missing "Bearer" prefix
-	request := &Request{}
+	request := newTestRequest()
 	request.With("invalid-token-without-bearer")
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
 
 	// Test empty token
-	request = &Request{}
+	request = newTestRequest()
 	request.With("")
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
 
 	// Test malformed bearer token (missing token value)
-	request = &Request{}
+	request = newTestRequest()
 	request.With("Bearer")
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
 
 	// Test invalid JWT
-	request = &Request{}
+	request = newTestRequest()
 	request.With("Bearer invalid.jwt.token")
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
@@ -482,7 +482,7 @@ func TestKeyCacheWithTaskStates(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Authenticate with key - should work
-	request := &Request{}
+	request := newTestRequest()
 	request.With("Bearer " + key.Secret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
@@ -490,7 +490,7 @@ func TestKeyCacheWithTaskStates(t *testing.T) {
 	// Update task to Succeeded - key should now be rejected
 	provider.cache.Reset()
 	db.Model(task).Update("State", "Succeeded")
-	request = &Request{}
+	request = newTestRequest()
 	request.With("Bearer " + key.Secret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
@@ -499,7 +499,7 @@ func TestKeyCacheWithTaskStates(t *testing.T) {
 	// Test with Failed state
 	provider.cache.Reset()
 	db.Model(task).Update("State", "Failed")
-	request = &Request{}
+	request = newTestRequest()
 	request.With("Bearer " + key.Secret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
@@ -507,7 +507,7 @@ func TestKeyCacheWithTaskStates(t *testing.T) {
 	// Test with Canceled state
 	provider.cache.Reset()
 	db.Model(task).Update("State", "Canceled")
-	request = &Request{}
+	request = newTestRequest()
 	request.With("Bearer " + key.Secret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
@@ -524,7 +524,7 @@ func TestNoAuthProvider(t *testing.T) {
 	provider := NewNoAuth(builtin)
 
 	// Authenticate always succeeds (returns nil token, nil error)
-	request := &Request{}
+	request := newTestRequest()
 	request.With("Bearer any-token")
 	token, err := provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
@@ -636,7 +636,7 @@ func TestCacheTokenDelete(t *testing.T) {
 	g.Expect(token.ID).NotTo(Equal(uint(0)))
 
 	// Verify token is in cache by authenticating
-	request := &Request{}
+	request := newTestRequest()
 	request.With("Bearer " + token.Secret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
@@ -649,7 +649,7 @@ func TestCacheTokenDelete(t *testing.T) {
 	provider.cache.TokenDeleted(token.ID)
 
 	// Verify token is removed from both indexes by checking authentication fails
-	request = &Request{}
+	request = newTestRequest()
 	request.With("Bearer " + token.Secret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
@@ -679,7 +679,7 @@ func TestTaskRevoke(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Verify token works
-	request := &Request{}
+	request := newTestRequest()
 	request.With("Bearer " + token.Secret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
@@ -697,7 +697,7 @@ func TestTaskRevoke(t *testing.T) {
 	g.Expect(count).To(Equal(int64(0)))
 
 	// Verify token no longer authenticates (removed from cache)
-	request = &Request{}
+	request = newTestRequest()
 	request.With("Bearer " + token.Secret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
@@ -747,12 +747,12 @@ func TestTaskRevokeMultipleTokens(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Verify both tokens work
-	request := &Request{}
+	request := newTestRequest()
 	request.With("Bearer " + token1.Secret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
 
-	request = &Request{}
+	request = newTestRequest()
 	request.With("Bearer " + token2Secret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
@@ -766,12 +766,12 @@ func TestTaskRevokeMultipleTokens(t *testing.T) {
 	g.Expect(count).To(Equal(int64(0)))
 
 	// Verify neither token authenticates
-	request = &Request{}
+	request = newTestRequest()
 	request.With("Bearer " + token1.Secret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
 
-	request = &Request{}
+	request = newTestRequest()
 	request.With("Bearer " + token2Secret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
@@ -930,7 +930,7 @@ func TestClientPAT(t *testing.T) {
 	g.Expect(*token.IdpClientID).To(Equal(client.ID))
 
 	// Authenticate with the token
-	request := &Request{}
+	request := newTestRequest()
 	request.With("Bearer " + token.Secret)
 	jwToken, err := provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
@@ -1084,7 +1084,7 @@ func TestBuiltinRevoke(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Populate cache by authenticating
-	request := &Request{}
+	request := newTestRequest()
 	request.With("Bearer " + token.Secret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
@@ -1544,7 +1544,7 @@ func TestCacheNotificationPropagation(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Verify token works (NewToken calls TokenSaved notification)
-	request := &Request{}
+	request := newTestRequest()
 	request.With("Bearer " + token.Secret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
@@ -1555,7 +1555,7 @@ func TestCacheNotificationPropagation(t *testing.T) {
 	provider.cache.TokenDeleted(token.ID)
 
 	// Verify token is immediately gone from cache (notification propagated)
-	request = &Request{}
+	request = newTestRequest()
 	request.With("Bearer " + token.Secret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil()) // Should fail immediately, not wait for refresh
@@ -1593,7 +1593,7 @@ func TestCacheTimeBasedRefresh(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Authenticate successfully (cache is fresh)
-	request := &Request{}
+	request := newTestRequest()
 	request.With("Bearer " + token.Secret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
@@ -1625,7 +1625,7 @@ func TestCacheTimeBasedRefresh(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Authenticate with new token - should trigger time-based refresh
-	request = &Request{}
+	request = newTestRequest()
 	request.With("Bearer " + newToken.Secret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
@@ -1663,7 +1663,7 @@ func TestIdpIdentityTokenBinding(t *testing.T) {
 	g.Expect(*token.IdpIdentityID).To(Equal(identity.ID))
 
 	// Authenticate with IdP-bound token
-	request := &Request{}
+	request := newTestRequest()
 	request.With("Bearer " + token.Secret)
 	jwToken, err := provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
@@ -1700,7 +1700,7 @@ func TestScopeCalculation(t *testing.T) {
 	token, err := provider.NewToken(userNoRoles.Subject, 24*time.Hour)
 	g.Expect(err).To(BeNil())
 
-	request := &Request{}
+	request := newTestRequest()
 	request.With("Bearer " + token.Secret)
 	jwToken, err := provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
@@ -1735,7 +1735,7 @@ func TestScopeCalculation(t *testing.T) {
 	token, err = provider.NewToken(userEmptyRole.Subject, 24*time.Hour)
 	g.Expect(err).To(BeNil())
 
-	request = &Request{}
+	request = newTestRequest()
 	request.With("Bearer " + token.Secret)
 	jwToken, err = provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
@@ -1789,7 +1789,7 @@ func TestScopeCalculation(t *testing.T) {
 	token, err = provider.NewToken(userMultiRole.Subject, 24*time.Hour)
 	g.Expect(err).To(BeNil())
 
-	request = &Request{}
+	request = newTestRequest()
 	request.With("Bearer " + token.Secret)
 	jwToken, err = provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
@@ -1847,7 +1847,7 @@ func TestTokenBindingEdgeCases(t *testing.T) {
 	token, err := provider.TaskGrant(pendingTask.ID)
 	g.Expect(err).To(BeNil())
 
-	request := &Request{}
+	request := newTestRequest()
 	request.With("Bearer " + token.Secret)
 	jwToken, err := provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
