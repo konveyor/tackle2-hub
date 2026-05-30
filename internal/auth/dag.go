@@ -169,10 +169,7 @@ func (h *DagHandler) VerifySubmit(ctx *gin.Context) {
 		})
 		return
 	}
-
-	// Normalize to uppercase for case-insensitive comparison
 	userCode = strings.ToUpper(userCode)
-
 	devAuth, found := h.storage.GetDevAuthByUserCode(userCode)
 	if !found {
 		_ = ctx.Error(&NotFound{
@@ -307,8 +304,6 @@ func (h *OIDCAuth) Login(ctx *gin.Context) {
 	issuer := Issuer(ctx.Request)
 	authURL, _ := url.Parse(issuer)
 	authURL.Path, _ = url.JoinPath(authURL.Path, "/authorize")
-
-	// Build redirect_uri from current request to match registered client URI
 	redirectURI := AppendIssuer(ctx.Request, api.DeviceCbRoute)
 
 	query := authURL.Query()
@@ -339,7 +334,6 @@ func (h *OIDCAuth) Callback(ctx *gin.Context) {
 			delete(h.pkceState, state)
 		}
 	}()
-
 	if !found {
 		_ = ctx.Error(&BadRequestError{
 			Reason: "Invalid state parameter",
@@ -405,7 +399,8 @@ func (h *OIDCAuth) Callback(ctx *gin.Context) {
 		return
 	}
 
-	http.Redirect(ctx.Writer, ctx.Request, AppendIssuer(ctx.Request, api.DeviceRoute), http.StatusFound)
+	redirect := AppendIssuer(ctx.Request, api.DeviceRoute)
+	http.Redirect(ctx.Writer, ctx.Request, redirect, http.StatusFound)
 }
 
 // AuthRequired checks for valid OIDC session.
