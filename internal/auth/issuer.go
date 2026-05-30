@@ -10,6 +10,7 @@ import (
 
 // Issuer constructs the issuer URL based on `Forward` header.
 // When not present, uses the request schema and host.
+// Forward RFC-7239 standard header adopted in 2014.
 func Issuer(req *http.Request) (issuer string) {
 	proto := "http"
 	if req.TLS != nil {

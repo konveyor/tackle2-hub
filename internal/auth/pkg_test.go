@@ -3,9 +3,11 @@ package auth
 import (
 	"context"
 	"errors"
+	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	as "github.com/konveyor/tackle2-hub/internal/auth/settings"
@@ -16,9 +18,22 @@ import (
 	"gorm.io/gorm"
 )
 
-const (
-	InternalIssuer = "TEST"
-)
+// testIssuer returns the issuer URL for test requests.
+func testIssuer() string {
+	return "http://localhost:8080/oidc"
+}
+
+// newTestRequest creates a Request with a gin.Context containing an HTTP request.
+// This provides the request context needed for issuer validation in token operations.
+func newTestRequest() (req *Request) {
+	w := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(w)
+	ctx.Request = httptest.NewRequest("GET", "http://localhost:8080/test", nil)
+
+	req = &Request{}
+	req.CTX = ctx
+	return
+}
 
 // TestUserGrant tests creating and authenticating with user tokens.
 func TestUserGrant(t *testing.T) {
@@ -66,7 +81,7 @@ func TestUserGrant(t *testing.T) {
 	g.Expect(err).NotTo(BeNil())
 
 	// Test authenticating with the token
-	request := &Request{}
+	request := newTestRequest()
 	request.With("Bearer " + token.Secret)
 	jwToken, err := provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
@@ -150,14 +165,14 @@ func TestJWTAuthentication(t *testing.T) {
 	claims[ClaimSub] = "user-123"
 	claims[ClaimScope] = "openid profile email"
 	claims[ClaimExp] = float64(time.Now().Add(1 * time.Hour).Unix())
-	claims[ClaimIss] = InternalIssuer
+	claims[ClaimIss] = testIssuer()
 	claims[ClaimIat] = time.Now().Unix()
 
 	tokenString, err := token.SignedString(signingKey)
 	g.Expect(err).To(BeNil())
 
 	// Test authenticating with valid JWT
-	request := &Request{}
+	request := newTestRequest()
 	request.With("Bearer " + tokenString)
 	jwToken, err := provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
@@ -174,13 +189,13 @@ func TestJWTAuthentication(t *testing.T) {
 	expiredClaims[ClaimSub] = "user-123"
 	expiredClaims[ClaimScope] = "openid profile"
 	expiredClaims[ClaimExp] = float64(time.Now().Add(-1 * time.Hour).Unix()) // Expired
-	expiredClaims[ClaimIss] = InternalIssuer
+	expiredClaims[ClaimIss] = testIssuer()
 	expiredClaims[ClaimIat] = time.Now().Add(-2 * time.Hour).Unix()
 
 	expiredTokenString, err := expiredToken.SignedString(signingKey)
 	g.Expect(err).To(BeNil())
 
-	request = &Request{}
+	request = newTestRequest()
 	request.With("Bearer " + expiredTokenString)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
@@ -191,13 +206,13 @@ func TestJWTAuthentication(t *testing.T) {
 	noSubClaims := noSubToken.Claims.(jwt.MapClaims)
 	noSubClaims[ClaimScope] = "openid"
 	noSubClaims[ClaimExp] = float64(time.Now().Add(1 * time.Hour).Unix())
-	noSubClaims[ClaimIss] = InternalIssuer
+	noSubClaims[ClaimIss] = testIssuer()
 	noSubClaims[ClaimIat] = time.Now().Unix()
 
 	noSubTokenString, err := noSubToken.SignedString(signingKey)
 	g.Expect(err).To(BeNil())
 
-	request = &Request{}
+	request = newTestRequest()
 	request.With("Bearer " + noSubTokenString)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
@@ -208,13 +223,13 @@ func TestJWTAuthentication(t *testing.T) {
 	noScopeClaims := noScopeToken.Claims.(jwt.MapClaims)
 	noScopeClaims[ClaimSub] = "user-123"
 	noScopeClaims[ClaimExp] = float64(time.Now().Add(1 * time.Hour).Unix())
-	noScopeClaims[ClaimIss] = InternalIssuer
+	noScopeClaims[ClaimIss] = testIssuer()
 	noScopeClaims[ClaimIat] = time.Now().Unix()
 
 	noScopeTokenString, err := noScopeToken.SignedString(signingKey)
 	g.Expect(err).To(BeNil())
 
-	request = &Request{}
+	request = newTestRequest()
 	request.With("Bearer " + noScopeTokenString)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
@@ -251,7 +266,7 @@ func TestLegacyHMACTokenAuthentication(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Authenticate with legacy token
-	request := &Request{}
+	request := newTestRequest()
 	request.With("Bearer " + tokenString)
 	jwToken, err := provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
@@ -263,8 +278,8 @@ func TestLegacyHMACTokenAuthentication(t *testing.T) {
 	g.Expect(jwtClaims[ClaimScope]).To(Equal("tasks:post applications:get"))
 	g.Expect(jwtClaims["task"]).To(Equal(float64(42)))
 
-	// Verify iss was injected
-	g.Expect(jwtClaims[ClaimIss]).To(Equal(InternalIssuer))
+	// Verify iss was injected from request context
+	g.Expect(jwtClaims[ClaimIss]).To(Equal(testIssuer()))
 }
 
 // TestUserExtraction tests extracting user from token.
@@ -297,7 +312,7 @@ func TestUserExtraction(t *testing.T) {
 	claims[ClaimSub] = user.Subject
 	claims[ClaimScope] = "openid profile"
 	claims[ClaimExp] = float64(time.Now().Add(1 * time.Hour).Unix())
-	claims[ClaimIss] = InternalIssuer
+	claims[ClaimIss] = testIssuer()
 	claims[ClaimIat] = time.Now().Unix()
 
 	login := provider.User(token)
@@ -308,7 +323,7 @@ func TestUserExtraction(t *testing.T) {
 	noSubClaims := tokenNoSub.Claims.(jwt.MapClaims)
 	noSubClaims[ClaimScope] = "openid"
 	noSubClaims[ClaimExp] = float64(time.Now().Add(1 * time.Hour).Unix())
-	noSubClaims[ClaimIss] = InternalIssuer
+	noSubClaims[ClaimIss] = testIssuer()
 	noSubClaims[ClaimIat] = time.Now().Unix()
 
 	login = provider.User(tokenNoSub)
@@ -331,7 +346,7 @@ func TestScopesExtraction(t *testing.T) {
 	claims[ClaimSub] = "test-user"
 	claims[ClaimScope] = "applications:read applications:write tags:read"
 	claims[ClaimExp] = float64(time.Now().Add(1 * time.Hour).Unix())
-	claims[ClaimIss] = InternalIssuer
+	claims[ClaimIss] = testIssuer()
 	claims[ClaimIat] = time.Now().Unix()
 
 	scopes := provider.Scopes(token)
@@ -351,7 +366,7 @@ func TestScopesExtraction(t *testing.T) {
 	noScopeClaims := tokenNoScope.Claims.(jwt.MapClaims)
 	noScopeClaims[ClaimSub] = "test-user"
 	noScopeClaims[ClaimExp] = float64(time.Now().Add(1 * time.Hour).Unix())
-	noScopeClaims[ClaimIss] = InternalIssuer
+	noScopeClaims[ClaimIss] = testIssuer()
 	noScopeClaims[ClaimIat] = time.Now().Unix()
 
 	scopes = provider.Scopes(tokenNoScope)
