@@ -3015,10 +3015,11 @@ func TestClientInjectCombinedWildcardAndTemplate(t *testing.T) {
 		id:              "combined-client",
 		applicationType: op.ApplicationTypeWeb,
 		redirectURIs: []string{
-			"https://*.konveyor.io:*/hub/callback", // Wildcard - matches requested
-			"http://localhost:${issuer.port}/auth", // Template - substitution only
-			"https://fixed.example.com/callback",   // Fixed - unchanged
-			"**",                                   // naked wildcard
+			"https://*.konveyor.io:*/hub/callback",    // Wildcard - matches requested
+			"http://localhost:${issuer.port}/auth",    // Template - substitution only
+			"https://fixed.example.com/callback",      // Fixed - unchanged
+			"${issuer.proto}://${issuer.host}{,*}/**", // Wildcard - match host.
+			"**", // Naked wildcard
 		},
 	}
 
@@ -3030,8 +3031,10 @@ func TestClientInjectCombinedWildcardAndTemplate(t *testing.T) {
 	g.Expect(client.redirectURIs[1]).To(Equal("http://localhost:443/auth"))
 	// Fixed URI unchanged
 	g.Expect(client.redirectURIs[2]).To(Equal("https://fixed.example.com/callback"))
-	// Maked wildcard.
+	// Match same host.
 	g.Expect(client.redirectURIs[3]).To(Equal(requestedRedirect))
+	// Naked wildcard.
+	g.Expect(client.redirectURIs[4]).To(Equal(requestedRedirect))
 }
 
 // TestClientInjectWildcardPathPattern tests wildcard with path components.

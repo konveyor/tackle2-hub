@@ -1504,7 +1504,7 @@ func (c *Client) Inject(ctx context.Context) {
 	for i, u := range c.redirectURIs {
 		u = strings.Replace(u, "${issuer}", issuer, -1)
 		u = strings.Replace(u, "${issuer.proto}", issuerURL.Scheme, -1)
-		u = strings.Replace(u, "${issuer.host}", issuerURL.Host, -1)
+		u = strings.Replace(u, "${issuer.host}", issuerURL.Hostname(), -1)
 		u = strings.Replace(u, "${issuer.port}", issuerURL.Port(), -1)
 		u = strings.Replace(u, "${issuer.path}", issuerURL.Path, -1)
 		if strings.Contains(u, "*") {
