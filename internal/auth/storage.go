@@ -1507,7 +1507,7 @@ func (c *Client) Inject(ctx context.Context) {
 		u = strings.Replace(u, "${issuer.host}", issuerURL.Hostname(), -1)
 		u = strings.Replace(u, "${issuer.port}", issuerURL.Port(), -1)
 		u = strings.Replace(u, "${issuer.path}", issuerURL.Path, -1)
-		if strings.Contains(u, "*") {
+		if strings.ContainsAny(u, "*${}") {
 			matched, _ := doublestar.Match(u, requested)
 			if matched {
 				u = requested

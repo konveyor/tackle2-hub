@@ -2989,8 +2989,8 @@ func TestClientInjectTemplateVariables(t *testing.T) {
 
 	// ${issuer} should be replaced with full issuer
 	g.Expect(client.redirectURIs[0]).To(Equal("http://hub.example.com:8080/oidc/callback"))
-	// ${issuer.host} should be replaced with host:port
-	g.Expect(client.redirectURIs[1]).To(Equal("http://hub.example.com:8080/auth"))
+	// ${issuer.host} should be replaced with hostname (no port)
+	g.Expect(client.redirectURIs[1]).To(Equal("http://hub.example.com/auth"))
 	// ${issuer.port} should be replaced with port
 	g.Expect(client.redirectURIs[2]).To(Equal("http://localhost:8080/callback"))
 	// ${issuer.path} should be replaced with path
@@ -3202,7 +3202,7 @@ func TestClientInjectComplexWildcardPatterns(t *testing.T) {
 		},
 		{
 			name:              "template with wildcard",
-			pattern:           "https://${issuer.host}/*/callback",
+			pattern:           "https://${issuer.host}{,*}/*/callback",
 			issuer:            "https://hub.example.com:8080/oidc",
 			requestedRedirect: "https://hub.example.com:8080/auth/callback",
 			shouldMatch:       true,
