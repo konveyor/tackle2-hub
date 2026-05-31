@@ -951,7 +951,7 @@ Subject hash:    HMAC-SHA256(jsmith) → dsLflKrXRBgaZC3u8XNHJS8UskJ19GM5AWIZ8nB
 
 ### Role Mapping
 
-LDAP groups are mapped to hub roles using pattern-based rules:
+LDAP groups are mapped to hub roles using pattern-based rules with [doublestar pattern matching](https://github.com/bmatcuk/doublestar) (same as [redirect URI wildcards](#wildcard-patterns)).
 
 ```yaml
 roleMappings:
@@ -984,18 +984,109 @@ roleMappings:
 | **any** | At least ONE pattern must match a group |
 | **roles** | Roles assigned when rule matches |
 
-**Pattern syntax:**
-- Supports glob wildcards (`*`)
-- Multiple rules can match (roles accumulated)
-- Roles resolved to permission scopes
+**Pattern Matching Syntax:**
 
-**Example:**
+LDAP group patterns use [doublestar glob matching](https://github.com/bmatcuk/doublestar), the same syntax as `.gitignore` files. Patterns are **case-sensitive** and match against the full LDAP group DN or name returned by your LDAP server.
+
+**Wildcard operators:**
+
+| Wildcard | Behavior | Example |
+|----------|----------|---------|
+| `*` | Matches any characters **within a segment** (doesn't cross `,` in DNs) | `*Admin*` matches `Global-Admin` or `AdminGroup` |
+| `**` | Matches across **multiple segments** (crosses `,` separators) | `CN=IT,**/Admin` matches `CN=IT,OU=Security,CN=Admin` |
+| `{a,b}` | Brace expansion - matches either `a` or `b` | `{*-admins,*-administrators}` matches both patterns |
+| `?` | Matches exactly one character | `Admin?` matches `Admins` or `Admin1` |
+| `[abc]` | Matches one character from the set | `Admin[123]` matches `Admin1`, `Admin2`, `Admin3` |
+
+**Common LDAP Group Patterns:**
+
+| Pattern | Description | Matches | Doesn't Match |
+|---------|-------------|---------|---------------|
+| `*Admins*` | Contains "Admins" anywhere | `CN=Global-Admins,OU=Groups`<br>`Security-Admins`<br>`CN=Admins-IT` | `CN=Admin,OU=Users` (no 's')<br>`CN=ADMINS` (case-sensitive) |
+| `*-admins` | Ends with "-admins" | `platform-admins`<br>`security-admins`<br>`CN=it-admins,OU=Groups` | `admin-users`<br>`Admins-Group` |
+| `CN=Developers,*` | Starts with "CN=Developers," | `CN=Developers,OU=Groups,DC=example,DC=com`<br>`CN=Developers,DC=example` | `CN=Senior,OU=Developers`<br>`OU=Developers,CN=Team` |
+| `*Developer*` | Contains "Developer" | `CN=Developers,OU=IT`<br>`Senior-Developer`<br>`Developer-Team` | `CN=Develop,OU=Groups` |
+| `CN=*,OU=Security,*` | Any CN in Security OU | `CN=Admins,OU=Security,DC=example,DC=com`<br>`CN=Team,OU=Security,DC=corp` | `CN=Admins,OU=IT,DC=example` |
+| `{*-admins,*-admin}` | Ends with -admins OR -admin | `platform-admins`<br>`global-admin` | `admin-group` |
+
+**Important behaviors:**
+
+1. **Case-sensitive matching:**
+   - `*Admin*` matches `Global-Admin` but NOT `global-admin`
+   - `*ADMIN*` matches `IT-ADMIN` but NOT `It-Admin`
+
+2. **Full string matching:**
+   - Pattern must match the **entire** group name/DN returned by LDAP
+   - Use `*` at start/end if you want partial matching
+
+3. **Multiple rules accumulate:**
+   - If a user's groups match multiple rules, they get **all roles** from all matching rules
+   - Order doesn't matter - all rules are evaluated
+
+**Example Scenarios:**
+
+**Scenario 1: Simple suffix matching**
+```yaml
+roleMappings:
+  - any: ["*-admins"]
+    roles: ["tackle-admin"]
 ```
-User groups:   ["CN=Developers,OU=Groups,DC=example,DC=com", "CN=Admins,OU=Groups,DC=example,DC=com"]
-Rule:          any: ["*Developers*"] → roles: ["architect"]
-Rule:          any: ["*Admins*"] → roles: ["tackle-admin"]
-Result:        User has roles: architect, tackle-admin
+User groups: `["platform-admins", "security-team", "CN=it-admins,OU=Groups"]`  
+Result: User gets `tackle-admin` role (2 groups match the pattern)
+
+**Scenario 2: Multiple patterns (OR logic)**
+```yaml
+roleMappings:
+  - any:
+      - "*Developers*"
+      - "*Engineers*"
+    roles: ["architect"]
 ```
+User groups: `["CN=Senior-Developers,OU=Groups", "QA-Team"]`  
+Result: User gets `architect` role (first group matches `*Developers*`)
+
+**Scenario 3: AND logic - all patterns must match**
+```yaml
+roleMappings:
+  - and:
+      - "*Migration*"
+      - "konveyor-*"
+    roles: ["migrator"]
+```
+User groups: `["konveyor-migration-team", "engineering-staff"]`  
+Result: User gets `migrator` role (first group matches BOTH `*Migration*` AND `konveyor-*`)
+
+**Scenario 4: Multiple roles from multiple rules**
+```yaml
+roleMappings:
+  - any: ["*-admins"]
+    roles: ["tackle-admin"]
+  - any: ["*Architects*"]
+    roles: ["architect"]
+```
+User groups: `["platform-admins", "Senior-Architects"]`  
+Result: User gets BOTH `tackle-admin` AND `architect` roles
+
+**Scenario 5: DN-based matching**
+```yaml
+roleMappings:
+  - any:
+      - "CN=Developers,OU=Engineering,*"
+      - "CN=Architects,OU=Engineering,*"
+    roles: ["architect"]
+```
+User groups: `["CN=Developers,OU=Engineering,DC=example,DC=com", "CN=Users,OU=IT"]`  
+Result: User gets `architect` role (first group matches the DN pattern)
+
+**Testing patterns:**
+
+To verify your patterns work correctly:
+1. Check your LDAP server's group format (simple names vs full DNs)
+2. Test with `*pattern*` for contains, `pattern*` for starts-with, `*pattern` for ends-with
+3. Remember patterns are case-sensitive - match the exact case from LDAP
+4. Use multiple rules if you need complex OR conditions across different role types
+
+**Reference:** See [doublestar documentation](https://pkg.go.dev/github.com/bmatcuk/doublestar/v4) for complete pattern syntax and matching behavior.
 
 ### Identity Lifecycle
 
@@ -1806,20 +1897,43 @@ redirectURIs:
 
 #### Wildcard Patterns
 
-After template substitution, redirect URIs containing `*` wildcards are **matched against the requested redirect URI** using doublestar pattern matching:
+After template substitution, redirect URIs containing `*` wildcards are **matched against the requested redirect URI** using [doublestar pattern matching](https://github.com/bmatcuk/doublestar).
 
-| Pattern | Requested Redirect URI | Match? | Result |
-|---------|----------------------|--------|--------|
-| `https://*.example.com/callback` | `https://app.example.com/callback` | ✅ Yes | Accept `https://app.example.com/callback` |
-| `http://localhost:*/callback` | `http://localhost:8080/callback` | ✅ Yes | Accept `http://localhost:8080/callback` |
-| `https://hub.io/*/callback` | `https://hub.io/auth/callback` | ✅ Yes | Accept `https://hub.io/auth/callback` |
-| `https://hub.io/**/callback` | `https://hub.io/auth/v1/callback` | ✅ Yes | Accept `https://hub.io/auth/v1/callback` |
-| `https://hub.example.com/*` | `https://different.com/callback` | ❌ No | Reject (host mismatch) |
+**Pattern matching semantics:**
 
-**Wildcard syntax:**
-- `*` matches any characters except `/` (single path segment or host component)
-- `**` matches any characters including `/` (multiple path segments)
-- Wildcards work in scheme, host, port, and path components
+Doublestar uses the same glob syntax as `.gitignore`, shell globs, and other path-matching tools. It treats `/` as a **path separator** and matches segment-by-segment:
+
+| Wildcard | Behavior | Example Pattern | Matches | Doesn't Match |
+|----------|----------|-----------------|---------|---------------|
+| `*` | Matches any characters **except** `/` (within one path segment) | `https://*/callback` | `https://app.example.com/callback` | `https://app.example.com/auth/callback` |
+| `**` | Matches zero or more **complete path segments** (crosses `/`) | `https://**/callback` | `https://app.example.com/auth/v1/callback` | `https://different.com/` |
+| `{a,b}` | Brace expansion - matches either `a` or `b` | `https://host{,*}/**` | With/without port, with/without path | N/A |
+
+**Important:** The pattern is split on `/` into segments, then matched segment-by-segment. This means:
+- `https://host**` doesn't match `https://host:443/path` (`:443/path` crosses segment boundary)
+- `https://host/**` does match (the `/**` is its own segment)
+- `/**` at the end is **optional** - it can match zero path segments
+
+**Common patterns:**
+
+| Pattern | Description | Matches |
+|---------|-------------|---------|
+| `https://*.example.com/**` | Specific domain, any subdomain, any path | `https://app.example.com/callback`, `https://api.example.com/auth` |
+| `http://localhost:*/**` | Localhost, any port, any path | `http://localhost:8080/callback`, `http://localhost:3000/` |
+| `${issuer.proto}://${issuer.host}{,*}/**` | **Recommended for web-ui**: Same scheme and host as issuer, optional port, optional path | All port/path combinations |
+
+**Example matching:** Pattern `https://hub.io{,*}/**` vs requested URIs:
+
+| Requested URI | Match? | Explanation |
+|---------------|--------|-------------|
+| `https://hub.io` | ✅ Yes | `{,*}` matches empty, `/**` matches zero segments |
+| `https://hub.io:443` | ✅ Yes | `{,*}` uses `*` alternative matching `:443`, `/**` matches zero segments |
+| `https://hub.io/callback` | ✅ Yes | `{,*}` matches empty, `/**` matches `/callback` |
+| `https://hub.io:443/hub/callback` | ✅ Yes | `{,*}` uses `*` matching `:443`, `/**` matches `/hub/callback` |
+| `http://hub.io/callback` | ❌ No | Scheme mismatch (http vs https) |
+| `https://other.io/callback` | ❌ No | Host mismatch |
+
+**Reference:** See [doublestar documentation](https://pkg.go.dev/github.com/bmatcuk/doublestar/v4) for complete pattern syntax. The matching behavior is identical to `.gitignore` patterns and other glob-based tools.
 
 #### Combined: Templates + Wildcards
 
