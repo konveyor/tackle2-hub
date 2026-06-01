@@ -49,11 +49,6 @@ func (h ServiceHandler) List(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusOK, r)
 }
 
-// Required enforces RBAC.
-func (h ServiceHandler) Required(ctx *gin.Context) {
-	Required(ctx.Param(Name))(ctx)
-}
-
 // Forward provides RBAC and forwards request to the service.
 func (h ServiceHandler) Forward(ctx *gin.Context) {
 	path := ctx.Param(Wildcard)
