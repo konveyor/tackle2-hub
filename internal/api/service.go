@@ -28,8 +28,8 @@ func (h ServiceHandler) AddRoutes(e *gin.Engine) {
 	routeGroup := e.Group("/")
 	routeGroup.Use(Authenticate())
 	routeGroup.GET(api.ServicesRoute, h.List)
-	routeGroup.Any(api.ServiceRoute, h.Required, h.Forward)
-	routeGroup.Any(api.ServiceNestedRoute, h.Required, h.Forward)
+	routeGroup.Any(api.ServiceRoute, h.Forward)
+	routeGroup.Any(api.ServiceNestedRoute, h.Forward)
 }
 
 // List godoc
