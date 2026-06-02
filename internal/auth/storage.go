@@ -1506,8 +1506,8 @@ func (c *Client) With(m *IdpClient, req *http.Request) {
 // - ${issuer.path}
 func (c *Client) Inject() {
 	req := c.request
-	requested := req.URL.Query().Get("redirect_uri")
 	issuer := Issuer(req)
+	requested := c.requestedURI()
 	issuerURL, _ := url.Parse(issuer)
 	for i, u := range c.redirectURIs {
 		u = strings.Replace(u, "${issuer}", issuer, -1)
@@ -1523,6 +1523,19 @@ func (c *Client) Inject() {
 		}
 		c.redirectURIs[i] = u
 	}
+}
+
+// requestedURI returns the redirect URI from the request query parameters.
+// Returns redirect_uri (RFC 6749 §3.1.2) for authorization flows or
+// post_logout_redirect_uri for logout flows (OpenID Connect RP-Initiated Logout 1.0 §2).
+func (c *Client) requestedURI() (u string) {
+	q := c.request.URL.Query()
+	p := "redirect_uri"
+	if strings.Contains(c.request.URL.Path, "/logout") {
+		p = "post_logout_" + p
+	}
+	u = q.Get(p)
+	return
 }
 
 // AuthRequest implements op.AuthRequest.
