@@ -58,13 +58,15 @@ func TestOIDCDiscovery(t *testing.T) {
 func TestClientCredentialsFlow(t *testing.T) {
 	g := NewGomegaWithT(t)
 
+	secret := "test-secret"
+
 	// Create API client
 	client := NewClient()
 
 	// Create test OAuth client with client_credentials grant
 	testClient := &api.IdpClient{
 		ClientId:        "test-client-credentials",
-		Secret:          "test-secret",
+		Secret:          secret,
 		ApplicationType: "web",
 		Grants:          []string{"client_credentials"},
 		Scopes:          []string{"openid", "profile", "email", "applications:get"},
@@ -79,7 +81,7 @@ func TestClientCredentialsFlow(t *testing.T) {
 	form := url.Values{}
 	form.Set("grant_type", "client_credentials")
 	form.Set("client_id", testClient.ClientId)
-	form.Set("client_secret", testClient.Secret)
+	form.Set("client_secret", secret)
 	form.Set("scope", "openid")
 
 	resp, err := http.PostForm(Settings.Addon.Hub.URL+api.OIDCRoutes+"/token", form)
@@ -117,13 +119,15 @@ func TestClientCredentialsFlow(t *testing.T) {
 func TestAuthorizationCodeFlow(t *testing.T) {
 	g := NewGomegaWithT(t)
 
+	secret := "test-secret"
+
 	// Create API client
 	client := NewClient()
 
 	// Create test OAuth client with authorization_code grant
 	testClient := &api.IdpClient{
 		ClientId:        "test-authorization-code",
-		Secret:          "test-secret",
+		Secret:          secret,
 		ApplicationType: "web",
 		Grants:          []string{"authorization_code", "refresh_token"},
 		RedirectURIs:    []string{"http://test-redirect"},
@@ -247,7 +251,7 @@ func TestAuthorizationCodeFlow(t *testing.T) {
 	tokenForm.Set("code", code)
 	tokenForm.Set("redirect_uri", redirectURI)
 	tokenForm.Set("client_id", testClient.ClientId)
-	tokenForm.Set("client_secret", testClient.Secret)
+	tokenForm.Set("client_secret", secret)
 	tokenForm.Set("code_verifier", verifier)
 
 	resp, err = http.PostForm(issuer+"/token", tokenForm)
@@ -284,13 +288,15 @@ func TestAuthorizationCodeFlow(t *testing.T) {
 func TestAuthorizationCodeFlowWithScopes(t *testing.T) {
 	g := NewGomegaWithT(t)
 
+	secret := "test-secret"
+
 	// Create API client
 	client := NewClient()
 
 	// Create test OAuth client with authorization_code grant
 	testClient := &api.IdpClient{
 		ClientId:        "test-authorization-scopes",
-		Secret:          "test-secret",
+		Secret:          secret,
 		ApplicationType: "web",
 		Grants:          []string{"authorization_code", "refresh_token"},
 		RedirectURIs:    []string{"http://test-redirect"},
@@ -332,7 +338,7 @@ func TestAuthorizationCodeFlowWithScopes(t *testing.T) {
 
 	// Create test user with role
 	user := api.User{
-		Login:   "oidc-role-test-user",
+		Login:    "oidc-role-test-user",
 		Email:    "oidc-role-test@example.com",
 		Password: "oidc-role-test-password",
 		Roles: []api.Ref{
@@ -439,7 +445,7 @@ func TestAuthorizationCodeFlowWithScopes(t *testing.T) {
 	tokenForm.Set("code", code)
 	tokenForm.Set("redirect_uri", redirectURI)
 	tokenForm.Set("client_id", testClient.ClientId)
-	tokenForm.Set("client_secret", testClient.Secret)
+	tokenForm.Set("client_secret", secret)
 	tokenForm.Set("code_verifier", verifier)
 
 	resp, err = http.PostForm(issuer+"/token", tokenForm)

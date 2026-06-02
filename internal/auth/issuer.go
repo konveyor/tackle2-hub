@@ -8,6 +8,11 @@ import (
 	"github.com/vfaronov/httpheader"
 )
 
+// ReqInCtx key used to store the request in a context.
+const (
+	ReqInCtx = "http.request"
+)
+
 // Issuer constructs the issuer URL based on `Forward` header.
 // When not present, uses the request schema and host.
 // Forward RFC-7239 standard header adopted in 2014.

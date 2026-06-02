@@ -2841,8 +2841,9 @@ func TestClientWithWildcard(t *testing.T) {
 		Scopes:          []string{"openid"},
 	}
 
+	req := httptest.NewRequest("GET", "http://localhost:8080/oidc", nil)
 	client := &Client{}
-	client.With(m)
+	client.With(m, req)
 
 	g.Expect(client.id).To(Equal("test-client"))
 	g.Expect(client.subject).To(Equal("test-subject"))
@@ -2869,8 +2870,9 @@ func TestClientWithMultipleRedirectURIs(t *testing.T) {
 		Scopes: []string{"openid", "profile", "email"},
 	}
 
+	req := httptest.NewRequest("GET", "http://localhost:8080/oidc", nil)
 	client := &Client{}
-	client.With(m)
+	client.With(m, req)
 
 	g.Expect(client.redirectURIs).To(HaveLen(3))
 	g.Expect(client.redirectURIs[0]).To(Equal("http://localhost:8080/callback"))
@@ -2891,15 +2893,14 @@ func TestClientInjectWildcardMatch(t *testing.T) {
 		nil,
 	)
 
-	ctx := context.WithValue(context.Background(), "http.request", req)
-
 	client := &Client{
 		id:              "wildcard-client",
 		applicationType: op.ApplicationTypeWeb,
 		redirectURIs:    []string{"http://*/callback"},
+		request:         req,
 	}
 
-	client.Inject(ctx)
+	client.Inject()
 
 	// Wildcard pattern matched requested redirect - replaced with it
 	g.Expect(client.redirectURIs).To(HaveLen(1))
@@ -2918,15 +2919,14 @@ func TestClientInjectWildcardNoMatch(t *testing.T) {
 		nil,
 	)
 
-	ctx := context.WithValue(context.Background(), "http.request", req)
-
 	client := &Client{
 		id:              "wildcard-mismatch",
 		applicationType: op.ApplicationTypeWeb,
 		redirectURIs:    []string{"http://hub.example.com/*"},
+		request:         req,
 	}
 
-	client.Inject(ctx)
+	client.Inject()
 
 	// Wildcard pattern doesn't match requested URI - pattern preserved
 	g.Expect(client.redirectURIs).To(HaveLen(1))
@@ -2945,8 +2945,6 @@ func TestClientInjectMultipleWildcards(t *testing.T) {
 		nil,
 	)
 
-	ctx := context.WithValue(context.Background(), "http.request", req)
-
 	client := &Client{
 		id:              "multi-wildcard",
 		applicationType: op.ApplicationTypeWeb,
@@ -2955,9 +2953,10 @@ func TestClientInjectMultipleWildcards(t *testing.T) {
 			"https://*.konveyor.io/*/callback",   // Matches requested redirect
 			"https://fixed.example.com/callback", // Fixed - no wildcard
 		},
+		request: req,
 	}
 
-	client.Inject(ctx)
+	client.Inject()
 
 	// First wildcard doesn't match requested redirect (http vs https)
 	g.Expect(client.redirectURIs[0]).To(Equal("http://localhost:*/callback"))
@@ -2972,8 +2971,6 @@ func TestClientInjectTemplateVariables(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	req := httptest.NewRequest("GET", "http://hub.example.com:8080/oidc/authorize", nil)
-	ctx := context.WithValue(context.Background(), "http.request", req)
-
 	client := &Client{
 		id:              "template-client",
 		applicationType: op.ApplicationTypeWeb,
@@ -2983,9 +2980,10 @@ func TestClientInjectTemplateVariables(t *testing.T) {
 			"http://localhost:${issuer.port}/callback",
 			"http://example.com${issuer.path}/done",
 		},
+		request: req,
 	}
 
-	client.Inject(ctx)
+	client.Inject()
 
 	// ${issuer} should be replaced with full issuer
 	g.Expect(client.redirectURIs[0]).To(Equal("http://hub.example.com:8080/oidc/callback"))
@@ -3009,8 +3007,6 @@ func TestClientInjectCombinedWildcardAndTemplate(t *testing.T) {
 		nil,
 	)
 
-	ctx := context.WithValue(context.Background(), "http.request", req)
-
 	client := &Client{
 		id:              "combined-client",
 		applicationType: op.ApplicationTypeWeb,
@@ -3021,9 +3017,10 @@ func TestClientInjectCombinedWildcardAndTemplate(t *testing.T) {
 			"${issuer.proto}://${issuer.host}{,*}/**", // Wildcard - match host.
 			"**", // Naked wildcard
 		},
+		request: req,
 	}
 
-	client.Inject(ctx)
+	client.Inject()
 
 	// Wildcard matches requested redirect - replaced with it
 	g.Expect(client.redirectURIs[0]).To(Equal(requestedRedirect))
@@ -3049,8 +3046,6 @@ func TestClientInjectWildcardPathPattern(t *testing.T) {
 		nil,
 	)
 
-	ctx := context.WithValue(context.Background(), "http.request", req)
-
 	client := &Client{
 		id:              "path-wildcard",
 		applicationType: op.ApplicationTypeWeb,
@@ -3058,9 +3053,10 @@ func TestClientInjectWildcardPathPattern(t *testing.T) {
 			"https://hub.example.com/**/callback", // Doublestar matches multi-level
 			"https://hub.example.com/*/callback",  // Single * matches single level
 		},
+		request: req,
 	}
 
-	client.Inject(ctx)
+	client.Inject()
 
 	// Doublestar pattern matches requested redirect
 	g.Expect(client.redirectURIs[0]).To(Equal(requestedRedirect))
@@ -3080,23 +3076,24 @@ func TestClientInjectNativeApplication(t *testing.T) {
 		Scopes:          []string{"openid"},
 	}
 
+	req := httptest.NewRequest("GET", "http://localhost:8080/oidc", nil)
 	client := &Client{}
-	client.With(m)
+	client.With(m, req)
 
 	g.Expect(client.applicationType).To(Equal(op.ApplicationTypeNative))
 	g.Expect(client.grantTypes).To(ContainElement("urn:ietf:params:oauth:grant-type:device_code"))
 
-	// Now inject with context
+	// Now inject with updated request
 	issuer := "http://localhost:8080/oidc"
 	requestedRedirect := "http://localhost:8080/callback"
-	req := httptest.NewRequest(
+	req2 := httptest.NewRequest(
 		"GET",
 		issuer+"/authorize?redirect_uri="+requestedRedirect,
 		nil,
 	)
 
-	ctx := context.WithValue(context.Background(), "http.request", req)
-	client.Inject(ctx)
+	client.request = req2
+	client.Inject()
 
 	// Wildcard matches requested redirect
 	g.Expect(client.redirectURIs[0]).To(Equal(requestedRedirect))
@@ -3109,15 +3106,14 @@ func TestClientInjectEmptyRedirectURIs(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	req := httptest.NewRequest("GET", "http://hub.example.com/oidc/authorize", nil)
-	ctx := context.WithValue(context.Background(), "http.request", req)
-
 	client := &Client{
 		id:              "no-redirects",
 		applicationType: op.ApplicationTypeWeb,
 		redirectURIs:    []string{},
+		request:         req,
 	}
 
-	client.Inject(ctx)
+	client.Inject()
 
 	g.Expect(client.redirectURIs).To(BeEmpty())
 }
@@ -3127,15 +3123,14 @@ func TestClientInjectNoRequestedRedirect(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	req := httptest.NewRequest("GET", "http://hub.example.com/oidc/authorize", nil)
-	ctx := context.WithValue(context.Background(), "http.request", req)
-
 	client := &Client{
 		id:              "no-requested",
 		applicationType: op.ApplicationTypeWeb,
 		redirectURIs:    []string{"http://*/callback"},
+		request:         req,
 	}
 
-	client.Inject(ctx)
+	client.Inject()
 
 	// No requested redirect means wildcard won't match, pattern preserved
 	g.Expect(client.redirectURIs).To(HaveLen(1))
@@ -3219,15 +3214,14 @@ func TestClientInjectComplexWildcardPatterns(t *testing.T) {
 				nil,
 			)
 
-			ctx := context.WithValue(context.Background(), "http.request", req)
-
 			client := &Client{
 				id:              "pattern-test",
 				applicationType: op.ApplicationTypeWeb,
 				redirectURIs:    []string{tc.pattern},
+				request:         req,
 			}
 
-			client.Inject(ctx)
+			client.Inject()
 
 			if tc.shouldMatch {
 				g.Expect(client.redirectURIs[0]).To(Equal(tc.requestedRedirect), "pattern should match and be replaced")

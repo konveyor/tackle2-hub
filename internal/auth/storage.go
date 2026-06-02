@@ -45,8 +45,13 @@ func (r *Storage) GetClientByClientID(ctx context.Context, clientId string) (opC
 			Log.Error(err, "")
 		}
 	}()
+	req, cast := ctx.Value(ReqInCtx).(*http.Request)
+	if !cast {
+		err = oidc.ErrServerError().
+			WithDescription("ctx must contain request")
+		return
+	}
 	if clientId == DevVerifierClientId {
-		req := ctx.Value("http.request").(*http.Request)
 		opClient = &Client{
 			id:              DevVerifierClientId,
 			subject:         "device-verifier-subject",
@@ -67,15 +72,20 @@ func (r *Storage) GetClientByClientID(ctx context.Context, clientId string) (opC
 		}
 		return
 	}
+	err = secret.Decode(m)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
 	client := &Client{}
-	client.With(m)
-	client.Inject(ctx)
+	client.With(m, req)
+	client.Inject()
 	opClient = client
 	return
 }
 
 // AuthorizeClientIDSecret validates client credentials.
-func (r *Storage) AuthorizeClientIDSecret(ctx context.Context, id, secret string) (err error) {
+func (r *Storage) AuthorizeClientIDSecret(ctx context.Context, id, passphrase string) (err error) {
 	defer func() {
 		if err != nil {
 			Log.Error(err, "")
@@ -89,14 +99,14 @@ func (r *Storage) AuthorizeClientIDSecret(ctx context.Context, id, secret string
 	if found.secret == "" {
 		return
 	}
-	if found.secret != secret {
+	if !secret.MatchPassword(passphrase, found.secret) {
 		err = oidc.ErrInvalidClient().WithDescription("clientSecret not-valid.")
 	}
 	return
 }
 
 // ClientCredentials validates client credentials for client credentials flow.
-func (r *Storage) ClientCredentials(ctx context.Context, id, secret string) (client op.Client, err error) {
+func (r *Storage) ClientCredentials(ctx context.Context, id, passphrase string) (client op.Client, err error) {
 	defer func() {
 		if err != nil {
 			Log.Error(err, "")
@@ -110,7 +120,7 @@ func (r *Storage) ClientCredentials(ctx context.Context, id, secret string) (cli
 	if found.secret == "" {
 		return
 	}
-	if found.secret != secret {
+	if found.secret != passphrase {
 		err = oidc.ErrInvalidClient().WithDescription("clientSecret not-valid.")
 	}
 	return
@@ -1361,6 +1371,7 @@ type Client struct {
 	grantTypes      []string
 	applicationType op.ApplicationType
 	scopes          []string
+	request         *http.Request
 }
 
 // GetID returns the client ID.
@@ -1413,7 +1424,10 @@ func (c *Client) GrantTypes() (types []oidc.GrantType) {
 
 // LoginURL returns the login URL.
 func (c *Client) LoginURL(id string) (s string) {
-	s = fmt.Sprintf("%s%s?authRequestID=%s", api.OIDCRoutes, api.LoginRoute, id)
+	s = fmt.Sprintf(
+		"%s?authRequestID=%s",
+		AppendIssuer(c.request, api.LoginRoute),
+		id)
 	return
 }
 
@@ -1471,15 +1485,14 @@ func (c *Client) ClockSkew() (d time.Duration) {
 }
 
 // With populates op.Client using the model.
-// Translate redirectURI wildcard (*) by injecting the requested
-// redirectURI into the supported URIs.
-func (c *Client) With(m *IdpClient) {
+func (c *Client) With(m *IdpClient, req *http.Request) {
 	c.id = m.ClientId
 	c.subject = m.Subject
 	c.secret = m.Secret
 	c.grantTypes = m.Grants
 	c.redirectURIs = m.RedirectURIs
 	c.scopes = m.Scopes
+	c.request = req
 	switch m.ApplicationType {
 	case "web":
 		c.applicationType = op.ApplicationTypeWeb
@@ -1496,8 +1509,8 @@ func (c *Client) With(m *IdpClient) {
 // - ${issuer.host}
 // - ${issuer.port}
 // - ${issuer.path}
-func (c *Client) Inject(ctx context.Context) {
-	req := ctx.Value("http.request").(*http.Request)
+func (c *Client) Inject() {
+	req := c.request
 	requested := req.URL.Query().Get("redirect_uri")
 	issuer := Issuer(req)
 	issuerURL, _ := url.Parse(issuer)

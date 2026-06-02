@@ -35,7 +35,7 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 		func(ctx *gin.Context) {
 			reqCtx := context.WithValue(
 				ctx.Request.Context(),
-				"http.request", // inject
+				auth.ReqInCtx, // inject
 				ctx.Request)
 			ctx.Request = ctx.Request.WithContext(reqCtx)
 			path := ctx.Param("path")
