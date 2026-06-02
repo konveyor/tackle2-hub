@@ -72,11 +72,6 @@ func (r *Storage) GetClientByClientID(ctx context.Context, clientId string) (opC
 		}
 		return
 	}
-	err = secret.Decode(m)
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
 	client := &Client{}
 	client.With(m, req)
 	client.Inject()
@@ -120,7 +115,7 @@ func (r *Storage) ClientCredentials(ctx context.Context, id, passphrase string) 
 	if found.secret == "" {
 		return
 	}
-	if found.secret != passphrase {
+	if !secret.MatchPassword(passphrase, found.secret) {
 		err = oidc.ErrInvalidClient().WithDescription("clientSecret not-valid.")
 	}
 	return

@@ -237,7 +237,7 @@ type IdpClient struct {
 	Model
 	Subject         string   `gorm:"<-:create;index;not null"`
 	ClientId        string   `gorm:"<-:create;uniqueIndex;not null"`
-	Secret          string   `gorm:"" secret:"encrypted"`
+	Secret          string   `gorm:"" secret:"hashed"`
 	ApplicationType string   `gorm:"not null"`
 	Grants          []string `gorm:"type:json;serializer:json"`
 	RedirectURIs    []string `gorm:"type:json;serializer:json"`
