@@ -465,6 +465,14 @@ IdpIdentities are automatically refreshed when tokens are refreshed:
 
 ### Key Design Decisions
 
+**Why hash client secrets?**
+- Client secrets are hashed using bcrypt (one-way hash), not encrypted
+- Same security model as user passwords
+- Authentication validates presented secret against stored hash using constant-time comparison
+- Database compromise does not reveal plaintext secrets
+- No ability to recover original secret (must regenerate if lost)
+- More secure than encryption (which requires protecting encryption keys)
+
 **Why hash LDAP login for subject?**
 - Raw login identifier would expose usernames in JWT tokens
 - HMAC hash provides stable, opaque identifier
@@ -1701,7 +1709,9 @@ spec:
 
 **Secret format:**
 - The referenced Secret must contain a key named `clientSecret`
-- The secret value will be resolved at startup and stored in the database
+- The secret value will be resolved at startup and hashed using bcrypt before being stored in the database
+- Secrets are stored as bcrypt hashes (not encrypted) - same approach as user passwords
+- Client authentication validates the presented secret against the stored hash
 - Changing the secret requires a hub restart to take effect
 
 #### Public Clients (CLI Tools, Native Apps)
