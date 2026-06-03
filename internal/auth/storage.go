@@ -157,6 +157,16 @@ func (r *Storage) CreateAuthRequest(
 		}
 	}
 	requestId := r.genId()
+	found := false
+	for _, scope := range authReq.Scopes {
+		if scope == oidc.ScopeOfflineAccess {
+			found = true
+			break
+		}
+	}
+	if !found {
+		authReq.Scopes = append(authReq.Scopes, oidc.ScopeOfflineAccess)
+	}
 	req = &AuthRequest{
 		AuthRequest: authReq,
 		requestId:   requestId,
