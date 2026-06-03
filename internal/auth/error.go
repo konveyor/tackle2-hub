@@ -7,6 +7,41 @@ import (
 	"github.com/konveyor/tackle2-hub/internal/auth/cache"
 )
 
+// NotAuthenticated is returned when a token cannot be authenticated.
+type NotAuthenticated struct {
+	Token  string
+	Reason string
+}
+
+func (e *NotAuthenticated) Error() (s string) {
+	if e.Reason != "" {
+		return fmt.Sprintf("Token [%s] not-authenticated: %s", e.Token, e.Reason)
+	}
+	return fmt.Sprintf("Token [%s] not-authenticated.", e.Token)
+}
+
+func (e *NotAuthenticated) Is(err error) (matched bool) {
+	notAuth := &NotAuthenticated{}
+	matched = errors.As(err, &notAuth)
+	return
+}
+
+// NotValid is returned when a token is not valid.
+type NotValid struct {
+	Reason string
+	Token  string
+}
+
+func (e *NotValid) Error() (s string) {
+	return fmt.Sprintf("Token [%s] not-valid: %s", e.Token, e.Reason)
+}
+
+func (e *NotValid) Is(err error) (matched bool) {
+	notValid := &NotValid{}
+	matched = errors.As(err, &notValid)
+	return
+}
+
 // BadRequestError reports bad request errors.
 type BadRequestError struct {
 	Reason string

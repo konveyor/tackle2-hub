@@ -116,6 +116,7 @@ func ErrorHandler() gin.HandlerFunc {
 		rtx := RichContext(ctx)
 		if errors.Is(err, &BadRequestError{}) ||
 			errors.Is(err, &auth.BadRequestError{}) ||
+			errors.Is(err, &tasking.BadRequest{}) ||
 			errors.Is(err, &resource.ValidationError{}) ||
 			errors.Is(err, &filter.Error{}) ||
 			errors.Is(err, &sort.SortError{}) ||
@@ -171,6 +172,16 @@ func ErrorHandler() gin.HandlerFunc {
 			return
 		}
 
+		if errors.Is(err, &auth.NotAuthenticated{}) ||
+			errors.Is(err, &auth.NotValid{}) {
+			rtx.Respond(
+				http.StatusUnauthorized,
+				gin.H{
+					"error": err.Error(),
+				})
+			return
+		}
+
 		if errors.Is(err, &Forbidden{}) {
 			rtx.Respond(
 				http.StatusForbidden,
@@ -200,15 +211,6 @@ func ErrorHandler() gin.HandlerFunc {
 				http.StatusBadRequest,
 				bErr.Items,
 			)
-			return
-		}
-
-		if errors.Is(err, &tasking.BadRequest{}) {
-			rtx.Respond(
-				http.StatusBadRequest,
-				gin.H{
-					"error": err.Error(),
-				})
 			return
 		}
 

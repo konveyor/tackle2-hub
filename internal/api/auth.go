@@ -1158,7 +1158,8 @@ func Authenticate() func(ctx *gin.Context) {
 		request.With(header)
 		result, err := request.Authenticate()
 		if err != nil {
-			_ = ctx.AbortWithError(http.StatusUnauthorized, err)
+			_ = ctx.Error(err)
+			ctx.Abort()
 			return
 		}
 		rtx.User = result.User
@@ -1186,6 +1187,9 @@ func Required(scope string) func(*gin.Context) {
 				return
 			}
 		}
-		ctx.AbortWithStatus(http.StatusForbidden)
+		_ = ctx.Error(&Forbidden{
+			Reason: "Required scope not granted",
+		})
+		ctx.Abort()
 	}
 }
