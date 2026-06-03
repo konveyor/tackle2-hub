@@ -77,6 +77,10 @@ type IdentityProviderSpec struct {
 	// TLS connection settings.
 	// +optional
 	TLS TLS `json:"tls,omitempty"`
+	// Primary indicates this IdP is the primary authentication method.
+	// When true, users are automatically redirected to this IdP for authentication.
+	// +optional
+	Primary bool `json:"primary,omitempty"`
 }
 
 // IdentityProviderStatus defines the observed state of the resource.

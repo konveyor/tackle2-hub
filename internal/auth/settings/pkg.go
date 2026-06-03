@@ -167,6 +167,7 @@ func (r *Federated) secret(ref *core.ObjectReference, key string) (s string, err
 // IdentityProvider defines a federated IdP.
 type IdentityProvider struct {
 	Enabled      bool
+	Primary      bool
 	Name         string
 	Issuer       string
 	ClientId     string
@@ -179,6 +180,7 @@ type IdentityProvider struct {
 // with populates self with the crd.
 func (r *IdentityProvider) with(idp *crd.IdentityProvider) (err error) {
 	r.Enabled = true
+	r.Primary = idp.Spec.Primary
 	r.Name = idp.Name
 	r.Issuer = idp.Spec.Issuer
 	r.ClientId = idp.Spec.ClientId

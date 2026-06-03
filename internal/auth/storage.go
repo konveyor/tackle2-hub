@@ -653,6 +653,15 @@ func (r *Storage) Login(writer http.ResponseWriter, request *http.Request, authR
 			Log.Error(err, "")
 		}
 	}()
+	if federated.Idp.Enabled && federated.Idp.Primary {
+		loginURL := AppendIssuer(request, api.IdpLoginRoute)
+		parsedURL, _ := url.Parse(loginURL)
+		query := parsedURL.Query()
+		query.Set(AuthRequestId, authReqId)
+		parsedURL.RawQuery = query.Encode()
+		http.Redirect(writer, request, parsedURL.String(), http.StatusFound)
+		return
+	}
 	login := &Login{
 		storage:   r,
 		writer:    writer,
@@ -806,7 +815,7 @@ func (r *Login) renderPage() (err error) {
 			return
 		}
 		query := parsedURL.Query()
-		query.Set("authRequestID", r.authReqId)
+		query.Set(AuthRequestId, r.authReqId)
 		parsedURL.RawQuery = query.Encode()
 
 		idpButton = `
@@ -936,7 +945,7 @@ func (r *Login) renderPage() (err error) {
     <div class="container">
         <h1>Tackle Login</h1>
         <p class="subtitle">Sign in to continue</p>
-        <form action="` + AppendIssuer(r.request, api.LoginRoute) + `?authRequestID=` + r.authReqId + `" method="post">
+        <form action="` + AppendIssuer(r.request, api.LoginRoute) + `?` + AuthRequestId + `=` + r.authReqId + `" method="post">
             <label for="login">Login</label>
             <input type="text" id="login" name="login" required autofocus>
 
@@ -1420,8 +1429,9 @@ func (c *Client) GrantTypes() (types []oidc.GrantType) {
 // LoginURL returns the login URL.
 func (c *Client) LoginURL(id string) (s string) {
 	s = fmt.Sprintf(
-		"%s?authRequestID=%s",
+		"%s?%s=%s",
 		AppendIssuer(c.request, api.LoginRoute),
+		AuthRequestId,
 		id)
 	return
 }

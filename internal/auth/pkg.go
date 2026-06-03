@@ -31,6 +31,10 @@ const (
 	DevVerifierClientId = "device-verifier"
 )
 
+const (
+	AuthRequestId = "authRequestId"
+)
+
 var (
 	Settings  = &settings.Settings
 	Log       = logr.New("auth", Settings.Log.Auth)

@@ -1069,11 +1069,11 @@ func (h AuthHandler) TokenDelete(ctx *gin.Context) {
 
 // Login OIDC login.
 func (h AuthHandler) Login(ctx *gin.Context) {
-	authReqID := ctx.Query("authRequestID")
+	authReqID := ctx.Query(auth.AuthRequestId)
 	if authReqID == "" {
 		_ = ctx.Error(
 			&BadRequestError{
-				Reason: "Missing 'authRequestID' query parameter",
+				Reason: "Missing '" + auth.AuthRequestId + "' query parameter",
 			})
 		return
 	}

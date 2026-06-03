@@ -149,7 +149,7 @@ type FedIdpLogin struct {
 // begin initiates the external IdP authentication flow.
 func (f *FedIdpLogin) begin() {
 	// Get authRequestID from query parameter (if present)
-	f.authRequestID = f.ctx.Query("authRequestID")
+	f.authRequestID = f.ctx.Query(AuthRequestId)
 
 	// Generate state and code verifier for PKCE
 	f.state = f.genString()
