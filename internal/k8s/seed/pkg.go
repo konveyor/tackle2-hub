@@ -28,12 +28,14 @@ func Scheme() (scheme *k8srt.Scheme) {
 func Resources() []client.Object {
 	var objects []client.Object
 	files := map[string]client.Object{
-		"resources/configmap.yaml": &core.ConfigMap{},
-		"resources/tackle.yaml":    &crd.Tackle{},
-		"resources/addon.yaml":     &crd.Addon{},
-		"resources/extension.yaml": &crd.Extension{},
-		"resources/task.yaml":      &crd.Task{},
-		"resources/jsd.yaml":       &crd.Schema{},
+		"resources/configmap.yaml":  &core.ConfigMap{},
+		"resources/secrets.yaml":    &core.Secret{},
+		"resources/tackle.yaml":     &crd.Tackle{},
+		"resources/addon.yaml":      &crd.Addon{},
+		"resources/extension.yaml":  &crd.Extension{},
+		"resources/task.yaml":       &crd.Task{},
+		"resources/jsd.yaml":        &crd.Schema{},
+		"resources/idpclients.yaml": &crd.IdpClient{},
 	}
 	for path, r := range files {
 		b, err := embedded.ReadFile(path)

@@ -63,6 +63,7 @@ type Task struct {
 	Errors      []TaskError  `json:"errors,omitempty" yaml:",omitempty"`
 	Activity    []string     `json:"activity,omitempty" yaml:",omitempty"`
 	Attached    []Attachment `json:"attached" yaml:",omitempty"`
+	Tokens      []Ref        `json:"tokens,omitempty" yaml:",omitempty"`
 }
 
 // TaskReport REST resource.

@@ -1,0 +1,121 @@
+/*
+Copyright 2019 Red Hat Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package v1alpha1
+
+import (
+	"crypto/tls"
+	"crypto/x509"
+	"fmt"
+
+	core "k8s.io/api/core/v1"
+	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+// TLS configures TLS/SSL connection settings.
+type TLS struct {
+	// Insecure skips server certificate verification.
+	// Use only for development/testing with self-signed certificates.
+	// +optional
+	Insecure bool `json:"insecure,omitempty"`
+	// CA is a PEM-encoded CA certificate for validating the server certificate.
+	// Use when the server uses a certificate signed by an internal/private CA.
+	// +optional
+	CA string `json:"ca,omitempty"`
+}
+
+// AsConfig converts TLS settings to a tls.Config.
+func (t TLS) AsConfig() (config *tls.Config, err error) {
+	config = &tls.Config{}
+	if t.Insecure {
+		config.InsecureSkipVerify = true
+		return
+	}
+
+	if t.CA != "" {
+		caCertPool := x509.NewCertPool()
+		if !caCertPool.AppendCertsFromPEM([]byte(t.CA)) {
+			err = fmt.Errorf("failed to parse CA certificate")
+			config = nil
+			return
+		}
+		config.RootCAs = caCertPool
+	}
+
+	return
+}
+
+// IdentityProviderSpec defines the desired state of the resource.
+type IdentityProviderSpec struct {
+	// Provider name.
+	Name string `json:"name"`
+	// Issuer URL.
+	Issuer string `json:"issuer"`
+	// Client ID.
+	ClientId string `json:"clientId"`
+	// Client secret reference (optional for public clients).
+	// +optional
+	ClientSecret *core.ObjectReference `json:"clientSecret,omitempty"`
+	// Redirect URI.
+	RedirectURI string `json:"redirectURI"`
+	// OAuth scopes (optional, provider injects defaults if empty).
+	// +optional
+	Scopes []string `json:"scopes,omitempty"`
+	// TLS connection settings.
+	// +optional
+	TLS TLS `json:"tls,omitempty"`
+	// Primary indicates this IdP is the primary authentication method.
+	// When true, users are automatically redirected to this IdP for authentication.
+	// +optional
+	Primary bool `json:"primary,omitempty"`
+}
+
+// IdentityProviderStatus defines the observed state of the resource.
+type IdentityProviderStatus struct {
+	// The most recent generation observed by the controller.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+	// Resource conditions.
+	Conditions []meta.Condition `json:"conditions,omitempty"`
+}
+
+// IdentityProvider defines external IDP federation settings.
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
+// +kubebuilder:storageversion
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:shortName=idp
+type IdentityProvider struct {
+	meta.TypeMeta   `json:",inline"`
+	meta.ObjectMeta `json:"metadata,omitempty"`
+	// Spec defines the desired state of the resource.
+	Spec IdentityProviderSpec `json:"spec"`
+	// Status defines the observed state of the resource.
+	Status IdentityProviderStatus `json:"status,omitempty"`
+}
+
+// IdentityProviderList is a list of IdentityProvider.
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type IdentityProviderList struct {
+	meta.TypeMeta `json:",inline"`
+	meta.ListMeta `json:"metadata,omitempty"`
+	Items         []IdentityProvider `json:"items"`
+}
+
+func init() {
+	SchemeBuilder.Register(&IdentityProvider{}, &IdentityProviderList{})
+}

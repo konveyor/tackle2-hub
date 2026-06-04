@@ -15,13 +15,13 @@ func TestTaskCRUD(t *testing.T) {
 			// Create.
 			err := Task.Create(&r)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Get.
 			got, err := Task.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if assert.FlatEqual(got, r) {
 				t.Errorf("Different response error. Got %v, expected %v", got, r)
@@ -31,12 +31,12 @@ func TestTaskCRUD(t *testing.T) {
 			r.Name = "Updated " + r.Name
 			err = Task.Update(&r)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			got, err = Task.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if got.Name != r.Name {
 				t.Errorf("Different response error. Got %s, expected %s", got.Name, r.Name)
@@ -50,11 +50,11 @@ func TestTaskCRUD(t *testing.T) {
 			p.Name = "patched " + r.Name
 			err = Task.Patch(r.ID, p)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			got, err = Task.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if got.Name != p.Name {
 				t.Errorf("Different response error. Got %s, expected %s", got.Name, p.Name)
@@ -62,7 +62,7 @@ func TestTaskCRUD(t *testing.T) {
 			// Delete.
 			err = Task.Delete(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			for i := 5; i >= 0; i-- {
@@ -91,7 +91,7 @@ func TestTaskList(t *testing.T) {
 
 	got, err := Task.List()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	if assert.FlatEqual(got, &samples) {
 		t.Errorf("Different response error. Got %v, expected %v", got, samples)
@@ -107,6 +107,6 @@ func TestBulkCancel(t *testing.T) {
 	f.And("id").Eq(filter.Any{1, 2, 3})
 	err := Task.BulkCancel(f)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 }

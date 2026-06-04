@@ -76,6 +76,10 @@ func (r *Task) With(m *model.Task) {
 	for _, a := range m.Attached {
 		r.Attached = append(r.Attached, Attachment(a))
 	}
+	r.Tokens = []Ref{}
+	for _, token := range m.Tokens {
+		r.Tokens = append(r.Tokens, ref(token.ID, &token))
+	}
 }
 
 // Patch the specified model.

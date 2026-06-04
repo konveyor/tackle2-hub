@@ -27,7 +27,7 @@ func TestAppManifestGet(t *testing.T) {
 	r.Application.ID = application.ID
 	err = Manifest.Create(&r)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	defer func() {
 		_ = RichClient.Manifest.Delete(r.ID)
@@ -44,7 +44,7 @@ func TestAppManifestGet(t *testing.T) {
 	// Get encrypted.
 	got, err := Manifest.Get()
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 	if !assert.MapEq(created.Content, got.Content) {
 		t.Errorf("Content mismatch.\n Expected: %s\n Actual: %s", created.Content, got.Content)
@@ -55,7 +55,7 @@ func TestAppManifestGet(t *testing.T) {
 	// Get decrypted.
 	decrypted, err := Manifest.Decrypted().Get()
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 	if !assert.MapEq(created.Content, decrypted.Content) {
 		t.Errorf("Content mismatch.\n Expected: %s\n Actual: %s", created.Content, decrypted.Content)
@@ -66,7 +66,7 @@ func TestAppManifestGet(t *testing.T) {
 	// Get decrypted and injected.
 	injected, err := Manifest.Decrypted().Injected().Get()
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 	if !assert.MapEq(manifest.InjectedContent, injected.Content) {
 		t.Errorf("Content not injected.\n Expected: %s\n Actual: %s", manifest.InjectedContent, injected.Content)
@@ -92,7 +92,7 @@ func TestAppManifestGet_Select(t *testing.T) {
 	r.Application.ID = application.ID
 	err = Application.Select(application.ID).Manifest.Create(&r)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	defer func() {
 		_ = RichClient.Manifest.Delete(r.ID)
@@ -109,7 +109,7 @@ func TestAppManifestGet_Select(t *testing.T) {
 	// Get encrypted.
 	got, err := Application.Select(application.ID).Manifest.Get()
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 	if !assert.MapEq(created.Content, got.Content) {
 		t.Errorf("Content mismatch.\n Expected: %s\n Actual: %s", created.Content, got.Content)
@@ -120,7 +120,7 @@ func TestAppManifestGet_Select(t *testing.T) {
 	// Get decrypted.
 	decrypted, err := Application.Select(application.ID).Manifest.Decrypted().Get()
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 	if !assert.MapEq(created.Content, decrypted.Content) {
 		t.Errorf("Content mismatch.\n Expected: %s\n Actual: %s", created.Content, decrypted.Content)
@@ -131,7 +131,7 @@ func TestAppManifestGet_Select(t *testing.T) {
 	// Get decrypted and injected.
 	injected, err := Application.Select(application.ID).Manifest.Decrypted().Injected().Get()
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 	if !assert.MapEq(manifest.InjectedContent, injected.Content) {
 		t.Errorf("Content not injected.\n Expected: %s\n Actual: %s", manifest.InjectedContent, injected.Content)

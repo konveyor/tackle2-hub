@@ -30,13 +30,13 @@ func TestGeneratorCRUD(t *testing.T) {
 	}
 	err = Generator.Create(&r)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 
 	// Get
 	got, err := Generator.Get(r.ID)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 	if !assert.Eq(got, r) {
 		t.Errorf("Different response error.\nGot:\n%+v\nExpected:\n%+v", got, &r)
@@ -46,11 +46,11 @@ func TestGeneratorCRUD(t *testing.T) {
 	r.Name = r.Name + "updated"
 	err = Generator.Update(&r)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	got, err = Generator.Get(r.ID)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 	r.UpdateUser = got.UpdateUser
 	if !assert.Eq(got, r) {
@@ -60,7 +60,7 @@ func TestGeneratorCRUD(t *testing.T) {
 	// Delete.
 	err = Generator.Delete(r.ID)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	_, err = Generator.Get(r.ID)
 	if err == nil {

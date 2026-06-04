@@ -11,6 +11,7 @@ import (
 	"github.com/konveyor/tackle2-hub/internal/api/filter"
 	"github.com/konveyor/tackle2-hub/internal/api/resource"
 	"github.com/konveyor/tackle2-hub/internal/api/sort"
+	"github.com/konveyor/tackle2-hub/internal/auth"
 	"github.com/konveyor/tackle2-hub/internal/jsd"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	tasking "github.com/konveyor/tackle2-hub/internal/task"
@@ -114,6 +115,8 @@ func ErrorHandler() gin.HandlerFunc {
 
 		rtx := RichContext(ctx)
 		if errors.Is(err, &BadRequestError{}) ||
+			errors.Is(err, &auth.BadRequestError{}) ||
+			errors.Is(err, &tasking.BadRequest{}) ||
 			errors.Is(err, &resource.ValidationError{}) ||
 			errors.Is(err, &filter.Error{}) ||
 			errors.Is(err, &sort.SortError{}) ||
@@ -128,6 +131,7 @@ func ErrorHandler() gin.HandlerFunc {
 
 		if errors.Is(err, gorm.ErrRecordNotFound) ||
 			errors.Is(err, &NotFound{}) ||
+			errors.Is(err, &auth.NotFound{}) ||
 			errors.Is(err, &jsd.NotFound{}) {
 			if ctx.Request.Method == http.MethodDelete {
 				rtx.Status(http.StatusNoContent)
@@ -168,6 +172,16 @@ func ErrorHandler() gin.HandlerFunc {
 			return
 		}
 
+		if errors.Is(err, &auth.NotAuthenticated{}) ||
+			errors.Is(err, &auth.NotValid{}) {
+			rtx.Respond(
+				http.StatusUnauthorized,
+				gin.H{
+					"error": err.Error(),
+				})
+			return
+		}
+
 		if errors.Is(err, &Forbidden{}) {
 			rtx.Respond(
 				http.StatusForbidden,
@@ -197,15 +211,6 @@ func ErrorHandler() gin.HandlerFunc {
 				http.StatusBadRequest,
 				bErr.Items,
 			)
-			return
-		}
-
-		if errors.Is(err, &tasking.BadRequest{}) {
-			rtx.Respond(
-				http.StatusBadRequest,
-				gin.H{
-					"error": err.Error(),
-				})
 			return
 		}
 

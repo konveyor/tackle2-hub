@@ -56,12 +56,29 @@ For all components:
 
 These settings pertain to authentication and authorization.
 
-| Name      | T | Envar         | Default         | Definition                                 |
-|-----------|---|---------------|-----------------|--------------------------------------------|
-| Required  | B | AUTH_REQUIRED | FALSE           | API enforces authentication/authorization. |
-| RolePath  | S | RULE_PATH     | /tmp/roles.yaml | Path to file used to seed roles.           |
-| UserPath  | S | USER_PATH     | /tmp/users/yaml | Path to file used to seed users.           |
-| Token.Key | S | ADDON_TOKEN   |                 | Key used to sign tokens.                   |
+| Name                   | T | Envar                       | Default              | Definition                                                                 |
+|------------------------|---|-----------------------------|----------------------|----------------------------------------------------------------------------|
+| Enabled                | B | AUTH_ENABLED                | TRUE                 | Authentication system enabled.                                             |
+| Required               | B | AUTH_REQUIRED               | FALSE                | API enforces authentication/authorization.                                 |
+| CacheLifespan          | I | AUTH_CACHE_LIFESPAN         | 5 (minute)           | (minutes) cache refresh interval (safety net for missed notifications).    |
+| BasicAuthLifespan      | I | BASIC_AUTH_LIFESPAN    | 60 (second)          | (seconds) Basic Auth cached identity staleness for LDAP users.             |
+| **APIKey**.Secret      | S | APIKEY_SECRET               | tackle               | Secret used for API key generation.                                        |
+| **APIKey**.Lifespan    | I | APIKEY_LIFESPAN             | 87600 (hour)         | (hours) Personal Access Token lifespan (default: 10 years).                |
+| **Token**.Key          | S | ADDON_TOKEN                 | tackle               | HMAC key for legacy tokens (deprecated).                                   |
+| **Token**.Lifespan     | I | OIDC_TOKEN_LIFESPAN         | 300 (second)         | (seconds) OAuth access token lifespan.                                     |
+| **Token**.RefreshLifespan | I | OIDC_REFRESH_TOKEN_LIFESPAN | 172800 (second)      | (seconds) OAuth refresh token lifespan (default: 2 days).                  |
+| IssuerURL              | S | OIDC_ISSUER                 | http://localhost:8080 | OIDC issuer URL (hub base URL).                                            |
+| **Key**.Rotation       | I | OIDC_KEY_ROTATION           | 90 (day)             | (days) RSA signing key rotation interval.                                  |
+
+**Authentication Staleness:**
+
+Different authentication methods have different staleness characteristics:
+
+- **OAuth Access Tokens**: Valid for `Token.Lifespan` (5 min default) with scopes embedded in JWT
+- **Basic Auth (LDAP)**: Cached identity expires after `BasicAuthLifespan` (1 min default), then re-authenticates with LDAP
+- **Basic Auth (Local)**: User lookup always refreshes from DB (immediate password/role changes)
+- **Token Refresh (LDAP)**: LDAP identity expires after `Token.Lifespan` during refresh flow
+- **Cache Safety Net**: All cached data refreshes from DB when `CacheLifespan` exceeded (5 min default)
 
 ### Task Manager ###
 

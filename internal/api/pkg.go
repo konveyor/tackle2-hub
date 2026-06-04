@@ -64,6 +64,10 @@ const (
 	DirectoryExpand = api.DirectoryExpand
 )
 
+const (
+	SecretMask = api.SecretMask
+)
+
 // Map REST resource.
 type Map = resource.Map
 

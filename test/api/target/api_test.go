@@ -40,13 +40,13 @@ func TestTargetCRUD(t *testing.T) {
 			// Create.
 			err = Target.Create(&r)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Get.
 			got, err := Target.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if assert.FlatEqual(got, r) {
 				t.Errorf("Different response error. Got %v, expected %v", got, r)
@@ -72,11 +72,11 @@ func TestTargetCRUD(t *testing.T) {
 			}
 			err = Target.Update(&r)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			got, err = Target.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if got.Name != r.Name {
 				t.Errorf("Different response error. Got %s, expected %s", got.Name, r.Name)
@@ -85,7 +85,7 @@ func TestTargetCRUD(t *testing.T) {
 			// Delete.
 			err = Target.Delete(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			_, err = Target.Get(r.ID)
 			if err == nil {

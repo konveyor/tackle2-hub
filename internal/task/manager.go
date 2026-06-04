@@ -97,12 +97,6 @@ var (
 	Log      = logr.New("task-scheduler", Settings.Log.Task)
 )
 
-func init() {
-	auth.Validators = append(
-		auth.Validators,
-		&Validator{})
-}
-
 // New manager.
 func New(db *gorm.DB, client k8s.Client) (m *Manager) {
 	m = &Manager{
@@ -373,11 +367,12 @@ func (m *Manager) Cancel(db *gorm.DB, id uint) (err error) {
 					snErr,
 					"Snapshot not created.")
 			}
+			auth.IdP.TaskRevoke(task.ID)
 			err = task.Cancel(m.Client)
 			if err != nil {
 				return
 			}
-			err = task.update(m.DB)
+			err = m.DB.Save(task).Error
 			if err != nil {
 				err = liberr.Wrap(err)
 				return
@@ -874,6 +869,7 @@ func (m *Manager) updateRunning(ctx context.Context) {
 					"Task completed.",
 					"id",
 					task.ID)
+				auth.IdP.TaskRevoke(task.ID)
 				err = m.podSnapshot(task, pod)
 				if err != nil {
 					Log.Error(err, "")

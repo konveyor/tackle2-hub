@@ -1,106 +1,61 @@
 package settings
 
 import (
-	"os"
+	"time"
 
 	"github.com/konveyor/tackle2-hub/shared/env"
 )
 
 // Environment variables
 const (
-	EnvAuthRequired          = "AUTH_REQUIRED"
-	EnvKeycloakHost          = "KEYCLOAK_HOST"
-	EnvKeycloakRealm         = "KEYCLOAK_REALM"
-	EnvKeycloakClientID      = "KEYCLOAK_CLIENT_ID"
-	EnvKeycloakClientSecret  = "KEYCLOAK_CLIENT_SECRET"
-	EnvKeycloakAdminUser     = "KEYCLOAK_ADMIN_USER"
-	EnvKeycloakAdminPass     = "KEYCLOAK_ADMIN_PASS"
-	EnvKeycloakAdminRealm    = "KEYCLOAK_ADMIN_REALM"
-	EnvKeycloakReqPassUpdate = "KEYCLOAK_REQ_PASS_UPDATE"
-	EnvKeycloakAudience      = "KEYCLOAK_AUDIENCE"
-	EnvBuiltinTokenKey       = "ADDON_TOKEN"
-	EnvRolePath              = "ROLE_PATH"
-	EnvUserPath              = "USER_PATH"
+	EnvAuthEnabled          = "AUTH_ENABLED"
+	EnvAuthRequired         = "AUTH_REQUIRED"
+	EnvAPIKeySecret         = "APIKEY_SECRET"
+	EnvAPIKeyLifespan       = "APIKEY_LIFESPAN"
+	EnvCacheLifespan        = "AUTH_CACHE_LIFESPAN"
+	EnvBasicAuthLifespan    = "BASIC_AUTH_LIFESPAN"
+	EnvTokenKey             = "ADDON_TOKEN" // Deprecated
+	EnvTokenLifespan        = "OIDC_TOKEN_LIFESPAN"
+	EnvRefreshTokenLifespan = "OIDC_REFRESH_TOKEN_LIFESPAN"
+	EnvKeyRotation          = "OIDC_KEY_ROTATION"
 )
 
 type Auth struct {
+	// Auth enabled
+	Enabled bool
 	// Auth required
 	Required bool
-	// Keycloak client config
-	Keycloak struct {
-		Host         string
-		Realm        string
-		ClientID     string
-		ClientSecret string
-		Audience     string
-		Admin        struct {
-			User  string
-			Pass  string
-			Realm string
-		}
-		RequirePasswordUpdate bool
+	// Cache
+	CacheLifespan time.Duration
+	// BasicAuth cache lifespan
+	BasicAuthLifespan time.Duration
+	// APIKey settings.
+	APIKey struct {
+		Secret   string
+		Lifespan time.Duration
 	}
-	// Path to role yaml
-	RolePath string
-	// Path to user yaml
-	UserPath string
 	// Token settings for builtin provider.
 	Token struct {
-		Key string
+		Key             string // Deprecated.
+		Lifespan        time.Duration
+		RefreshLifespan time.Duration
+	}
+	// RSaKey settings.
+	Key struct {
+		Rotation time.Duration
 	}
 }
 
 func (r *Auth) Load() (err error) {
-	var found bool
+	r.Enabled = env.GetBool(EnvAuthEnabled, true)
 	r.Required = env.GetBool(EnvAuthRequired, false)
-	if !r.Required {
-		return
-	}
-	r.Keycloak.Host, found = os.LookupEnv(EnvKeycloakHost)
-	if !found {
-		r.Keycloak.Host = "https://localhost:8081"
-	}
-	r.Keycloak.Realm, found = os.LookupEnv(EnvKeycloakRealm)
-	if !found {
-		r.Keycloak.Realm = "konveyor"
-	}
-	r.Keycloak.ClientID, found = os.LookupEnv(EnvKeycloakClientID)
-	if !found {
-		r.Keycloak.ClientID = "konveyor"
-	}
-	r.Keycloak.ClientSecret, found = os.LookupEnv(EnvKeycloakClientSecret)
-	if !found {
-		r.Keycloak.ClientSecret = ""
-	}
-	r.Keycloak.Audience, found = os.LookupEnv(EnvKeycloakAudience)
-	if !found {
-		r.Keycloak.Audience = r.Keycloak.ClientID
-	}
-	r.Keycloak.Admin.User, found = os.LookupEnv(EnvKeycloakAdminUser)
-	if !found {
-		r.Keycloak.Admin.User = "admin"
-	}
-	r.Keycloak.Admin.Pass, found = os.LookupEnv(EnvKeycloakAdminPass)
-	if !found {
-		r.Keycloak.Admin.Pass = "admin"
-	}
-	r.Keycloak.Admin.Realm, found = os.LookupEnv(EnvKeycloakAdminRealm)
-	if !found {
-		r.Keycloak.Admin.Realm = "master"
-	}
-	r.Keycloak.RequirePasswordUpdate = env.GetBool(EnvKeycloakReqPassUpdate, true)
-	r.Token.Key, found = os.LookupEnv(EnvBuiltinTokenKey)
-	if !found {
-		r.Token.Key = "konveyor"
-	}
-	r.RolePath, found = os.LookupEnv(EnvRolePath)
-	if !found {
-		r.RolePath = "/tmp/roles.yaml"
-	}
-	r.UserPath, found = os.LookupEnv(EnvUserPath)
-	if !found {
-		r.UserPath = "/tmp/users.yaml"
-
-	}
+	r.CacheLifespan = env.GetMinute(EnvCacheLifespan, 5)
+	r.BasicAuthLifespan = env.GetSecond(EnvBasicAuthLifespan, 60) // second: 1 minute.
+	r.APIKey.Secret = env.Get(EnvAPIKeySecret, "tackle")
+	r.APIKey.Lifespan = env.GetHour(EnvAPIKeyLifespan, 10*24*365) // hour: 10 years.
+	r.Token.Key = env.Get(EnvTokenKey, "tackle")
+	r.Token.Lifespan = env.GetSecond(EnvTokenLifespan, 300)                   // second: 5 minutes.
+	r.Token.RefreshLifespan = env.GetSecond(EnvRefreshTokenLifespan, 48*3600) // second: 2 days.
+	r.Key.Rotation = env.GetDay(EnvKeyRotation, 90)
 	return
 }

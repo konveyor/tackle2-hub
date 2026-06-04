@@ -9,9 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: '1.25'
       - run: make test
 
   test-binding:
@@ -24,9 +24,9 @@ jobs:
           mkdir -p /tmp/seed
           cp -r resources/* /tmp/seed
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: '1.25'
       - run: |
           make vet
           DISCONNECTED=1 make run &
@@ -37,9 +37,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: '1.25'
       - run: |
           make vet
           DISCONNECTED=1 make run &

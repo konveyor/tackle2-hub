@@ -12,13 +12,13 @@ func TestStakeholderCRUD(t *testing.T) {
 			// Create.
 			err := Stakeholder.Create(&r)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Get.
 			got, err := Stakeholder.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if assert.FlatEqual(got, r) {
 				t.Errorf("Different response error. Got %v, expected %v", got, r)
@@ -28,12 +28,12 @@ func TestStakeholderCRUD(t *testing.T) {
 			r.Name = "Updated " + r.Name
 			err = Stakeholder.Update(&r)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			got, err = Stakeholder.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if got.Name != r.Name {
 				t.Errorf("Different response error. Got %s, expected %s", got.Name, r.Name)
@@ -42,7 +42,7 @@ func TestStakeholderCRUD(t *testing.T) {
 			// Delete.
 			err = Stakeholder.Delete(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			_, err = Stakeholder.Get(r.ID)
@@ -64,7 +64,7 @@ func TestStakeholderList(t *testing.T) {
 
 	got, err := Stakeholder.List()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	if assert.FlatEqual(got, &samples) {
 		t.Errorf("Different response error. Got %v, expected %v", got, samples)

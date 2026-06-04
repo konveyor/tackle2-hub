@@ -10,8 +10,8 @@
 
 set -e
 
-root="migration"
-importRoot="github.com/konveyor/tackle2-hub/migration"
+root="internal/migration"
+importRoot="github.com/konveyor/tackle2-hub/internal/migration"
 
 #
 # Determine migration versions.
@@ -48,8 +48,6 @@ import (
 	"gorm.io/gorm"
 )
 
-var log = logr.WithName("migration|${current}")
-
 type Migration struct{}
 
 func (r Migration) Apply(db *gorm.DB) (err error) {
@@ -79,5 +77,5 @@ sed -i "s|${current}.Migration{}|${current}.Migration{},\n\t\t${next}.Migration{
 #
 # Point model at new migration.
 #
-sed -i "s/${current}/${next}/g" model/pkg.go
+sed -i "s/${current}/${next}/g" internal/model/pkg.go
 

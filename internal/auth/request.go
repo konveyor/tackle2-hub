@@ -1,69 +1,70 @@
 package auth
 
 import (
-	"errors"
+	"encoding/base64"
+	"strings"
 
-	"github.com/golang-jwt/jwt/v5"
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
-// Request auth request.
+// Request represents an authentication request.
 type Request struct {
-	Token  string
-	Scope  string
-	Method string
-	DB     *gorm.DB
+	DB       *gorm.DB
+	CTX      *gin.Context
+	Token    string
+	Login    string
+	Password string
+	Method   string
 }
 
-// Permit the specified request.
-func (r *Request) Permit() (result Result, err error) {
-	var (
-		jwToken *jwt.Token
-		p       Provider
-	)
-	for _, p = range []Provider{Hub, Remote} {
-		var pErr error
-		jwToken, pErr = p.Authenticate(r)
-		if pErr == nil {
-			result.Authenticated = true
-			break
-		}
-		if errors.Is(pErr, &NotAuthenticated{}) {
-			continue
-		}
-		if errors.Is(pErr, &NotValid{}) {
-			break
-		}
-		err = pErr
-		return
-
-	}
+// Authenticate authenticates the credentials presented in the request.
+func (r *Request) Authenticate() (result Result, err error) {
+	jwToken, err := IdP.Authenticate(r)
 	if err != nil {
-		return
-	}
-	if result.Authenticated {
-		scopes := p.Scopes(jwToken)
-		for _, scope := range scopes {
-			if scope.Match(r.Scope, r.Method) {
-				result.Scopes = scopes
-				result.User = p.User(jwToken)
-				result.Authorized = true
-				break
-			}
-		}
-	} else {
 		Log.Info(
 			"Token not authenticated.",
 			"token",
 			r.Token)
+		return
+	}
+	result.Authenticated = true
+	result.Scopes = IdP.Scopes(jwToken)
+	result.User = IdP.User(jwToken)
+	result.Subject = IdP.Subject(jwToken)
+	return
+}
+
+// With populates the request from the Authorization header.
+func (r *Request) With(header string) {
+	part := strings.Fields(header)
+	if len(part) != 2 {
+		return
+	}
+	method := strings.ToLower(part[0])
+	switch method {
+	case "bearer":
+		r.Token = part[1]
+	case "basic":
+		encoded := part[1]
+		b, err := base64.StdEncoding.DecodeString(encoded)
+		if err != nil {
+			return
+		}
+		part := strings.SplitN(string(b), ":", 2)
+		if len(part) != 2 {
+			return
+		}
+		r.Login = part[0]
+		r.Password = part[1]
 	}
 	return
 }
 
-// Result - auth result.
+// Result - auth (request) result.
 type Result struct {
 	Authenticated bool
-	Authorized    bool
+	Subject       string
 	User          string
 	Scopes        []Scope
 }

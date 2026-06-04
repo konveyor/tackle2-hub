@@ -1,0 +1,5 @@
+- id: 1
+  login: admin
+  password: admin
+  roles:
+    - admin

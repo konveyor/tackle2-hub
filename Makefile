@@ -47,6 +47,12 @@ docker: vet
 run: fmt vet
 	go run ./cmd/main.go
 
+.PHONY: login
+login: bin/login
+
+bin/login: ./hack/cmd/login/main.go
+	go build -o bin/login ./hack/cmd/login/main.go
+
 run-addon:
 	go run ./hack/cmd/addon/main.go
 
@@ -62,7 +68,7 @@ generate: $(CONTROLLERGEN)
 
 # Ensure controller-gen installed.
 $(CONTROLLERGEN):
-	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.10.0
+	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.17.0
 
 # Ensure goimports installed.
 $(GOIMPORTS):
@@ -137,7 +143,7 @@ test-api:
 	done
 test-binding:
 	for pkg in $$(go list ./test/binding/...); do \
-	  HUB_BASE_URL="$(HUB_BASE_URL)" go test -count=1 -v -failfast "$$pkg" || exit 1; \
+	  HUB_BASE_URL="$(HUB_BASE_URL)" USER="admin" PASSWORD="admin" go test -count=1 -v -failfast "$$pkg" || exit 1; \
 	done
 
 # Run Hub test suite.

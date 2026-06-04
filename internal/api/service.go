@@ -14,7 +14,8 @@ import (
 
 // serviceRoutes name to route map.
 var serviceRoutes = map[string]string{
-	"kai": os.Getenv("KAI_URL"),
+	"llm-proxy": os.Getenv("LLM_PROXY_URL"),
+	"kai":       os.Getenv("KAI_URL"),
 }
 
 // ServiceHandler handles service routes.
@@ -24,9 +25,11 @@ type ServiceHandler struct {
 
 // AddRoutes adds routes.
 func (h ServiceHandler) AddRoutes(e *gin.Engine) {
-	e.GET(api.ServicesRoute, h.List)
-	e.Any(api.ServiceRoute, h.Required, h.Forward)
-	e.Any(api.ServiceNestedRoute, h.Required, h.Forward)
+	routeGroup := e.Group("/")
+	routeGroup.Use(Authenticate())
+	routeGroup.GET(api.ServicesRoute, h.List)
+	routeGroup.Any(api.ServiceRoute, h.Forward)
+	routeGroup.Any(api.ServiceNestedRoute, h.Forward)
 }
 
 // List godoc
@@ -44,11 +47,6 @@ func (h ServiceHandler) List(ctx *gin.Context) {
 	}
 
 	h.Respond(ctx, http.StatusOK, r)
-}
-
-// Required enforces RBAC.
-func (h ServiceHandler) Required(ctx *gin.Context) {
-	Required(ctx.Param(Name))(ctx)
 }
 
 // Forward provides RBAC and forwards request to the service.

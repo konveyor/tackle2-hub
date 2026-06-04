@@ -33,6 +33,8 @@ type Context struct {
 	*gin.Context
 	// DB client.
 	DB *gorm.DB
+	// Auth subject.
+	Subject string
 	// User
 	User string
 	// Scope

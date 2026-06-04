@@ -1,0 +1,51 @@
+# .github/actions/start-hub/action.yml
+name: Start Hub Server
+
+inputs:
+  disconnected:
+    description: 'Set DISCONNECTED=1'
+    default: 'true'
+  db-path:
+    description: 'Path to DB'
+    default: '/tmp/hub.db'
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v4
+      with:
+        repository: konveyor/tackle2-seed
+        path: tackle2-seed
+
+    - run: |
+        mkdir -p /tmp/seed
+        cp -r tackle2-seed/resources/* /tmp/seed
+      shell: bash
+
+    - run: rm -f ${{ inputs.db-path }}
+      if: inputs.db-path != ''
+      shell: bash
+
+    - name: Start Hub in background
+      shell: bash
+      env:
+        DISCONNECTED: ${{ inputs.disconnected }}
+        DB_PATH: ${{ inputs.db-path }}
+      run: |
+        make run > /tmp/hub.log 2>&1 &
+        echo $! > /tmp/hub.pid
+
+    - name: Wait for Hub API (curl polling)
+      shell: bash
+      run: |
+        echo "Waiting for Hub to become ready..."
+        for i in {1..120}; do
+          if curl -s -f http://localhost:8080/schema > /dev/null 2>&1; then
+            echo "✅ Hub API is ready after $i seconds"
+            exit 0
+          fi
+          sleep 1
+        done
+        echo "❌ Hub failed to start within 120 seconds"
+        cat /tmp/hub.log
+        exit 1
