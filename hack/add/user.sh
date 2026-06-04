@@ -1,7 +1,7 @@
 #!/bin/bash
 
 host="${HOST:-localhost:8080}"
-userid="${1:-$(whoami)}"
+login="${1:-$(whoami)}"
 password="${2:-$(whoami)}"
 roleId="${3:-3}" # migrator
 
@@ -10,9 +10,9 @@ curl -Ss -k -X POST ${host}/users -H "Authorization: Bearer ${TOKEN}" \
   -H 'Accept:application/x-yaml' \
   -d \
 "
-userid: ${userid}
+login: ${login}
 password: ${password}
-email: $(whoami)@redhat.com
+email: ${login}@redhat.com
 roles:
 - id: ${roleId}
 "
