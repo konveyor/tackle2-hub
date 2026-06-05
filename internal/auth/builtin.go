@@ -163,7 +163,7 @@ func (p *Builtin) NewToken(subject string, lifespan time.Duration) (m Token, err
 			}
 		}
 	}()
-	m = p.newToken(lifespan)
+	m = p.newToken(subject, lifespan)
 	s, err := p.cache.FindSubject(subject)
 	if err != nil {
 		return
@@ -182,7 +182,7 @@ func (p *Builtin) NewToken(subject string, lifespan time.Duration) (m Token, err
 
 // TaskGrant creates a new task api-key.
 func (p *Builtin) TaskGrant(taskId uint) (m Token, err error) {
-	m = p.newToken(0)
+	m = p.newToken("", 0)
 	m.TaskID = &taskId
 	err = p.db.Create(&m).Error
 	if err != nil {
@@ -577,11 +577,12 @@ func (p *Builtin) authLdapUser(req *Request) (jwToken *jwt.Token, err error) {
 }
 
 // newToken returns a new token.
-func (p *Builtin) newToken(lifespan time.Duration) (token Token) {
+func (p *Builtin) newToken(subject string, lifespan time.Duration) (token Token) {
 	if lifespan == 0 {
 		lifespan = Settings.APIKey.Lifespan
 	}
 	token.Kind = KindAPIKey
+	token.Subject = subject
 	token.AuthId = p.storage.genId()
 	token.Secret = p.storage.genId()
 	token.Digest = secret.Hash(token.Secret)

@@ -583,7 +583,8 @@ func (h AuthHandler) UserUpdate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	if !h.Admin(ctx) {
+	isAdmin := h.Admin(ctx)
+	if !isAdmin {
 		if m.Subject != h.CurrentSubject(ctx) {
 			err = &Forbidden{
 				Reason: "Must be admin or current user",
@@ -612,7 +613,7 @@ func (h AuthHandler) UserUpdate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	if id > auth.LastId {
+	if id > auth.LastId && isAdmin {
 		err = h.DB(ctx).Model(m).Association("Roles").Replace(m.Roles)
 		if err != nil {
 			_ = ctx.Error(err)

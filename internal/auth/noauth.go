@@ -25,7 +25,7 @@ func (r *NoAuth) Authenticate(request *Request) (jwToken *jwt.Token, err error) 
 }
 
 func (r *NoAuth) NewToken(subject string, lifespan time.Duration) (token Token, err error) {
-	token = r.newToken(lifespan)
+	token = r.newToken(subject, lifespan)
 	err = r.Builtin.db.Create(&token).Error
 	return
 }

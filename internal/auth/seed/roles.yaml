@@ -1,7 +1,7 @@
 - role: admin
   id: 1
   resources:
-    - name: ADMIN
+    - name: admin
       verbs:
         - delete
         - get
