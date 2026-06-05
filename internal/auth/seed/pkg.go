@@ -1,7 +1,7 @@
 package seed
 
 const (
-	ADMIN = "ADMIN"
+	ADMIN = "admin"
 )
 
 // Role use to read roles.yaml.
