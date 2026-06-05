@@ -779,9 +779,6 @@
         - delete
         - get
         - put
-    - name: users
-      verbs:
-        - get
     - name: tokens
       verbs:
         - post
