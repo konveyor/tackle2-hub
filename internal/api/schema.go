@@ -28,9 +28,11 @@ type SchemaHandler struct {
 func (h *SchemaHandler) AddRoutes(r *gin.Engine) {
 	h.router = r
 	r.GET(api.SchemaRoute, h.GetAPI)
-	r.GET(api.SchemasRoute, h.List)
-	r.GET(api.SchemasGetRoute, h.Get)
-	r.GET(api.SchemaFindRoute, h.Find)
+	routeGroup := r.Group("/")
+	routeGroup.Use(Required("schemas"))
+	routeGroup.GET(api.SchemasRoute, h.List)
+	routeGroup.GET(api.SchemasGetRoute, h.Get)
+	routeGroup.GET(api.SchemaFindRoute, h.Find)
 }
 
 // GetAPI godoc

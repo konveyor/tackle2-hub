@@ -7,7 +7,6 @@ var AddonScopes = []string{
 	"applications:get",
 	"applications:post",
 	"applications:put",
-	"applications.tags:*",
 	"applications.facts:*",
 	"applications.bucket:*",
 	"applications.analyses:*",

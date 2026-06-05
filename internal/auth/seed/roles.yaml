@@ -34,12 +34,6 @@
         - get
         - post
         - put
-    - name: applications.tags
-      verbs:
-        - delete
-        - get
-        - post
-        - put
     - name: applications.bucket
       verbs:
         - delete
@@ -108,10 +102,6 @@
         - get
         - post
         - put
-    - name: kai
-      verbs:
-        - get
-        - post
     - name: manifests
       verbs:
         - delete
@@ -286,9 +276,6 @@
         - post
         - get
         - delete
-    - name: device
-      verbs:
-        - post
 - role: architect
   id: 2
   resources:
@@ -314,12 +301,6 @@
         - post
         - put
     - name: applications.facts
-      verbs:
-        - delete
-        - get
-        - post
-        - put
-    - name: applications.tags
       verbs:
         - delete
         - get
@@ -390,10 +371,6 @@
         - get
         - post
         - put
-    - name: kai
-      verbs:
-        - get
-        - post
     - name: manifests
       verbs:
         - delete
@@ -527,9 +504,6 @@
     - name: tokens
       verbs:
         - post
-    - name: device
-      verbs:
-        - post
 - role: migrator
   id: 3
   resources:
@@ -546,9 +520,6 @@
       verbs:
         - get
     - name: applications.facts
-      verbs:
-        - get
-    - name: applications.tags
       verbs:
         - get
     - name: applications.bucket
@@ -590,10 +561,6 @@
     - name: jobfunctions
       verbs:
         - get
-    - name: kai
-      verbs:
-        - get
-        - post
     - name: manifests
       verbs:
         - get
@@ -681,9 +648,6 @@
     - name: tokens
       verbs:
         - post
-    - name: device
-      verbs:
-        - post
 - role: project-manager
   id: 4
   resources:
@@ -700,9 +664,6 @@
       verbs:
         - get
     - name: applications.facts
-      verbs:
-        - get
-    - name: applications.tags
       verbs:
         - get
     - name: applications.bucket
@@ -744,10 +705,6 @@
     - name: jobfunctions
       verbs:
         - get
-    - name: kai
-      verbs:
-        - get
-        - post
     - name: platforms
       verbs:
         - get
@@ -826,8 +783,5 @@
       verbs:
         - get
     - name: tokens
-      verbs:
-        - post
-    - name: device
       verbs:
         - post
