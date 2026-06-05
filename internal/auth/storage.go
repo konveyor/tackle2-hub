@@ -407,6 +407,45 @@ func (r *Storage) TerminateSession(ctx context.Context, userID, _ string) (err e
 	return
 }
 
+// TerminateSessionFromRequest terminates a user session and returns the redirect URL.
+// For federated (OIDC) users, the redirect chains through the upstream IdP's
+// end_session_endpoint so that both the hub and IdP sessions are terminated.
+func (r *Storage) TerminateSessionFromRequest(
+	ctx context.Context,
+	req *op.EndSessionRequest) (redirect string, err error) {
+	//
+	err = r.TerminateSession(ctx, req.UserID, req.ClientID)
+	if err != nil {
+		return
+	}
+	redirect = req.RedirectURI
+	if r.idpHandler == nil || req.UserID == "" {
+		return
+	}
+	s, sErr := r.findSubject(req.UserID)
+	if sErr != nil {
+		if !errors.Is(sErr, &NotFound{}) {
+			err = liberr.Wrap(sErr)
+		}
+		return
+	}
+	if s == nil {
+		return
+	}
+	if !s.IsIdentity() || s.Identity.Kind != IdentityKindOpenid {
+		return
+	}
+	logoutURL, ok, eErr := r.idpHandler.EndSessionURL(req.RedirectURI)
+	if eErr != nil {
+		err = eErr
+		return
+	}
+	if ok {
+		redirect = logoutURL
+	}
+	return
+}
+
 // RevokeToken revokes a token.
 func (r *Storage) RevokeToken(
 	ctx context.Context,

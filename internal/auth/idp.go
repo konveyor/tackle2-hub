@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -124,6 +125,38 @@ func (h *FedIdpHandler) parseAccessToken(accessToken string) (claims map[string]
 // identitySaved notification the Idp identity has been saved.
 func (h *FedIdpHandler) identitySaved(m *Identity) {
 	h.cache.IdentitySaved(m)
+}
+
+// EndSessionURL builds the upstream IdP's end_session URL.
+// The postLogoutRedirectURI is passed through to the IdP so the user
+// is redirected back to the original destination after the IdP session ends.
+func (h *FedIdpHandler) EndSessionURL(postLogoutRedirectURI string) (logoutURL string, ok bool, err error) {
+	if !federated.Idp.Enabled {
+		return
+	}
+	var rpClient rp.RelyingParty
+	rpClient, err = h.RpClient()
+	if err != nil || rpClient == nil {
+		return
+	}
+	endpoint := rpClient.GetEndSessionEndpoint()
+	if endpoint == "" {
+		return
+	}
+	parsed, pErr := url.Parse(endpoint)
+	if pErr != nil {
+		err = liberr.Wrap(pErr)
+		return
+	}
+	q := parsed.Query()
+	q.Set("client_id", federated.Idp.ClientId)
+	if postLogoutRedirectURI != "" {
+		q.Set("post_logout_redirect_uri", postLogoutRedirectURI)
+	}
+	parsed.RawQuery = q.Encode()
+	logoutURL = parsed.String()
+	ok = true
+	return
 }
 
 //
