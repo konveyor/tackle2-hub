@@ -513,6 +513,9 @@
     - name: questionnaires
       verbs:
         - get
+    - name: users
+      verbs:
+        - get
     - name: tokens
       verbs:
         - post
@@ -662,6 +665,9 @@
     - name: questionnaires
       verbs:
         - get
+    - name: users
+      verbs:
+        - get
     - name: tokens
       verbs:
         - post
@@ -799,6 +805,9 @@
       verbs:
         - get
     - name: questionnaires
+      verbs:
+        - get
+    - name: users
       verbs:
         - get
     - name: tokens
