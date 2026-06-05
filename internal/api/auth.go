@@ -1127,7 +1127,7 @@ func (h AuthHandler) Login(ctx *gin.Context) {
 // @tags auth
 // @produce json
 // @success 200 {object} AuthSelf
-// @router /auth/me [get]
+// @router /auth/self [get]
 func (h AuthHandler) GetSelf(ctx *gin.Context) {
 	r := AuthSelf{}
 	s := h.CurrentSubject(ctx)

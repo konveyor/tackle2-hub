@@ -124,8 +124,12 @@ func (h *BaseHandler) CurrentSubject(ctx *gin.Context) (subject string) {
 }
 
 // Admin returns true when the current user is an admin.
-func (h *BaseHandler) Admin(ctx *gin.Context) (admin bool) {
-	admin = h.HasScope(ctx, auth.ADMIN)
+func (h *BaseHandler) Admin(ctx *gin.Context) (matched bool) {
+	admin := auth.Scope{
+		Method:   ctx.Request.Method,
+		Resource: auth.ADMIN,
+	}
+	matched = h.HasScope(ctx, admin.String())
 	return
 }
 
