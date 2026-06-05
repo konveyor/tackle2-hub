@@ -1,5 +1,9 @@
 package seed
 
+const (
+	ADMIN = "ADMIN"
+)
+
 // Role use to read roles.yaml.
 type Role struct {
 	ID        uint   `yaml:"id"`

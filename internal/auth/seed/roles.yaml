@@ -1,6 +1,9 @@
 - role: admin
   id: 1
   resources:
+    - name: ADMIN
+      verbs:
+        - *
     - name: addons
       verbs:
         - delete
@@ -515,7 +518,9 @@
         - get
     - name: users
       verbs:
+        - delete
         - get
+        - put
     - name: tokens
       verbs:
         - post
@@ -667,7 +672,9 @@
         - get
     - name: users
       verbs:
+        - delete
         - get
+        - put
     - name: tokens
       verbs:
         - post
@@ -807,6 +814,11 @@
     - name: questionnaires
       verbs:
         - get
+    - name: users
+      verbs:
+        - delete
+        - get
+        - put
     - name: users
       verbs:
         - get

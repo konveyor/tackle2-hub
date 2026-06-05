@@ -8,10 +8,15 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/internal/auth/cache"
+	"github.com/konveyor/tackle2-hub/internal/auth/seed"
 	as "github.com/konveyor/tackle2-hub/internal/auth/settings"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/shared/settings"
 	"gorm.io/gorm"
+)
+
+const (
+	ADMIN = seed.ADMIN
 )
 
 const (

@@ -123,6 +123,12 @@ func (h *BaseHandler) CurrentSubject(ctx *gin.Context) (subject string) {
 	return
 }
 
+// Admin returns true when the current user is an admin.
+func (h *BaseHandler) Admin(ctx *gin.Context) (admin bool) {
+	admin = h.HasScope(ctx, auth.ADMIN)
+	return
+}
+
 // HasScope determines if the token has the specified scope.
 func (h *BaseHandler) HasScope(ctx *gin.Context, scope string) (b bool) {
 	in := auth.Scope{}

@@ -92,8 +92,6 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(api.UsersRoute+"/", h.UserList)
 	routeGroup.POST(api.UsersRoute, h.UserCreate)
 	routeGroup.GET(api.UserRoute, h.UserGet)
-	routeGroup = e.Group("/")
-	routeGroup.Use(Authenticate(), Transaction)
 	routeGroup.PUT(api.UserRoute, h.UserUpdate)
 	routeGroup.DELETE(api.UserRoute, h.UserDelete)
 	// Role routes.
@@ -585,9 +583,11 @@ func (h AuthHandler) UserUpdate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	if !h.HasScope(ctx, "users") {
+	if !h.Admin(ctx) {
 		if m.Subject != h.CurrentSubject(ctx) {
-			err = &Forbidden{}
+			err = &Forbidden{
+				Reason: "Must be admin or current user",
+			}
 			_ = ctx.Error(err)
 			return
 		}
@@ -646,9 +646,11 @@ func (h AuthHandler) UserDelete(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	if !h.HasScope(ctx, "users") {
+	if !h.Admin(ctx) {
 		if m.Subject != h.CurrentSubject(ctx) {
-			err = &Forbidden{}
+			err = &Forbidden{
+				Reason: "Must be admin or current user",
+			}
 			_ = ctx.Error(err)
 			return
 		}
@@ -1032,6 +1034,15 @@ func (h AuthHandler) TokenGet(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	if !h.Admin(ctx) {
+		if m.Subject != h.CurrentSubject(ctx) {
+			err = &Forbidden{
+				Reason: "Must be admin or current user",
+			}
+			_ = ctx.Error(err)
+			return
+		}
+	}
 
 	r := Token{}
 	r.With(m)
@@ -1048,6 +1059,9 @@ func (h AuthHandler) TokenGet(ctx *gin.Context) {
 func (h AuthHandler) TokenList(ctx *gin.Context) {
 	var list []model.Token
 	db := h.preLoad(h.DB(ctx), clause.Associations)
+	if !h.Admin(ctx) {
+		db = db.Where("subject", h.CurrentSubject(ctx))
+	}
 	err := db.Find(&list).Error
 	if err != nil {
 		_ = ctx.Error(err)
