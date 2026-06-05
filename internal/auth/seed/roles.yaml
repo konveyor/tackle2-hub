@@ -3,7 +3,10 @@
   resources:
     - name: ADMIN
       verbs:
-        - *
+        - delete
+        - get
+        - post
+        - put
     - name: addons
       verbs:
         - delete
