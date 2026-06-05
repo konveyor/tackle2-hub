@@ -203,7 +203,6 @@ const (
 const (
 	AuthRoute           = "/auth"
 	AuthSelfGetRoute    = AuthRoute + "/self"
-	AuthUserRoute       = AuthRoute + "/user"
 	AuthGrantsRoute     = AuthRoute + "/grants"
 	AuthGrantRoute      = AuthGrantsRoute + "/:" + ID
 	AuthTokensRoute     = AuthRoute + "/tokens"

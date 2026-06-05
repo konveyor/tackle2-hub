@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -93,13 +92,10 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(api.UsersRoute+"/", h.UserList)
 	routeGroup.POST(api.UsersRoute, h.UserCreate)
 	routeGroup.GET(api.UserRoute, h.UserGet)
+	routeGroup = e.Group("/")
+	routeGroup.Use(Authenticate(), Transaction)
 	routeGroup.PUT(api.UserRoute, h.UserUpdate)
 	routeGroup.DELETE(api.UserRoute, h.UserDelete)
-	// User (current) routes.
-	routeGroup = e.Group("/")
-	routeGroup.Use(Required("user"), Transaction)
-	routeGroup.PUT(api.AuthUserRoute, h.AuthUserUpdate)
-	routeGroup.DELETE(api.AuthUserRoute, h.AuthUserDelete)
 	// Role routes.
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("roles"), Transaction)
@@ -583,7 +579,20 @@ func (h AuthHandler) UserUpdate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	m := r.Model()
+	m := &model.User{}
+	err = h.DB(ctx).First(m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	if !h.HasScope(ctx, "users") {
+		if m.Subject != h.CurrentSubject(ctx) {
+			err = &Forbidden{}
+			_ = ctx.Error(err)
+			return
+		}
+	}
+	m = r.Model()
 	m.ID = id
 	m.UpdateUser = h.CurrentUser(ctx)
 	db := h.DB(ctx).Model(m)
@@ -637,6 +646,13 @@ func (h AuthHandler) UserDelete(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	if !h.HasScope(ctx, "users") {
+		if m.Subject != h.CurrentSubject(ctx) {
+			err = &Forbidden{}
+			_ = ctx.Error(err)
+			return
+		}
+	}
 	err = h.DB(ctx).Delete(m).Error
 	if err != nil {
 		_ = ctx.Error(err)
@@ -646,56 +662,6 @@ func (h AuthHandler) UserDelete(ctx *gin.Context) {
 	auth.IdP.Cache().UserDeleted(id)
 
 	h.Status(ctx, http.StatusNoContent)
-}
-
-// AuthUserUpdate godoc
-// @summary Update the current authenticated user.
-// @description Update the current authenticated user.
-// @tags user
-// @accept json
-// @success 204
-// @router /user [put]
-// @param user body api.User true "User data"
-func (h AuthHandler) AuthUserUpdate(ctx *gin.Context) {
-	subject := h.CurrentSubject(ctx)
-	m := &model.User{}
-	err := h.DB(ctx).First(m, "subject", subject).Error
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	id := strconv.Itoa(int(m.ID))
-	ctx.Params = append(
-		ctx.Params,
-		gin.Param{
-			Key:   ID,
-			Value: id,
-		})
-	h.UserUpdate(ctx)
-}
-
-// AuthUserDelete godoc
-// @summary Delete the current authenticated user.
-// @description Delete the current authenticated user.
-// @tags user
-// @success 204
-// @router /user [delete]
-func (h AuthHandler) AuthUserDelete(ctx *gin.Context) {
-	subject := h.CurrentSubject(ctx)
-	m := &model.User{}
-	err := h.DB(ctx).First(m, "subject", subject).Error
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	id := strconv.Itoa(int(m.ID))
-	ctx.Params = append(
-		ctx.Params,
-		gin.Param{
-			Key:   ID,
-			Value: id,
-		})
-	h.UserDelete(ctx)
 }
 
 //
