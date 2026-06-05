@@ -23,7 +23,9 @@ var (
 )
 
 var (
-	registeredResources = make(map[string]bool)
+	registeredResources = map[string]bool{
+		ADMIN: true,
+	}
 )
 
 const (
