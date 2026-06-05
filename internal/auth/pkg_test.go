@@ -414,30 +414,30 @@ func TestBaseScopeMatching(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	// Wildcard scope matches everything
-	scope := &BaseScope{Resource: "*", Method: "*"}
+	scope := Scope{Resource: "*", Method: "*"}
 	g.Expect(scope.Match("applications", "GET")).To(BeTrue())
 	g.Expect(scope.Match("tags", "POST")).To(BeTrue())
 
 	// Resource wildcard matches any method for that resource
-	scope = &BaseScope{Resource: "applications", Method: "*"}
+	scope = Scope{Resource: "applications", Method: "*"}
 	g.Expect(scope.Match("applications", "GET")).To(BeTrue())
 	g.Expect(scope.Match("applications", "POST")).To(BeTrue())
 	g.Expect(scope.Match("tags", "GET")).To(BeFalse())
 
 	// Method wildcard matches that method for any resource
-	scope = &BaseScope{Resource: "*", Method: "GET"}
+	scope = Scope{Resource: "*", Method: "GET"}
 	g.Expect(scope.Match("applications", "GET")).To(BeTrue())
 	g.Expect(scope.Match("tags", "GET")).To(BeTrue())
 	g.Expect(scope.Match("applications", "POST")).To(BeFalse())
 
 	// Exact match
-	scope = &BaseScope{Resource: "applications", Method: "GET"}
+	scope = Scope{Resource: "applications", Method: "GET"}
 	g.Expect(scope.Match("applications", "GET")).To(BeTrue())
 	g.Expect(scope.Match("applications", "POST")).To(BeFalse())
 	g.Expect(scope.Match("tags", "GET")).To(BeFalse())
 
 	// Case insensitive
-	scope = &BaseScope{Resource: "Applications", Method: "get"}
+	scope = Scope{Resource: "Applications", Method: "get"}
 	g.Expect(scope.Match("applications", "GET")).To(BeTrue())
 }
 
@@ -445,18 +445,18 @@ func TestBaseScopeMatching(t *testing.T) {
 func TestBaseScopeParsing(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	scope := &BaseScope{}
+	scope := Scope{}
 	scope.With("applications:read")
 	g.Expect(scope.Resource).To(Equal("applications"))
 	g.Expect(scope.Method).To(Equal("read"))
 
-	scope = &BaseScope{}
+	scope = Scope{}
 	scope.With("*:*")
 	g.Expect(scope.Resource).To(Equal("*"))
 	g.Expect(scope.Method).To(Equal("*"))
 
 	// Test String() roundtrip
-	scope = &BaseScope{Resource: "tags", Method: "write"}
+	scope = Scope{Resource: "tags", Method: "write"}
 	g.Expect(scope.String()).To(Equal("tags:write"))
 }
 

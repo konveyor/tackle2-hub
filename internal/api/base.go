@@ -125,7 +125,7 @@ func (h *BaseHandler) CurrentSubject(ctx *gin.Context) (subject string) {
 
 // HasScope determines if the token has the specified scope.
 func (h *BaseHandler) HasScope(ctx *gin.Context, scope string) (b bool) {
-	in := auth.BaseScope{}
+	in := auth.Scope{}
 	in.With(scope)
 	rtx := RichContext(ctx)
 	for _, s := range rtx.Scope.Granted {
@@ -154,12 +154,11 @@ func (h *BaseHandler) Decrypt(ctx *gin.Context, m any) (err error) {
 		return
 	}
 	rtx := RichContext(ctx)
-	for _, scope := range rtx.Scope.Required {
-		scope += ":" + MethodDecrypt
-		if h.HasScope(ctx, scope) {
-			err = secret.Decrypt(m)
-			return
-		}
+	scope := rtx.Scope.Required
+	scope.Method = MethodDecrypt
+	if h.HasScope(ctx, scope.String()) {
+		err = secret.Decrypt(m)
+		return
 	}
 	err = &Forbidden{
 		Reason: ":decrypt (scope) required.",

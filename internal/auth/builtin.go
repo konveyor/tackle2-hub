@@ -284,7 +284,7 @@ func (p *Builtin) Scopes(jwToken *jwt.Token) (scopes []Scope) {
 	v := claims[ClaimScope]
 	if sList, cast := v.(string); cast {
 		for _, s := range strings.Fields(sList) {
-			scope := &BaseScope{}
+			scope := Scope{}
 			scope.With(s)
 			scopes = append(
 				scopes,

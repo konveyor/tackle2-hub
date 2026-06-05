@@ -39,8 +39,8 @@ type Context struct {
 	User string
 	// Scope
 	Scope struct {
+		Required auth.Scope
 		Granted  []auth.Scope
-		Required []string
 	}
 	// k8s Client
 	Client client.Client

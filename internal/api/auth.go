@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -94,6 +95,11 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(api.UserRoute, h.UserGet)
 	routeGroup.PUT(api.UserRoute, h.UserUpdate)
 	routeGroup.DELETE(api.UserRoute, h.UserDelete)
+	// User (current) routes.
+	routeGroup = e.Group("/")
+	routeGroup.Use(Required("user"), Transaction)
+	routeGroup.PUT(api.AuthUserRoute, h.AuthUserUpdate)
+	routeGroup.DELETE(api.AuthUserRoute, h.AuthUserDelete)
 	// Role routes.
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("roles"), Transaction)
@@ -124,10 +130,10 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(api.AuthTokensRoute+"/", h.TokenList)
 	routeGroup.GET(api.AuthTokenRoute, h.TokenGet)
 	routeGroup.DELETE(api.AuthTokenRoute, h.TokenDelete)
-	// ME route
+	// self route
 	routeGroup = e.Group("/")
 	routeGroup.Use(Authenticate())
-	routeGroup.GET(api.AuthMeRoute, h.GetMe)
+	routeGroup.GET(api.AuthSelfGetRoute, h.GetSelf)
 }
 
 //
@@ -642,6 +648,56 @@ func (h AuthHandler) UserDelete(ctx *gin.Context) {
 	h.Status(ctx, http.StatusNoContent)
 }
 
+// AuthUserUpdate godoc
+// @summary Update the current authenticated user.
+// @description Update the current authenticated user.
+// @tags user
+// @accept json
+// @success 204
+// @router /user [put]
+// @param user body api.User true "User data"
+func (h AuthHandler) AuthUserUpdate(ctx *gin.Context) {
+	subject := h.CurrentSubject(ctx)
+	m := &model.User{}
+	err := h.DB(ctx).First(m, "subject", subject).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	id := strconv.Itoa(int(m.ID))
+	ctx.Params = append(
+		ctx.Params,
+		gin.Param{
+			Key:   ID,
+			Value: id,
+		})
+	h.UserUpdate(ctx)
+}
+
+// AuthUserDelete godoc
+// @summary Delete the current authenticated user.
+// @description Delete the current authenticated user.
+// @tags user
+// @success 204
+// @router /user [delete]
+func (h AuthHandler) AuthUserDelete(ctx *gin.Context) {
+	subject := h.CurrentSubject(ctx)
+	m := &model.User{}
+	err := h.DB(ctx).First(m, "subject", subject).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	id := strconv.Itoa(int(m.ID))
+	ctx.Params = append(
+		ctx.Params,
+		gin.Param{
+			Key:   ID,
+			Value: id,
+		})
+	h.UserDelete(ctx)
+}
+
 //
 // Role handlers
 //
@@ -1084,15 +1140,16 @@ func (h AuthHandler) Login(ctx *gin.Context) {
 	}
 }
 
-// GetMe godoc
+// GetSelf godoc
 // @summary Get current authenticated subject.
-// @description Get information about the currently authenticated user, identity, or client.
+// @description Get information about the currently authenticated
+// @description user, identity, or client.
 // @tags auth
 // @produce json
-// @success 200 {object} AuthMe
+// @success 200 {object} AuthSelf
 // @router /auth/me [get]
-func (h AuthHandler) GetMe(ctx *gin.Context) {
-	r := AuthMe{}
+func (h AuthHandler) GetSelf(ctx *gin.Context) {
+	r := AuthSelf{}
 	s := h.CurrentSubject(ctx)
 	subject, err := auth.IdP.Cache().FindSubject(s)
 	if err == nil {
@@ -1133,8 +1190,8 @@ type Grant = resource.Grant
 type Token = resource.Token
 type PAT api.PAT
 
-// AuthMe REST resource.
-type AuthMe struct {
+// AuthSelf REST resource.
+type AuthSelf struct {
 	User     *User        `json:"user,omitempty" yaml:",omitempty"`
 	Identity *IdpIdentity `json:"identity,omitempty" yaml:",omitempty"`
 	Client   *IdpClient   `json:"client,omitempty" yaml:",omitempty"`
@@ -1168,22 +1225,23 @@ func Authenticate() func(ctx *gin.Context) {
 	}
 }
 
-// Required authenticates the user and enforces that the user
-// (identified by a token) has been granted the necessary scope
-// to use a specified resource.
-func Required(scope string) func(*gin.Context) {
-	auth.RegisterScope(scope)
+// Required authenticates the user and enforces that
+// the user has been granted the required scope.
+func Required(resource string) func(*gin.Context) {
+	auth.RegisterResource(resource)
 	return func(ctx *gin.Context) {
 		Authenticate()(ctx)
 		if ctx.IsAborted() {
 			return
 		}
 		rtx := RichContext(ctx)
-		rtx.Scope.Required = append(
-			rtx.Scope.Required,
-			scope)
+		rtx.Scope.Required = auth.Scope{
+			Method:   ctx.Request.Method,
+			Resource: resource,
+		}
 		for _, granted := range rtx.Scope.Granted {
-			if granted.Match(scope, ctx.Request.Method) {
+			matched := granted.Match(resource, ctx.Request.Method)
+			if matched {
 				return
 			}
 		}

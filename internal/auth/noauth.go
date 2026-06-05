@@ -34,7 +34,7 @@ func (r *NoAuth) NewToken(subject string, lifespan time.Duration) (token Token, 
 // For the NoAuth provider, this just returns a single
 // wildcard scope matching everything.
 func (r *NoAuth) Scopes(jwToken *jwt.Token) (scopes []Scope) {
-	scopes = append(scopes, &BaseScope{"*", "*"})
+	scopes = append(scopes, Scope{"*", "*"})
 	return
 }
 
