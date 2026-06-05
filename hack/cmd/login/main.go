@@ -146,6 +146,7 @@ func main() {
 	}
 	if *route != "" {
 		hubURL = route
+		*hubURL += "/hub"
 	}
 
 	fmt.Printf("\nUsing:\n")

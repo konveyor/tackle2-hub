@@ -59,6 +59,7 @@ func (r *Storage) GetClientByClientID(ctx context.Context, clientId string) (opC
 			grantTypes:      []string{"authorization_code"},
 			redirectURIs:    []string{AppendIssuer(req, api.DeviceCbRoute)},
 			scopes:          []string{"openid"},
+			request:         req,
 		}
 		return
 	}
