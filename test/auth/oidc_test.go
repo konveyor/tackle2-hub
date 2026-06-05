@@ -194,7 +194,7 @@ func TestAuthorizationCodeFlow(t *testing.T) {
 	// Should get redirect to login page
 	g.Expect(resp.StatusCode).To(Equal(http.StatusFound))
 	loginURL = resp.Header.Get("Location")
-	g.Expect(loginURL).To(ContainSubstring("/login?authRequestID="))
+	g.Expect(loginURL).To(ContainSubstring("/login?authRequestId="))
 
 	// Follow redirect to get login page
 	resp, err = httpClient.Get(loginURL)
@@ -209,11 +209,11 @@ func TestAuthorizationCodeFlow(t *testing.T) {
 	// Extract auth request ID from URL
 	parsedURL, err := url.Parse(loginURL)
 	g.Expect(err).To(BeNil())
-	authReqID := parsedURL.Query().Get("authRequestID")
+	authReqID := parsedURL.Query().Get("authRequestId")
 	g.Expect(authReqID).NotTo(BeEmpty())
 
-	// Step 2: Submit login form (POST /login?authRequestID=...)
-	loginURL = issuer + "/login?authRequestID=" + authReqID
+	// Step 2: Submit login form (POST /login?authRequestId=...)
+	loginURL = issuer + "/login?authRequestId=" + authReqID
 	loginForm := url.Values{}
 	loginForm.Set("login", username)
 	loginForm.Set("password", password)
@@ -390,7 +390,7 @@ func TestAuthorizationCodeFlowWithScopes(t *testing.T) {
 	// Should get redirect to login page
 	g.Expect(resp.StatusCode).To(Equal(http.StatusFound))
 	loginURL = resp.Header.Get("Location")
-	g.Expect(loginURL).To(ContainSubstring("/login?authRequestID="))
+	g.Expect(loginURL).To(ContainSubstring("/login?authRequestId="))
 
 	// Follow redirect to get login page
 	resp, err = httpClient.Get(loginURL)
@@ -405,11 +405,11 @@ func TestAuthorizationCodeFlowWithScopes(t *testing.T) {
 	// Extract auth request ID from URL
 	parsedURL, err := url.Parse(loginURL)
 	g.Expect(err).To(BeNil())
-	authReqID := parsedURL.Query().Get("authRequestID")
+	authReqID := parsedURL.Query().Get("authRequestId")
 	g.Expect(authReqID).NotTo(BeEmpty())
 
 	// Step 2: Submit login form
-	loginURL = issuer + "/login?authRequestID=" + authReqID
+	loginURL = issuer + "/login?authRequestId=" + authReqID
 	loginForm := url.Values{}
 	loginForm.Set("login", username)
 	loginForm.Set("password", password)
