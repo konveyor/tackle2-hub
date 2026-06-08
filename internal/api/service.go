@@ -82,6 +82,7 @@ func (h ServiceHandler) Forward(ctx *gin.Context) {
 				"route",
 				req.URL.String())
 		},
+		FlushInterval: -1, // Flush immediately for SSE/streaming (MCP, LLM responses)
 	}
 
 	proxy.ServeHTTP(ctx.Writer, ctx.Request)
