@@ -8,10 +8,15 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/internal/auth/cache"
+	"github.com/konveyor/tackle2-hub/internal/auth/seed"
 	as "github.com/konveyor/tackle2-hub/internal/auth/settings"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/shared/settings"
 	"gorm.io/gorm"
+)
+
+const (
+	ADMIN = seed.ADMIN
 )
 
 const (
@@ -101,23 +106,15 @@ const (
 	ClaimIat   = "iat"   // Issued At
 )
 
-// Scope represents an authorization scope.
-type Scope interface {
-	// Match returns whether the scope is a match.
-	Match(resource string, method string) bool
-	//String representations of the scope.
-	String() (s string)
-}
-
-// BaseScope provides base behavior.
-type BaseScope struct {
+// Scope provides scope behavior.
+type Scope struct {
 	Resource string
 	Method   string
 }
 
 // With parses a scope and populate fields.
 // Format: <resource>:<method>
-func (r *BaseScope) With(s string) {
+func (r *Scope) With(s string) {
 	part := strings.Split(s, ":")
 	n := len(part)
 	if n > 0 {
@@ -130,7 +127,7 @@ func (r *BaseScope) With(s string) {
 }
 
 // Match returns whether the scope is a match.
-func (r *BaseScope) Match(resource string, method string) (b bool) {
+func (r *Scope) Match(resource string, method string) (b bool) {
 	b = (r.Resource == "*" ||
 		r.Eq(r.Resource, resource)) &&
 		(r.Method == "*" ||
@@ -139,13 +136,13 @@ func (r *BaseScope) Match(resource string, method string) (b bool) {
 }
 
 // Eq returns true when strings matched.
-func (r *BaseScope) Eq(a, b string) (eq bool) {
+func (r *Scope) Eq(a, b string) (eq bool) {
 	eq = strings.EqualFold(a, b)
 	return
 }
 
 // String representations of the scope.
-func (r *BaseScope) String() (s string) {
+func (r *Scope) String() (s string) {
 	s = strings.Join([]string{r.Resource, r.Method}, ":")
 	return
 }

@@ -124,10 +124,10 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(api.AuthTokensRoute+"/", h.TokenList)
 	routeGroup.GET(api.AuthTokenRoute, h.TokenGet)
 	routeGroup.DELETE(api.AuthTokenRoute, h.TokenDelete)
-	// ME route
+	// self route
 	routeGroup = e.Group("/")
 	routeGroup.Use(Authenticate())
-	routeGroup.GET(api.AuthMeRoute, h.GetMe)
+	routeGroup.GET(api.AuthSelfGetRoute, h.GetSelf)
 }
 
 //
@@ -577,7 +577,23 @@ func (h AuthHandler) UserUpdate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	m := r.Model()
+	m := &model.User{}
+	err = h.DB(ctx).First(m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	isAdmin := h.Admin(ctx)
+	if !isAdmin {
+		if m.Subject != h.CurrentSubject(ctx) {
+			err = &Forbidden{
+				Reason: "Must be admin or current user",
+			}
+			_ = ctx.Error(err)
+			return
+		}
+	}
+	m = r.Model()
 	m.ID = id
 	m.UpdateUser = h.CurrentUser(ctx)
 	db := h.DB(ctx).Model(m)
@@ -597,7 +613,7 @@ func (h AuthHandler) UserUpdate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	if id > auth.LastId {
+	if id > auth.LastId && isAdmin {
 		err = h.DB(ctx).Model(m).Association("Roles").Replace(m.Roles)
 		if err != nil {
 			_ = ctx.Error(err)
@@ -630,6 +646,15 @@ func (h AuthHandler) UserDelete(ctx *gin.Context) {
 	if err != nil {
 		_ = ctx.Error(err)
 		return
+	}
+	if !h.Admin(ctx) {
+		if m.Subject != h.CurrentSubject(ctx) {
+			err = &Forbidden{
+				Reason: "Must be admin or current user",
+			}
+			_ = ctx.Error(err)
+			return
+		}
 	}
 	err = h.DB(ctx).Delete(m).Error
 	if err != nil {
@@ -1010,6 +1035,15 @@ func (h AuthHandler) TokenGet(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	if !h.Admin(ctx) {
+		if m.Subject != h.CurrentSubject(ctx) {
+			err = &Forbidden{
+				Reason: "Must be admin or current user",
+			}
+			_ = ctx.Error(err)
+			return
+		}
+	}
 
 	r := Token{}
 	r.With(m)
@@ -1026,6 +1060,9 @@ func (h AuthHandler) TokenGet(ctx *gin.Context) {
 func (h AuthHandler) TokenList(ctx *gin.Context) {
 	var list []model.Token
 	db := h.preLoad(h.DB(ctx), clause.Associations)
+	if !h.Admin(ctx) {
+		db = db.Where("subject", h.CurrentSubject(ctx))
+	}
 	err := db.Find(&list).Error
 	if err != nil {
 		_ = ctx.Error(err)
@@ -1084,15 +1121,16 @@ func (h AuthHandler) Login(ctx *gin.Context) {
 	}
 }
 
-// GetMe godoc
+// GetSelf godoc
 // @summary Get current authenticated subject.
-// @description Get information about the currently authenticated user, identity, or client.
+// @description Get information about the currently authenticated
+// @description user, identity, or client.
 // @tags auth
 // @produce json
-// @success 200 {object} AuthMe
-// @router /auth/me [get]
-func (h AuthHandler) GetMe(ctx *gin.Context) {
-	r := AuthMe{}
+// @success 200 {object} AuthSelf
+// @router /auth/self [get]
+func (h AuthHandler) GetSelf(ctx *gin.Context) {
+	r := AuthSelf{}
 	s := h.CurrentSubject(ctx)
 	subject, err := auth.IdP.Cache().FindSubject(s)
 	if err == nil {
@@ -1133,8 +1171,8 @@ type Grant = resource.Grant
 type Token = resource.Token
 type PAT api.PAT
 
-// AuthMe REST resource.
-type AuthMe struct {
+// AuthSelf REST resource.
+type AuthSelf struct {
 	User     *User        `json:"user,omitempty" yaml:",omitempty"`
 	Identity *IdpIdentity `json:"identity,omitempty" yaml:",omitempty"`
 	Client   *IdpClient   `json:"client,omitempty" yaml:",omitempty"`
@@ -1168,22 +1206,23 @@ func Authenticate() func(ctx *gin.Context) {
 	}
 }
 
-// Required authenticates the user and enforces that the user
-// (identified by a token) has been granted the necessary scope
-// to use a specified resource.
-func Required(scope string) func(*gin.Context) {
-	auth.RegisterScope(scope)
+// Required authenticates the user and enforces that
+// the user has been granted the required scope.
+func Required(resource string) func(*gin.Context) {
+	auth.RegisterResource(resource)
 	return func(ctx *gin.Context) {
 		Authenticate()(ctx)
 		if ctx.IsAborted() {
 			return
 		}
 		rtx := RichContext(ctx)
-		rtx.Scope.Required = append(
-			rtx.Scope.Required,
-			scope)
+		rtx.Scope.Required = auth.Scope{
+			Method:   ctx.Request.Method,
+			Resource: resource,
+		}
 		for _, granted := range rtx.Scope.Granted {
-			if granted.Match(scope, ctx.Request.Method) {
+			matched := granted.Match(resource, ctx.Request.Method)
+			if matched {
 				return
 			}
 		}

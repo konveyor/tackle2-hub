@@ -123,9 +123,19 @@ func (h *BaseHandler) CurrentSubject(ctx *gin.Context) (subject string) {
 	return
 }
 
+// Admin returns true when the current user is an admin.
+func (h *BaseHandler) Admin(ctx *gin.Context) (matched bool) {
+	admin := auth.Scope{
+		Method:   ctx.Request.Method,
+		Resource: auth.ADMIN,
+	}
+	matched = h.HasScope(ctx, admin.String())
+	return
+}
+
 // HasScope determines if the token has the specified scope.
 func (h *BaseHandler) HasScope(ctx *gin.Context, scope string) (b bool) {
-	in := auth.BaseScope{}
+	in := auth.Scope{}
 	in.With(scope)
 	rtx := RichContext(ctx)
 	for _, s := range rtx.Scope.Granted {
@@ -154,12 +164,11 @@ func (h *BaseHandler) Decrypt(ctx *gin.Context, m any) (err error) {
 		return
 	}
 	rtx := RichContext(ctx)
-	for _, scope := range rtx.Scope.Required {
-		scope += ":" + MethodDecrypt
-		if h.HasScope(ctx, scope) {
-			err = secret.Decrypt(m)
-			return
-		}
+	scope := rtx.Scope.Required
+	scope.Method = MethodDecrypt
+	if h.HasScope(ctx, scope.String()) {
+		err = secret.Decrypt(m)
+		return
 	}
 	err = &Forbidden{
 		Reason: ":decrypt (scope) required.",

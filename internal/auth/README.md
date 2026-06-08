@@ -99,71 +99,106 @@ Short-lived tokens automatically generated for addon task execution. Scoped to t
 
 ---
 
-## Authentication Staleness
+## Authentication Staleness and Cache Management
 
-Different authentication methods have different staleness characteristics based on their use cases:
+Different authentication methods have different staleness characteristics based on their use cases and security requirements.
 
-| Authentication Method | Staleness | Environment Variable | Default |
-|----------------------|-----------|---------------------|---------|
-| **OAuth Access Tokens** | Token lifespan | `OIDC_TOKEN_LIFESPAN` | 5 minutes |
-| **Basic Auth (LDAP)** | Identity expiration | `AUTH_BASIC_AUTH_LIFESPAN` | 1 minute |
-| **Basic Auth (Local)** | Cache refresh | `AUTH_CACHE_LIFESPAN` | 5 minutes |
-| **OAuth Refresh (LDAP)** | Token lifespan | `OIDC_TOKEN_LIFESPAN` | 5 minutes |
-| **Personal Access Tokens** | Cache refresh | `AUTH_CACHE_LIFESPAN` | 5 minutes |
+### Staleness Control Summary
 
-### Staleness Behavior
+| Authentication Method | Primary Control | Worst Case | Environment Variable | Default |
+|----------------------|----------------|------------|---------------------|---------|
+| **OAuth Access Tokens** | Token `exp` claim | N/A (stateless) | `OIDC_TOKEN_LIFESPAN` | 5 minutes |
+| **Basic Auth (Local Users)** | Cache notifications | 5 minutes | `AUTH_CACHE_LIFESPAN` | 5 minutes |
+| **Basic Auth (LDAP)** | Identity expiration | 5 minutes | `LDAP_AUTH_LIFESPAN` | 5 minutes |
+| **Personal Access Tokens** | Cache notifications | 5 minutes | `AUTH_CACHE_LIFESPAN` | 5 minutes |
+| **OAuth Refresh (LDAP)** | Identity expiration | 5 minutes | `LDAP_AUTH_LIFESPAN` | 5 minutes |
 
-**OAuth Access Tokens:**
-- Signed JWTs with embedded scopes
-- Valid until expiration (typically 5 minutes)
-- Group/role changes don't apply until token refresh
-- Designed staleness for performance
+### Cache Architecture
 
-**Basic Auth with LDAP:**
-- Creates LDAP Identity with expiration based on `BasicAuthLifespan`
-- Cached identity reused until expiration
-- On expiration: re-authenticate with LDAP, update groups/roles
-- Shorter staleness (1 min) for responsive credential/permission changes
+The authentication cache uses a **two-layer strategy** for optimal performance and freshness:
 
-**Basic Auth with Local Users:**
-- User lookup always refreshes from database (security-critical)
-- Password and role changes apply immediately
-- Cache used for role→scope resolution only
+**Primary: Immediate Notifications**
+- When users/roles/identities/tokens are modified via the API, the cache is updated **immediately**
+- Changes propagate in < 1 second (typical in-memory update time)
+- Triggered by: UserSaved, RoleSaved, IdentitySaved, TokenDeleted, etc.
+- Ensures near-instant application of changes made through the hub API
 
-**Token Refresh with LDAP:**
-- Uses Token.Lifespan for Identity expiration
-- Re-authenticates with LDAP when identity expires during refresh
-- Longer staleness (5 min) aligned with access token validity
+**Secondary: Safety-Net Refresh**
+- Periodic refresh every `AUTH_CACHE_LIFESPAN` (default: 5 minutes)
+- Catches changes made directly in the database (external tools, migrations)
+- Ensures eventual consistency even if notifications fail
+- Acts as a backstop, not the primary staleness control
 
-**Cache Safety Net:**
-- All cached data refreshes from database when `CacheLifespan` exceeded
-- Explicit notifications (IdentitySaved, UserSaved, etc.) update cache immediately
-- CacheLifespan is worst-case staleness for notification failures
+From the code comments (`internal/auth/cache/cache.go`):
+```go
+// Cache Strategy:
+//   - Notifications: Saved/Deleted methods immediately update the cache
+//   - Safety-net: Periodic refresh.
+//   - Password changes, role updates, and other changes are propagated
+//     immediately via notifications
+```
 
-### Lifespan vs Staleness
+### Staleness by Authentication Method
 
-**Lifespan** = how long a caller controls when creating authentication data:
-- `LdapHandler.Authenticate(login, password, lifespan)` sets Identity.Expiration
+#### OAuth Access Tokens (JWT)
 
-**Staleness** = resulting delay before changes take effect:
-- Basic Auth passes `BasicAuthLifespan` (1 min) → 1 min staleness
-- Token refresh passes `TokenLifespan` (5 min) → 5 min staleness
+**Staleness:** Controlled by JWT `exp` claim (stateless validation)
+
+Clients send bearer tokens on every request. The server validates the JWT signature and checks the `exp` claim against current time. No database or cache lookup required. Permission changes don't apply until token refresh.
+
+**Trade-off:** Performance and scalability vs immediate permission propagation.
+
+#### Basic Authentication - Local Users
+
+**Staleness:** Near-instant via cache notifications (< 1 second typical)
+
+Clients send username/password on every request. The server looks up the user in cache, validates the password hash, and resolves roles/scopes. When users/roles are modified via the API, the cache is updated immediately via notifications (UserSaved, RoleSaved). 
+
+The server creates an ephemeral JWT with `exp` set to `CacheLifespan` for the internal request context, but this JWT is **never sent to the client** - it exists only for the single request. Actual staleness is controlled by cache notifications, not the JWT expiration.
+
+**Fallback:** Up to 5 minutes (cache safety-net refresh) only for direct database modifications.
+
+#### Basic Authentication - LDAP Users  
+
+**Staleness:** Controlled by `LDAP_AUTH_LIFESPAN` (default: 5 minutes)
+
+Clients send username/password on every request. The server checks for a cached LDAP identity. If the identity is cached and not expired, the cached scopes are used. If expired or not cached, the server authenticates against the LDAP server, queries groups, maps groups to roles, and creates/updates the identity with `Expiration = now + LdapAuthLifespan`.
+
+Password validation always goes to LDAP (bind operation). Role mapping changes propagate via cache notifications. The lifespan controls how often group memberships are refreshed from LDAP.
+
+**Trade-off:** LDAP load vs permission freshness.
+
+#### Personal Access Tokens (PAT/API Keys)
+
+**Staleness:** Near-instant for revocation via cache notifications (< 1 second typical)
+
+Clients send bearer tokens (API keys) on every request. The server computes the SHA256 hash and looks up the token in cache. Token revocation propagates immediately via cache notifications (TokenDeleted). User role changes are resolved fresh on every request from the cached user data.
+
+**Fallback:** Up to 5 minutes (cache safety-net refresh) for cache misses.
+
+#### OAuth Refresh with LDAP Identity
+
+**Staleness:** Controlled by `LDAP_AUTH_LIFESPAN` (default: 5 minutes)
+
+When refreshing tokens, if the associated LDAP identity has expired, the server re-authenticates with LDAP using the stored password and fetches fresh group memberships. This enables automatic permission updates without user interaction.
+
+**Trade-off:** LDAP load vs automatic permission sync during token refresh.
 
 ### Environment Variables
 
 Complete list of authentication-related environment variables:
 
-| Variable | Type | Default                      | Description |
-|----------|------|------------------------------|-------------|
-| `AUTH_ENABLED` | Boolean | `true`                       | Enable authentication system |
-| `AUTH_REQUIRED` | Boolean | `false`                      | Enforce authentication for all API requests |
-| `AUTH_CACHE_LIFESPAN` | Integer | `5`                          | Cache refresh interval in minutes |
-| `AUTH_BASIC_AUTH_LIFESPAN` | Integer | `60`                         | Basic auth identity lifespan for LDAP users in seconds |
-| `OIDC_TOKEN_LIFESPAN` | Integer | `300`                        | OAuth access token lifespan in seconds (5 minutes) |
-| `OIDC_REFRESH_TOKEN_LIFESPAN` | Integer | `172800`                     | OAuth refresh token lifespan in seconds (2 days) |
-| `OIDC_KEY_ROTATION` | Integer | `90`                         | RSA signing key rotation interval in days |
-| `APIKEY_SECRET` | String | `tackle`                     | Secret used for API key generation |
-| `APIKEY_LIFESPAN` | Integer | `87600`                      | Personal Access Token lifespan in hours (10 years) |
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `AUTH_ENABLED` | Boolean | `true` | Enable authentication system |
+| `AUTH_REQUIRED` | Boolean | `false` | Enforce authentication for all API requests |
+| `AUTH_CACHE_LIFESPAN` | Integer (minutes) | `5` | Cache safety-net refresh interval; worst-case staleness for basic auth and PATs |
+| `LDAP_AUTH_LIFESPAN` | Integer (minutes) | `5` | LDAP identity cache duration; controls LDAP query frequency |
+| `OIDC_TOKEN_LIFESPAN` | Integer (seconds) | `300` | OAuth access token lifespan in seconds (5 minutes) |
+| `OIDC_REFRESH_TOKEN_LIFESPAN` | Integer (seconds) | `172800` | OAuth refresh token lifespan in seconds (2 days) |
+| `OIDC_KEY_ROTATION` | Integer (days) | `90` | RSA signing key rotation interval in days |
+| `APIKEY_SECRET` | String | `tackle` | Secret used for API key generation |
+| `APIKEY_LIFESPAN` | Integer (hours) | `87600` | Personal Access Token lifespan in hours (10 years) |
 
 **Note on OIDC Issuer:** The OIDC issuer is now **dynamically determined** from the incoming HTTP request rather than configured via environment variable. The issuer is constructed from the request's scheme, host, and path to `/oidc`. This enables the hub to work seamlessly across different deployment environments (localhost, OpenShift routes, custom domains) without configuration changes.
 
@@ -1121,11 +1156,11 @@ To verify your patterns work correctly:
 
 The `Expiration` field controls how long the cached LDAP identity is trusted before re-authentication:
 
-| Flow | Lifespan Parameter | Purpose |
-|------|-------------------|---------|
-| **Basic Auth** | `BasicAuthLifespan` (1 min) | Fast detection of password/permission changes |
-| **Token Refresh** | `TokenLifespan` (5 min) | Aligned with access token validity |
-| **OIDC Login** | `TokenLifespan` (5 min) | Matches token refresh behavior |
+| Flow | Lifespan Setting | Environment Variable | Default | Purpose |
+|------|-----------------|---------------------|---------|---------|
+| **Basic Auth (LDAP)** | `Settings.Auth.LdapAuthLifespan` | `LDAP_AUTH_LIFESPAN` | 5 min | Balance between LDAP load and permission freshness |
+| **Token Refresh (LDAP)** | `Settings.Auth.LdapAuthLifespan` | `LDAP_AUTH_LIFESPAN` | 5 min | Automatic group membership updates during refresh |
+| **OIDC Login (LDAP)** | `Settings.Auth.LdapAuthLifespan` | `LDAP_AUTH_LIFESPAN` | 5 min | Consistent with other LDAP flows |
 
 When identity is found in cache:
 - If `Expiration > now`: Use cached scopes (no LDAP contact)

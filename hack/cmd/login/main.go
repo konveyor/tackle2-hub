@@ -145,7 +145,8 @@ func main() {
 		issuerURL = &path
 	}
 	if *route != "" {
-		hubURL = route
+		u := *route + "/hub"
+		hubURL = &u
 	}
 
 	fmt.Printf("\nUsing:\n")

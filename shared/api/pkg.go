@@ -131,18 +131,6 @@ const (
 	AssessmentRoute  = AssessmentsRoute + "/:" + ID
 )
 
-// Routes - Auth
-const (
-	AuthRoute           = "/auth"
-	AuthGrantsRoute     = AuthRoute + "/grants"
-	AuthGrantRoute      = AuthGrantsRoute + "/:" + ID
-	AuthTokensRoute     = AuthRoute + "/tokens"
-	AuthTokenRoute      = AuthTokensRoute + "/:" + ID
-	AuthDevAuthRoute    = AuthRoute + "/device"
-	AuthDevAuthCallback = AuthDevAuthRoute + "/callback"
-	AuthMeRoute         = AuthRoute + "/me"
-)
-
 // Routes - Batch
 const (
 	BatchRoute        = "/batch"
@@ -201,18 +189,35 @@ const (
 	AppIdentitiesRoute = ApplicationRoute + "/identities"
 )
 
-// Routes - OIDC
+// Routes - RBAC
 const (
-	OIDCRoutes       = "/oidc"
 	UsersRoute       = "/users"
 	UserRoute        = UsersRoute + "/:" + ID
 	RolesRoute       = "/roles"
 	RoleRoute        = RolesRoute + "/:" + ID
 	PermissionsRoute = "/permissions"
 	PermissionRoute  = PermissionsRoute + "/:" + ID
-	IdpClientsRoute  = AuthRoute + "/clients"
-	IdpClientRoute   = IdpClientsRoute + "/:" + ID
-	// OIDC flow paths (relative to OIDCRoutes)
+)
+
+// Routes - Auth
+const (
+	AuthRoute           = "/auth"
+	AuthSelfGetRoute    = AuthRoute + "/self"
+	AuthGrantsRoute     = AuthRoute + "/grants"
+	AuthGrantRoute      = AuthGrantsRoute + "/:" + ID
+	AuthTokensRoute     = AuthRoute + "/tokens"
+	AuthTokenRoute      = AuthTokensRoute + "/:" + ID
+	AuthDevAuthRoute    = AuthRoute + "/device"
+	AuthDevAuthCallback = AuthDevAuthRoute + "/callback"
+	IdpIdentitiesRoute  = AuthRoute + "/identities"
+	IdpIdentityRoute    = IdpIdentitiesRoute + "/:" + ID
+	IdpClientsRoute     = AuthRoute + "/clients"
+	IdpClientRoute      = IdpClientsRoute + "/:" + ID
+)
+
+// Routes - mounted under OIDC
+const (
+	OIDCRoutes       = "/oidc"
 	LoginRoute       = "/login"
 	IdpLoginRoute    = "/idp/login"
 	IdpCbRoute       = "/idp/callback"
@@ -220,13 +225,6 @@ const (
 	DeviceLoginRoute = "/device/login"
 	DeviceCbRoute    = "/device/callback"
 	AuthorizeCbRoute = "/authorize/callback"
-)
-
-// Routes - External IdP
-const (
-	IdpRoute           = OIDCRoutes + "/idp"
-	IdpIdentitiesRoute = AuthRoute + "/identities"
-	IdpIdentityRoute   = IdpIdentitiesRoute + "/:" + ID
 )
 
 // Routes - Imports

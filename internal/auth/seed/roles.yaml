@@ -1,6 +1,12 @@
 - role: admin
   id: 1
   resources:
+    - name: admin
+      verbs:
+        - delete
+        - get
+        - post
+        - put
     - name: addons
       verbs:
         - delete
@@ -23,12 +29,6 @@
         - post
         - put
     - name: applications.facts
-      verbs:
-        - delete
-        - get
-        - post
-        - put
-    - name: applications.tags
       verbs:
         - delete
         - get
@@ -102,10 +102,6 @@
         - get
         - post
         - put
-    - name: kai
-      verbs:
-        - get
-        - post
     - name: manifests
       verbs:
         - delete
@@ -280,9 +276,6 @@
         - post
         - get
         - delete
-    - name: device
-      verbs:
-        - post
 - role: architect
   id: 2
   resources:
@@ -308,12 +301,6 @@
         - post
         - put
     - name: applications.facts
-      verbs:
-        - delete
-        - get
-        - post
-        - put
-    - name: applications.tags
       verbs:
         - delete
         - get
@@ -384,10 +371,6 @@
         - get
         - post
         - put
-    - name: kai
-      verbs:
-        - get
-        - post
     - name: manifests
       verbs:
         - delete
@@ -513,10 +496,12 @@
     - name: questionnaires
       verbs:
         - get
-    - name: tokens
+    - name: users
       verbs:
-        - post
-    - name: device
+        - delete
+        - get
+        - put
+    - name: tokens
       verbs:
         - post
 - role: migrator
@@ -535,9 +520,6 @@
       verbs:
         - get
     - name: applications.facts
-      verbs:
-        - get
-    - name: applications.tags
       verbs:
         - get
     - name: applications.bucket
@@ -579,10 +561,6 @@
     - name: jobfunctions
       verbs:
         - get
-    - name: kai
-      verbs:
-        - get
-        - post
     - name: manifests
       verbs:
         - get
@@ -662,10 +640,12 @@
     - name: questionnaires
       verbs:
         - get
-    - name: tokens
+    - name: users
       verbs:
-        - post
-    - name: device
+        - delete
+        - get
+        - put
+    - name: tokens
       verbs:
         - post
 - role: project-manager
@@ -684,9 +664,6 @@
       verbs:
         - get
     - name: applications.facts
-      verbs:
-        - get
-    - name: applications.tags
       verbs:
         - get
     - name: applications.bucket
@@ -728,10 +705,6 @@
     - name: jobfunctions
       verbs:
         - get
-    - name: kai
-      verbs:
-        - get
-        - post
     - name: platforms
       verbs:
         - get
@@ -801,9 +774,11 @@
     - name: questionnaires
       verbs:
         - get
-    - name: tokens
+    - name: users
       verbs:
-        - post
-    - name: device
+        - delete
+        - get
+        - put
+    - name: tokens
       verbs:
         - post

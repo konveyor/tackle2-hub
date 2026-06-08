@@ -13,7 +13,7 @@ const (
 	EnvAPIKeySecret         = "APIKEY_SECRET"
 	EnvAPIKeyLifespan       = "APIKEY_LIFESPAN"
 	EnvCacheLifespan        = "AUTH_CACHE_LIFESPAN"
-	EnvBasicAuthLifespan    = "BASIC_AUTH_LIFESPAN"
+	EnvLdapAuthLifespan     = "LDAP_AUTH_LIFESPAN"
 	EnvTokenKey             = "ADDON_TOKEN" // Deprecated
 	EnvTokenLifespan        = "OIDC_TOKEN_LIFESPAN"
 	EnvRefreshTokenLifespan = "OIDC_REFRESH_TOKEN_LIFESPAN"
@@ -25,10 +25,10 @@ type Auth struct {
 	Enabled bool
 	// Auth required
 	Required bool
-	// Cache
+	// Cache lifespan.
 	CacheLifespan time.Duration
-	// BasicAuth cache lifespan
-	BasicAuthLifespan time.Duration
+	// LDAP auth lifespan.
+	LdapAuthLifespan time.Duration
 	// APIKey settings.
 	APIKey struct {
 		Secret   string
@@ -49,8 +49,8 @@ type Auth struct {
 func (r *Auth) Load() (err error) {
 	r.Enabled = env.GetBool(EnvAuthEnabled, true)
 	r.Required = env.GetBool(EnvAuthRequired, false)
-	r.CacheLifespan = env.GetMinute(EnvCacheLifespan, 5)
-	r.BasicAuthLifespan = env.GetSecond(EnvBasicAuthLifespan, 60) // second: 1 minute.
+	r.CacheLifespan = env.GetMinute(EnvCacheLifespan, 5)       // minute: 5 minutes.
+	r.LdapAuthLifespan = env.GetMinute(EnvLdapAuthLifespan, 5) // minute: 5 minutes.
 	r.APIKey.Secret = env.Get(EnvAPIKeySecret, "tackle")
 	r.APIKey.Lifespan = env.GetHour(EnvAPIKeyLifespan, 10*24*365) // hour: 10 years.
 	r.Token.Key = env.Get(EnvTokenKey, "tackle")

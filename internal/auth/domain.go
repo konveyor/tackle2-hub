@@ -23,7 +23,9 @@ var (
 )
 
 var (
-	registeredScopes = make(map[string]bool)
+	registeredResources = map[string]bool{
+		ADMIN: true,
+	}
 )
 
 const (
@@ -38,10 +40,10 @@ func init() {
 	}
 }
 
-// RegisterScope registers a resource scope for permission generation.
-func RegisterScope(scope string) {
-	if scope != "" {
-		registeredScopes[scope] = true
+// RegisterResource registers an api resource for permission (scope) generation.
+func RegisterResource(resource string) {
+	if resource != "" {
+		registeredResources[resource] = true
 	}
 }
 
@@ -68,8 +70,8 @@ func (d *Domain) Seed() (err error) {
 	database.PK.Begin(d.DB, IdpClient{}, LastId)
 	database.PK.Begin(d.DB, User{}, LastId)
 	var resources []string
-	for scope := range registeredScopes {
-		resources = append(resources, scope)
+	for r := range registeredResources {
+		resources = append(resources, r)
 	}
 	sort.Strings(resources)
 	err = d.DB.Transaction(
@@ -130,6 +132,7 @@ func (d *Domain) buildPermissionMap(db *gorm.DB) (err error) {
 // Each resource gets 5 permissions (one per HTTP verb).
 func (d *Domain) generatePermissions(resources []string) (perms []Permission) {
 	verbs := []string{
+		"decrypt",
 		"delete",
 		"get",
 		"patch",
