@@ -1156,11 +1156,11 @@ To verify your patterns work correctly:
 
 The `Expiration` field controls how long the cached LDAP identity is trusted before re-authentication:
 
-| Flow | Lifespan Parameter | Purpose |
-|------|-------------------|---------|
-| **Basic Auth** | `BasicAuthLifespan` (1 min) | Fast detection of password/permission changes |
-| **Token Refresh** | `TokenLifespan` (5 min) | Aligned with access token validity |
-| **OIDC Login** | `TokenLifespan` (5 min) | Matches token refresh behavior |
+| Flow | Lifespan Setting | Environment Variable | Default | Purpose |
+|------|-----------------|---------------------|---------|---------|
+| **Basic Auth (LDAP)** | `Settings.Auth.LdapAuthLifespan` | `LDAP_AUTH_LIFESPAN` | 5 min | Balance between LDAP load and permission freshness |
+| **Token Refresh (LDAP)** | `Settings.Auth.LdapAuthLifespan` | `LDAP_AUTH_LIFESPAN` | 5 min | Automatic group membership updates during refresh |
+| **OIDC Login (LDAP)** | `Settings.Auth.LdapAuthLifespan` | `LDAP_AUTH_LIFESPAN` | 5 min | Consistent with other LDAP flows |
 
 When identity is found in cache:
 - If `Expiration > now`: Use cached scopes (no LDAP contact)
