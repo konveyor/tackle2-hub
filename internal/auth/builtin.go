@@ -555,13 +555,13 @@ func (p *Builtin) authUser(req *Request) (jwToken *jwt.Token, err error) {
 	jwtClaims[ClaimScope] = strings.Join(scopes, " ")
 	jwtClaims[ClaimIss] = Issuer(req.CTX.Request)
 	jwtClaims[ClaimIat] = time.Now().Unix()
-	jwtClaims[ClaimExp] = time.Now().Add(Settings.Auth.BasicAuthLifespan).Unix()
+	jwtClaims[ClaimExp] = time.Now().Add(Settings.Auth.CacheLifespan).Unix()
 	return
 }
 
 // authLdapUser authenticates an LDAP user.
 func (p *Builtin) authLdapUser(req *Request) (jwToken *jwt.Token, err error) {
-	lifespan := Settings.Auth.BasicAuthLifespan
+	lifespan := Settings.Auth.LdapAuthLifespan
 	subject, err := p.dsHandler.Authenticate(req.Login, req.Password, lifespan)
 	if err != nil {
 		return
