@@ -300,8 +300,7 @@ func (p *Builtin) Scopes(jwToken *jwt.Token) (scopes []Scope) {
 
 // validToken returns an error if not valid.
 func (p *Builtin) validToken(jwToken *jwt.Token, req *Request) (err error) {
-	jti := jwToken.Raw[:min(12, len(jwToken.Raw))]
-	jti += "..."
+	jti := p.jti(jwToken)
 	if !jwToken.Valid {
 		err = liberr.Wrap(&NotAuthenticated{
 			Reason: "token invalid",
@@ -318,13 +317,7 @@ func (p *Builtin) validToken(jwToken *jwt.Token, req *Request) (err error) {
 			})
 		return
 	}
-	v, found := claims[ClaimId]
-	if found {
-		if s, cast := v.(string); cast {
-			jti = s
-		}
-	}
-	v, found = claims[ClaimSub]
+	v, found := claims[ClaimSub]
 	if !found {
 		err = liberr.Wrap(
 			&NotValid{
@@ -602,6 +595,26 @@ func (p *Builtin) newToken(subject string, lifespan time.Duration) (token Token)
 	token.Secret = p.storage.genId()
 	token.Digest = secret.Hash(token.Secret)
 	token.Expiration = time.Now().Add(lifespan)
+	return
+}
+
+// jti returns the token id.
+// when the id cannot be extracted from the 'jti' claim, the first
+// 12 characters of the token itself are returned.
+func (p *Builtin) jti(jwToken *jwt.Token) (id string) {
+	id = jwToken.Raw[:min(12, len(jwToken.Raw))]
+	id += "..."
+	claims, cast := jwToken.Claims.(jwt.MapClaims)
+	if !cast {
+		return
+	}
+	v, found := claims[ClaimId]
+	if !found {
+		return
+	}
+	if s, cast := v.(string); cast {
+		id = s
+	}
 	return
 }
 
