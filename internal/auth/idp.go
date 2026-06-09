@@ -130,22 +130,22 @@ func (h *FedIdpHandler) identitySaved(m *Identity) {
 // EndSessionURL builds the upstream IdP's end_session URL.
 // The postLogoutRedirectURI is passed through to the IdP so the user
 // is redirected back to the original destination after the IdP session ends.
-func (h *FedIdpHandler) EndSessionURL(postLogoutRedirectURI string) (logoutURL string, ok bool, err error) {
+// Returns an empty logoutURL when the IdP is not enabled or has no end_session_endpoint.
+func (h *FedIdpHandler) EndSessionURL(postLogoutRedirectURI string) (logoutURL string, err error) {
 	if !federated.Idp.Enabled {
 		return
 	}
-	var rpClient rp.RelyingParty
-	rpClient, err = h.RpClient()
-	if err != nil || rpClient == nil {
+	rpClient, err := h.RpClient()
+	if err != nil {
 		return
 	}
 	endpoint := rpClient.GetEndSessionEndpoint()
 	if endpoint == "" {
 		return
 	}
-	parsed, pErr := url.Parse(endpoint)
-	if pErr != nil {
-		err = liberr.Wrap(pErr)
+	parsed, err := url.Parse(endpoint)
+	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	q := parsed.Query()
@@ -155,7 +155,6 @@ func (h *FedIdpHandler) EndSessionURL(postLogoutRedirectURI string) (logoutURL s
 	}
 	parsed.RawQuery = q.Encode()
 	logoutURL = parsed.String()
-	ok = true
 	return
 }
 

@@ -419,28 +419,24 @@ func (r *Storage) TerminateSessionFromRequest(
 		return
 	}
 	redirect = req.RedirectURI
-	if r.idpHandler == nil || req.UserID == "" {
+	if req.UserID == "" {
 		return
 	}
-	s, sErr := r.findSubject(req.UserID)
-	if sErr != nil {
-		if !errors.Is(sErr, &NotFound{}) {
-			err = liberr.Wrap(sErr)
+	s, err := r.findSubject(req.UserID)
+	if err != nil {
+		if errors.Is(err, &NotFound{}) {
+			err = nil
 		}
-		return
-	}
-	if s == nil {
 		return
 	}
 	if !s.IsIdentity() || s.Identity.Kind != IdentityKindOpenid {
 		return
 	}
-	logoutURL, ok, eErr := r.idpHandler.EndSessionURL(req.RedirectURI)
-	if eErr != nil {
-		err = eErr
+	logoutURL, err := r.idpHandler.EndSessionURL(req.RedirectURI)
+	if err != nil {
 		return
 	}
-	if ok {
+	if logoutURL != "" {
 		redirect = logoutURL
 	}
 	return
