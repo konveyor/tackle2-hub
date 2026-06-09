@@ -596,21 +596,24 @@ func (p *Builtin) newToken(subject string, lifespan time.Duration) (token Token)
 
 // jti returns the token id.
 // when the id cannot be extracted from the 'jti' claim, the first
-// 12 characters of the token itself are returned.
+// 12 characters of the token itself + '..." are returned.
 func (p *Builtin) jti(jwToken *jwt.Token) (id string) {
-	id = jwToken.Raw[:min(12, len(jwToken.Raw))]
-	id += "..."
+	if jwToken.Raw == "" {
+		return
+	}
 	claims, cast := jwToken.Claims.(jwt.MapClaims)
-	if !cast {
-		return
+	if cast {
+		v, found := claims[ClaimId]
+		if found {
+			if s, cast := v.(string); cast {
+				id = s
+				return
+			}
+		}
 	}
-	v, found := claims[ClaimId]
-	if !found {
-		return
-	}
-	if s, cast := v.(string); cast {
-		id = s
-	}
+	id = jwToken.Raw
+	pLen := min(12, max(1, len(id)/4))
+	id = id[:pLen] + "..."
 	return
 }
 
