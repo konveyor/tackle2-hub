@@ -104,6 +104,7 @@ const (
 	ClaimIss   = "iss"   // Issuer
 	ClaimAud   = "aud"   // Audience
 	ClaimIat   = "iat"   // Issued At
+	ClaimId    = "jti"   // Token id.
 )
 
 // Scope provides scope behavior.

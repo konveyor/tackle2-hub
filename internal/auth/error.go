@@ -28,12 +28,12 @@ func (e *NotAuthenticated) Is(err error) (matched bool) {
 
 // NotValid is returned when a token is not valid.
 type NotValid struct {
-	Reason string
-	Token  string
+	Reason  string
+	TokenId string
 }
 
 func (e *NotValid) Error() (s string) {
-	return fmt.Sprintf("Token [%s] not-valid: %s", e.Token, e.Reason)
+	return fmt.Sprintf("Token (jti=%s) not-valid: %s", e.TokenId, e.Reason)
 }
 
 func (e *NotValid) Is(err error) (matched bool) {
