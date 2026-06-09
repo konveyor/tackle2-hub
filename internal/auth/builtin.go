@@ -242,10 +242,6 @@ func (p *Builtin) Authenticate(req *Request) (jwToken *jwt.Token, err error) {
 		return
 	}
 	//
-	if errors.Is(err, &NotAuthenticated{}) || errors.Is(err, &NotFound{}) {
-		Log.Info(err.Error())
-		return
-	}
 	err = liberr.Wrap(
 		&NotAuthenticated{
 			Reason: "missing credentials",
