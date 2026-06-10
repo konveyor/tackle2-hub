@@ -53,9 +53,10 @@ func (r *Federated) Load(namespace string) (err error) {
 
 // String returns a string representation.
 func (r *Federated) String() (s string) {
-	r.Idp.TLS = nil
-	r.Ldap.TLS = nil
-	b, _ := yaml.Marshal(r)
+	clone := *r
+	clone.Idp.TLS = nil
+	clone.Ldap.TLS = nil
+	b, _ := yaml.Marshal(clone)
 	s = string(b)
 	return
 }
