@@ -33,6 +33,7 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	e.Any(
 		api.OIDCRoutes+"/*path",
 		func(ctx *gin.Context) {
+			auth.IdP.Ready(ctx.Request)
 			reqCtx := context.WithValue(
 				ctx.Request.Context(),
 				auth.ReqInCtx, // inject
