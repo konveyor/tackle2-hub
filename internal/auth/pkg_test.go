@@ -3267,18 +3267,18 @@ type mockRelyingParty struct {
 	endSessionEndpoint string
 }
 
-func (m *mockRelyingParty) OAuthConfig() *oauth2.Config             { return &oauth2.Config{} }
-func (m *mockRelyingParty) Issuer() string                          { return "" }
-func (m *mockRelyingParty) IsPKCE() bool                            { return false }
+func (m *mockRelyingParty) OAuthConfig() *oauth2.Config              { return &oauth2.Config{} }
+func (m *mockRelyingParty) Issuer() string                           { return "" }
+func (m *mockRelyingParty) IsPKCE() bool                             { return false }
 func (m *mockRelyingParty) CookieHandler() *httphelper.CookieHandler { return nil }
-func (m *mockRelyingParty) HttpClient() *http.Client                { return nil }
-func (m *mockRelyingParty) IsOAuth2Only() bool                      { return false }
-func (m *mockRelyingParty) Signer() jose.Signer                    { return nil }
-func (m *mockRelyingParty) GetEndSessionEndpoint() string           { return m.endSessionEndpoint }
-func (m *mockRelyingParty) GetRevokeEndpoint() string               { return "" }
-func (m *mockRelyingParty) UserinfoEndpoint() string                { return "" }
-func (m *mockRelyingParty) GetDeviceAuthorizationEndpoint() string  { return "" }
-func (m *mockRelyingParty) IDTokenVerifier() *rp.IDTokenVerifier    { return nil }
+func (m *mockRelyingParty) HttpClient() *http.Client                 { return nil }
+func (m *mockRelyingParty) IsOAuth2Only() bool                       { return false }
+func (m *mockRelyingParty) Signer() jose.Signer                      { return nil }
+func (m *mockRelyingParty) GetEndSessionEndpoint() string            { return m.endSessionEndpoint }
+func (m *mockRelyingParty) GetRevokeEndpoint() string                { return "" }
+func (m *mockRelyingParty) UserinfoEndpoint() string                 { return "" }
+func (m *mockRelyingParty) GetDeviceAuthorizationEndpoint() string   { return "" }
+func (m *mockRelyingParty) IDTokenVerifier() *rp.IDTokenVerifier     { return nil }
 func (m *mockRelyingParty) ErrorHandler() func(http.ResponseWriter, *http.Request, string, string, string) {
 	return nil
 }
@@ -3288,8 +3288,8 @@ func (m *mockRelyingParty) Logger(context.Context) (*slog.Logger, bool) { return
 func TestEndSessionURL(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	savedFederated := *federated
-	defer func() { *federated = savedFederated }()
+	savedIdp := federated.Idp
+	defer func() { federated.Idp = savedIdp }()
 
 	federated.Idp = as.IdentityProvider{
 		Enabled:  true,
@@ -3317,8 +3317,8 @@ func TestEndSessionURL(t *testing.T) {
 func TestEndSessionURLNoRedirect(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	savedFederated := *federated
-	defer func() { *federated = savedFederated }()
+	savedIdp := federated.Idp
+	defer func() { federated.Idp = savedIdp }()
 
 	federated.Idp = as.IdentityProvider{
 		Enabled:  true,

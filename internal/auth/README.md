@@ -787,6 +787,61 @@ spec:
     - email
 ```
 
+#### Template Variables for Dynamic Deployment
+
+The `issuer` and `redirectURI` fields support **template variables** to enable portable configurations across different deployment environments (localhost, OpenShift routes, custom domains).
+
+Template variables are substituted with values from the incoming HTTP request's issuer URL at runtime:
+
+| Variable | Substitution | Example Request | Result |
+|----------|-------------|-----------------|--------|
+| `${issuer}` | Full issuer URL | `https://hub.example.com:8080/oidc` | `https://hub.example.com:8080/oidc` |
+| `${issuer.proto}` | Protocol/scheme | `https://hub.example.com:8080/oidc` | `https` |
+| `${issuer.host}` | Host (hostname:port) | `https://hub.example.com:8080/oidc` | `hub.example.com:8080` |
+| `${issuer.port}` | Port only | `https://hub.example.com:8080/oidc` | `8080` |
+| `${issuer.path}` | Path only | `https://hub.example.com:8080/oidc` | `/oidc` |
+
+**Example: Portable configuration for OpenShift routes**
+
+```yaml
+apiVersion: tackle.konveyor.io/v1alpha1
+kind: OpenidProvider
+metadata:
+  name: corporate-sso
+  namespace: konveyor-tackle
+spec:
+  name: "Corporate SSO"
+  # External IdP - can use template for dynamic cluster deployments
+  issuer: "${issuer.proto}://${issuer.host}/auth/realms/tackle"
+  clientId: "tackle-hub"
+  clientSecret:
+    name: idp-client-secret
+    namespace: konveyor-tackle
+  # Dynamic redirect URI - uses template to match hub's deployment URL
+  redirectURI: "${issuer.proto}://${issuer.host}/oidc/idp/callback"
+  scopes:
+    - openid
+    - profile
+    - email
+```
+
+**When the hub is accessed at `https://tackle-konveyor-tackle.apps.cluster.example.com/oidc`:**
+- `issuer` becomes: `https://keycloak-tackle-konveyor-tackle.apps.cluster.example.com/auth/realms/tackle`
+- `redirectURI` becomes: `https://tackle-konveyor-tackle.apps.cluster.example.com/oidc/idp/callback`
+
+**Template injection is idempotent:**
+- Variables are injected once on first authentication request
+- Subsequent requests reuse the injected values
+- Thread-safe implementation with mutex protection
+
+**Common patterns:**
+
+| Pattern | Use Case | Example |
+|---------|----------|---------|
+| `${issuer}/callback` | Hub callback endpoint | `https://hub.example.com/oidc/callback` |
+| `https://${issuer.host}/auth` | Same host, different path | `https://hub.example.com:8080/auth` |
+| `${issuer.proto}://${issuer.host}/app` | Match scheme and host | `https://hub.example.com/app` |
+
 If the external IdP requires a client secret, store it in a Kubernetes Secret:
 
 ```yaml

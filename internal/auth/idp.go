@@ -41,6 +41,7 @@ func (h *FedIdpHandler) Login(ctx *gin.Context) {
 		ctx.AbortWithStatus(http.StatusNotFound)
 		return
 	}
+	federated.Idp.Inject(Issuer(ctx.Request))
 	_, err := h.RpClient()
 	if err != nil {
 		_ = ctx.Error(err)
