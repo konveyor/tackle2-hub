@@ -765,11 +765,11 @@ sequenceDiagram
 
 ### Configuration
 
-To enable federation to an external OIDC provider, create an `OpenidProvider` Custom Resource:
+To enable federation to an external OIDC provider, create an `IdentityProvider` Custom Resource:
 
 ```yaml
 apiVersion: tackle.konveyor.io/v1alpha1
-kind: OpenidProvider
+kind: IdentityProvider
 metadata:
   name: corporate-sso
   namespace: konveyor-tackle
@@ -805,7 +805,7 @@ Template variables are substituted with values from the incoming HTTP request's 
 
 ```yaml
 apiVersion: tackle.konveyor.io/v1alpha1
-kind: OpenidProvider
+kind: IdentityProvider
 metadata:
   name: corporate-sso
   namespace: konveyor-tackle
@@ -1703,7 +1703,7 @@ OIDC clients (web applications, CLI tools, IDE extensions) are configured using 
 - **Runtime configurability** - Add/modify clients without code changes
 - **Kubernetes-native management** - Use kubectl/operators to manage clients
 - **Secret management** - Reference Kubernetes Secrets for client credentials
-- **Consistent with IdP/LDAP** - Same CRD pattern as OpenidProvider and LdapProvider
+- **Consistent with IdP/LDAP** - Same CRD pattern as IdentityProvider and LdapProvider
 
 ### IdpClient CRD Structure
 
