@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
@@ -83,7 +84,27 @@ func (h ServiceHandler) Forward(ctx *gin.Context) {
 				req.URL.String())
 		},
 		FlushInterval: -1, // Flush immediately for SSE/streaming (MCP, LLM responses)
+		ErrorHandler: func(rw http.ResponseWriter, req *http.Request, err error) {
+			if req.Context().Err() != nil {
+				return
+			}
+			Log.Error(err, "Proxy error", "path", req.URL.Path)
+		},
 	}
+
+	// httputil.ReverseProxy panics with http.ErrAbortHandler when an SSE/streaming
+	// client disconnects mid-response. Recover gracefully instead of crashing the
+	// request pipeline.
+	defer func() {
+		if r := recover(); r != nil {
+			if err, ok := r.(error); ok && errors.Is(err, http.ErrAbortHandler) {
+				Log.V(1).Info("Client disconnected during proxy streaming",
+					"path", ctx.Request.URL.Path)
+				return
+			}
+			panic(r)
+		}
+	}()
 
 	proxy.ServeHTTP(ctx.Writer, ctx.Request)
 }
