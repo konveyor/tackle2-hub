@@ -32,6 +32,9 @@ func (r Migration) encodeScopes(db *gorm.DB) (err error) {
 		return
 	}
 	for _, m := range list {
+		if m.Scopes == "" || m.Scopes[0] == '[' {
+			continue
+		}
 		var b []byte
 		v := strings.Fields(m.Scopes)
 		b, err = json.Marshal(v)
@@ -40,6 +43,11 @@ func (r Migration) encodeScopes(db *gorm.DB) (err error) {
 			return
 		}
 		m.Scopes = string(b)
+		err = db.Save(m).Error
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
 	}
 	return
 }
