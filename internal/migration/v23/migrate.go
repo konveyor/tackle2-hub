@@ -32,7 +32,10 @@ func (r Migration) encodeScopes(db *gorm.DB) (err error) {
 		return
 	}
 	for _, m := range list {
-		if m.Scopes == "" || m.Scopes[0] == '[' {
+		if m.Scopes == "" {
+			continue
+		}
+		if m.Scopes[0] == '[' {
 			continue
 		}
 		var b []byte
