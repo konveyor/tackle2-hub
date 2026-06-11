@@ -25,7 +25,7 @@ func (r Migration) Apply(db *gorm.DB) (err error) {
 // as space-delimited as json array.
 // The Token.Scopes in type changed to []string.
 func (r Migration) encodeScopes(db *gorm.DB) (err error) {
-	var list []v22.Token
+	var list []*v22.Token
 	err = db.Find(&list).Error
 	if err != nil {
 		err = liberr.Wrap(err)
