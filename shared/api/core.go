@@ -212,7 +212,7 @@ type Token struct {
 	Kind        string    `json:"kind"`
 	AuthId      string    `json:"authId,omitempty" yaml:"authId,omitempty"`
 	Subject     string    `json:"subject,omitempty" yaml:",omitempty"`
-	Scopes      string    `json:"scopes,omitempty" yaml:",omitempty"`
+	Scopes      []string  `json:"scopes,omitempty" yaml:",omitempty"`
 	Issued      time.Time `json:"issued,omitempty" yaml:",omitempty"`
 	Expiration  time.Time `json:"expiration,omitempty" yaml:",omitempty"`
 	Lifespan    int       `json:"lifespan,omitempty" yaml:",omitempty"`

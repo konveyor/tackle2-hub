@@ -296,7 +296,7 @@ func (r *Storage) CreateAccessToken(
 	m.Kind = KindAccessToken
 	m.AuthId = tokenId
 	m.Subject = subject
-	m.Scopes = strings.Join(req.GetScopes(), " ")
+	m.Scopes = req.GetScopes()
 	m.Issued = time.Now()
 	m.Expiration = expiration
 	m.GrantID = r.grantId(grantId)
@@ -665,7 +665,7 @@ func (r *Storage) SetIntrospectionFromToken(
 	}
 	expiration := int(token.Expiration.Unix())
 	introspection.Active = expiration > int(time.Now().Unix())
-	introspection.Scope = strings.Fields(token.Scopes)
+	introspection.Scope = token.Scopes
 	introspection.ClientID = clientId
 	introspection.Subject = token.Subject
 	introspection.Expiration = oidc.FromTime(token.Expiration)
