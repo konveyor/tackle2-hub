@@ -24,50 +24,9 @@ type AuthHandler struct {
 
 // AddRoutes adds routes.
 func (h AuthHandler) AddRoutes(e *gin.Engine) {
-	// OIDC routes (hub as provider)
-	baseHandler := auth.IdP.Handler()
-	strippedHandler := http.StripPrefix(api.OIDCRoutes, baseHandler)
-	idpHandler := auth.IdP.IdpHandler()
-	dagHandler := auth.IdP.DagHandler()
-	oidcAuth := dagHandler.OIDCAuth()
-	e.Any(
-		api.OIDCRoutes+"/*path",
-		func(ctx *gin.Context) {
-			reqCtx := context.WithValue(
-				ctx.Request.Context(),
-				auth.ReqInCtx, // inject
-				ctx.Request)
-			ctx.Request = ctx.Request.WithContext(reqCtx)
-			path := ctx.Param("path")
-			switch path {
-			case api.LoginRoute:
-				h.Login(ctx)
-			case api.IdpLoginRoute:
-				if idpHandler != nil {
-					idpHandler.Login(ctx)
-				}
-			case api.IdpCbRoute:
-				if idpHandler != nil {
-					idpHandler.LoginFinished(ctx)
-				}
-			case api.DeviceRoute:
-				oidcAuth.AuthRequired(ctx)
-				if !ctx.IsAborted() {
-					if ctx.Request.Method == http.MethodPost {
-						dagHandler.VerifySubmit(ctx)
-					} else {
-						dagHandler.Verify(ctx)
-					}
-				}
-			case api.DeviceLoginRoute:
-				oidcAuth.Login(ctx)
-			case api.DeviceCbRoute:
-				oidcAuth.Callback(ctx)
-			default:
-				strippedHandler.ServeHTTP(ctx.Writer, ctx.Request)
-			}
-		})
-	// IdpClient routes
+	// OIDC routes.
+	e.Any(api.OIDCRoutes+"/*path", h.OIDC())
+	// IdpClient routes.
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("idp.clients"))
 	routeGroup.GET(api.IdpClientsRoute, h.IdpClientList)
@@ -1159,6 +1118,54 @@ func (h AuthHandler) GetSelf(ctx *gin.Context) {
 	}
 
 	h.Respond(ctx, http.StatusOK, r)
+}
+
+// OIDC returns the handler for OIDC routes.
+func (h AuthHandler) OIDC() func(*gin.Context) {
+	baseHandler := auth.IdP.Handler()
+	strippedHandler := http.StripPrefix(api.OIDCRoutes, baseHandler)
+	idpHandler := auth.IdP.IdpHandler()
+	dagHandler := auth.IdP.DagHandler()
+	oidcAuth := dagHandler.OIDCAuth()
+
+	return func(ctx *gin.Context) {
+		auth.IdP.Ready(ctx.Request)
+
+		reqCtx := context.WithValue(
+			ctx.Request.Context(),
+			auth.ReqInCtx, // inject
+			ctx.Request)
+		ctx.Request = ctx.Request.WithContext(reqCtx)
+
+		path := ctx.Param("path")
+		switch path {
+		case api.LoginRoute:
+			h.Login(ctx)
+		case api.IdpLoginRoute:
+			if idpHandler != nil {
+				idpHandler.Login(ctx)
+			}
+		case api.IdpCbRoute:
+			if idpHandler != nil {
+				idpHandler.LoginFinished(ctx)
+			}
+		case api.DeviceRoute:
+			oidcAuth.AuthRequired(ctx)
+			if !ctx.IsAborted() {
+				if ctx.Request.Method == http.MethodPost {
+					dagHandler.VerifySubmit(ctx)
+				} else {
+					dagHandler.Verify(ctx)
+				}
+			}
+		case api.DeviceLoginRoute:
+			oidcAuth.Login(ctx)
+		case api.DeviceCbRoute:
+			oidcAuth.Callback(ctx)
+		default:
+			strippedHandler.ServeHTTP(ctx.Writer, ctx.Request)
+		}
+	}
 }
 
 // Auth REST Resources.

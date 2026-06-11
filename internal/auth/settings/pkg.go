@@ -3,6 +3,8 @@ package settings
 import (
 	"context"
 	"crypto/tls"
+	"net/url"
+	"strings"
 
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
@@ -50,10 +52,11 @@ func (r *Federated) Load(namespace string) (err error) {
 }
 
 // String returns a string representation.
-func (r Federated) String() (s string) {
-	r.Idp.TLS = nil
-	r.Ldap.TLS = nil
-	b, _ := yaml.Marshal(r)
+func (r *Federated) String() (s string) {
+	clone := *r
+	clone.Idp.TLS = nil
+	clone.Ldap.TLS = nil
+	b, _ := yaml.Marshal(clone)
 	s = string(b)
 	return
 }
@@ -175,6 +178,33 @@ type IdentityProvider struct {
 	RedirectURI  string
 	Scopes       []string
 	TLS          *tls.Config
+	//
+	injected bool
+}
+
+// Inject template values:
+// - ${issuer}
+// - ${issuer.proto}
+// - ${issuer.host}
+// - ${issuer.port}
+// - ${issuer.path}
+// Note: not thread-safe.
+func (r *IdentityProvider) Inject(issuer string) {
+	if r.injected {
+		return
+	}
+	issuerURL, _ := url.Parse(issuer)
+	for _, u := range []*string{
+		&r.Issuer,
+		&r.RedirectURI,
+	} {
+		*u = strings.Replace(*u, "${issuer}", issuer, -1)
+		*u = strings.Replace(*u, "${issuer.proto}", issuerURL.Scheme, -1)
+		*u = strings.Replace(*u, "${issuer.host}", issuerURL.Hostname(), -1)
+		*u = strings.Replace(*u, "${issuer.port}", issuerURL.Port(), -1)
+		*u = strings.Replace(*u, "${issuer.path}", issuerURL.Path, -1)
+	}
+	r.injected = true
 }
 
 // with populates self with the crd.

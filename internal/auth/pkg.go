@@ -68,6 +68,8 @@ func New(db *gorm.DB) (p Provider, err error) {
 
 // Provider provides RBAC.
 type Provider interface {
+	// Ready notification of an incoming request.
+	Ready(r *http.Request)
 	// Cache returns the provider cache.
 	Cache() *Cache
 	// Login begin OIDC auth.

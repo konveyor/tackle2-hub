@@ -187,3 +187,140 @@ func TestFederatedGetClientsFields(t *testing.T) {
 	g.Expect(kaiIDE.Grants).To(ContainElement("authorization_code"))
 	g.Expect(kaiIDE.Scopes).To(ContainElement("openid"))
 }
+
+// TestIdentityProviderInject tests template variable injection.
+func TestIdentityProviderInject(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	idp := &IdentityProvider{
+		Issuer:      "https://${issuer.host}/auth",
+		RedirectURI: "${issuer.proto}://${issuer.host}:${issuer.port}/callback",
+	}
+
+	issuer := "https://hub.example.com:8443/oidc"
+	idp.Inject(issuer)
+
+	g.Expect(idp.Issuer).To(Equal("https://hub.example.com/auth"))
+	g.Expect(idp.RedirectURI).To(Equal("https://hub.example.com:8443/callback"))
+}
+
+// TestIdentityProviderInjectIssuerVariable tests ${issuer} template variable.
+func TestIdentityProviderInjectIssuerVariable(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	idp := &IdentityProvider{
+		Issuer:      "${issuer}/external",
+		RedirectURI: "${issuer}/callback",
+	}
+
+	issuer := "https://auth.example.com"
+	idp.Inject(issuer)
+
+	g.Expect(idp.Issuer).To(Equal("https://auth.example.com/external"))
+	g.Expect(idp.RedirectURI).To(Equal("https://auth.example.com/callback"))
+}
+
+// TestIdentityProviderInjectIdempotent tests that Inject() is idempotent.
+func TestIdentityProviderInjectIdempotent(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	idp := &IdentityProvider{
+		Issuer:      "https://${issuer.host}/auth",
+		RedirectURI: "${issuer}/callback",
+	}
+
+	issuer := "https://hub.example.com/oidc"
+
+	// First injection
+	idp.Inject(issuer)
+	firstIssuer := idp.Issuer
+	firstRedirect := idp.RedirectURI
+
+	// Second injection with different issuer
+	idp.Inject("https://different.example.com/oidc")
+
+	// Values should not change (idempotent)
+	g.Expect(idp.Issuer).To(Equal(firstIssuer))
+	g.Expect(idp.RedirectURI).To(Equal(firstRedirect))
+}
+
+// TestIdentityProviderInjectNoTemplates tests Inject() with no template variables.
+func TestIdentityProviderInjectNoTemplates(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	idp := &IdentityProvider{
+		Issuer:      "https://static.example.com/auth",
+		RedirectURI: "https://app.example.com/callback",
+	}
+
+	issuer := "https://hub.example.com/oidc"
+	idp.Inject(issuer)
+
+	// Values should remain unchanged
+	g.Expect(idp.Issuer).To(Equal("https://static.example.com/auth"))
+	g.Expect(idp.RedirectURI).To(Equal("https://app.example.com/callback"))
+}
+
+// TestIdentityProviderInjectAllVariables tests all template variables.
+func TestIdentityProviderInjectAllVariables(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	idp := &IdentityProvider{
+		Issuer:      "${issuer.proto}://${issuer.host}:${issuer.port}${issuer.path}/auth",
+		RedirectURI: "${issuer}/callback",
+	}
+
+	issuer := "https://hub.example.com:9443/oidc"
+	idp.Inject(issuer)
+
+	g.Expect(idp.Issuer).To(Equal("https://hub.example.com:9443/oidc/auth"))
+	g.Expect(idp.RedirectURI).To(Equal("https://hub.example.com:9443/oidc/callback"))
+}
+
+// TestIdentityProviderInjectDefaultPort tests template variables with default port.
+func TestIdentityProviderInjectDefaultPort(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	idp := &IdentityProvider{
+		Issuer:      "https://${issuer.host}:${issuer.port}/auth",
+		RedirectURI: "http://${issuer.host}:${issuer.port}/callback",
+	}
+
+	// HTTPS default port (443) - url.Parse returns empty string for default ports
+	issuer := "https://hub.example.com/oidc"
+	idp.Inject(issuer)
+
+	// When port is default (443 for https), ${issuer.port} expands to empty string
+	g.Expect(idp.Issuer).To(Equal("https://hub.example.com:/auth"))
+	g.Expect(idp.RedirectURI).To(Equal("http://hub.example.com:/callback"))
+}
+
+// TestIdentityProviderInjectConcurrent tests thread-safety of Inject().
+func TestIdentityProviderInjectConcurrent(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	idp := &IdentityProvider{
+		Issuer:      "https://${issuer.host}/auth",
+		RedirectURI: "${issuer}/callback",
+	}
+
+	issuer := "https://hub.example.com/oidc"
+
+	// Call Inject concurrently from multiple goroutines
+	done := make(chan bool, 10)
+	for i := 0; i < 10; i++ {
+		go func() {
+			idp.Inject(issuer)
+			done <- true
+		}()
+	}
+
+	// Wait for all goroutines
+	for i := 0; i < 10; i++ {
+		<-done
+	}
+
+	// Verify injection happened correctly (only once due to idempotency)
+	g.Expect(idp.Issuer).To(Equal("https://hub.example.com/auth"))
+	g.Expect(idp.RedirectURI).To(Equal("https://hub.example.com/oidc/callback"))
+}

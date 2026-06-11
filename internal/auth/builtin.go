@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-jose/go-jose/v4"
@@ -108,6 +109,7 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 
 // Builtin provides OIDC authentication.
 type Builtin struct {
+	ready      sync.Once
 	db         *gorm.DB
 	provider   op.OpenIDProvider
 	idpHandler *FedIdpHandler
@@ -139,6 +141,14 @@ func (p *Builtin) IdpHandler() (h *FedIdpHandler) {
 // Cache returns the provider cache.
 func (p *Builtin) Cache() *Cache {
 	return p.cache
+}
+
+// Ready notification of an incoming request.
+func (p *Builtin) Ready(r *http.Request) {
+	p.ready.Do(func() {
+		federated.Idp.Inject(Issuer(r))
+		Log.Info("Injected:\n" + federated.String())
+	})
 }
 
 // Login handles the custom login page.
