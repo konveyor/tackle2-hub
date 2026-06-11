@@ -296,10 +296,11 @@ func (p *Builtin) Scopes(jwToken *jwt.Token) (scopes []Scope) {
 
 // validToken returns an error if not valid.
 func (p *Builtin) validToken(jwToken *jwt.Token, req *Request) (err error) {
+	jti := p.jti(jwToken)
 	if !jwToken.Valid {
 		err = liberr.Wrap(&NotAuthenticated{
 			Reason: "token invalid",
-			Token:  jwToken.Raw,
+			Token:  jti,
 		})
 		return
 	}
@@ -307,8 +308,8 @@ func (p *Builtin) validToken(jwToken *jwt.Token, req *Request) (err error) {
 	if !cast {
 		err = liberr.Wrap(
 			&NotValid{
-				Reason: "Claims not specified.",
-				Token:  jwToken.Raw,
+				Reason:  "Claims not specified.",
+				TokenId: jti,
 			})
 		return
 	}
@@ -316,8 +317,8 @@ func (p *Builtin) validToken(jwToken *jwt.Token, req *Request) (err error) {
 	if !found {
 		err = liberr.Wrap(
 			&NotValid{
-				Reason: "User not specified.",
-				Token:  jwToken.Raw,
+				Reason:  "User not specified.",
+				TokenId: jti,
 			})
 		return
 	}
@@ -325,8 +326,8 @@ func (p *Builtin) validToken(jwToken *jwt.Token, req *Request) (err error) {
 	if !cast {
 		err = liberr.Wrap(
 			&NotValid{
-				Reason: "User not string.",
-				Token:  jwToken.Raw,
+				Reason:  "User not string.",
+				TokenId: jti,
 			})
 		return
 	}
@@ -334,8 +335,8 @@ func (p *Builtin) validToken(jwToken *jwt.Token, req *Request) (err error) {
 	if !found {
 		err = liberr.Wrap(
 			&NotValid{
-				Reason: "Scope not specified.",
-				Token:  jwToken.Raw,
+				Reason:  "Scope not specified.",
+				TokenId: jti,
 			})
 		return
 	}
@@ -343,8 +344,8 @@ func (p *Builtin) validToken(jwToken *jwt.Token, req *Request) (err error) {
 	if !cast {
 		err = liberr.Wrap(
 			&NotValid{
-				Reason: "Scope not string.",
-				Token:  jwToken.Raw,
+				Reason:  "Scope not string.",
+				TokenId: jti,
 			})
 		return
 	}
@@ -352,8 +353,8 @@ func (p *Builtin) validToken(jwToken *jwt.Token, req *Request) (err error) {
 	if !found {
 		err = liberr.Wrap(
 			&NotValid{
-				Reason: "Exp not specified.",
-				Token:  jwToken.Raw,
+				Reason:  "Exp not specified.",
+				TokenId: jti,
 			})
 		return
 	}
@@ -361,16 +362,16 @@ func (p *Builtin) validToken(jwToken *jwt.Token, req *Request) (err error) {
 	if !cast {
 		err = liberr.Wrap(
 			&NotValid{
-				Reason: "Exp not float64.",
-				Token:  jwToken.Raw,
+				Reason:  "Exp not float64.",
+				TokenId: jti,
 			})
 		return
 	}
 	expiration := time.Unix(int64(f64), 0)
 	if expiration.Before(time.Now()) {
 		err = &NotValid{
-			Reason: "Token expired.",
-			Token:  jwToken.Raw,
+			Reason:  "Token expired.",
+			TokenId: jti,
 		}
 		return
 	}
@@ -378,8 +379,8 @@ func (p *Builtin) validToken(jwToken *jwt.Token, req *Request) (err error) {
 	if !found {
 		err = liberr.Wrap(
 			&NotValid{
-				Reason: "Iss not specified.",
-				Token:  jwToken.Raw,
+				Reason:  "Iss not specified.",
+				TokenId: jti,
 			})
 		return
 	}
@@ -387,16 +388,16 @@ func (p *Builtin) validToken(jwToken *jwt.Token, req *Request) (err error) {
 	if !cast {
 		err = liberr.Wrap(
 			&NotValid{
-				Reason: "Iss not string.",
-				Token:  jwToken.Raw,
+				Reason:  "Iss not string.",
+				TokenId: jti,
 			})
 		return
 	}
 	if issuerStr != Issuer(req.CTX.Request) {
 		err = liberr.Wrap(
 			&NotValid{
-				Reason: "Iss mismatch.",
-				Token:  jwToken.Raw,
+				Reason:  "Iss mismatch.",
+				TokenId: jti,
 			})
 		return
 	}
@@ -432,7 +433,7 @@ func (k *KeySet) Key(id string) (jwk JWK, err error) {
 func (p *Builtin) authToken(req *Request) (jwToken *jwt.Token, err error) {
 	defer func() {
 		if errors.Is(err, &NotValid{}) {
-			Log.V(2).Info("[builtin] " + err.Error())
+			Log.V(2).Info(err.Error())
 		}
 	}()
 	token := req.Token
@@ -507,6 +508,7 @@ func (p *Builtin) authToken(req *Request) (jwToken *jwt.Token, err error) {
 	if err == nil {
 		jwToken = jwt.New(jwt.SigningMethodHS512)
 		jwtClaims := jwToken.Claims.(jwt.MapClaims)
+		jwtClaims[ClaimId] = pat.AuthId
 		jwtClaims[ClaimSub] = pat.Subject
 		jwtClaims[ClaimScope] = pat.Scopes
 		jwtClaims[ClaimIss] = Issuer(req.CTX.Request)
@@ -551,6 +553,7 @@ func (p *Builtin) authUser(req *Request) (jwToken *jwt.Token, err error) {
 	sort.Strings(scopes)
 	jwToken = jwt.New(jwt.SigningMethodRS256)
 	jwtClaims := jwToken.Claims.(jwt.MapClaims)
+	jwtClaims[ClaimId] = user.Login
 	jwtClaims[ClaimSub] = user.Subject
 	jwtClaims[ClaimScope] = strings.Join(scopes, " ")
 	jwtClaims[ClaimIss] = Issuer(req.CTX.Request)
@@ -568,6 +571,7 @@ func (p *Builtin) authLdapUser(req *Request) (jwToken *jwt.Token, err error) {
 	}
 	jwToken = jwt.New(jwt.SigningMethodRS256)
 	jwtClaims := jwToken.Claims.(jwt.MapClaims)
+	jwtClaims[ClaimId] = subject.Login()
 	jwtClaims[ClaimSub] = subject.Key
 	jwtClaims[ClaimScope] = strings.Join(subject.Scopes, " ")
 	jwtClaims[ClaimIss] = Issuer(req.CTX.Request)
@@ -587,6 +591,29 @@ func (p *Builtin) newToken(subject string, lifespan time.Duration) (token Token)
 	token.Secret = p.storage.genId()
 	token.Digest = secret.Hash(token.Secret)
 	token.Expiration = time.Now().Add(lifespan)
+	return
+}
+
+// jti returns the token id.
+// when the id cannot be extracted from the 'jti' claim, the first
+// 12 characters of the token itself + '..." are returned.
+func (p *Builtin) jti(jwToken *jwt.Token) (id string) {
+	if jwToken.Raw == "" {
+		return
+	}
+	claims, cast := jwToken.Claims.(jwt.MapClaims)
+	if cast {
+		v, found := claims[ClaimId]
+		if found {
+			if s, cast := v.(string); cast {
+				id = s
+				return
+			}
+		}
+	}
+	id = jwToken.Raw
+	pLen := min(12, max(1, len(id)/4))
+	id = id[:pLen] + "..."
 	return
 }
 

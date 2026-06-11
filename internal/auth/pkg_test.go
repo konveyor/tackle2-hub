@@ -604,10 +604,10 @@ func TestNotValidError(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	err := &NotValid{
-		Token:  "test-token",
-		Reason: "expired",
+		TokenId: "test-token-id",
+		Reason:  "expired",
 	}
-	g.Expect(err.Error()).To(ContainSubstring("test-token"))
+	g.Expect(err.Error()).To(ContainSubstring("test-token-id"))
 	g.Expect(err.Error()).To(ContainSubstring("expired"))
 	g.Expect(err.Error()).To(ContainSubstring("not-valid"))
 
