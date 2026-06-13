@@ -22,7 +22,7 @@ func NewCluster(client k8s.Client) (cluster Cluster) {
 // Maps must NOT be accessed directly.
 type Cluster struct {
 	k8s.Client
-	mutex      sync.RWMutex
+	mutex      sync.Mutex
 	tackle     *crd.Tackle
 	addons     map[string]*crd.Addon
 	extensions map[string]*crd.Extension
@@ -68,24 +68,24 @@ func (k *Cluster) Refresh() (err error) {
 
 // Tackle returns the tackle resource.
 func (k *Cluster) Tackle() (r *crd.Tackle) {
-	k.mutex.RLock()
-	defer k.mutex.RUnlock()
+	k.mutex.Lock()
+	defer k.mutex.Unlock()
 	r = k.tackle
 	return
 }
 
 // Addon returns an addon by name.
 func (k *Cluster) Addon(name string) (r *crd.Addon, found bool) {
-	k.mutex.RLock()
-	defer k.mutex.RUnlock()
+	k.mutex.Lock()
+	defer k.mutex.Unlock()
 	r, found = k.addons[name]
 	return
 }
 
 // Addons returns an addon by name.
 func (k *Cluster) Addons() (list []*crd.Addon) {
-	k.mutex.RLock()
-	defer k.mutex.RUnlock()
+	k.mutex.Lock()
+	defer k.mutex.Unlock()
 	for _, r := range k.addons {
 		list = append(list, r)
 	}
@@ -94,16 +94,16 @@ func (k *Cluster) Addons() (list []*crd.Addon) {
 
 // Extension returns an extension by name.
 func (k *Cluster) Extension(name string) (r *crd.Extension, found bool) {
-	k.mutex.RLock()
-	defer k.mutex.RUnlock()
+	k.mutex.Lock()
+	defer k.mutex.Unlock()
 	r, found = k.extensions[name]
 	return
 }
 
 // Extensions returns an extension by name.
 func (k *Cluster) Extensions() (list []*crd.Extension) {
-	k.mutex.RLock()
-	defer k.mutex.RUnlock()
+	k.mutex.Lock()
+	defer k.mutex.Unlock()
 	for _, r := range k.extensions {
 		list = append(list, r)
 	}
@@ -112,8 +112,8 @@ func (k *Cluster) Extensions() (list []*crd.Extension) {
 
 // FindExtensions returns extensions by name.
 func (k *Cluster) FindExtensions(names []string) (list []*crd.Extension, err error) {
-	k.mutex.RLock()
-	defer k.mutex.RUnlock()
+	k.mutex.Lock()
+	defer k.mutex.Unlock()
 	for _, name := range names {
 		r, found := k.extensions[name]
 		if !found {
@@ -127,24 +127,24 @@ func (k *Cluster) FindExtensions(names []string) (list []*crd.Extension, err err
 
 // Task returns a task by name.
 func (k *Cluster) Task(name string) (r *crd.Task, found bool) {
-	k.mutex.RLock()
-	defer k.mutex.RUnlock()
+	k.mutex.Lock()
+	defer k.mutex.Unlock()
 	r, found = k.tasks[name]
 	return
 }
 
 // Pod returns a pod by name.
 func (k *Cluster) Pod(name string) (r *core.Pod, found bool) {
-	k.mutex.RLock()
-	defer k.mutex.RUnlock()
+	k.mutex.Lock()
+	defer k.mutex.Unlock()
 	r, found = k.pods.tasks[name]
 	return
 }
 
 // OtherPods returns a list of non-task pods.
 func (k *Cluster) OtherPods() (list []*core.Pod) {
-	k.mutex.RLock()
-	defer k.mutex.RUnlock()
+	k.mutex.Lock()
+	defer k.mutex.Unlock()
 	for _, r := range k.pods.other {
 		list = append(list, r)
 	}
@@ -153,8 +153,8 @@ func (k *Cluster) OtherPods() (list []*core.Pod) {
 
 // TaskPods returns a list of task pods.
 func (k *Cluster) TaskPods() (list []*core.Pod) {
-	k.mutex.RLock()
-	defer k.mutex.RUnlock()
+	k.mutex.Lock()
+	defer k.mutex.Unlock()
 	for _, r := range k.pods.tasks {
 		list = append(list, r)
 	}
@@ -163,8 +163,8 @@ func (k *Cluster) TaskPods() (list []*core.Pod) {
 
 // TaskPodsScheduled returns a list of task pods scheduled.
 func (k *Cluster) TaskPodsScheduled() (list []*core.Pod) {
-	k.mutex.RLock()
-	defer k.mutex.RUnlock()
+	k.mutex.Lock()
+	defer k.mutex.Unlock()
 	for _, r := range k.pods.tasks {
 		if r.Status.Phase == core.PodFailed || r.Status.Phase == core.PodSucceeded {
 			continue
@@ -176,8 +176,8 @@ func (k *Cluster) TaskPodsScheduled() (list []*core.Pod) {
 
 // Quotas returns quotas.
 func (k *Cluster) Quotas() (list []*core.ResourceQuota) {
-	k.mutex.RLock()
-	defer k.mutex.RUnlock()
+	k.mutex.Lock()
+	defer k.mutex.Unlock()
 	for _, r := range k.quotas {
 		list = append(list, r)
 	}

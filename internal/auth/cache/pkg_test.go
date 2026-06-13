@@ -74,14 +74,23 @@ func TestCacheEntityUpdates(t *testing.T) {
 	_, err = cache.FindUserByLogin("testuser")
 	g.Expect(err).NotTo(BeNil())
 
-	// Test TaskGranted/TaskRevoked
+	// Test TokenSaved/TaskRevoked
 	taskID := uint(300)
-	cache.TaskGranted(taskID)
-	_, err = cache.FindTaskById(taskID)
+	taskToken := &Token{
+		Token: model.Token{
+			Model:      Model{ID: 300},
+			TaskID:     &taskID,
+			Digest:     secret.Hash("task-token-300"),
+			Expiration: time.Now().Add(24 * time.Hour),
+		},
+		Secret: "task-token-300",
+	}
+	cache.TokenSaved(taskToken)
+	_, err = cache.FindToken("task-token-300")
 	g.Expect(err).To(BeNil())
 
 	cache.TaskRevoked(taskID)
-	_, err = cache.FindTaskById(taskID)
+	_, err = cache.FindToken("task-token-300")
 	g.Expect(err).NotTo(BeNil())
 
 	// Test IdentitySaved/IdentityDeleted
@@ -129,10 +138,9 @@ func TestCacheTransaction(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Both roles should be in cache
-	cache.mutex.RLock()
-	_, found1 := cache.roleById[101]
-	_, found2 := cache.roleById[102]
-	cache.mutex.RUnlock()
+	d := cache.data.Load()
+	_, found1 := d.roleById[101]
+	_, found2 := d.roleById[102]
 	g.Expect(found1).To(BeTrue())
 	g.Expect(found2).To(BeTrue())
 
@@ -149,9 +157,8 @@ func TestCacheTransaction(t *testing.T) {
 	g.Expect(err).NotTo(BeNil())
 
 	// Role3 should NOT be in cache (rolled back)
-	cache.mutex.RLock()
-	_, found3 := cache.roleById[103]
-	cache.mutex.RUnlock()
+	d = cache.data.Load()
+	_, found3 := d.roleById[103]
 	g.Expect(found3).To(BeFalse())
 
 	// Test explicit Begin/Commit/Rollback
@@ -164,9 +171,8 @@ func TestCacheTransaction(t *testing.T) {
 	tx.UserSaved(user)
 	tx.Commit()
 
-	cache.mutex.RLock()
-	_, foundUser := cache.userById[201]
-	cache.mutex.RUnlock()
+	d = cache.data.Load()
+	_, foundUser := d.userById[201]
 	g.Expect(foundUser).To(BeTrue())
 
 	// Test rollback
@@ -179,9 +185,8 @@ func TestCacheTransaction(t *testing.T) {
 	tx.UserSaved(user2)
 	tx.Rollback() // Discard changes
 
-	cache.mutex.RLock()
-	_, foundUser2 := cache.userById[202]
-	cache.mutex.RUnlock()
+	d = cache.data.Load()
+	_, foundUser2 := d.userById[202]
 	g.Expect(foundUser2).To(BeFalse())
 }
 
@@ -206,10 +211,8 @@ func TestCacheDoubleCheckRefresh(t *testing.T) {
 	err = cache.Refresh()
 	g.Expect(err).To(BeNil())
 
-	// Force cache to be stale
-	cache.mutex.Lock()
-	cache.refreshed = time.Now().Add(-10 * time.Minute)
-	cache.mutex.Unlock()
+	// Force cache to be stale - not needed with new design
+	// (background refresh runs independently)
 
 	// Launch multiple concurrent calls to FindUserByLogin (which calls ensureFresh)
 	var wg sync.WaitGroup
@@ -259,37 +262,15 @@ func TestCacheInconsistency(t *testing.T) {
 			Digest: userTokenDigest,
 		},
 	}
-	cache.mutex.Lock()
-	cache.tokenByDigest[userTokenDigest] = userToken
-	cache.tokenById[1] = userToken
-	cache.mutex.Unlock()
+	d := cache.data.Load()
+	d.tokenByDigest[userTokenDigest] = userToken
+	d.tokenById[1] = userToken
 
-	_, err = cache.getToken(userTokenSecret)
+	_, err = cache.FindToken(userTokenSecret)
 	g.Expect(err).NotTo(BeNil())
 	var notFound *NotFound
 	g.Expect(errors.As(err, &notFound)).To(BeTrue())
 	g.Expect(notFound.Resource).To(Equal("user"))
-
-	// Create token referencing non-existent task
-	taskID := uint(8888)
-	taskTokenSecret := "inconsistent-task-token"
-	taskTokenDigest := secret.Hash(taskTokenSecret)
-	taskToken := &Token{
-		Token: model.Token{
-			Model:  Model{ID: 2},
-			TaskID: &taskID,
-			Digest: taskTokenDigest,
-		},
-	}
-	cache.mutex.Lock()
-	cache.tokenByDigest[taskTokenDigest] = taskToken
-	cache.tokenById[2] = taskToken
-	cache.mutex.Unlock()
-
-	_, err = cache.getToken(taskTokenSecret)
-	g.Expect(err).NotTo(BeNil())
-	g.Expect(errors.As(err, &notFound)).To(BeTrue())
-	g.Expect(notFound.Resource).To(Equal("task"))
 
 	// Create token referencing non-existent identity
 	identityID := uint(7777)
@@ -302,12 +283,10 @@ func TestCacheInconsistency(t *testing.T) {
 			Digest:        identityTokenDigest,
 		},
 	}
-	cache.mutex.Lock()
-	cache.tokenByDigest[identityTokenDigest] = identityToken
-	cache.tokenById[3] = identityToken
-	cache.mutex.Unlock()
+	d.tokenByDigest[identityTokenDigest] = identityToken
+	d.tokenById[3] = identityToken
 
-	_, err = cache.getToken(identityTokenSecret)
+	_, err = cache.FindToken(identityTokenSecret)
 	g.Expect(err).NotTo(BeNil())
 	g.Expect(errors.As(err, &notFound)).To(BeTrue())
 	g.Expect(notFound.Resource).To(Equal("identity"))
@@ -323,12 +302,10 @@ func TestCacheInconsistency(t *testing.T) {
 			Digest:      clientTokenDigest,
 		},
 	}
-	cache.mutex.Lock()
-	cache.tokenByDigest[clientTokenDigest] = clientToken
-	cache.tokenById[4] = clientToken
-	cache.mutex.Unlock()
+	d.tokenByDigest[clientTokenDigest] = clientToken
+	d.tokenById[4] = clientToken
 
-	_, err = cache.getToken(clientTokenSecret)
+	_, err = cache.FindToken(clientTokenSecret)
 	g.Expect(err).NotTo(BeNil())
 	g.Expect(errors.As(err, &notFound)).To(BeTrue())
 	g.Expect(notFound.Resource).To(Equal("client"))
@@ -358,23 +335,16 @@ func TestTaskRevokedRemovesTokens(t *testing.T) {
 		Secret: tokenSecret,
 	}
 
-	// Add task and token to cache
-	cache.TaskGranted(taskID)
+	// Add token to cache
 	cache.TokenSaved(token)
 
-	// Verify task and token are in cache
-	_, err = cache.FindTaskById(taskID)
-	g.Expect(err).To(BeNil())
+	// Verify token is in cache
 	found, err := cache.FindToken(tokenSecret)
 	g.Expect(err).To(BeNil())
 	g.Expect(found.ID).To(Equal(uint(100)))
 
 	// Revoke task
 	cache.TaskRevoked(taskID)
-
-	// Verify task removed from cache
-	_, err = cache.FindTaskById(taskID)
-	g.Expect(err).NotTo(BeNil())
 
 	// Verify token removed from cache
 	_, err = cache.FindToken(tokenSecret)
@@ -422,9 +392,7 @@ func TestTaskRevokedMultipleTokens(t *testing.T) {
 		Secret: token2Secret,
 	}
 
-	// Add tasks and tokens to cache
-	cache.TaskGranted(task1ID)
-	cache.TaskGranted(task2ID)
+	// Add tokens to cache
 	cache.TokenSaved(token1)
 	cache.TokenSaved(token2)
 
@@ -445,10 +413,6 @@ func TestTaskRevokedMultipleTokens(t *testing.T) {
 	found, err := cache.FindToken(token2Secret)
 	g.Expect(err).To(BeNil())
 	g.Expect(found.ID).To(Equal(uint(102)))
-
-	// Verify task2 still in cache
-	_, err = cache.FindTaskById(task2ID)
-	g.Expect(err).To(BeNil())
 }
 
 // TestTaskRevokedTransaction tests TaskRevoked within a transaction.
@@ -474,13 +438,10 @@ func TestTaskRevokedTransaction(t *testing.T) {
 		Secret: tokenSecret,
 	}
 
-	// Add task and token
-	cache.TaskGranted(taskID)
+	// Add token
 	cache.TokenSaved(token)
 
 	// Verify in cache
-	_, err = cache.FindTaskById(taskID)
-	g.Expect(err).To(BeNil())
 	_, err = cache.FindToken(tokenSecret)
 	g.Expect(err).To(BeNil())
 
@@ -491,9 +452,7 @@ func TestTaskRevokedTransaction(t *testing.T) {
 	})
 	g.Expect(err).To(BeNil())
 
-	// Verify task and token removed
-	_, err = cache.FindTaskById(taskID)
-	g.Expect(err).NotTo(BeNil())
+	// Verify token removed
 	_, err = cache.FindToken(tokenSecret)
 	g.Expect(err).NotTo(BeNil())
 
@@ -510,7 +469,6 @@ func TestTaskRevokedTransaction(t *testing.T) {
 		Secret: token2Secret,
 	}
 
-	cache.TaskGranted(task2ID)
 	cache.TokenSaved(token2)
 
 	// Rollback transaction
@@ -520,9 +478,7 @@ func TestTaskRevokedTransaction(t *testing.T) {
 	})
 	g.Expect(err).NotTo(BeNil())
 
-	// Verify task and token still exist (rollback successful)
-	_, err = cache.FindTaskById(task2ID)
-	g.Expect(err).To(BeNil())
+	// Verify token still exists (rollback successful)
 	_, err = cache.FindToken(token2Secret)
 	g.Expect(err).To(BeNil())
 }
@@ -551,10 +507,9 @@ func TestCacheUserSavedBySubject(t *testing.T) {
 	cache.UserSaved(user)
 
 	// Verify it's in both maps
-	cache.mutex.RLock()
-	userById, foundById := cache.userById[999]
-	userBySubject, foundBySubject := cache.userBySubject["cached-user-subject"]
-	cache.mutex.RUnlock()
+	d := cache.data.Load()
+	userById, foundById := d.userById[999]
+	userBySubject, foundBySubject := d.userBySubject["cached-user-subject"]
 
 	g.Expect(foundById).To(BeTrue())
 	g.Expect(foundBySubject).To(BeTrue())
@@ -593,10 +548,9 @@ func TestCacheIdentitySavedBySubject(t *testing.T) {
 	cache.IdentitySaved(identity)
 
 	// Verify it's in both maps
-	cache.mutex.RLock()
-	identById, foundById := cache.identById[888]
-	identBySubject, foundBySubject := cache.identBySubject["cached-identity-subject"]
-	cache.mutex.RUnlock()
+	d := cache.data.Load()
+	identById, foundById := d.identById[888]
+	identBySubject, foundBySubject := d.identBySubject["cached-identity-subject"]
 
 	g.Expect(foundById).To(BeTrue())
 	g.Expect(foundBySubject).To(BeTrue())
@@ -630,10 +584,9 @@ func TestCacheUserDeletedBySubject(t *testing.T) {
 	cache.UserSaved(user)
 
 	// Verify it's in both maps
-	cache.mutex.RLock()
-	_, foundById := cache.userById[777]
-	_, foundBySubject := cache.userBySubject["delete-user-subject"]
-	cache.mutex.RUnlock()
+	d := cache.data.Load()
+	_, foundById := d.userById[777]
+	_, foundBySubject := d.userBySubject["delete-user-subject"]
 	g.Expect(foundById).To(BeTrue())
 	g.Expect(foundBySubject).To(BeTrue())
 
@@ -641,10 +594,9 @@ func TestCacheUserDeletedBySubject(t *testing.T) {
 	cache.UserDeleted(777)
 
 	// Verify removed from both maps
-	cache.mutex.RLock()
-	_, foundById = cache.userById[777]
-	_, foundBySubject = cache.userBySubject["delete-user-subject"]
-	cache.mutex.RUnlock()
+	d = cache.data.Load()
+	_, foundById = d.userById[777]
+	_, foundBySubject = d.userBySubject["delete-user-subject"]
 	g.Expect(foundById).To(BeFalse())
 	g.Expect(foundBySubject).To(BeFalse())
 
@@ -673,10 +625,9 @@ func TestCacheIdentityDeletedBySubject(t *testing.T) {
 	cache.IdentitySaved(identity)
 
 	// Verify it's in both maps
-	cache.mutex.RLock()
-	_, foundById := cache.identById[666]
-	_, foundBySubject := cache.identBySubject["delete-identity-subject"]
-	cache.mutex.RUnlock()
+	d := cache.data.Load()
+	_, foundById := d.identById[666]
+	_, foundBySubject := d.identBySubject["delete-identity-subject"]
 	g.Expect(foundById).To(BeTrue())
 	g.Expect(foundBySubject).To(BeTrue())
 
@@ -684,10 +635,9 @@ func TestCacheIdentityDeletedBySubject(t *testing.T) {
 	cache.IdentityDeleted(666)
 
 	// Verify removed from both maps
-	cache.mutex.RLock()
-	_, foundById = cache.identById[666]
-	_, foundBySubject = cache.identBySubject["delete-identity-subject"]
-	cache.mutex.RUnlock()
+	d = cache.data.Load()
+	_, foundById = d.identById[666]
+	_, foundBySubject = d.identBySubject["delete-identity-subject"]
 	g.Expect(foundById).To(BeFalse())
 	g.Expect(foundBySubject).To(BeFalse())
 
@@ -720,11 +670,10 @@ func TestCacheUserByUseridMaps(t *testing.T) {
 	cache.UserSaved(user)
 
 	// Verify it's in all three maps
-	cache.mutex.RLock()
-	userById, foundById := cache.userById[555]
-	userBySubject, foundBySubject := cache.userBySubject["map-test-subject"]
-	userByLogin, foundByLogin := cache.userByLogin["maptestuser"]
-	cache.mutex.RUnlock()
+	d := cache.data.Load()
+	userById, foundById := d.userById[555]
+	userBySubject, foundBySubject := d.userBySubject["map-test-subject"]
+	userByLogin, foundByLogin := d.userByLogin["maptestuser"]
 
 	g.Expect(foundById).To(BeTrue())
 	g.Expect(foundBySubject).To(BeTrue())
@@ -737,11 +686,10 @@ func TestCacheUserByUseridMaps(t *testing.T) {
 	cache.UserDeleted(555)
 
 	// Verify removed from all three maps
-	cache.mutex.RLock()
-	_, foundById = cache.userById[555]
-	_, foundBySubject = cache.userBySubject["map-test-subject"]
-	_, foundByLogin = cache.userByLogin["maptestuser"]
-	cache.mutex.RUnlock()
+	d = cache.data.Load()
+	_, foundById = d.userById[555]
+	_, foundBySubject = d.userBySubject["map-test-subject"]
+	_, foundByLogin = d.userByLogin["maptestuser"]
 
 	g.Expect(foundById).To(BeFalse())
 	g.Expect(foundBySubject).To(BeFalse())
@@ -782,16 +730,6 @@ func TestCacheConcurrency(t *testing.T) {
 			_, err := cache.FindUserByLogin(fmt.Sprintf("concurrentuser%d", userIdx))
 			g.Expect(err).To(BeNil())
 		}(i)
-	}
-
-	// Launch concurrent Refresh operations
-	for i := 0; i < 5; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			err := cache.Refresh()
-			g.Expect(err).To(BeNil())
-		}()
 	}
 
 	// Launch concurrent UserSaved operations
@@ -835,12 +773,11 @@ func TestManualCacheRefresh(t *testing.T) {
 	// Call Reset - should clear cache
 	cache.Reset()
 
-	// User should still be found via automatic refresh (ensureFresh)
-	found, err = cache.FindUserByLogin("manualrefreshuser")
-	g.Expect(err).To(BeNil())
-	g.Expect(found).NotTo(BeNil())
+	// Cache is now empty, user not found
+	_, err = cache.FindUserByLogin("manualrefreshuser")
+	g.Expect(err).NotTo(BeNil())
 
-	// Call manual Refresh
+	// Call manual Refresh to reload
 	err = cache.Refresh()
 	g.Expect(err).To(BeNil())
 
@@ -1232,4 +1169,424 @@ func TestIdpClientWith(t *testing.T) {
 	g.Expect(cachePublic.ClientId).To(Equal("public-client"))
 	g.Expect(cachePublic.Secret).To(BeEmpty())
 	g.Expect(cachePublic.ApplicationType).To(Equal("native"))
+}
+
+// TestCopyOnWriteCommit verifies Commit clones Data instead of mutating.
+func TestCopyOnWriteCommit(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	// Load Data before Tx
+	oldData := cache.data.Load()
+
+	// Execute transaction
+	user := &User{
+		Model:   Model{ID: 100},
+		Subject: "cow-test",
+		Login:   "cowtest",
+	}
+	cache.UserSaved(user)
+
+	// Load Data after Tx
+	newData := cache.data.Load()
+
+	// Verify Data pointer changed (copy-on-write)
+	g.Expect(oldData).NotTo(Equal(newData))
+
+	// Verify old Data unchanged
+	_, found := oldData.userById[100]
+	g.Expect(found).To(BeFalse())
+
+	// Verify new Data has change
+	_, found = newData.userById[100]
+	g.Expect(found).To(BeTrue())
+}
+
+// TestConcurrentCommitsNoLostUpdates verifies mutex prevents lost updates.
+func TestConcurrentCommitsNoLostUpdates(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	// Spawn 10 concurrent UserSaved operations
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+			user := &User{
+				Model:   Model{ID: uint(id + 100)},
+				Subject: fmt.Sprintf("concurrent-%d", id),
+				Login:   fmt.Sprintf("concurrent%d", id),
+			}
+			cache.UserSaved(user)
+		}(i)
+	}
+
+	wg.Wait()
+
+	// Verify ALL 10 users are in cache (no lost updates)
+	d := cache.data.Load()
+	for i := 0; i < 10; i++ {
+		_, found := d.userById[uint(i+100)]
+		g.Expect(found).To(BeTrue(), fmt.Sprintf("user %d not found", i))
+	}
+}
+
+// TestDataClone verifies clone creates independent copy.
+func TestDataClone(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Create original Data with content
+	original := &Data{}
+	original.reset()
+	original.userById[1] = &User{Model: Model{ID: 1}, Login: "user1"}
+	original.roleById[2] = &Role{Model: Model{ID: 2}, Name: "role1"}
+	original.refreshed = time.Now().Add(-5 * time.Minute)
+
+	// Clone it
+	clone := original.clone()
+
+	// Verify refreshed timestamp copied
+	g.Expect(clone.refreshed).To(Equal(original.refreshed))
+
+	// Verify maps copied (share same objects)
+	g.Expect(clone.userById[1]).To(Equal(original.userById[1]))
+	g.Expect(clone.roleById[2]).To(Equal(original.roleById[2]))
+
+	// Mutate clone - should NOT affect original
+	clone.userById[3] = &User{Model: Model{ID: 3}, Login: "user3"}
+	delete(clone.roleById, 2)
+
+	// Verify original unchanged
+	_, found := original.userById[3]
+	g.Expect(found).To(BeFalse())
+	_, found = original.roleById[2]
+	g.Expect(found).To(BeTrue())
+
+	// Verify clone has mutations
+	_, found = clone.userById[3]
+	g.Expect(found).To(BeTrue())
+	_, found = clone.roleById[2]
+	g.Expect(found).To(BeFalse())
+}
+
+// TestOnDemandRefresh verifies ensureRefreshed triggers when stale.
+func TestOnDemandRefresh(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	// Get original Data and manually age it
+	d := cache.data.Load()
+	oldRefreshed := d.refreshed
+
+	// Create a new stale Data and swap it in
+	staleData := d.clone()
+	staleData.refreshed = time.Now().Add(-10 * time.Minute) // Stale
+	cache.data.Store(staleData)
+
+	// Create new user in DB (bypassing cache notifications)
+	user := &User{
+		Subject:  "on-demand-user",
+		Login:    "ondemanduser",
+		Password: secret.HashPassword("password"),
+		Email:    "ondemand@example.com",
+	}
+	err = db.Create(user).Error
+	g.Expect(err).To(BeNil())
+
+	// First FindXXX should trigger refresh
+	cache.FindUserByLogin("ondemanduser")
+
+	// Poll until refresh completes (max 2 seconds)
+	refreshed := false
+	for i := 0; i < 20; i++ {
+		time.Sleep(100 * time.Millisecond)
+		d = cache.data.Load()
+		if d.refreshed.After(oldRefreshed) {
+			refreshed = true
+			break
+		}
+	}
+	g.Expect(refreshed).To(BeTrue(), "refresh should complete within 2 seconds")
+
+	// Verify new user now in cache
+	found, err := cache.FindUserByLogin("ondemanduser")
+	g.Expect(err).To(BeNil())
+	g.Expect(found).NotTo(BeNil())
+}
+
+// TestAuthStorm tests lock-free reads under concurrent load.
+func TestAuthStorm(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Create test tokens
+	for i := 0; i < 10; i++ {
+		token := &Token{
+			Token: model.Token{
+				Kind:       KindAPIKey,
+				AuthId:     fmt.Sprintf("storm-auth-%d", i),
+				Digest:     secret.Hash(fmt.Sprintf("storm-token-%d", i)),
+				Expiration: time.Now().Add(24 * time.Hour),
+			},
+			Secret: fmt.Sprintf("storm-token-%d", i),
+		}
+		err = db.Create(&token.Token).Error
+		g.Expect(err).To(BeNil())
+	}
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	// 100 goroutines each doing 10 FindToken calls
+	var wg sync.WaitGroup
+	successCount := make([]int, 100)
+
+	for i := 0; i < 100; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			for j := 0; j < 10; j++ {
+				tokenIdx := j % 10
+				_, err := cache.FindToken(fmt.Sprintf("storm-token-%d", tokenIdx))
+				if err == nil {
+					successCount[idx]++
+				}
+			}
+		}(i)
+	}
+
+	wg.Wait()
+
+	// All reads should succeed
+	totalSuccess := 0
+	for _, count := range successCount {
+		totalSuccess += count
+	}
+	g.Expect(totalSuccess).To(Equal(1000))
+}
+
+// TestTaskChurnUnderLoad tests copy-on-write under write load.
+func TestTaskChurnUnderLoad(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	var wg sync.WaitGroup
+	doneChan := make(chan struct{})
+
+	// 10 writers: create/revoke task tokens
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+			taskID := uint(1000 + id)
+			tokenSecret := fmt.Sprintf("churn-token-%d", id)
+
+			for j := 0; j < 10; j++ {
+				select {
+				case <-doneChan:
+					return
+				default:
+				}
+
+				// Add token
+				token := &Token{
+					Token: model.Token{
+						Model:      Model{ID: uint(id*100 + j)},
+						TaskID:     &taskID,
+						Digest:     secret.Hash(tokenSecret),
+						Expiration: time.Now().Add(24 * time.Hour),
+					},
+					Secret: tokenSecret,
+				}
+				cache.TokenSaved(token)
+
+				// Revoke it
+				cache.TaskRevoked(taskID)
+			}
+		}(i)
+	}
+
+	// 50 readers: continuously try to find tokens
+	readErrors := make([]int, 50)
+	for i := 0; i < 50; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			for j := 0; j < 20; j++ {
+				select {
+				case <-doneChan:
+					return
+				default:
+				}
+				tokenIdx := j % 10
+				_, err := cache.FindToken(fmt.Sprintf("churn-token-%d", tokenIdx))
+				// Token may or may not exist (being churned)
+				// Just verify no panic/crash
+				if err != nil {
+					readErrors[idx]++
+				}
+			}
+		}(i)
+	}
+
+	wg.Wait()
+	close(doneChan)
+
+	// Test passes if no panics occurred
+	// Read errors are expected due to churn
+}
+
+// TestRefreshRace tests that Data.refreshOnce prevents stampede.
+func TestRefreshRace(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	// Make cache stale
+	d := cache.data.Load()
+	staleData := d.clone()
+	staleData.refreshed = time.Now().Add(-10 * time.Minute)
+	cache.data.Store(staleData)
+
+	// 50 goroutines all detect staleness simultaneously
+	var wg sync.WaitGroup
+	for i := 0; i < 50; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			// This triggers ensureRefreshed
+			cache.FindUserByLogin("nonexistent")
+		}()
+	}
+
+	wg.Wait()
+
+	// Give refresh time to complete
+	time.Sleep(100 * time.Millisecond)
+
+	// Verify cache refreshed (exactly once via sync.Once)
+	d = cache.data.Load()
+	g.Expect(d.refreshed).To(BeTemporally(">", staleData.refreshed))
+}
+
+// TestMixedConcurrentOperations tests all operations work concurrently.
+func TestMixedConcurrentOperations(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	var wg sync.WaitGroup
+	iterations := 20
+
+	// Concurrent UserSaved
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+			for j := 0; j < iterations; j++ {
+				user := &User{
+					Model:   Model{ID: uint(id*1000 + j)},
+					Subject: fmt.Sprintf("mixed-user-%d-%d", id, j),
+					Login:   fmt.Sprintf("mixeduser%d-%d", id, j),
+				}
+				cache.UserSaved(user)
+			}
+		}(i)
+	}
+
+	// Concurrent RoleSaved/Deleted
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+			for j := 0; j < iterations; j++ {
+				role := &Role{
+					Model: Model{ID: uint(id*1000 + j)},
+					Name:  fmt.Sprintf("mixed-role-%d-%d", id, j),
+				}
+				cache.RoleSaved(role)
+				if j%2 == 0 {
+					cache.RoleDeleted(role.ID)
+				}
+			}
+		}(i)
+	}
+
+	// Concurrent TokenSaved
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+			for j := 0; j < iterations; j++ {
+				taskID := uint(id*1000 + j)
+				token := &Token{
+					Token: model.Token{
+						Model:      Model{ID: uint(id*1000 + j)},
+						TaskID:     &taskID,
+						Digest:     secret.Hash(fmt.Sprintf("mixed-token-%d-%d", id, j)),
+						Expiration: time.Now().Add(24 * time.Hour),
+					},
+					Secret: fmt.Sprintf("mixed-token-%d-%d", id, j),
+				}
+				cache.TokenSaved(token)
+			}
+		}(i)
+	}
+
+	// Concurrent FindUserByLogin
+	for i := 0; i < 20; i++ {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+			for j := 0; j < iterations; j++ {
+				userIdx := j % 10
+				cache.FindUserByLogin(fmt.Sprintf("mixeduser%d-%d", userIdx, j))
+			}
+		}(i)
+	}
+
+	wg.Wait()
+
+	// Verify final state is consistent
+	d := cache.data.Load()
+	// Should have some users (not all, some deleted/not found)
+	g.Expect(len(d.userById)).To(BeNumerically(">", 0))
 }

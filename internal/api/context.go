@@ -107,8 +107,10 @@ func Transaction(ctx *gin.Context) {
 		err := rtx.DB.Transaction(func(tx *gorm.DB) (err error) {
 			db := rtx.DB
 			rtx.DB = tx
+			defer func() {
+				rtx.DB = db
+			}()
 			ctx.Next()
-			rtx.DB = db
 			if len(ctx.Errors) > 0 {
 				err = ctx.Errors[0]
 				ctx.Errors = nil
