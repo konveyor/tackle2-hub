@@ -178,13 +178,13 @@ func (r *Cache) FindToken(token string) (m *Token, err error) {
 			return
 		}
 		m.Subject = user.Subject
-		m.Scopes = strings.Join(user.GetScopes(r), " ")
+		m.Scopes = user.GetScopes(r)
 		return
 	}
 	// task binding.
 	if m.TaskID != nil {
 		m.Subject = "task:" + strconv.Itoa(int(*m.TaskID))
-		m.Scopes = strings.Join(AddonScopes, " ")
+		m.Scopes = AddonScopes
 		return
 	}
 	// IdP identity binding.
@@ -198,7 +198,7 @@ func (r *Cache) FindToken(token string) (m *Token, err error) {
 			return
 		}
 		m.Subject = identity.Subject
-		m.Scopes = identity.Scopes
+		m.Scopes = strings.Fields(identity.Scopes)
 		return
 	}
 	// IdP client binding.
@@ -212,7 +212,7 @@ func (r *Cache) FindToken(token string) (m *Token, err error) {
 			return
 		}
 		m.Subject = client.Subject
-		m.Scopes = strings.Join(client.GetScopes(), " ")
+		m.Scopes = client.GetScopes()
 		return
 	}
 	return
