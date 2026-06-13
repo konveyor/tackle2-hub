@@ -10,6 +10,10 @@ type Tx struct {
 func (r *Tx) RoleSaved(m *Role) {
 	r.changes = append(
 		r.changes, func(d *Data) {
+			p, found := d.roleById[m.ID]
+			if found {
+				delete(d.roleByName, p.Name)
+			}
 			d.roleById[m.ID] = m
 			d.roleByName[m.Name] = m
 		})

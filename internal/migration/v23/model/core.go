@@ -251,9 +251,9 @@ type IdpClient struct {
 
 type IdpIdentity struct {
 	Model
-	Kind              string    `gorm:"index;not null"`
-	Issuer            string    `gorm:"not null"`
-	Subject           string    `gorm:"uniqueIndex;not null"`
+	Kind              string    `gorm:"<-:create;index;not null"`
+	Issuer            string    `gorm:"<-:create;not null"`
+	Subject           string    `gorm:"<-:create;uniqueIndex;not null"`
 	RefreshToken      string    `gorm:"not null" secret:""`
 	Expiration        time.Time `gorm:"index"`
 	LastAuthenticated time.Time
@@ -272,10 +272,10 @@ type RsaKey struct {
 
 type Grant struct {
 	Model
-	Kind         string `gorm:"not null"`
-	ClientId     string `gorm:"index;not null"`
-	AuthId       string `gorm:"uniqueIndex;not null"`
-	Subject      string `gorm:"index"`
+	Kind         string `gorm:"<-:create;not null"`
+	ClientId     string `gorm:"<-:create;index;not null"`
+	AuthId       string `gorm:"<-:create;uniqueIndex;not null"`
+	Subject      string `gorm:"<-:create;index"`
 	RefreshToken string `gorm:"uniqueIndex"` // digest
 	AuthCode     string `gorm:"index"`
 	Scopes       string
@@ -285,14 +285,13 @@ type Grant struct {
 
 type Token struct {
 	Model
-	Kind          string    `gorm:"not null"`
-	AuthId        string    `gorm:"uniqueIndex;not null"`
-	Subject       string    `gorm:"index"`
-	Digest        string    `gorm:"index"`
-	Scopes        []string  `gorm:"type:json;serializer:json"`
-	Issued        time.Time `gorm:"not null"`
-	Expiration    time.Time
-	Revoked       time.Time
+	Kind          string       `gorm:"<-:create;not null"`
+	AuthId        string       `gorm:"<-:create;uniqueIndex;not null"`
+	Subject       string       `gorm:"<-:create;index"`
+	Digest        string       `gorm:"<-:create;index"`
+	Issued        time.Time    `gorm:"<-:create;not null"`
+	Scopes        []string     `gorm:"<-:create;type:json;serializer:json"`
+	Expiration    time.Time    `gorm:"index"`
 	GrantID       *uint        `gorm:"index"`
 	Grant         *Grant       `gorm:"constraint:OnDelete:CASCADE"`
 	UserID        *uint        `gorm:"index"`
