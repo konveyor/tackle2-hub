@@ -3798,7 +3798,7 @@ func TestToken_With(t *testing.T) {
 		},
 		Kind:       "access_token",
 		Subject:    "user-subject",
-		Scopes:     "openid profile email",
+		Scopes:     []string{"openid", "profile", "email"},
 		Issued:     issued,
 		Expiration: expiration,
 		Revoked:    revoked,
@@ -3817,7 +3817,7 @@ func TestToken_With(t *testing.T) {
 	g.Expect(r.UpdateUser).To(gomega.Equal("user2"))
 	g.Expect(r.Kind).To(gomega.Equal("access_token"))
 	g.Expect(r.Subject).To(gomega.Equal("user-subject"))
-	g.Expect(r.Scopes).To(gomega.Equal("openid profile email"))
+	g.Expect(r.Scopes).To(gomega.Equal([]string{"openid", "profile", "email"}))
 	g.Expect(r.Issued).To(gomega.Equal(issued))
 	g.Expect(r.Expiration).To(gomega.Equal(expiration))
 	g.Expect(r.User).ToNot(gomega.BeNil())
@@ -3832,7 +3832,7 @@ func TestToken_With_NilUser(t *testing.T) {
 		Model:      model.Model{ID: 1},
 		Kind:       "client_credentials",
 		Subject:    "client-subject",
-		Scopes:     "applications:get",
+		Scopes:     []string{"applications:get"},
 		Issued:     time.Now(),
 		Expiration: time.Now().Add(5 * time.Minute),
 		UserID:     nil,
@@ -3860,7 +3860,7 @@ func TestToken_With_IdpClient(t *testing.T) {
 		},
 		Kind:        "access_token",
 		Subject:     "client-subject-123",
-		Scopes:      "openid profile",
+		Scopes:      []string{"openid", "profile"},
 		Issued:      issued,
 		Expiration:  expiration,
 		IdpClientID: &clientID,
@@ -3876,7 +3876,7 @@ func TestToken_With_IdpClient(t *testing.T) {
 	g.Expect(r.ID).To(gomega.Equal(uint(1)))
 	g.Expect(r.Kind).To(gomega.Equal("access_token"))
 	g.Expect(r.Subject).To(gomega.Equal("client-subject-123"))
-	g.Expect(r.Scopes).To(gomega.Equal("openid profile"))
+	g.Expect(r.Scopes).To(gomega.Equal([]string{"openid", "profile"}))
 	g.Expect(r.IdpClient).ToNot(gomega.BeNil())
 	g.Expect(r.IdpClient.ID).To(gomega.Equal(uint(10)))
 }

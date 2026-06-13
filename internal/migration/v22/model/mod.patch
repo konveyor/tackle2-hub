@@ -1,64 +1,130 @@
-diff -ruN '--exclude=mod.patch' migration/v20/model/analysis.go migration/v21/model/analysis.go
---- migration/v20/model/analysis.go	2025-10-27 16:11:13.781809158 -0500
-+++ migration/v21/model/analysis.go	2025-11-07 12:08:40.454018870 -0600
-@@ -142,6 +142,19 @@
- 	return r.UUID != nil
+diff -urN '--exclude=mod.patch' v21/model/core.go v22/model/core.go
+--- v21/model/core.go	2026-04-05 16:41:25.815602657 -0500
++++ v22/model/core.go	2026-06-11 11:46:45.782339667 -0500
+@@ -144,6 +144,7 @@
+ 	Platform      *Platform
+ 	TaskGroupID   *uint `gorm:"<-:create;index"`
+ 	TaskGroup     *TaskGroup
++	Tokens        []Token `gorm:"constraint:OnDelete:CASCADE"`
  }
  
-+type AnalysisProfile struct {
+ func (m *Task) BeforeCreate(db *gorm.DB) (err error) {
+@@ -209,6 +210,101 @@
+ 	Profiles     []AnalysisProfile `gorm:"constraint:OnDelete:SET NULL"`
+ }
+ 
++type User struct {
 +	Model
-+	Name          string `gorm:"uniqueIndex"`
-+	Description   string
-+	WithDeps      bool
-+	WithKnownLibs bool
-+	Packages      InExList   `gorm:"type:json;serializer:json"`
-+	Labels        InExList   `gorm:"type:json;serializer:json"`
-+	Files         []json.Ref `gorm:"type:json;serializer:json" ref:"[]file"`
-+	Repository    Repository `gorm:"type:json;serializer:json"`
-+	Targets       []Target   `gorm:"many2many:analysisProfileTargets;constraint:OnDelete:CASCADE"`
++	Subject  string  `gorm:"<-:create;index;not null"`
++	Login    string  `gorm:"<-:create;uniqueIndex;not null"`
++	Name     string  `gorm:""`
++	Password string  `gorm:"not null" secret:"hashed"`
++	Email    string  `gorm:"index;not null"`
++	Roles    []Role  `gorm:"many2many:UserRole;constraint:OnDelete:CASCADE"`
++	Tokens   []Token `gorm:"constraint:OnDelete:CASCADE"`
++}
++
++type Role struct {
++	Model
++	Name        string       `gorm:"index;not null"`
++	Permissions []Permission `gorm:"many2many:RolePermission;constraint:OnDelete:CASCADE"`
++}
++
++type Permission struct {
++	Model
++	Name  string `gorm:"not null"`
++	Scope string `gorm:"uniqueIndex;not null"`
++}
++
++type IdpClient struct {
++	Model
++	Subject         string   `gorm:"<-:create;index;not null"`
++	ClientId        string   `gorm:"<-:create;uniqueIndex;not null"`
++	Secret          string   `gorm:"" secret:"hashed"`
++	ApplicationType string   `gorm:"not null"`
++	Grants          []string `gorm:"type:json;serializer:json"`
++	RedirectURIs    []string `gorm:"type:json;serializer:json"`
++	Scopes          []string `gorm:"type:json;serializer:json"`
++	Tokens          []Token  `gorm:"constraint:OnDelete:CASCADE"`
++}
++
++//
++// IDP State
++//
++
++type IdpIdentity struct {
++	Model
++	Kind              string    `gorm:"index;not null"`
++	Issuer            string    `gorm:"not null"`
++	Subject           string    `gorm:"uniqueIndex;not null"`
++	RefreshToken      string    `gorm:"not null" secret:""`
++	Expiration        time.Time `gorm:"index"`
++	LastAuthenticated time.Time
++	LastRefreshed     time.Time
++	Scopes            string
++	Login             string
++	Name              string
++	Email             string
++	Tokens            []Token `gorm:"constraint:OnDelete:CASCADE"`
++}
++
++type RsaKey struct {
++	Model
++	PEM string `gorm:"not null" secret:""`
++}
++
++type Grant struct {
++	Model
++	Kind         string `gorm:"not null"`
++	ClientId     string `gorm:"index;not null"`
++	AuthId       string `gorm:"uniqueIndex;not null"`
++	Subject      string `gorm:"index"`
++	RefreshToken string `gorm:"uniqueIndex"` // digest
++	AuthCode     string `gorm:"index"`
++	Scopes       string
++	Issued       time.Time
++	Expiration   time.Time
++}
++
++type Token struct {
++	Model
++	Kind          string    `gorm:"not null"`
++	AuthId        string    `gorm:"uniqueIndex;not null"`
++	Subject       string    `gorm:"index"`
++	Digest        string    `gorm:"index"`
++	Scopes        string    `gorm:"not null"`
++	Issued        time.Time `gorm:"not null"`
++	Expiration    time.Time
++	Revoked       time.Time
++	GrantID       *uint        `gorm:"index"`
++	Grant         *Grant       `gorm:"constraint:OnDelete:CASCADE"`
++	UserID        *uint        `gorm:"index"`
++	User          *User        `gorm:"constraint:OnDelete:CASCADE"`
++	IdpIdentityID *uint        `gorm:"index"`
++	IdpIdentity   *IdpIdentity `gorm:"constraint:OnDelete:CASCADE"`
++	IdpClientID   *uint        `gorm:"index"`
++	IdpClient     *IdpClient   `gorm:"constraint:OnDelete:CASCADE"`
++	TaskID        *uint        `gorm:"index"`
++	Task          *Task        `gorm:"constraint:OnDelete:CASCADE"`
 +}
 +
  //
  // JSON Fields.
  //
-@@ -168,3 +181,9 @@
- 	Name  string `json:"name"`
- 	Label string `json:"label"`
+diff -urN '--exclude=mod.patch' v21/model/pkg.go v22/model/pkg.go
+--- v21/model/pkg.go	2026-04-05 16:41:25.815602657 -0500
++++ v22/model/pkg.go	2026-05-22 07:34:40.288189794 -0500
+@@ -59,5 +59,13 @@
+ 		Assessment{},
+ 		Archetype{},
+ 		ProfileGenerator{},
++		IdpClient{},
++		IdpIdentity{},
++		Permission{},
++		Role{},
++		User{},
++		Token{},
++		RsaKey{},
++		Grant{},
+ 	}
  }
-+
-+// InExList contains items included and excluded.
-+type InExList struct {
-+	Included []string `json:"included"`
-+	Excluded []string `json:"excluded"`
-+}
-diff -ruN '--exclude=mod.patch' migration/v20/model/application.go migration/v21/model/application.go
---- migration/v20/model/application.go	2025-10-27 16:11:13.781809158 -0500
-+++ migration/v21/model/application.go	2025-11-07 14:01:27.483825203 -0600
-@@ -186,10 +186,12 @@
- 
- type TargetProfile struct {
- 	Model
--	Name        string `gorm:"uniqueIndex:targetProfileA;not null"`
--	ArchetypeID uint   `gorm:"uniqueIndex:targetProfileA;not null"`
--	Archetype   Archetype
--	Generators  []ProfileGenerator `gorm:"order:Index;constraint:OnDelete:CASCADE"`
-+	Name              string `gorm:"uniqueIndex:targetProfileA;not null"`
-+	ArchetypeID       uint   `gorm:"uniqueIndex:targetProfileA;not null"`
-+	Archetype         Archetype
-+	Generators        []ProfileGenerator `gorm:"order:Index;constraint:OnDelete:CASCADE"`
-+	AnalysisProfileID *uint              `gorm:"index"`
-+	AnalysisProfile   *AnalysisProfile   `gorm:"constraint:OnDelete:SET NULL"`
- }
- 
- type ProfileGenerator struct {
-diff -ruN '--exclude=mod.patch' migration/v20/model/pkg.go migration/v21/model/pkg.go
---- migration/v20/model/pkg.go	2025-10-27 16:11:13.781809158 -0500
-+++ migration/v21/model/pkg.go	2025-11-07 12:08:40.454018870 -0600
-@@ -20,6 +20,7 @@
- 		TechDependency{},
- 		Incident{},
- 		Analysis{},
-+		AnalysisProfile{},
- 		Insight{},
- 		Bucket{},
- 		BusinessService{},

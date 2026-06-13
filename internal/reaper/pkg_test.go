@@ -1071,7 +1071,7 @@ func TestTokenReaper_NotExpired(t *testing.T) {
 	futureTime := time.Now().Add(2 * time.Hour)
 	token := &model.Token{
 		Kind:       "access",
-		Scopes:     "read write",
+		Scopes:     []string{"read", "write"},
 		Issued:     time.Now(),
 		Expiration: futureTime,
 	}
@@ -1100,7 +1100,7 @@ func TestTokenReaper_WithinGracePeriod(t *testing.T) {
 	expiredTime := time.Now().Add(-30 * time.Minute)
 	token := &model.Token{
 		Kind:       "access",
-		Scopes:     "read",
+		Scopes:     []string{"read"},
 		Issued:     time.Now().Add(-1 * time.Hour),
 		Expiration: expiredTime,
 	}
@@ -1129,7 +1129,7 @@ func TestTokenReaper_ExpiredPastGracePeriod(t *testing.T) {
 	expiredTime := time.Now().Add(-2 * time.Hour)
 	token := &model.Token{
 		Kind:       "refresh",
-		Scopes:     "read write",
+		Scopes:     []string{"read", "write"},
 		Issued:     time.Now().Add(-3 * time.Hour),
 		Expiration: expiredTime,
 	}
@@ -1159,28 +1159,28 @@ func TestTokenReaper_MultipleTokens(t *testing.T) {
 	futureToken := &model.Token{
 		Kind:       "access",
 		AuthId:     "a",
-		Scopes:     "read",
+		Scopes:     []string{"read"},
 		Issued:     now,
 		Expiration: now.Add(2 * time.Hour),
 	}
 	graceToken := &model.Token{
 		Kind:       "access",
 		AuthId:     "b",
-		Scopes:     "write",
+		Scopes:     []string{"write"},
 		Issued:     now.Add(-1 * time.Hour),
 		Expiration: now.Add(-30 * time.Minute),
 	}
 	expiredToken1 := &model.Token{
 		Kind:       "refresh",
 		AuthId:     "c",
-		Scopes:     "read write",
+		Scopes:     []string{"read", "write"},
 		Issued:     now.Add(-3 * time.Hour),
 		Expiration: now.Add(-2 * time.Hour),
 	}
 	expiredToken2 := &model.Token{
 		Kind:       "access",
 		AuthId:     "d",
-		Scopes:     "read",
+		Scopes:     []string{"read"},
 		Issued:     now.Add(-4 * time.Hour),
 		Expiration: now.Add(-3 * time.Hour),
 	}

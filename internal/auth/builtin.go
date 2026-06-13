@@ -520,7 +520,7 @@ func (p *Builtin) authToken(req *Request) (jwToken *jwt.Token, err error) {
 		jwtClaims := jwToken.Claims.(jwt.MapClaims)
 		jwtClaims[ClaimId] = pat.AuthId
 		jwtClaims[ClaimSub] = pat.Subject
-		jwtClaims[ClaimScope] = pat.Scopes
+		jwtClaims[ClaimScope] = strings.Join(pat.Scopes, " ")
 		jwtClaims[ClaimIss] = Issuer(req.CTX.Request)
 		jwtClaims[ClaimIat] = time.Now().Unix()
 		jwtClaims[ClaimExp] = pat.Expiration.Unix()

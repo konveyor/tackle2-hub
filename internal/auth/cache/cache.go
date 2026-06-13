@@ -520,7 +520,7 @@ func (r *Cache) getToken(token string) (m *Token, err error) {
 			return
 		}
 		m.Subject = user.Subject
-		m.Scopes = strings.Join(user.GetScopes(r), " ")
+		m.Scopes = user.GetScopes(r)
 		return
 	}
 	// task binding.
@@ -534,7 +534,7 @@ func (r *Cache) getToken(token string) (m *Token, err error) {
 			return
 		}
 		m.Subject = "task:" + strconv.Itoa(int(task.ID))
-		m.Scopes = strings.Join(AddonScopes, " ")
+		m.Scopes = AddonScopes
 		return
 	}
 	// IdP identity binding.
@@ -548,7 +548,7 @@ func (r *Cache) getToken(token string) (m *Token, err error) {
 			return
 		}
 		m.Subject = identity.Subject
-		m.Scopes = identity.Scopes
+		m.Scopes = strings.Fields(identity.Scopes)
 		return
 	}
 	// IdP client binding.
@@ -562,7 +562,7 @@ func (r *Cache) getToken(token string) (m *Token, err error) {
 			return
 		}
 		m.Subject = client.Subject
-		m.Scopes = strings.Join(client.GetScopes(), " ")
+		m.Scopes = client.GetScopes()
 		return
 	}
 	return
