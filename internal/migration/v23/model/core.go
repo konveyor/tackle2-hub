@@ -290,7 +290,7 @@ type Token struct {
 	Subject       string       `gorm:"<-:create;index"`
 	Digest        string       `gorm:"<-:create;index"`
 	Issued        time.Time    `gorm:"<-:create;not null"`
-	Scopes        []string     `gorm:"<-:create;type:json;serializer:json"`
+	Scopes        []string     `gorm:"type:json;serializer:json"`
 	Expiration    time.Time    `gorm:"index"`
 	GrantID       *uint        `gorm:"index"`
 	Grant         *Grant       `gorm:"constraint:OnDelete:CASCADE"`
