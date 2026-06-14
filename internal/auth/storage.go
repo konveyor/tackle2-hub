@@ -1143,9 +1143,10 @@ func (r *Storage) deleteToken(_ context.Context, id string) (err error) {
 		return
 	}
 	for _, m := range tokens {
-		r.cache.TokenDeleted(m.ID)
-		err = db.Delete(m).Error
-		if err != nil {
+		err = r.db.Delete(m).Error
+		if err == nil {
+			r.cache.TokenDeleted(m.ID)
+		} else {
 			err = liberr.Wrap(err)
 			return
 		}
@@ -1164,9 +1165,10 @@ func (r *Storage) deleteTokensBySubject(_ context.Context, subject string) (err 
 		return
 	}
 	for _, m := range tokens {
-		r.cache.TokenDeleted(m.ID)
-		err = db.Delete(m).Error
-		if err != nil {
+		err = r.db.Delete(m).Error
+		if err == nil {
+			r.cache.TokenDeleted(m.ID)
+		} else {
 			err = liberr.Wrap(err)
 			return
 		}
