@@ -1,17 +1,15 @@
 package reaper
 
 import (
-	"net/http"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/konveyor/tackle2-hub/internal/auth"
-	"github.com/konveyor/tackle2-hub/internal/auth/cache"
 	"github.com/konveyor/tackle2-hub/internal/database"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/task"
+	"github.com/konveyor/tackle2-hub/shared/settings"
 	"github.com/onsi/gomega"
 	"gorm.io/gorm"
 )
@@ -527,10 +525,11 @@ func TestManager_Iterate(t *testing.T) {
 	db, err := setupDB()
 	g.Expect(err).To(gomega.BeNil())
 
-	// Setup fake auth provider for TokenReaper
+	// Setup auth provider for TokenReaper
 	savedIdP := auth.IdP
 	defer func() { auth.IdP = savedIdP }()
-	auth.IdP = &FakeProvider{cache: cache.New(db)}
+	auth.IdP, err = setupIdp(db)
+	g.Expect(err).To(gomega.BeNil())
 
 	// Create orphan bucket
 	bucket := &model.Bucket{Path: "/tmp/test-bucket"}
@@ -1076,10 +1075,11 @@ func TestTokenReaper_NotExpired(t *testing.T) {
 	db, err := setupDB()
 	g.Expect(err).To(gomega.BeNil())
 
-	// Setup fake auth provider for reaper
+	// Setup auth provider for reaper
 	savedIdP := auth.IdP
 	defer func() { auth.IdP = savedIdP }()
-	auth.IdP = &FakeProvider{cache: cache.New(db)}
+	auth.IdP, err = setupIdp(db)
+	g.Expect(err).To(gomega.BeNil())
 
 	// Create token that expires in the future
 	futureTime := time.Now().Add(2 * time.Hour)
@@ -1110,10 +1110,11 @@ func TestTokenReaper_WithinGracePeriod(t *testing.T) {
 	db, err := setupDB()
 	g.Expect(err).To(gomega.BeNil())
 
-	// Setup fake auth provider for reaper
+	// Setup auth provider for reaper
 	savedIdP := auth.IdP
 	defer func() { auth.IdP = savedIdP }()
-	auth.IdP = &FakeProvider{cache: cache.New(db)}
+	auth.IdP, err = setupIdp(db)
+	g.Expect(err).To(gomega.BeNil())
 
 	// Create token expired 30 seconds ago (within 1-minute grace period)
 	expiredTime := time.Now().Add(-30 * time.Second)
@@ -1144,10 +1145,11 @@ func TestTokenReaper_ExpiredPastGracePeriod(t *testing.T) {
 	db, err := setupDB()
 	g.Expect(err).To(gomega.BeNil())
 
-	// Setup fake auth provider for reaper
+	// Setup auth provider for reaper
 	savedIdP := auth.IdP
 	defer func() { auth.IdP = savedIdP }()
-	auth.IdP = &FakeProvider{cache: cache.New(db)}
+	auth.IdP, err = setupIdp(db)
+	g.Expect(err).To(gomega.BeNil())
 
 	// Create token expired 2 minutes ago (past grace period)
 	expiredTime := time.Now().Add(-2 * time.Minute)
@@ -1178,10 +1180,11 @@ func TestTokenReaper_MultipleTokens(t *testing.T) {
 	db, err := setupDB()
 	g.Expect(err).To(gomega.BeNil())
 
-	// Setup fake auth provider for reaper
+	// Setup auth provider for reaper
 	savedIdP := auth.IdP
 	defer func() { auth.IdP = savedIdP }()
-	auth.IdP = &FakeProvider{cache: cache.New(db)}
+	auth.IdP, err = setupIdp(db)
+	g.Expect(err).To(gomega.BeNil())
 
 	// Create multiple tokens with different expiration times
 	now := time.Now()
@@ -1399,28 +1402,18 @@ func TestGrantReaper_MultipleGrants(t *testing.T) {
 	g.Expect(err).To(gomega.Equal(gorm.ErrRecordNotFound))
 }
 
-// FakeProvider is a minimal auth.Provider implementation for testing.
-// Only Cache() returns a real implementation; all other methods are stubs.
-type FakeProvider struct {
-	cache *auth.Cache
+// setupIdp creates an auth provider for testing without federated IdP configuration.
+func setupIdp(db *gorm.DB) (p auth.Provider, err error) {
+	builtin, err := auth.NewBuiltin(db)
+	if err != nil {
+		return
+	}
+	p = auth.NewNoAuth(builtin)
+	if settings.Settings.Auth.Required {
+		p = builtin
+	}
+	return
 }
-
-func (f *FakeProvider) Ready(r *http.Request)                                            {}
-func (f *FakeProvider) Cache() *auth.Cache                                               { return f.cache }
-func (f *FakeProvider) Login(w http.ResponseWriter, r *http.Request, reqId string) error { return nil }
-func (f *FakeProvider) NewToken(subject string, lifespan time.Duration) (auth.Token, error) {
-	return auth.Token{}, nil
-}
-func (f *FakeProvider) TaskGrant(taskId uint) (auth.Token, error)        { return auth.Token{}, nil }
-func (f *FakeProvider) TaskRevoke(taskId uint)                           {}
-func (f *FakeProvider) Revoke(tokenId uint) error                        { return nil }
-func (f *FakeProvider) Authenticate(r *auth.Request) (*jwt.Token, error) { return nil, nil }
-func (f *FakeProvider) Scopes(jwToken *jwt.Token) []auth.Scope           { return nil }
-func (f *FakeProvider) User(jwToken *jwt.Token) string                   { return "" }
-func (f *FakeProvider) Subject(jwToken *jwt.Token) string                { return "" }
-func (f *FakeProvider) Handler() http.Handler                            { return nil }
-func (f *FakeProvider) DagHandler() *auth.DagHandler                     { return nil }
-func (f *FakeProvider) IdpHandler() *auth.FedIdpHandler                  { return nil }
 
 // setupDB creates an in-memory SQLite database for testing.
 func setupDB() (db *gorm.DB, err error) {
@@ -1443,6 +1436,7 @@ func setupDB() (db *gorm.DB, err error) {
 		&model.AnalysisProfile{},
 		&model.Token{},
 		&model.Grant{},
+		&model.RsaKey{},
 	)
 
 	return
