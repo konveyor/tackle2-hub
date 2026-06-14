@@ -4,6 +4,7 @@ import (
 	"time"
 
 	liberr "github.com/jortel/go-utils/error"
+	"github.com/konveyor/tackle2-hub/internal/auth"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"gorm.io/gorm"
 )
@@ -19,7 +20,9 @@ type TokenReaper struct {
 func (r *TokenReaper) Run() {
 	Log.V(1).Info("Reaping tokens.")
 
-	mark := time.Now().Add(-time.Hour)
+	mark := time.Now().Add(-time.Minute)
+
+	cache := auth.IdP.Cache()
 
 	err := r.DB.Transaction(
 		func(tx *gorm.DB) (err error) {
@@ -30,6 +33,7 @@ func (r *TokenReaper) Run() {
 				return
 			}
 			for _, token := range list {
+				cache.TokenDeleted(token.ID)
 				err = tx.Delete(token).Error
 				if err != nil {
 					err = liberr.Wrap(err)

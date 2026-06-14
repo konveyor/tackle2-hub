@@ -45,10 +45,6 @@ var (
 	IdP       Provider
 )
 
-func init() {
-	IdP = &NoAuth{}
-}
-
 // New returns an auth provider.
 func New(db *gorm.DB) (p Provider, err error) {
 	err = federated.Load(Settings.Namespace)
