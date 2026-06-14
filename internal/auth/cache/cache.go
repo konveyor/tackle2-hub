@@ -38,7 +38,7 @@ func New(db *gorm.DB) (cache *Cache) {
 //
 // The cache is optimized for reads. Concurrent reads are safe
 // because of the copy-on-write behavior. The txMutex just ensures
-// Tx are committed sequentially.
+// Tx, Reset and Refresh are committed sequentially.
 type Cache struct {
 	txMutex     sync.Mutex
 	data        atomic.Pointer[Data]
@@ -48,6 +48,8 @@ type Cache struct {
 
 // Reset clears all cached data.
 func (r *Cache) Reset() {
+	r.txMutex.Lock()
+	defer r.txMutex.Unlock()
 	d := Data{}
 	d.reset()
 	r.data.Store(&d)
@@ -55,6 +57,8 @@ func (r *Cache) Reset() {
 
 // Refresh reloads all data from the database.
 func (r *Cache) Refresh() (err error) {
+	r.txMutex.Lock()
+	defer r.txMutex.Unlock()
 	d := Data{}
 	d.reset()
 	err = d.refresh(r.db)
