@@ -16,29 +16,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// FakeProvider is a minimal auth.Provider implementation for testing.
-// Only Cache() returns a real implementation; all other methods are stubs.
-type FakeProvider struct {
-	cache *auth.Cache
-}
-
-func (f *FakeProvider) Ready(r *http.Request)                                            {}
-func (f *FakeProvider) Cache() *auth.Cache                                               { return f.cache }
-func (f *FakeProvider) Login(w http.ResponseWriter, r *http.Request, reqId string) error { return nil }
-func (f *FakeProvider) NewToken(subject string, lifespan time.Duration) (auth.Token, error) {
-	return auth.Token{}, nil
-}
-func (f *FakeProvider) TaskGrant(taskId uint) (auth.Token, error)        { return auth.Token{}, nil }
-func (f *FakeProvider) TaskRevoke(taskId uint)                           {}
-func (f *FakeProvider) Revoke(tokenId uint) error                        { return nil }
-func (f *FakeProvider) Authenticate(r *auth.Request) (*jwt.Token, error) { return nil, nil }
-func (f *FakeProvider) Scopes(jwToken *jwt.Token) []auth.Scope           { return nil }
-func (f *FakeProvider) User(jwToken *jwt.Token) string                   { return "" }
-func (f *FakeProvider) Subject(jwToken *jwt.Token) string                { return "" }
-func (f *FakeProvider) Handler() http.Handler                            { return nil }
-func (f *FakeProvider) DagHandler() *auth.DagHandler                     { return nil }
-func (f *FakeProvider) IdpHandler() *auth.FedIdpHandler                  { return nil }
-
 // TestBucketReaper_OrphanDetection tests bucket orphan detection and deletion.
 func TestBucketReaper_OrphanDetection(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
@@ -1421,6 +1398,29 @@ func TestGrantReaper_MultipleGrants(t *testing.T) {
 	err = db.First(&g4, expiredGrant2.ID).Error
 	g.Expect(err).To(gomega.Equal(gorm.ErrRecordNotFound))
 }
+
+// FakeProvider is a minimal auth.Provider implementation for testing.
+// Only Cache() returns a real implementation; all other methods are stubs.
+type FakeProvider struct {
+	cache *auth.Cache
+}
+
+func (f *FakeProvider) Ready(r *http.Request)                                            {}
+func (f *FakeProvider) Cache() *auth.Cache                                               { return f.cache }
+func (f *FakeProvider) Login(w http.ResponseWriter, r *http.Request, reqId string) error { return nil }
+func (f *FakeProvider) NewToken(subject string, lifespan time.Duration) (auth.Token, error) {
+	return auth.Token{}, nil
+}
+func (f *FakeProvider) TaskGrant(taskId uint) (auth.Token, error)        { return auth.Token{}, nil }
+func (f *FakeProvider) TaskRevoke(taskId uint)                           {}
+func (f *FakeProvider) Revoke(tokenId uint) error                        { return nil }
+func (f *FakeProvider) Authenticate(r *auth.Request) (*jwt.Token, error) { return nil, nil }
+func (f *FakeProvider) Scopes(jwToken *jwt.Token) []auth.Scope           { return nil }
+func (f *FakeProvider) User(jwToken *jwt.Token) string                   { return "" }
+func (f *FakeProvider) Subject(jwToken *jwt.Token) string                { return "" }
+func (f *FakeProvider) Handler() http.Handler                            { return nil }
+func (f *FakeProvider) DagHandler() *auth.DagHandler                     { return nil }
+func (f *FakeProvider) IdpHandler() *auth.FedIdpHandler                  { return nil }
 
 // setupDB creates an in-memory SQLite database for testing.
 func setupDB() (db *gorm.DB, err error) {
