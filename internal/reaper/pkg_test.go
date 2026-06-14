@@ -1,16 +1,43 @@
 package reaper
 
 import (
+	"net/http"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/konveyor/tackle2-hub/internal/auth"
+	"github.com/konveyor/tackle2-hub/internal/auth/cache"
 	"github.com/konveyor/tackle2-hub/internal/database"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/task"
 	"github.com/onsi/gomega"
 	"gorm.io/gorm"
 )
+
+// FakeProvider is a minimal auth.Provider implementation for testing.
+// Only Cache() returns a real implementation; all other methods are stubs.
+type FakeProvider struct {
+	cache *auth.Cache
+}
+
+func (f *FakeProvider) Ready(r *http.Request)                                            {}
+func (f *FakeProvider) Cache() *auth.Cache                                               { return f.cache }
+func (f *FakeProvider) Login(w http.ResponseWriter, r *http.Request, reqId string) error { return nil }
+func (f *FakeProvider) NewToken(subject string, lifespan time.Duration) (auth.Token, error) {
+	return auth.Token{}, nil
+}
+func (f *FakeProvider) TaskGrant(taskId uint) (auth.Token, error)        { return auth.Token{}, nil }
+func (f *FakeProvider) TaskRevoke(taskId uint)                           {}
+func (f *FakeProvider) Revoke(tokenId uint) error                        { return nil }
+func (f *FakeProvider) Authenticate(r *auth.Request) (*jwt.Token, error) { return nil, nil }
+func (f *FakeProvider) Scopes(jwToken *jwt.Token) []auth.Scope           { return nil }
+func (f *FakeProvider) User(jwToken *jwt.Token) string                   { return "" }
+func (f *FakeProvider) Subject(jwToken *jwt.Token) string                { return "" }
+func (f *FakeProvider) Handler() http.Handler                            { return nil }
+func (f *FakeProvider) DagHandler() *auth.DagHandler                     { return nil }
+func (f *FakeProvider) IdpHandler() *auth.FedIdpHandler                  { return nil }
 
 // TestBucketReaper_OrphanDetection tests bucket orphan detection and deletion.
 func TestBucketReaper_OrphanDetection(t *testing.T) {
@@ -522,6 +549,11 @@ func TestManager_Iterate(t *testing.T) {
 
 	db, err := setupDB()
 	g.Expect(err).To(gomega.BeNil())
+
+	// Setup fake auth provider for TokenReaper
+	savedIdP := auth.IdP
+	defer func() { auth.IdP = savedIdP }()
+	auth.IdP = &FakeProvider{cache: cache.New(db)}
 
 	// Create orphan bucket
 	bucket := &model.Bucket{Path: "/tmp/test-bucket"}
@@ -1067,6 +1099,11 @@ func TestTokenReaper_NotExpired(t *testing.T) {
 	db, err := setupDB()
 	g.Expect(err).To(gomega.BeNil())
 
+	// Setup fake auth provider for reaper
+	savedIdP := auth.IdP
+	defer func() { auth.IdP = savedIdP }()
+	auth.IdP = &FakeProvider{cache: cache.New(db)}
+
 	// Create token that expires in the future
 	futureTime := time.Now().Add(2 * time.Hour)
 	token := &model.Token{
@@ -1089,19 +1126,24 @@ func TestTokenReaper_NotExpired(t *testing.T) {
 	g.Expect(tok.ID).To(gomega.Equal(token.ID))
 }
 
-// TestTokenReaper_WithinGracePeriod tests that tokens expired less than 1 hour are not deleted.
+// TestTokenReaper_WithinGracePeriod tests that tokens expired less than 1 minute are not deleted.
 func TestTokenReaper_WithinGracePeriod(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	db, err := setupDB()
 	g.Expect(err).To(gomega.BeNil())
 
-	// Create token expired 30 minutes ago (within 1-hour grace period)
-	expiredTime := time.Now().Add(-30 * time.Minute)
+	// Setup fake auth provider for reaper
+	savedIdP := auth.IdP
+	defer func() { auth.IdP = savedIdP }()
+	auth.IdP = &FakeProvider{cache: cache.New(db)}
+
+	// Create token expired 30 seconds ago (within 1-minute grace period)
+	expiredTime := time.Now().Add(-30 * time.Second)
 	token := &model.Token{
 		Kind:       "access",
 		Scopes:     []string{"read"},
-		Issued:     time.Now().Add(-1 * time.Hour),
+		Issued:     time.Now().Add(-2 * time.Minute),
 		Expiration: expiredTime,
 	}
 	err = db.Create(token).Error
@@ -1118,19 +1160,24 @@ func TestTokenReaper_WithinGracePeriod(t *testing.T) {
 	g.Expect(tok.ID).To(gomega.Equal(token.ID))
 }
 
-// TestTokenReaper_ExpiredPastGracePeriod tests that tokens expired more than 1 hour are deleted.
+// TestTokenReaper_ExpiredPastGracePeriod tests that tokens expired more than 1 minute are deleted.
 func TestTokenReaper_ExpiredPastGracePeriod(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	db, err := setupDB()
 	g.Expect(err).To(gomega.BeNil())
 
-	// Create token expired 2 hours ago (past grace period)
-	expiredTime := time.Now().Add(-2 * time.Hour)
+	// Setup fake auth provider for reaper
+	savedIdP := auth.IdP
+	defer func() { auth.IdP = savedIdP }()
+	auth.IdP = &FakeProvider{cache: cache.New(db)}
+
+	// Create token expired 2 minutes ago (past grace period)
+	expiredTime := time.Now().Add(-2 * time.Minute)
 	token := &model.Token{
 		Kind:       "refresh",
 		Scopes:     []string{"read", "write"},
-		Issued:     time.Now().Add(-3 * time.Hour),
+		Issued:     time.Now().Add(-5 * time.Minute),
 		Expiration: expiredTime,
 	}
 	err = db.Create(token).Error
@@ -1154,6 +1201,11 @@ func TestTokenReaper_MultipleTokens(t *testing.T) {
 	db, err := setupDB()
 	g.Expect(err).To(gomega.BeNil())
 
+	// Setup fake auth provider for reaper
+	savedIdP := auth.IdP
+	defer func() { auth.IdP = savedIdP }()
+	auth.IdP = &FakeProvider{cache: cache.New(db)}
+
 	// Create multiple tokens with different expiration times
 	now := time.Now()
 	futureToken := &model.Token{
@@ -1161,28 +1213,28 @@ func TestTokenReaper_MultipleTokens(t *testing.T) {
 		AuthId:     "a",
 		Scopes:     []string{"read"},
 		Issued:     now,
-		Expiration: now.Add(2 * time.Hour),
+		Expiration: now.Add(10 * time.Minute),
 	}
 	graceToken := &model.Token{
 		Kind:       "access",
 		AuthId:     "b",
 		Scopes:     []string{"write"},
-		Issued:     now.Add(-1 * time.Hour),
-		Expiration: now.Add(-30 * time.Minute),
+		Issued:     now.Add(-2 * time.Minute),
+		Expiration: now.Add(-30 * time.Second),
 	}
 	expiredToken1 := &model.Token{
 		Kind:       "refresh",
 		AuthId:     "c",
 		Scopes:     []string{"read", "write"},
-		Issued:     now.Add(-3 * time.Hour),
-		Expiration: now.Add(-2 * time.Hour),
+		Issued:     now.Add(-5 * time.Minute),
+		Expiration: now.Add(-2 * time.Minute),
 	}
 	expiredToken2 := &model.Token{
 		Kind:       "access",
 		AuthId:     "d",
 		Scopes:     []string{"read"},
-		Issued:     now.Add(-4 * time.Hour),
-		Expiration: now.Add(-3 * time.Hour),
+		Issued:     now.Add(-10 * time.Minute),
+		Expiration: now.Add(-5 * time.Minute),
 	}
 
 	err = db.Create(futureToken).Error
