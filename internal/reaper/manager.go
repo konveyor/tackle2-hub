@@ -22,7 +22,7 @@ type Task = task.Task
 
 // Manager provides task management.
 type Manager struct {
-	mutex sync.RWMutex
+	mutex sync.Mutex
 	// DB
 	DB *gorm.DB
 	// k8s client.

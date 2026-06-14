@@ -3787,7 +3787,6 @@ func TestToken_With(t *testing.T) {
 	userID := uint(5)
 	issued := time.Now()
 	expiration := issued.Add(5 * time.Minute)
-	revoked := issued.Add(3 * time.Minute)
 
 	m := &model.Token{
 		Model: model.Model{
@@ -3801,7 +3800,6 @@ func TestToken_With(t *testing.T) {
 		Scopes:     []string{"openid", "profile", "email"},
 		Issued:     issued,
 		Expiration: expiration,
-		Revoked:    revoked,
 		UserID:     &userID,
 		User: &model.User{
 			Model: model.Model{ID: 5},

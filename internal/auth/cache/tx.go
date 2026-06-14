@@ -1,30 +1,32 @@
 package cache
 
-import "github.com/konveyor/tackle2-hub/shared/task"
-
 // Tx is a cache transaction.
 type Tx struct {
 	cache   *Cache
-	changes []func()
+	changes []func(d *Data)
 }
 
 // RoleSaved updates the cache when a role is saved.
 func (r *Tx) RoleSaved(m *Role) {
 	r.changes = append(
-		r.changes, func() {
-			r.cache.roleById[m.ID] = m
-			r.cache.roleByName[m.Name] = m
+		r.changes, func(d *Data) {
+			p, found := d.roleById[m.ID]
+			if found {
+				delete(d.roleByName, p.Name)
+			}
+			d.roleById[m.ID] = m
+			d.roleByName[m.Name] = m
 		})
 }
 
 // RoleDeleted removes a role from the cache.
 func (r *Tx) RoleDeleted(id uint) {
 	r.changes = append(
-		r.changes, func() {
-			m, found := r.cache.roleById[id]
+		r.changes, func(d *Data) {
+			m, found := d.roleById[id]
 			if found {
-				delete(r.cache.roleById, id)
-				delete(r.cache.roleByName, m.Name)
+				delete(d.roleById, id)
+				delete(d.roleByName, m.Name)
 			}
 		})
 }
@@ -32,46 +34,34 @@ func (r *Tx) RoleDeleted(id uint) {
 // UserSaved updates the cache when a user is saved.
 func (r *Tx) UserSaved(m *User) {
 	r.changes = append(
-		r.changes, func() {
-			r.cache.userById[m.ID] = m
-			r.cache.userBySubject[m.Subject] = m
-			r.cache.userByLogin[m.Login] = m
+		r.changes, func(d *Data) {
+			d.userById[m.ID] = m
+			d.userBySubject[m.Subject] = m
+			d.userByLogin[m.Login] = m
 		})
 }
 
 // UserDeleted removes a user from the cache.
 func (r *Tx) UserDeleted(id uint) {
 	r.changes = append(
-		r.changes, func() {
-			m, found := r.cache.userById[id]
+		r.changes, func(d *Data) {
+			m, found := d.userById[id]
 			if found {
-				delete(r.cache.userBySubject, m.Subject)
-				delete(r.cache.userByLogin, m.Login)
-				delete(r.cache.userById, id)
+				delete(d.userBySubject, m.Subject)
+				delete(d.userByLogin, m.Login)
+				delete(d.userById, id)
 			}
-		})
-}
-
-// TaskGranted token granted.
-func (r *Tx) TaskGranted(id uint) {
-	r.changes = append(
-		r.changes, func() {
-			m := &Task{}
-			m.ID = id
-			m.State = task.Running
-			r.cache.taskById[id] = m
 		})
 }
 
 // TaskRevoked task token revoked.
 func (r *Tx) TaskRevoked(id uint) {
 	r.changes = append(
-		r.changes, func() {
-			delete(r.cache.taskById, id)
-			for _, m := range r.cache.tokenById {
+		r.changes, func(d *Data) {
+			for _, m := range d.tokenById {
 				if m.TaskID != nil && *m.TaskID == id {
-					delete(r.cache.tokenByDigest, m.Digest)
-					delete(r.cache.tokenById, m.ID)
+					delete(d.tokenByDigest, m.Digest)
+					delete(d.tokenById, m.ID)
 				}
 			}
 		})
@@ -80,22 +70,22 @@ func (r *Tx) TaskRevoked(id uint) {
 // IdentitySaved updates the cache when an identity is saved.
 func (r *Tx) IdentitySaved(m *Identity) {
 	r.changes = append(
-		r.changes, func() {
-			r.cache.identById[m.ID] = m
-			r.cache.identBySubject[m.Subject] = m
-			r.cache.identByLogin[m.Login] = m
+		r.changes, func(d *Data) {
+			d.identById[m.ID] = m
+			d.identBySubject[m.Subject] = m
+			d.identByLogin[m.Login] = m
 		})
 }
 
 // IdentityDeleted removes an identity from the cache.
 func (r *Tx) IdentityDeleted(id uint) {
 	r.changes = append(
-		r.changes, func() {
-			m, found := r.cache.identById[id]
+		r.changes, func(d *Data) {
+			m, found := d.identById[id]
 			if found {
-				delete(r.cache.identByLogin, m.Login)
-				delete(r.cache.identBySubject, m.Subject)
-				delete(r.cache.identById, id)
+				delete(d.identByLogin, m.Login)
+				delete(d.identBySubject, m.Subject)
+				delete(d.identById, id)
 			}
 		})
 }
@@ -103,20 +93,20 @@ func (r *Tx) IdentityDeleted(id uint) {
 // ClientSaved updates the cache when a client is saved.
 func (r *Tx) ClientSaved(m *IdpClient) {
 	r.changes = append(
-		r.changes, func() {
-			r.cache.clientById[m.ID] = m
-			r.cache.clientBySubject[m.Subject] = m
+		r.changes, func(d *Data) {
+			d.clientById[m.ID] = m
+			d.clientBySubject[m.Subject] = m
 		})
 }
 
 // ClientDeleted removes a client from the cache.
 func (r *Tx) ClientDeleted(id uint) {
 	r.changes = append(
-		r.changes, func() {
-			m, found := r.cache.clientById[id]
+		r.changes, func(d *Data) {
+			m, found := d.clientById[id]
 			if found {
-				delete(r.cache.clientBySubject, m.Subject)
-				delete(r.cache.clientById, id)
+				delete(d.clientBySubject, m.Subject)
+				delete(d.clientById, id)
 			}
 		})
 }
@@ -124,31 +114,34 @@ func (r *Tx) ClientDeleted(id uint) {
 // TokenSaved updates the cache when a token is saved.
 func (r *Tx) TokenSaved(m *Token) {
 	r.changes = append(
-		r.changes, func() {
-			r.cache.tokenById[m.ID] = m
-			r.cache.tokenByDigest[m.Digest] = m
+		r.changes, func(d *Data) {
+			d.tokenById[m.ID] = m
+			d.tokenByDigest[m.Digest] = m
 		})
 }
 
 // TokenDeleted removes a token from the cache.
 func (r *Tx) TokenDeleted(id uint) {
 	r.changes = append(
-		r.changes, func() {
-			token, found := r.cache.tokenById[id]
+		r.changes, func(d *Data) {
+			token, found := d.tokenById[id]
 			if found {
-				delete(r.cache.tokenByDigest, token.Digest)
-				delete(r.cache.tokenById, id)
+				delete(d.tokenByDigest, token.Digest)
+				delete(d.tokenById, id)
 			}
 		})
 }
 
 // Commit applies all changelog operations atomically.
 func (r *Tx) Commit() {
-	r.cache.mutex.Lock()
-	defer r.cache.mutex.Unlock()
+	r.cache.txMutex.Lock()
+	defer r.cache.txMutex.Unlock()
+	d := r.cache.data.Load()
+	clone := d.clone()
 	for _, fn := range r.changes {
-		fn()
+		fn(clone)
 	}
+	r.cache.data.Store(clone)
 	r.changes = nil
 }
 

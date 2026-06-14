@@ -50,7 +50,7 @@ func NewOIDC(issuerURL, clientId string) (h *OIDC) {
 
 // OIDC provides OIDC authentication with automatic token refresh.
 type OIDC struct {
-	mutex        sync.RWMutex
+	mutex        sync.Mutex
 	issuerURL    string
 	clientId     string
 	httpClient   *http.Client
@@ -67,8 +67,8 @@ func (p *OIDC) Use(token string) {
 
 // Token returns the access token.
 func (p *OIDC) Token() (token string) {
-	p.mutex.RLock()
-	defer p.mutex.RUnlock()
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
 	token = p.accessToken
 	return
 }
@@ -111,8 +111,8 @@ func (p *OIDC) Login() (err error) {
 
 // Header returns the Authorization header value.
 func (p *OIDC) Header() (header string) {
-	p.mutex.RLock()
-	defer p.mutex.RUnlock()
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
 	header = "Bearer " + p.accessToken
 	return
 }

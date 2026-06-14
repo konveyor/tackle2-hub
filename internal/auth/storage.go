@@ -26,7 +26,7 @@ import (
 
 // Storage implements op.Storage.
 type Storage struct {
-	mutex               sync.RWMutex
+	mutex               sync.Mutex
 	keySet              KeySet
 	db                  *gorm.DB
 	authReqById         map[string]*AuthRequest
@@ -181,8 +181,8 @@ func (r *Storage) CreateAuthRequest(
 
 // AuthRequestByID retrieves an auth request by ID.
 func (r *Storage) AuthRequestByID(_ context.Context, id string) (req op.AuthRequest, err error) {
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 	defer func() {
 		if err != nil {
 			Log.Error(err, "")
@@ -203,8 +203,8 @@ func (r *Storage) AuthRequestByID(_ context.Context, id string) (req op.AuthRequ
 
 // AuthRequestByCode retrieves auth request by authorization code.
 func (r *Storage) AuthRequestByCode(_ context.Context, code string) (req op.AuthRequest, err error) {
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 	defer func() {
 		if err != nil {
 			Log.Error(err, "")
@@ -1233,8 +1233,8 @@ func (r *Storage) createGrant(
 
 // authCodeById returns the auth code for an auth request.
 func (r *Storage) authCodeById(id string) (code string) {
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 	authReq, found := r.authReqById[id]
 	if found {
 		code = authReq.authCode
@@ -1331,9 +1331,9 @@ func (r *Storage) GetDeviceAuthorizatonState(
 			Log.Error(err, "")
 		}
 	}()
-	r.mutex.RLock()
+	r.mutex.Lock()
 	devAuth, found := r.devAuthReqByDevCode[deviceCode]
-	r.mutex.RUnlock()
+	r.mutex.Unlock()
 
 	if !found {
 		err = oidc.ErrInvalidGrant().WithDescription("deviceCode not-found.")
@@ -1365,8 +1365,8 @@ func (r *Storage) DeleteDevAuthByCode(deviceCode string) {
 
 // devAuthCodeBySubject returns device code for completed device authorization by subject.
 func (r *Storage) devAuthCodeBySubject(subject string) (deviceCode string) {
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 	for code, req := range r.devAuthReqByDevCode {
 		if req.subject == subject && req.done {
 			deviceCode = code
@@ -1379,8 +1379,8 @@ func (r *Storage) devAuthCodeBySubject(subject string) (deviceCode string) {
 // GetDevAuthByUserCode returns device authorization by user code.
 // Returns the device authorization request and true if found, otherwise nil and false.
 func (r *Storage) GetDevAuthByUserCode(userCode string) (devAuth *DeviceAuthRequest, found bool) {
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 	deviceCode, found := r.devAuthByUserCode[userCode]
 	if !found {
 		return

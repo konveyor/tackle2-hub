@@ -48,7 +48,7 @@ func (m *User) GetScopes(cache *Cache) (scopes []string) {
 // Role alias.
 type Role model.Role
 
-// ScopeNames returns the roles scopes.
+// GetScopes returns the roles scopes.
 func (m *Role) GetScopes() (scopes []string) {
 	for _, p := range m.Permissions {
 		scopes = append(scopes, p.Scope)

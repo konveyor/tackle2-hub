@@ -181,8 +181,8 @@ func main() {
 			rtx.TaskManager = taskManager
 			rtx.DB = db
 			rtx.Client = client
+			defer rtx.Detach()
 			ctx.Next()
-			rtx.Detach()
 		})
 	router.Use(api.Render())
 	router.Use(api.ErrorHandler())
