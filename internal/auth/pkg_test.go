@@ -577,9 +577,6 @@ func TestNoAuthProvider(t *testing.T) {
 		db.Delete(task)
 	})
 
-	// Notify cache about new task
-	provider.Builtin.cache.TaskGranted(task.ID)
-
 	key, err = provider.TaskGrant(task.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(key.Secret).ToNot(BeEmpty())
@@ -710,10 +707,6 @@ func TestTaskRevoke(t *testing.T) {
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
 	g.Expect(err.Error()).To(ContainSubstring("not-authenticated"))
-
-	// Verify task removed from task cache
-	_, err = provider.cache.FindTaskById(task.ID)
-	g.Expect(err).NotTo(BeNil())
 }
 
 // TestTaskRevokeMultipleTokens tests revoking when task has multiple tokens (edge case).
@@ -802,9 +795,6 @@ func TestTaskRevokeNoTokens(t *testing.T) {
 
 	provider, err := NewBuiltin(db)
 	g.Expect(err).To(BeNil())
-
-	// Add task to cache but don't create token
-	provider.cache.TaskGranted(task.ID)
 
 	// Revoke should not error even though no tokens exist
 	provider.TaskRevoke(task.ID)
@@ -1569,76 +1559,6 @@ func TestCacheNotificationPropagation(t *testing.T) {
 	g.Expect(err).NotTo(BeNil()) // Should fail immediately, not wait for refresh
 }
 
-// TestCacheTimeBasedRefresh tests time-based cache expiration.
-func TestCacheTimeBasedRefresh(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	db, err := setupTestDB()
-	g.Expect(err).To(BeNil())
-
-	// Save original cache lifespan and restore after test
-	originalLifespan := Settings.CacheLifespan
-	defer func() {
-		Settings.CacheLifespan = originalLifespan
-	}()
-
-	// Set very short cache lifespan
-	Settings.CacheLifespan = 100 * time.Millisecond
-
-	user := &model.User{
-		Subject:  "time-refresh-user",
-		Login:    "timerefreshuser",
-		Password: secret.HashPassword("password"),
-		Email:    "timerefresh@example.com",
-	}
-	err = db.Create(user).Error
-	g.Expect(err).To(BeNil())
-
-	provider, err := NewBuiltin(db)
-	g.Expect(err).To(BeNil())
-
-	token, err := provider.NewToken(user.Subject, 24*time.Hour)
-	g.Expect(err).To(BeNil())
-
-	// Authenticate successfully (cache is fresh)
-	request := newTestRequest()
-	request.With("Bearer " + token.Secret)
-	_, err = provider.Authenticate(request)
-	g.Expect(err).To(BeNil())
-
-	// Wait for cache to expire
-	time.Sleep(150 * time.Millisecond)
-
-	// Create new token while cache is stale
-	newUser := &model.User{
-		Subject:  "new-time-user",
-		Login:    "newtimeuser",
-		Password: secret.HashPassword("password"),
-		Email:    "newtime@example.com",
-	}
-	err = db.Create(newUser).Error
-	g.Expect(err).To(BeNil())
-
-	newToken := Token{
-		Token: model.Token{
-			Kind:       KindAPIKey,
-			AuthId:     "time-auth-id",
-			Digest:     secret.Hash("time-secret-token"),
-			Expiration: time.Now().Add(24 * time.Hour),
-			UserID:     &newUser.ID,
-		},
-		Secret: "time-secret-token",
-	}
-	err = db.Create(&newToken.Token).Error
-	g.Expect(err).To(BeNil())
-
-	// Authenticate with new token - should trigger time-based refresh
-	request = newTestRequest()
-	request.With("Bearer " + newToken.Secret)
-	_, err = provider.Authenticate(request)
-	g.Expect(err).To(BeNil())
-}
-
 // TestIdpIdentityTokenBinding tests token binding to IdP identities.
 func TestIdpIdentityTokenBinding(t *testing.T) {
 	g := NewGomegaWithT(t)
@@ -1867,42 +1787,6 @@ func TestTokenBindingEdgeCases(t *testing.T) {
 	g.Expect(subject).To(ContainSubstring("task:"))
 }
 
-// TestManualCacheRefresh tests explicit Refresh() and Reset() calls.
-func TestTaskStateFiltering(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	db, err := setupTestDB()
-	g.Expect(err).To(BeNil())
-
-	// Create tasks in various states
-	states := []string{"Pending", "Running", "Succeeded", "Failed", "Canceled"}
-	tasks := make([]*model.Task, len(states))
-	for i, state := range states {
-		tasks[i] = &model.Task{
-			Name:  "task-" + state,
-			State: state,
-		}
-		err = db.Create(tasks[i]).Error
-		g.Expect(err).To(BeNil())
-	}
-
-	provider, err := NewBuiltin(db)
-	g.Expect(err).To(BeNil())
-
-	// Verify only Pending and Running are in cache
-	_, errPending := provider.cache.FindTaskById(tasks[0].ID)
-	_, errRunning := provider.cache.FindTaskById(tasks[1].ID)
-	_, errSucceeded := provider.cache.FindTaskById(tasks[2].ID)
-	_, errFailed := provider.cache.FindTaskById(tasks[3].ID)
-	_, errCanceled := provider.cache.FindTaskById(tasks[4].ID)
-
-	g.Expect(errPending).To(BeNil())
-	g.Expect(errRunning).To(BeNil())
-	g.Expect(errSucceeded).NotTo(BeNil())
-	g.Expect(errFailed).NotTo(BeNil())
-	g.Expect(errCanceled).NotTo(BeNil())
-}
-
 // TestCacheFindSubject tests finding subjects (users and identities) by subject string.
 func TestCacheFindSubject(t *testing.T) {
 	g := NewGomegaWithT(t)
@@ -2040,67 +1924,6 @@ func TestCacheFindSubjectMiss(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(subject).NotTo(BeNil())
 	g.Expect(subject.IsUser()).To(BeTrue())
-}
-
-// TestCacheFindSubjectTimeBasedRefresh tests time-based refresh with FindSubject.
-func TestCacheFindSubjectTimeBasedRefresh(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	db, err := setupTestDB()
-	g.Expect(err).To(BeNil())
-
-	// Save original cache lifespan and restore after test
-	originalLifespan := Settings.CacheLifespan
-	defer func() {
-		Settings.CacheLifespan = originalLifespan
-	}()
-
-	// Set very short cache lifespan
-	Settings.CacheLifespan = 100 * time.Millisecond
-
-	user := &model.User{
-		Subject:  uuid.New().String(),
-		Login:    "timesubjectuser",
-		Password: secret.HashPassword("password"),
-		Email:    "timesubject@example.com",
-	}
-	err = db.Create(user).Error
-	g.Expect(err).To(BeNil())
-
-	// Reload user to get auto-generated subject
-	err = db.First(user, user.ID).Error
-	g.Expect(err).To(BeNil())
-
-	provider, err := NewBuiltin(db)
-	g.Expect(err).To(BeNil())
-
-	// Find subject successfully (cache is fresh)
-	subject, err := provider.cache.FindSubject(user.Subject)
-	g.Expect(err).To(BeNil())
-	g.Expect(subject.Key).To(Equal(user.Subject))
-	g.Expect(subject.User.Login).To(Equal("timesubjectuser"))
-
-	// Wait for cache to expire
-	time.Sleep(150 * time.Millisecond)
-
-	// Create new user while cache is stale
-	newUser := &model.User{
-		Login:    "newtimesubject",
-		Password: secret.HashPassword("password"),
-		Email:    "newtimesubject@example.com",
-	}
-	err = db.Create(newUser).Error
-	g.Expect(err).To(BeNil())
-
-	// Reload newUser to get auto-generated subject
-	err = db.First(newUser, newUser.ID).Error
-	g.Expect(err).To(BeNil())
-
-	// FindSubject should trigger time-based refresh and find new user
-	subject, err = provider.cache.FindSubject(newUser.Subject)
-	g.Expect(err).To(BeNil())
-	g.Expect(subject.Key).To(Equal(newUser.Subject))
-	g.Expect(subject.User.Login).To(Equal("newtimesubject"))
 }
 
 // TestCacheUserSavedBySubject tests that UserSaved updates bySubject map.
@@ -2242,184 +2065,6 @@ func TestCacheFindUserByLoginNotification(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(found).NotTo(BeNil())
 	g.Expect(found.Subject).To(Equal(user.Subject))
-}
-
-// TestCacheFindUserByLoginTimeRefresh tests time-based refresh for userid lookup.
-func TestCacheFindUserByLoginTimeRefresh(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	db, err := setupTestDB()
-	g.Expect(err).To(BeNil())
-
-	// Save original cache lifespan and restore after test
-	originalLifespan := Settings.CacheLifespan
-	defer func() {
-		Settings.CacheLifespan = originalLifespan
-	}()
-
-	// Set very short cache lifespan
-	Settings.CacheLifespan = 100 * time.Millisecond
-
-	user := &model.User{
-		Subject:  uuid.New().String(),
-		Login:    "timeuserid",
-		Password: secret.HashPassword("password"),
-		Email:    "timeuserid@example.com",
-	}
-	err = db.Create(user).Error
-	g.Expect(err).To(BeNil())
-
-	// Reload user to get auto-generated subject
-	err = db.First(user, user.ID).Error
-	g.Expect(err).To(BeNil())
-
-	provider, err := NewBuiltin(db)
-	g.Expect(err).To(BeNil())
-
-	// Find successfully (cache is fresh)
-	found, err := provider.cache.FindUserByLogin("timeuserid")
-	g.Expect(err).To(BeNil())
-	g.Expect(found.Subject).To(Equal(user.Subject))
-
-	// Wait for cache to expire
-	time.Sleep(150 * time.Millisecond)
-
-	// Create new user while cache is stale
-	newUser := &model.User{
-		Login:    "newtimeuserid",
-		Password: secret.HashPassword("password"),
-		Email:    "newtimeuserid@example.com",
-	}
-	err = db.Create(newUser).Error
-	g.Expect(err).To(BeNil())
-
-	// Reload newUser to get auto-generated subject
-	err = db.First(newUser, newUser.ID).Error
-	g.Expect(err).To(BeNil())
-
-	// FindUserByLogin should trigger time-based refresh
-	found, err = provider.cache.FindUserByLogin("newtimeuserid")
-	g.Expect(err).To(BeNil())
-	g.Expect(found.Subject).To(Equal(newUser.Subject))
-}
-
-// TestCacheGetTask tests finding task by ID.
-func TestCacheGetTask(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	db, err := setupTestDB()
-	g.Expect(err).To(BeNil())
-
-	// Create test task
-	task := &model.Task{
-		Name:  "cache-test-task",
-		State: "Running",
-	}
-	err = db.Create(task).Error
-	g.Expect(err).To(BeNil())
-
-	provider, err := NewBuiltin(db)
-	g.Expect(err).To(BeNil())
-
-	// Get task by ID
-	found, err := provider.cache.FindTaskById(task.ID)
-	g.Expect(err).To(BeNil())
-	g.Expect(found).NotTo(BeNil())
-	g.Expect(found.ID).To(Equal(task.ID))
-	g.Expect(found.State).To(Equal("Running"))
-
-	// Get non-existent task
-	_, err = provider.cache.FindTaskById(9999)
-	g.Expect(err).NotTo(BeNil())
-	var notFound *NotFound
-	g.Expect(errors.As(err, &notFound)).To(BeTrue())
-	g.Expect(notFound.Resource).To(Equal("task"))
-}
-
-// TestCacheFindTaskByIdNotification tests notification-based cache updates for tasks.
-func TestCacheFindTaskByIdNotification(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	db, err := setupTestDB()
-	g.Expect(err).To(BeNil())
-
-	provider, err := NewBuiltin(db)
-	g.Expect(err).To(BeNil())
-
-	// Force initial cache load
-	_, _ = provider.cache.FindTaskById(9999)
-
-	// Create task after cache is loaded (NOT notified)
-	task := &model.Task{
-		Name:  "new-cache-task",
-		State: "Pending",
-	}
-	err = db.Create(task).Error
-	g.Expect(err).To(BeNil())
-
-	// FindTaskById should NOT find it (cache is fresh, no notification)
-	found, err := provider.cache.FindTaskById(task.ID)
-	g.Expect(err).NotTo(BeNil()) // NotFound
-	g.Expect(found).To(BeNil())
-
-	// Notify cache of task grant
-	provider.cache.TaskGranted(task.ID)
-
-	// Now it should be found immediately
-	found, err = provider.cache.FindTaskById(task.ID)
-	g.Expect(err).To(BeNil())
-	g.Expect(found).NotTo(BeNil())
-	g.Expect(found.State).To(Equal("Running")) // TaskGranted creates minimal Task{ID, State: Running}
-}
-
-// TestCacheGetTaskTimeRefresh tests time-based refresh for task lookup.
-func TestCacheGetTaskTimeRefresh(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	db, err := setupTestDB()
-	g.Expect(err).To(BeNil())
-
-	// Save original cache lifespan and restore after test
-	originalLifespan := Settings.CacheLifespan
-	defer func() {
-		Settings.CacheLifespan = originalLifespan
-	}()
-
-	// Set very short cache lifespan
-	Settings.CacheLifespan = 100 * time.Millisecond
-
-	task := &model.Task{
-		Name:  "time-task",
-		State: "Running",
-	}
-	err = db.Create(task).Error
-	g.Expect(err).To(BeNil())
-
-	provider, err := NewBuiltin(db)
-	g.Expect(err).To(BeNil())
-
-	// Get successfully (cache is fresh)
-	found, err := provider.cache.FindTaskById(task.ID)
-	g.Expect(err).To(BeNil())
-	g.Expect(found.ID).To(Equal(task.ID))
-	g.Expect(found.State).To(Equal("Running"))
-
-	// Wait for cache to expire
-	time.Sleep(150 * time.Millisecond)
-
-	// Create new task while cache is stale
-	newTask := &model.Task{
-		Name:  "new-time-task",
-		State: "Pending",
-	}
-	err = db.Create(newTask).Error
-	g.Expect(err).To(BeNil())
-
-	// GetTask should trigger time-based refresh
-	found, err = provider.cache.FindTaskById(newTask.ID)
-	g.Expect(err).To(BeNil())
-	g.Expect(found.ID).To(Equal(newTask.ID))
-	g.Expect(found.State).To(Equal("Pending"))
 }
 
 // TestCacheUserByUseridMaps tests that all userid maps are maintained.

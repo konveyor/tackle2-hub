@@ -4,19 +4,26 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	liberr "github.com/jortel/go-utils/error"
+	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/internal/secret"
-	"github.com/konveyor/tackle2-hub/shared/task"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
+var (
+	Log = logr.WithName("auth.cache")
+)
+
 // New returns a cache.
 func New(db *gorm.DB) (cache *Cache) {
+	d := Data{}
+	d.reset()
 	cache = &Cache{db: db}
-	cache.reset()
+	cache.data.Store(&d)
 	return
 }
 
@@ -28,38 +35,37 @@ func New(db *gorm.DB) (cache *Cache) {
 //   - Safety-net: Periodic refresh.
 //   - Password changes, role updates, and other changes are propagated
 //     immediately via notifications
+//
+// The cache is optimized for reads. Concurrent reads are safe
+// because of the copy-on-write behavior. The txMutex just ensures
+// Tx, Reset and Refresh are committed sequentially.
 type Cache struct {
-	db              *gorm.DB
-	mutex           sync.RWMutex
-	permById        map[uint]*Permission
-	roleById        map[uint]*Role
-	roleByName      map[string]*Role
-	userById        map[uint]*User
-	userBySubject   map[string]*User
-	userByLogin     map[string]*User
-	taskById        map[uint]*Task
-	identById       map[uint]*Identity
-	identBySubject  map[string]*Identity
-	identByLogin    map[string]*Identity
-	clientById      map[uint]*IdpClient
-	clientBySubject map[string]*IdpClient
-	tokenById       map[uint]*Token
-	tokenByDigest   map[string]*Token
-	refreshed       time.Time
+	txMutex     sync.Mutex
+	data        atomic.Pointer[Data]
+	refreshOnce sync.Once
+	db          *gorm.DB
 }
 
 // Reset clears all cached data.
 func (r *Cache) Reset() {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-	r.reset()
+	r.txMutex.Lock()
+	defer r.txMutex.Unlock()
+	d := Data{}
+	d.reset()
+	r.data.Store(&d)
 }
 
 // Refresh reloads all data from the database.
 func (r *Cache) Refresh() (err error) {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-	err = r.refresh()
+	r.txMutex.Lock()
+	defer r.txMutex.Unlock()
+	d := Data{}
+	d.reset()
+	err = d.refresh(r.db)
+	if err != nil {
+		return
+	}
+	r.data.Store(&d)
 	return
 }
 
@@ -91,14 +97,6 @@ func (r *Cache) UserSaved(m *User) {
 func (r *Cache) UserDeleted(id uint) {
 	_ = r.Transaction(func(tx *Tx) (_ error) {
 		tx.UserDeleted(id)
-		return
-	})
-}
-
-// TaskGranted task token granted.
-func (r *Cache) TaskGranted(id uint) {
-	_ = r.Transaction(func(tx *Tx) (_ error) {
-		tx.TaskGranted(id)
 		return
 	})
 }
@@ -161,44 +159,103 @@ func (r *Cache) TokenDeleted(id uint) {
 
 // FindToken returns a PAT.
 func (r *Cache) FindToken(token string) (m *Token, err error) {
-	err = r.ensureFresh()
-	if err != nil {
+	defer r.ensureRefreshed()
+	d := r.data.Load()
+	cached, found := d.tokenByDigest[secret.Hash(token)]
+	if !found {
+		err = &NotFound{
+			Resource: "token",
+			Id:       token,
+		}
 		return
 	}
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
-	m, err = r.getToken(token)
+	// Create a copy to avoid modifying cached instance
+	m = &Token{Token: cached.Token}
+	// user binding.
+	if m.UserID != nil {
+		user, found := d.userById[*m.UserID]
+		if !found {
+			err = &NotFound{
+				Resource: "user",
+				Id:       strconv.Itoa(int(*m.UserID)),
+			}
+			return
+		}
+		m.Subject = user.Subject
+		m.Scopes = user.GetScopes(r)
+		return
+	}
+	// task binding.
+	if m.TaskID != nil {
+		m.Subject = "task:" + strconv.Itoa(int(*m.TaskID))
+		m.Scopes = AddonScopes
+		return
+	}
+	// IdP identity binding.
+	if m.IdpIdentityID != nil {
+		identity, found := d.identById[*m.IdpIdentityID]
+		if !found {
+			err = &NotFound{
+				Resource: "identity",
+				Id:       strconv.Itoa(int(*m.IdpIdentityID)),
+			}
+			return
+		}
+		m.Subject = identity.Subject
+		m.Scopes = strings.Fields(identity.Scopes)
+		return
+	}
+	// IdP client binding.
+	if m.IdpClientID != nil {
+		client, found := d.clientById[*m.IdpClientID]
+		if !found {
+			err = &NotFound{
+				Resource: "client",
+				Id:       strconv.Itoa(int(*m.IdpClientID)),
+			}
+			return
+		}
+		m.Subject = client.Subject
+		m.Scopes = client.GetScopes()
+		return
+	}
 	return
 }
 
 // FindSubject returns a subject.
-func (r *Cache) FindSubject(subject string) (m *Subject, err error) {
-	err = r.ensureFresh()
-	if err != nil {
+func (r *Cache) FindSubject(subject string) (s *Subject, err error) {
+	defer r.ensureRefreshed()
+	d := r.data.Load()
+	user, found := d.userBySubject[subject]
+	if found {
+		s = &Subject{}
+		s.WithUser(user, r)
 		return
 	}
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
-	var found bool
-	m, found = r.findSubject(subject)
-	if !found {
-		err = &NotFound{
-			Resource: "subject",
-			Id:       subject,
-		}
+	identity, found := d.identBySubject[subject]
+	if found {
+		s = &Subject{}
+		s.WithIdentity(identity)
+		return
+	}
+	client, found := d.clientBySubject[subject]
+	if found {
+		s = &Subject{}
+		s.WithClient(client, r)
+		return
+	}
+	err = &NotFound{
+		Resource: "subject",
+		Id:       subject,
 	}
 	return
 }
 
 // FindIdentityByLogin finds and returns identities by login.
 func (r *Cache) FindIdentityByLogin(login string) (m *Identity, err error) {
-	err = r.ensureFresh()
-	if err != nil {
-		return
-	}
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
-	m, found := r.identByLogin[login]
+	defer r.ensureRefreshed()
+	d := r.data.Load()
+	m, found := d.identByLogin[login]
 	if !found {
 		err = &NotFound{
 			Resource: "identity",
@@ -210,13 +267,9 @@ func (r *Cache) FindIdentityByLogin(login string) (m *Identity, err error) {
 
 // FindRoleById return a role by id.
 func (r *Cache) FindRoleById(id uint) (m *Role, err error) {
-	err = r.ensureFresh()
-	if err != nil {
-		return
-	}
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
-	m, found := r.roleById[id]
+	defer r.ensureRefreshed()
+	d := r.data.Load()
+	m, found := d.roleById[id]
 	if !found {
 		err = &NotFound{
 			Resource: "Role",
@@ -228,13 +281,9 @@ func (r *Cache) FindRoleById(id uint) (m *Role, err error) {
 
 // FindRoleByName return a role by name.
 func (r *Cache) FindRoleByName(name string) (m *Role, err error) {
-	err = r.ensureFresh()
-	if err != nil {
-		return
-	}
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
-	m, found := r.roleByName[name]
+	defer r.ensureRefreshed()
+	d := r.data.Load()
+	m, found := d.roleByName[name]
 	if !found {
 		err = &NotFound{
 			Resource: "Role",
@@ -246,53 +295,13 @@ func (r *Cache) FindRoleByName(name string) (m *Role, err error) {
 
 // FindUserByLogin returns a user by login.
 func (r *Cache) FindUserByLogin(login string) (m *User, err error) {
-	err = r.ensureFresh()
-	if err != nil {
-		return
-	}
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
-	m, found := r.userByLogin[login]
+	defer r.ensureRefreshed()
+	d := r.data.Load()
+	m, found := d.userByLogin[login]
 	if !found {
 		err = &NotFound{
 			Resource: "user",
 			Id:       login,
-		}
-	}
-	return
-}
-
-// FindTaskById returns a task by ID.
-func (r *Cache) FindTaskById(id uint) (m *Task, err error) {
-	err = r.ensureFresh()
-	if err != nil {
-		return
-	}
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
-	m, found := r.taskById[id]
-	if !found {
-		err = &NotFound{
-			Resource: "task",
-			Id:       strconv.Itoa(int(id)),
-		}
-	}
-	return
-}
-
-// ensureFresh refreshes the cache if CacheLifespan has elapsed.
-func (r *Cache) ensureFresh() (err error) {
-	var needsRefresh bool
-	func() {
-		r.mutex.RLock()
-		defer r.mutex.RUnlock()
-		needsRefresh = time.Since(r.refreshed) > Settings.CacheLifespan
-	}()
-	if needsRefresh {
-		r.mutex.Lock()
-		defer r.mutex.Unlock()
-		if time.Since(r.refreshed) > Settings.CacheLifespan {
-			err = r.refresh()
 		}
 	}
 	return
@@ -303,8 +312,8 @@ func (r *Cache) ensureFresh() (err error) {
 // Changes are applied atomically on Commit().
 func (r *Cache) Begin() (tx *Tx) {
 	tx = &Tx{
+		changes: make([]func(*Data), 0),
 		cache:   r,
-		changes: make([]func(), 0),
 	}
 	return
 }
@@ -322,131 +331,166 @@ func (r *Cache) Transaction(fn func(*Tx) error) (err error) {
 	return
 }
 
-// reset allocate cache content backing maps.
-func (r *Cache) reset() {
-	r.permById = make(map[uint]*Permission)
-	r.roleById = make(map[uint]*Role)
-	r.roleByName = make(map[string]*Role)
-	r.userById = make(map[uint]*User)
-	r.userBySubject = make(map[string]*User)
-	r.userByLogin = make(map[string]*User)
-	r.taskById = make(map[uint]*Task)
-	r.tokenById = make(map[uint]*Token)
-	r.identById = make(map[uint]*Identity)
-	r.identBySubject = make(map[string]*Identity)
-	r.identByLogin = make(map[string]*Identity)
-	r.clientById = make(map[uint]*IdpClient)
-	r.clientBySubject = make(map[string]*IdpClient)
-	r.tokenByDigest = make(map[string]*Token)
-	r.refreshed = time.Time{}
+// ensureRefreshed detected the cache is stale and
+// refresh (Asynchronously) as needed.
+func (r *Cache) ensureRefreshed() {
+	d := r.data.Load()
+	if time.Since(d.refreshed) < Settings.CacheLifespan {
+		return
+	}
+	d.refreshOnce.Do(func() {
+		go func() {
+			err := r.Refresh()
+			if err != nil {
+				Log.Error(err, "REFRESH FAILED:"+err.Error())
+				r.Reset()
+			}
+		}()
+	})
+}
+
+// Data contains cached maps.
+type Data struct {
+	refreshOnce sync.Once
+	refreshed   time.Time
+	//
+	permById        map[uint]*Permission
+	roleById        map[uint]*Role
+	roleByName      map[string]*Role
+	userById        map[uint]*User
+	userBySubject   map[string]*User
+	userByLogin     map[string]*User
+	identById       map[uint]*Identity
+	identBySubject  map[string]*Identity
+	identByLogin    map[string]*Identity
+	clientById      map[uint]*IdpClient
+	clientBySubject map[string]*IdpClient
+	tokenById       map[uint]*Token
+	tokenByDigest   map[string]*Token
+}
+
+// reset creates new maps.
+func (d *Data) reset() {
+	d.permById = make(map[uint]*Permission)
+	d.roleById = make(map[uint]*Role)
+	d.roleByName = make(map[string]*Role)
+	d.userById = make(map[uint]*User)
+	d.userBySubject = make(map[string]*User)
+	d.userByLogin = make(map[string]*User)
+	d.tokenById = make(map[uint]*Token)
+	d.identById = make(map[uint]*Identity)
+	d.identBySubject = make(map[string]*Identity)
+	d.identByLogin = make(map[string]*Identity)
+	d.clientById = make(map[uint]*IdpClient)
+	d.clientBySubject = make(map[string]*IdpClient)
+	d.tokenByDigest = make(map[string]*Token)
+}
+
+// clone returns cloned data.
+// the refreshed timestamp is copied, but the
+// refreshOnce is new.
+func (d *Data) clone() *Data {
+	return &Data{
+		refreshOnce:     sync.Once{},
+		refreshed:       d.refreshed,
+		permById:        cloneMap(d.permById),
+		roleById:        cloneMap(d.roleById),
+		roleByName:      cloneMap(d.roleByName),
+		userById:        cloneMap(d.userById),
+		userBySubject:   cloneMap(d.userBySubject),
+		userByLogin:     cloneMap(d.userByLogin),
+		tokenById:       cloneMap(d.tokenById),
+		identById:       cloneMap(d.identById),
+		identBySubject:  cloneMap(d.identBySubject),
+		identByLogin:    cloneMap(d.identByLogin),
+		clientById:      cloneMap(d.clientById),
+		clientBySubject: cloneMap(d.clientBySubject),
+		tokenByDigest:   cloneMap(d.tokenByDigest),
+	}
 }
 
 // refresh cached content.
-func (r *Cache) refresh() (err error) {
-	r.reset()
-	err = r.getPerms()
+func (d *Data) refresh(db *gorm.DB) (err error) {
+	d.reset()
+	err = d.getPerms(db)
 	if err != nil {
 		return
 	}
-	err = r.getRoles()
+	err = d.getRoles(db)
 	if err != nil {
 		return
 	}
-	err = r.getUsers()
+	err = d.getUsers(db)
 	if err != nil {
 		return
 	}
-	err = r.getTasks()
+	err = d.getIdentities(db)
 	if err != nil {
 		return
 	}
-	err = r.getIdentities()
+	err = d.getClients(db)
 	if err != nil {
 		return
 	}
-	err = r.getClients()
+	err = d.getTokens(db)
 	if err != nil {
 		return
 	}
-	err = r.getTokens()
-	if err != nil {
-		return
-	}
-	r.refreshed = time.Now()
+	d.refreshed = time.Now()
 	return
 }
 
 // getPerms fetches permissions from the DB and populates.
-func (r *Cache) getPerms() (err error) {
+func (d *Data) getPerms(db *gorm.DB) (err error) {
 	list := make([]*Permission, 0)
-	err = r.db.Find(&list).Error
+	err = db.Find(&list).Error
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
 	for _, m := range list {
-		r.permById[m.ID] = m
+		d.permById[m.ID] = m
 	}
 	return
 }
 
 // getRoles fetches roles from the DB and populates.
-func (r *Cache) getRoles() (err error) {
+func (d *Data) getRoles(db *gorm.DB) (err error) {
 	list := make([]*Role, 0)
-	db := r.db.Preload(clause.Associations)
+	db = db.Preload(clause.Associations)
 	err = db.Find(&list).Error
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
 	for _, m := range list {
-		r.roleById[m.ID] = m
-		r.roleByName[m.Name] = m
+		d.roleById[m.ID] = m
+		d.roleByName[m.Name] = m
 	}
 	return
 }
 
 // getUsers fetches users from the DB and populates.
-func (r *Cache) getUsers() (err error) {
+func (d *Data) getUsers(db *gorm.DB) (err error) {
 	list := make([]*User, 0)
-	db := r.db.Preload(clause.Associations)
+	db = db.Preload(clause.Associations)
 	err = db.Find(&list).Error
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
 	for _, m := range list {
-		r.userById[m.ID] = m
-		r.userBySubject[m.Subject] = m
-		r.userByLogin[m.Login] = m
-	}
-	return
-}
-
-// getTasks fetches tasks state=(pending|running) from the DB and populates.
-func (r *Cache) getTasks() (err error) {
-	list := make([]*Task, 0)
-	err = r.db.Find(
-		&list,
-		"state IN ?",
-		[]string{
-			task.Pending,
-			task.Running,
-		}).Error
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	for _, m := range list {
-		r.taskById[m.ID] = m
+		d.userById[m.ID] = m
+		d.userBySubject[m.Subject] = m
+		d.userByLogin[m.Login] = m
 	}
 	return
 }
 
 // getIdentities fetches idp identities from the DB and populates.
-func (r *Cache) getIdentities() (err error) {
+func (d *Data) getIdentities(db *gorm.DB) (err error) {
 	list := make([]*Identity, 0)
-	err = r.db.Find(&list).Error
+	err = db.Find(&list).Error
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -454,9 +498,9 @@ func (r *Cache) getIdentities() (err error) {
 	for _, m := range list {
 		err = secret.Decrypt(m)
 		if err == nil {
-			r.identById[m.ID] = m
-			r.identBySubject[m.Subject] = m
-			r.identByLogin[m.Login] = m
+			d.identById[m.ID] = m
+			d.identBySubject[m.Subject] = m
+			d.identByLogin[m.Login] = m
 		} else {
 			return
 		}
@@ -465,24 +509,24 @@ func (r *Cache) getIdentities() (err error) {
 }
 
 // getClients fetches idp clients from the DB and populates.
-func (r *Cache) getClients() (err error) {
+func (d *Data) getClients(db *gorm.DB) (err error) {
 	list := make([]*IdpClient, 0)
-	err = r.db.Find(&list).Error
+	err = db.Find(&list).Error
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
 	for _, m := range list {
-		r.clientById[m.ID] = m
-		r.clientBySubject[m.Subject] = m
+		d.clientById[m.ID] = m
+		d.clientBySubject[m.Subject] = m
 	}
 	return
 }
 
 // getTokens fetches permissions from the DB and populates.
-func (r *Cache) getTokens() (err error) {
+func (d *Data) getTokens(db *gorm.DB) (err error) {
 	list := []*Token{}
-	db := r.db.Preload(clause.Associations)
+	db = db.Preload(clause.Associations)
 	db = db.Where("kind", KindAPIKey)
 	db = db.Where("expiration > ?", time.Now())
 	err = db.Find(&list).Error
@@ -491,102 +535,20 @@ func (r *Cache) getTokens() (err error) {
 		return
 	}
 	for _, m := range list {
-		r.tokenById[m.ID] = m
-		r.tokenByDigest[m.Digest] = m
+		d.tokenById[m.ID] = m
+		d.tokenByDigest[m.Digest] = m
 	}
 	return
 }
 
-// getToken returns a PAT.
-func (r *Cache) getToken(token string) (m *Token, err error) {
-	cached, found := r.tokenByDigest[secret.Hash(token)]
-	if !found {
-		err = &NotFound{
-			Resource: "token",
-			Id:       token,
-		}
-		return
+// cloneMap returns a shallow clone.
+func cloneMap[K comparable, V any](m map[K]V) (m2 map[K]V) {
+	if m == nil {
+		return nil
 	}
-	// Create a copy to avoid modifying cached instance
-	m = &Token{Token: cached.Token}
-	// user binding.
-	if m.UserID != nil {
-		user, found := r.userById[*m.UserID]
-		if !found {
-			err = &NotFound{
-				Resource: "user",
-				Id:       strconv.Itoa(int(*m.UserID)),
-			}
-			return
-		}
-		m.Subject = user.Subject
-		m.Scopes = user.GetScopes(r)
-		return
-	}
-	// task binding.
-	if m.TaskID != nil {
-		task, found := r.taskById[*m.TaskID]
-		if !found {
-			err = &NotFound{
-				Resource: "task",
-				Id:       strconv.Itoa(int(*m.TaskID)),
-			}
-			return
-		}
-		m.Subject = "task:" + strconv.Itoa(int(task.ID))
-		m.Scopes = AddonScopes
-		return
-	}
-	// IdP identity binding.
-	if m.IdpIdentityID != nil {
-		identity, found := r.identById[*m.IdpIdentityID]
-		if !found {
-			err = &NotFound{
-				Resource: "identity",
-				Id:       strconv.Itoa(int(*m.IdpIdentityID)),
-			}
-			return
-		}
-		m.Subject = identity.Subject
-		m.Scopes = strings.Fields(identity.Scopes)
-		return
-	}
-	// IdP client binding.
-	if m.IdpClientID != nil {
-		client, found := r.clientById[*m.IdpClientID]
-		if !found {
-			err = &NotFound{
-				Resource: "client",
-				Id:       strconv.Itoa(int(*m.IdpClientID)),
-			}
-			return
-		}
-		m.Subject = client.Subject
-		m.Scopes = client.GetScopes()
-		return
-	}
-	return
-}
-
-// findSubject returns the subject.
-func (r *Cache) findSubject(subject string) (s *Subject, found bool) {
-	user, found := r.userBySubject[subject]
-	if found {
-		s = &Subject{}
-		s.WithUser(user, r)
-		return
-	}
-	identity, found := r.identBySubject[subject]
-	if found {
-		s = &Subject{}
-		s.WithIdentity(identity)
-		return
-	}
-	client, found := r.clientBySubject[subject]
-	if found {
-		s = &Subject{}
-		s.WithClient(client, r)
-		return
+	m2 = make(map[K]V, len(m))
+	for k, v := range m {
+		m2[k] = v
 	}
 	return
 }

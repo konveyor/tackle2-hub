@@ -26,6 +26,10 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		cache: cache,
 		db:    db,
 	}
+	err = cache.Refresh()
+	if err != nil {
+		return
+	}
 	keyManager := NewKeyManager(db)
 	builtin.keySet, err = keyManager.KeySet()
 	if err != nil {
@@ -200,7 +204,6 @@ func (p *Builtin) TaskGrant(taskId uint) (m Token, err error) {
 		return
 	}
 	p.cache.TokenSaved(&m)
-	p.cache.TaskGranted(taskId)
 	return
 }
 

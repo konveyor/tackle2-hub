@@ -281,7 +281,7 @@ func (h *DagHandler) currentUser(ctx *gin.Context) (user string) {
 // Uses server-side state storage to avoid cookie domain issues when hub
 // acts as both IdP and RP.
 type OIDCAuth struct {
-	mutex     sync.RWMutex
+	mutex     sync.Mutex
 	cookies   *httphelper.CookieHandler
 	pkceState map[string]*PKCEState
 	initOnce  sync.Once
