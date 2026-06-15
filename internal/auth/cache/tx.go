@@ -41,7 +41,7 @@ func (r *Tx) UserSaved(m *User) {
 		})
 }
 
-// UserDeleted removes a user from the cache.
+// UserDeleted removes a user and all associated tokens from the cache.
 func (r *Tx) UserDeleted(id uint) {
 	r.changes = append(
 		r.changes, func(d *Data) {
@@ -50,6 +50,12 @@ func (r *Tx) UserDeleted(id uint) {
 				delete(d.userBySubject, m.Subject)
 				delete(d.userByLogin, m.Login)
 				delete(d.userById, id)
+			}
+			for _, token := range d.tokenById {
+				if token.UserID != nil && *token.UserID == id {
+					delete(d.tokenByDigest, token.Digest)
+					delete(d.tokenById, token.ID)
+				}
 			}
 		})
 }
@@ -77,7 +83,7 @@ func (r *Tx) IdentitySaved(m *Identity) {
 		})
 }
 
-// IdentityDeleted removes an identity from the cache.
+// IdentityDeleted removes an identity and all associated tokens from the cache.
 func (r *Tx) IdentityDeleted(id uint) {
 	r.changes = append(
 		r.changes, func(d *Data) {
@@ -86,6 +92,12 @@ func (r *Tx) IdentityDeleted(id uint) {
 				delete(d.identByLogin, m.Login)
 				delete(d.identBySubject, m.Subject)
 				delete(d.identById, id)
+			}
+			for _, token := range d.tokenById {
+				if token.IdpIdentityID != nil && *token.IdpIdentityID == id {
+					delete(d.tokenByDigest, token.Digest)
+					delete(d.tokenById, token.ID)
+				}
 			}
 		})
 }
@@ -99,7 +111,7 @@ func (r *Tx) ClientSaved(m *IdpClient) {
 		})
 }
 
-// ClientDeleted removes a client from the cache.
+// ClientDeleted removes a client and all associated tokens from the cache.
 func (r *Tx) ClientDeleted(id uint) {
 	r.changes = append(
 		r.changes, func(d *Data) {
@@ -107,6 +119,12 @@ func (r *Tx) ClientDeleted(id uint) {
 			if found {
 				delete(d.clientBySubject, m.Subject)
 				delete(d.clientById, id)
+			}
+			for _, token := range d.tokenById {
+				if token.IdpClientID != nil && *token.IdpClientID == id {
+					delete(d.tokenByDigest, token.Digest)
+					delete(d.tokenById, token.ID)
+				}
 			}
 		})
 }
@@ -128,6 +146,19 @@ func (r *Tx) TokenDeleted(id uint) {
 			if found {
 				delete(d.tokenByDigest, token.Digest)
 				delete(d.tokenById, id)
+			}
+		})
+}
+
+// GrantDeleted removes a grant and all associated tokens from the cache.
+func (r *Tx) GrantDeleted(id uint) {
+	r.changes = append(
+		r.changes, func(d *Data) {
+			for _, m := range d.tokenById {
+				if m.GrantID != nil && *m.GrantID == id {
+					delete(d.tokenByDigest, m.Digest)
+					delete(d.tokenById, m.ID)
+				}
 			}
 		})
 }

@@ -266,6 +266,7 @@ func (r *Storage) DeleteAuthRequest(_ context.Context, id string) (err error) {
 }
 
 // CreateAccessToken creates an access token.
+// CreateAccessToken creates an access token.
 func (r *Storage) CreateAccessToken(
 	_ context.Context,
 	req op.TokenRequest) (tokenId string, expiration time.Time, err error) {

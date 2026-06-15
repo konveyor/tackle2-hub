@@ -3079,3 +3079,155 @@ func TestEndSessionURLNoClient(t *testing.T) {
 	g.Expect(err).NotTo(BeNil())
 	g.Expect(logoutURL).To(BeEmpty())
 }
+
+// TestCreateAccessToken_UpdatesExistingToken tests that refreshing a token
+// updates the existing token record instead of creating a new one.
+func TestCreateAccessToken_UpdatesExistingToken(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := database.OpenTest()
+	g.Expect(err).To(BeNil())
+	db.AutoMigrate(
+		&IdpClient{},
+		&User{},
+		&Task{},
+		&model.Bucket{},
+		&Role{},
+		&Permission{},
+		&Token{},
+		&Grant{},
+		&RsaKey{},
+		&Identity{})
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	user := &User{Login: "testuser"}
+	err = db.Create(user).Error
+	g.Expect(err).To(BeNil())
+
+	subject := &Subject{}
+	subject.WithUser(user, provider.cache)
+
+	grantId := provider.storage.genId()
+	grant := &Grant{
+		Kind:       KindAuthCode,
+		AuthId:     grantId,
+		Subject:    subject.Key,
+		Scopes:     "openid profile",
+		Issued:     time.Now(),
+		Expiration: time.Now().Add(48 * time.Hour),
+	}
+	err = db.Create(grant).Error
+	g.Expect(err).To(BeNil())
+
+	refreshReq := &RefreshRequest{
+		grantId:  grantId,
+		clientId: "test-client",
+		subject:  subject.Key,
+		scopes:   []string{"openid", "profile"},
+		issued:   time.Now(),
+	}
+
+	tokenId1, expiration1, err := provider.storage.CreateAccessToken(context.Background(), refreshReq)
+	g.Expect(err).To(BeNil())
+	g.Expect(tokenId1).To(Equal(grantId))
+
+	var tokens1 []Token
+	err = db.Find(&tokens1, "authId = ?", tokenId1).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(tokens1).To(HaveLen(1))
+
+	firstToken := tokens1[0]
+	firstExpiration := firstToken.Expiration
+	firstScopes := firstToken.Scopes
+
+	time.Sleep(100 * time.Millisecond)
+
+	refreshReq.scopes = []string{"openid", "profile", "email"}
+	tokenId2, expiration2, err := provider.storage.CreateAccessToken(context.Background(), refreshReq)
+	g.Expect(err).To(BeNil())
+	g.Expect(tokenId2).To(Equal(grantId))
+	g.Expect(tokenId2).To(Equal(tokenId1))
+
+	var tokens2 []Token
+	err = db.Find(&tokens2, "authId = ?", tokenId1).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(tokens2).To(HaveLen(1))
+
+	g.Expect(tokens2[0].Expiration).To(BeTemporally(">", firstExpiration))
+	g.Expect(expiration2).To(BeTemporally(">", expiration1))
+
+	g.Expect(tokens2[0].Scopes).To(Equal([]string{"openid", "profile", "email"}))
+	g.Expect(tokens2[0].Scopes).NotTo(Equal(firstScopes))
+
+	g.Expect(tokens2[0].Subject).To(Equal(firstToken.Subject))
+	g.Expect(tokens2[0].Issued).To(Equal(firstToken.Issued))
+	g.Expect(tokens2[0].ID).To(Equal(firstToken.ID))
+}
+
+// TestCreateAccessToken_CascadeDeleteOnGrantDeletion tests that deleting
+// a grant CASCADE deletes its associated access token.
+func TestCreateAccessToken_CascadeDeleteOnGrantDeletion(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := database.OpenTest()
+	g.Expect(err).To(BeNil())
+	db.AutoMigrate(
+		&IdpClient{},
+		&User{},
+		&Task{},
+		&model.Bucket{},
+		&Role{},
+		&Permission{},
+		&Token{},
+		&Grant{},
+		&RsaKey{},
+		&Identity{})
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	user := &User{Login: "testuser"}
+	err = db.Create(user).Error
+	g.Expect(err).To(BeNil())
+
+	subject := &Subject{}
+	subject.WithUser(user, provider.cache)
+
+	grantId := provider.storage.genId()
+	grant := &Grant{
+		Kind:       KindAuthCode,
+		AuthId:     grantId,
+		Subject:    subject.Key,
+		Scopes:     "openid profile",
+		Issued:     time.Now(),
+		Expiration: time.Now().Add(48 * time.Hour),
+	}
+	err = db.Create(grant).Error
+	g.Expect(err).To(BeNil())
+
+	refreshReq := &RefreshRequest{
+		grantId:  grantId,
+		clientId: "test-client",
+		subject:  subject.Key,
+		scopes:   []string{"openid", "profile"},
+		issued:   time.Now(),
+	}
+
+	tokenId, _, err := provider.storage.CreateAccessToken(context.Background(), refreshReq)
+	g.Expect(err).To(BeNil())
+
+	var tokens []Token
+	err = db.Find(&tokens, "authId = ?", tokenId).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(tokens).To(HaveLen(1))
+
+	err = db.Delete(grant).Error
+	g.Expect(err).To(BeNil())
+
+	var tokensAfter []Token
+	err = db.Find(&tokensAfter, "authId = ?", tokenId).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(tokensAfter).To(BeEmpty())
+}
