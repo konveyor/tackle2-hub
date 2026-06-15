@@ -527,11 +527,6 @@ func (h AuthHandler) UserCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	_, err = secret.Encode(m)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
 	db := h.DB(ctx).Model(m)
 	db = db.Omit(clause.Associations)
 	err = db.Create(m).Error
@@ -555,6 +550,11 @@ func (h AuthHandler) UserCreate(ctx *gin.Context) {
 	auth.IdP.Cache().UserSaved((*auth.User)(m))
 
 	err = secret.Redact(m, SecretMask)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	
 	r.With(m)
 
 	h.Respond(ctx, http.StatusCreated, r)
