@@ -1134,20 +1134,44 @@ func (r *Storage) token(_ context.Context, id string) (m *Token, err error) {
 
 // deleteToken deletes a token by id.
 func (r *Storage) deleteToken(_ context.Context, id string) (err error) {
-	m := &Token{}
-	err = r.db.Delete(m, "authId", id).Error
+	var tokens []*Token
+	db := r.db.Where("authId", id)
+	db = db.Where("kind", KindAccessToken)
+	err = db.Find(&tokens).Error
 	if err != nil {
 		err = liberr.Wrap(err)
+		return
+	}
+	for _, m := range tokens {
+		err = r.db.Delete(m).Error
+		if err == nil {
+			r.cache.TokenDeleted(m.ID)
+		} else {
+			err = liberr.Wrap(err)
+			return
+		}
 	}
 	return
 }
 
 // deleteTokensBySubject deletes all tokens for a subject.
 func (r *Storage) deleteTokensBySubject(_ context.Context, subject string) (err error) {
-	m := &Token{}
-	err = r.db.Delete(m, "subject", subject).Error
+	var tokens []*Token
+	db := r.db.Where("subject", subject)
+	db = db.Where("kind", KindAccessToken)
+	err = db.Find(&tokens).Error
 	if err != nil {
 		err = liberr.Wrap(err)
+		return
+	}
+	for _, m := range tokens {
+		err = r.db.Delete(m).Error
+		if err == nil {
+			r.cache.TokenDeleted(m.ID)
+		} else {
+			err = liberr.Wrap(err)
+			return
+		}
 	}
 	return
 }
