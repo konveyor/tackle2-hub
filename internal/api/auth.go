@@ -527,7 +527,7 @@ func (h AuthHandler) UserCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	err = secret.Redact(m, SecretMask)
+	_, err = secret.Encode(m)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -619,6 +619,13 @@ func (h AuthHandler) UserUpdate(ctx *gin.Context) {
 			_ = ctx.Error(err)
 			return
 		}
+	}
+
+	db = h.preLoad(h.DB(ctx), clause.Associations)
+	err = db.First(updated, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
 	}
 
 	auth.IdP.Cache().UserSaved((*auth.User)(updated))

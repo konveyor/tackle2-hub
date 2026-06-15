@@ -1351,26 +1351,46 @@ func (h ResourceHandler) Get(ctx *gin.Context) {
 
 ### Functions
 
-- `secret.Encode(m)` - Encrypt/hash secrets, returns `[]Field`
-- `secret.Redact(m, mask)` - Replace secrets with mask
-- `secret.RevertRedacted(fields, from, mask)` - Restore masked fields from another object
+- `secret.Encode(m)` - Encrypt/hash secrets, returns `([]Field, error)`
+- `secret.Redact(m, mask)` - Replace secrets with mask, returns `error`
+- `secret.RevertRedacted(fields, from, mask)` - Restore masked fields from another object, returns `error`
 
 ### Patterns
 
 **GET/List:**
 ```go
-db.First(m, id)
-secret.Redact(m, SecretMask)  // Mask secrets
-r.With(m)                      // Pure conversion
+err := db.First(m, id).Error
+if err != nil {
+    _ = ctx.Error(err)
+    return
+}
+err = secret.Redact(m, SecretMask)
+if err != nil {
+    _ = ctx.Error(err)
+    return
+}
+r.With(m)
 h.Respond(ctx, http.StatusOK, r)
 ```
 
 **Create:**
 ```go
-secret.Encode(m)               // Encrypt/hash
-db.Create(m)                   // Save
+_, err := secret.Encode(m)
+if err != nil {
+    _ = ctx.Error(err)
+    return
+}
+err = db.Create(m).Error
+if err != nil {
+    _ = ctx.Error(err)
+    return
+}
 Cache().UserSaved(m)           // Cache gets real values
-secret.Redact(m, SecretMask)   // Mask for response
+err = secret.Redact(m, SecretMask)
+if err != nil {
+    _ = ctx.Error(err)
+    return
+}
 r.With(m)
 h.Respond(ctx, http.StatusCreated, r)
 ```
@@ -1378,7 +1398,11 @@ h.Respond(ctx, http.StatusCreated, r)
 **Update:**
 ```go
 current := &model.User{}
-db.First(current, id)
+err := db.First(current, id).Error
+if err != nil {
+    _ = ctx.Error(err)
+    return
+}
 updated := r.Model()
 fields, err := secret.Encode(updated)
 if err != nil {
@@ -1390,8 +1414,12 @@ if err != nil {
     _ = ctx.Error(err)
     return
 }
-db.Save(updated)
-Cache().UserSaved(updated)      // Cache gets real values
+err = db.Save(updated).Error
+if err != nil {
+    _ = ctx.Error(err)
+    return
+}
+Cache().UserSaved(updated)     // Cache gets real values
 h.Status(ctx, http.StatusNoContent)
 ```
 
