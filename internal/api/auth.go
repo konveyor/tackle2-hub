@@ -209,20 +209,24 @@ func (h AuthHandler) IdpClientUpdate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	m := r.Model()
-	m.ID = id
-	m.UpdateUser = h.CurrentUser(ctx)
-	db := h.DB(ctx)
-	db = db.Model(m)
-	fields, err := secret.Encode(m)
+	m := &model.IdpClient{}
+	err = h.DB(ctx).First(m, id).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	for _, f := range fields {
-		if f.Secret() == SecretMask {
-			db = db.Omit(f.Fqn())
-		}
+	if r.Secret == SecretMask {
+		r.Secret = m.Secret
+	}
+	m = r.Model()
+	m.ID = id
+	m.UpdateUser = h.CurrentUser(ctx)
+	db := h.DB(ctx)
+	db = db.Model(m)
+	_, err = secret.Encode(m)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
 	}
 	err = db.Save(m).Error
 	if err != nil {
@@ -552,20 +556,18 @@ func (h AuthHandler) UserUpdate(ctx *gin.Context) {
 			return
 		}
 	}
+	if r.Password == SecretMask {
+		r.Password = m.Password
+	}
 	m = r.Model()
 	m.ID = id
 	m.UpdateUser = h.CurrentUser(ctx)
 	db := h.DB(ctx).Model(m)
 	db = db.Omit(clause.Associations)
-	fields, err := secret.Encode(m)
+	_, err = secret.Encode(m)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
-	}
-	for _, f := range fields {
-		if f.Secret() == SecretMask {
-			db = db.Omit(f.Fqn())
-		}
 	}
 	err = db.Save(m).Error
 	if err != nil {
