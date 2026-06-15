@@ -1342,6 +1342,11 @@ func (h ResourceHandler) Get(ctx *gin.Context) {
 
 **Preferred approach** for handlers managing secrets (passwords, API keys, tokens). Older handlers may use different patterns - this is the recommended approach for new code and refactoring.
 
+**Why preferred:**
+- **More secure** - Returns mask (`"***"`) instead of exposing encrypted/hashed values in responses
+- **Tag-driven** - Adding new secret fields is automatic via `secret:` struct tags, no handler changes needed
+- **Cleaner separation** - `With()` does pure conversion, secret logic stays in handlers
+
 **Core principle:** `With()` does pure conversion. Handlers explicitly manage secrets using `secret` package.
 
 ### Functions
