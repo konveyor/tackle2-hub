@@ -243,7 +243,7 @@ func (h AuthHandler) IdpClientUpdate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	err = secret.RestoreRedacted(fields, current, SecretMask)
+	err = secret.RevertRedacted(fields, current, SecretMask)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -603,7 +603,7 @@ func (h AuthHandler) UserUpdate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	err = secret.RestoreRedacted(fields, current, SecretMask)
+	err = secret.RevertRedacted(fields, current, SecretMask)
 	if err != nil {
 		_ = ctx.Error(err)
 		return

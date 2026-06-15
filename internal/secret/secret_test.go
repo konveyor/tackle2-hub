@@ -1115,8 +1115,8 @@ func TestEncryptionErrorPropagation(t *testing.T) {
 	g.Expect(err).ToNot(BeNil())
 }
 
-// TestRestoreRedacted tests RestoreRedacted() function.
-func TestRestoreRedacted(t *testing.T) {
+// TestRevertRedacted tests RevertRedacted() function.
+func TestRevertRedacted(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	Settings.Passphrase = "TEST"
@@ -1151,7 +1151,7 @@ func TestRestoreRedacted(t *testing.T) {
 	g.Expect(len(fields)).To(Equal(2))
 
 	// Restore masked values from current
-	err = RestoreRedacted(fields, &current, mask)
+	err = RevertRedacted(fields, &current, mask)
 	g.Expect(err).To(BeNil())
 
 	// Password should be restored from current
@@ -1162,8 +1162,8 @@ func TestRestoreRedacted(t *testing.T) {
 	g.Expect(updated.ApiKey).ToNot(Equal("encrypted-key"))
 }
 
-// TestRestoreRedactedNoMask tests RestoreRedacted when no fields are masked.
-func TestRestoreRedactedNoMask(t *testing.T) {
+// TestRevertRedactedNoMask tests RevertRedacted when no fields are masked.
+func TestRevertRedactedNoMask(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	Settings.Passphrase = "TEST"
@@ -1188,7 +1188,7 @@ func TestRestoreRedactedNoMask(t *testing.T) {
 	originalHash := updated.Password
 
 	// No masked fields - should be no-op
-	err = RestoreRedacted(fields, &current, mask)
+	err = RevertRedacted(fields, &current, mask)
 	g.Expect(err).To(BeNil())
 
 	// Password should still be the new hash
@@ -1197,8 +1197,8 @@ func TestRestoreRedactedNoMask(t *testing.T) {
 	g.Expect(updated.Password).ToNot(Equal("old-password"))
 }
 
-// TestRestoreRedactedAllMasked tests RestoreRedacted when all fields are masked.
-func TestRestoreRedactedAllMasked(t *testing.T) {
+// TestRevertRedactedAllMasked tests RevertRedacted when all fields are masked.
+func TestRevertRedactedAllMasked(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	Settings.Passphrase = "TEST"
@@ -1225,7 +1225,7 @@ func TestRestoreRedactedAllMasked(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Restore all masked values
-	err = RestoreRedacted(fields, &current, mask)
+	err = RevertRedacted(fields, &current, mask)
 	g.Expect(err).To(BeNil())
 
 	// Both fields should be restored from current
@@ -1233,8 +1233,8 @@ func TestRestoreRedactedAllMasked(t *testing.T) {
 	g.Expect(updated.ApiKey).To(Equal("encrypted-key"))
 }
 
-// TestRestoreRedactedMixedTypes tests RestoreRedacted with hashed and encrypted fields.
-func TestRestoreRedactedMixedTypes(t *testing.T) {
+// TestRevertRedactedMixedTypes tests RevertRedacted with hashed and encrypted fields.
+func TestRevertRedactedMixedTypes(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	Settings.Passphrase = "TEST"
@@ -1268,7 +1268,7 @@ func TestRestoreRedactedMixedTypes(t *testing.T) {
 	fields, err := Encode(&updated)
 	g.Expect(err).To(BeNil())
 
-	err = RestoreRedacted(fields, &current, mask)
+	err = RevertRedacted(fields, &current, mask)
 	g.Expect(err).To(BeNil())
 
 	// Password restored
@@ -1283,8 +1283,8 @@ func TestRestoreRedactedMixedTypes(t *testing.T) {
 	g.Expect(updated.ApiKey).To(Equal(current.ApiKey))
 }
 
-// TestRestoreRedactedDifferentStructs tests RestoreRedacted with different struct types.
-func TestRestoreRedactedDifferentStructs(t *testing.T) {
+// TestRevertRedactedDifferentStructs tests RevertRedacted with different struct types.
+func TestRevertRedactedDifferentStructs(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	Settings.Passphrase = "TEST"
@@ -1314,15 +1314,15 @@ func TestRestoreRedactedDifferentStructs(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Should restore Password by field name match
-	err = RestoreRedacted(fields, &current, mask)
+	err = RevertRedacted(fields, &current, mask)
 	g.Expect(err).To(BeNil())
 
 	g.Expect(updated.Password).To(Equal("old-hash"))
 	g.Expect(updated.Email).To(Equal("user@example.com"))
 }
 
-// TestRestoreRedactedEmptyFields tests RestoreRedacted with no secret fields.
-func TestRestoreRedactedEmptyFields(t *testing.T) {
+// TestRevertRedactedEmptyFields tests RevertRedacted with no secret fields.
+func TestRevertRedactedEmptyFields(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	Settings.Passphrase = "TEST"
@@ -1347,12 +1347,12 @@ func TestRestoreRedactedEmptyFields(t *testing.T) {
 	g.Expect(len(fields)).To(Equal(0))
 
 	// Should be no-op
-	err = RestoreRedacted(fields, &current, mask)
+	err = RevertRedacted(fields, &current, mask)
 	g.Expect(err).To(BeNil())
 }
 
-// TestRestoreRedactedError tests RestoreRedacted error handling.
-func TestRestoreRedactedError(t *testing.T) {
+// TestRevertRedactedError tests RevertRedacted error handling.
+func TestRevertRedactedError(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	Settings.Passphrase = "TEST"
@@ -1370,10 +1370,10 @@ func TestRestoreRedactedError(t *testing.T) {
 
 	// Pass invalid object type (string instead of struct pointer)
 	invalidString := "not-a-struct"
-	err = RestoreRedacted(fields, &invalidString, mask)
+	err = RevertRedacted(fields, &invalidString, mask)
 	g.Expect(err).To(BeNil()) // Fields() on string pointer succeeds but finds no secret fields
 
 	// Pass nil should error
-	err = RestoreRedacted(fields, nil, mask)
+	err = RevertRedacted(fields, nil, mask)
 	g.Expect(err).ToNot(BeNil())
 }

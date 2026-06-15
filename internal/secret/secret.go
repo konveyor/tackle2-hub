@@ -168,10 +168,10 @@ func (r Secret) Redact(object any, mask string) (err error) {
 	return
 }
 
-// RestoreRedacted restores redacted fields (defined by mask).
+// RevertRedacted restores redacted fields (defined by mask).
 // When a secret field Secret() matches the mask, it is updated with the
 // corresponding field in (other) fields.
-func (r Secret) RestoreRedacted(fields []Field, other any, mask string) (err error) {
+func (r Secret) RevertRedacted(fields []Field, other any, mask string) (err error) {
 	otherFields, err := r.Fields(other)
 	if err != nil {
 		return

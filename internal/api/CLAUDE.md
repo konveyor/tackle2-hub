@@ -1353,7 +1353,7 @@ func (h ResourceHandler) Get(ctx *gin.Context) {
 
 - `secret.Encode(m)` - Encrypt/hash secrets, returns `[]Field`
 - `secret.Redact(m, mask)` - Replace secrets with mask
-- `secret.RestoreRedacted(fields, from, mask)` - Restore masked fields from another object
+- `secret.RevertRedacted(fields, from, mask)` - Restore masked fields from another object
 
 ### Patterns
 
@@ -1385,7 +1385,7 @@ if err != nil {
     _ = ctx.Error(err)
     return
 }
-err = secret.RestoreRedacted(fields, current, SecretMask)
+err = secret.RevertRedacted(fields, current, SecretMask)
 if err != nil {
     _ = ctx.Error(err)
     return
