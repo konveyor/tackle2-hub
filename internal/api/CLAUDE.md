@@ -16,6 +16,7 @@ This document describes the design patterns, conventions, and standards for impl
 - [Associations and Relationships](#associations-and-relationships)
 - [Sub-Resources](#sub-resources)
 - [Pagination and Filtering](#pagination-and-filtering)
+- [Secret Handling (Preferred Pattern)](#secret-handling-preferred-pattern)
 - [Testing API Handlers](#testing-api-handlers)
 
 ---
@@ -1332,6 +1333,86 @@ func (h ResourceHandler) Get(ctx *gin.Context) {
 // @router /resources/{id} [delete]
 // @param id path int true "Resource ID"
 ```
+
+---
+
+## Secret Handling (Preferred Pattern)
+
+### Overview
+
+**Preferred approach** for handlers managing secrets (passwords, API keys, tokens). Older handlers may use different patterns - this is the recommended approach for new code and refactoring.
+
+**Core principle:** `With()` does pure conversion. Handlers explicitly manage secrets using `secret` package.
+
+### Functions
+
+- `secret.Encode(m)` - Encrypt/hash secrets, returns `[]Field`
+- `secret.Redact(m, mask)` - Replace secrets with mask
+- `secret.RestoreRedacted(fields, from, mask)` - Restore masked fields from another object
+
+### Patterns
+
+**GET/List:**
+```go
+db.First(m, id)
+secret.Redact(m, SecretMask)  // Mask secrets
+r.With(m)                      // Pure conversion
+h.Respond(ctx, http.StatusOK, r)
+```
+
+**Create:**
+```go
+secret.Encode(m)               // Encrypt/hash
+db.Create(m)                   // Save
+Cache().UserSaved(m)           // Cache gets real values
+secret.Redact(m, SecretMask)   // Mask for response
+r.With(m)
+h.Respond(ctx, http.StatusCreated, r)
+```
+
+**Update:**
+```go
+current := &model.User{}
+db.First(current, id)
+updated := r.Model()
+fields, err := secret.Encode(updated)
+if err != nil {
+    _ = ctx.Error(err)
+    return
+}
+err = secret.RestoreRedacted(fields, current, SecretMask)
+if err != nil {
+    _ = ctx.Error(err)
+    return
+}
+db.Save(updated)
+Cache().UserSaved(updated)      // Cache gets real values
+h.Status(ctx, http.StatusNoContent)
+```
+
+### SecretMask Semantics
+
+- **GET/List:** Mask secrets before response (`"***"` instead of encrypted value)
+- **Create:** Reject if client sends `SecretMask`
+- **Update:** `SecretMask` means "don't change this field"
+
+### Model Tags
+
+```go
+type User struct {
+    Password string `secret:"hashed"`      // bcrypt
+    Token    string `secret:"encrypted"`   // AES-GCM
+    ApiKey   string `secret:""`            // defaults to encrypted
+}
+```
+
+### Key Point
+
+**Cache timing:** Notify cache before `Redact()` - cache needs real encrypted/hashed values, not masks.
+
+### Example
+
+See `UserGet`, `UserCreate`, `UserUpdate` in `internal/api/auth.go` for reference implementation.
 
 ---
 

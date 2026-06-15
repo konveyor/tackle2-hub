@@ -110,7 +110,11 @@ func (h AuthHandler) IdpClientGet(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-
+	err = secret.Redact(m, SecretMask)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	r := IdpClient{}
 	r.With(m)
 	h.Respond(ctx, http.StatusOK, r)
@@ -131,11 +135,16 @@ func (h AuthHandler) IdpClientList(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-
 	resources := []IdpClient{}
 	for i := range list {
+		m := &list[i]
+		err = secret.Redact(m, SecretMask)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
 		r := IdpClient{}
-		r.With(&list[i])
+		r.With(m)
 		resources = append(resources, r)
 	}
 
@@ -176,14 +185,22 @@ func (h AuthHandler) IdpClientCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	err = h.DB(ctx).Create(m).Error
+	db := h.DB(ctx).Omit(clause.Associations)
+	err = db.Create(m).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	r.With(m)
 
 	auth.IdP.Cache().ClientSaved((*cache.IdpClient)(m))
+
+	err = secret.Redact(m, SecretMask)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	r.With(m)
 
 	h.Respond(ctx, http.StatusCreated, r)
 }
@@ -209,21 +226,24 @@ func (h AuthHandler) IdpClientUpdate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	m := &model.IdpClient{}
-	err = h.DB(ctx).First(m, id).Error
+	current := &model.IdpClient{}
+	err = h.DB(ctx).First(current, id).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	if r.Secret == SecretMask {
-		r.Secret = m.Secret
-	}
-	m = r.Model()
+	m := r.Model()
 	m.ID = id
 	m.UpdateUser = h.CurrentUser(ctx)
 	db := h.DB(ctx)
 	db = db.Model(m)
-	_, err = secret.Encode(m)
+	db = db.Omit(clause.Associations)
+	fields, err := secret.Encode(m)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	err = secret.RestoreRedacted(fields, current, SecretMask)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -430,6 +450,11 @@ func (h AuthHandler) UserGet(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	err = secret.Redact(m, SecretMask)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	r := User{}
 	r.With(m)
 	h.Respond(ctx, http.StatusOK, r)
@@ -453,6 +478,11 @@ func (h AuthHandler) UserList(ctx *gin.Context) {
 	resources := []User{}
 	for i := range list {
 		m := &list[i]
+		err = secret.Redact(m, SecretMask)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
 		r := User{}
 		r.With(m)
 		resources = append(resources, r)
@@ -497,6 +527,11 @@ func (h AuthHandler) UserCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	err = secret.Redact(m, SecretMask)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	db := h.DB(ctx).Model(m)
 	db = db.Omit(clause.Associations)
 	err = db.Create(m).Error
@@ -516,9 +551,11 @@ func (h AuthHandler) UserCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	r.With(m)
 
 	auth.IdP.Cache().UserSaved((*auth.User)(m))
+
+	err = secret.Redact(m, SecretMask)
+	r.With(m)
 
 	h.Respond(ctx, http.StatusCreated, r)
 }
@@ -540,15 +577,15 @@ func (h AuthHandler) UserUpdate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	m := &model.User{}
-	err = h.DB(ctx).First(m, id).Error
+	current := &model.User{}
+	err = h.DB(ctx).First(current, id).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 	isAdmin := h.Admin(ctx)
 	if !isAdmin {
-		if m.Subject != h.CurrentSubject(ctx) {
+		if current.Subject != h.CurrentSubject(ctx) {
 			err = &Forbidden{
 				Reason: "Must be admin or current user",
 			}
@@ -556,33 +593,35 @@ func (h AuthHandler) UserUpdate(ctx *gin.Context) {
 			return
 		}
 	}
-	if r.Password == SecretMask {
-		r.Password = m.Password
-	}
-	m = r.Model()
-	m.ID = id
-	m.UpdateUser = h.CurrentUser(ctx)
-	db := h.DB(ctx).Model(m)
+	updated := r.Model()
+	updated.ID = id
+	updated.UpdateUser = h.CurrentUser(ctx)
+	db := h.DB(ctx).Model(updated)
 	db = db.Omit(clause.Associations)
-	_, err = secret.Encode(m)
+	fields, err := secret.Encode(updated)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	err = db.Save(m).Error
+	err = secret.RestoreRedacted(fields, current, SecretMask)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	err = db.Save(updated).Error
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 	if id > auth.LastId && isAdmin {
-		err = h.DB(ctx).Model(m).Association("Roles").Replace(m.Roles)
+		err = h.DB(ctx).Model(updated).Association("Roles").Replace(updated.Roles)
 		if err != nil {
 			_ = ctx.Error(err)
 			return
 		}
 	}
 
-	auth.IdP.Cache().UserSaved((*auth.User)(m))
+	auth.IdP.Cache().UserSaved((*auth.User)(updated))
 
 	h.Status(ctx, http.StatusNoContent)
 }

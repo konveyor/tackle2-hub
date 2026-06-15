@@ -18,7 +18,7 @@ func (r *User) With(m *model.User) {
 	r.Subject = m.Subject
 	r.Login = m.Login
 	r.Name = m.Name
-	r.Password = SecretMask
+	r.Password = m.Password
 	r.Email = m.Email
 	r.Roles = []Ref{}
 	for _, role := range m.Roles {
