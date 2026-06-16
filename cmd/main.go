@@ -197,6 +197,10 @@ func main() {
 	if err != nil {
 		return
 	}
+	err = auth.IdP.Cache().Refresh()
+	if err != nil {
+		return
+	}
 	//
 	err = router.Run(port())
 }
