@@ -3447,7 +3447,7 @@ func TestUser_With(t *testing.T) {
 	g.Expect(r.ID).To(gomega.Equal(uint(1)))
 	g.Expect(r.Subject).To(gomega.Equal(m.Subject))
 	g.Expect(r.Login).To(gomega.Equal("john.doe"))
-	g.Expect(r.Password).To(gomega.Equal("encrypted-password")) // With() does pure conversion - no masking
+	g.Expect(r.Password).To(gomega.Equal(SecretMask))
 	g.Expect(r.Email).To(gomega.Equal("john.doe@example.com"))
 	g.Expect(len(r.Roles)).To(gomega.Equal(2))
 	g.Expect(r.Roles[0].ID).To(gomega.Equal(uint(10)))
@@ -3553,7 +3553,7 @@ func TestIdpClient_With(t *testing.T) {
 
 	g.Expect(r.ID).To(gomega.Equal(uint(1)))
 	g.Expect(r.ClientId).To(gomega.Equal("web-ui"))
-	g.Expect(r.Secret).To(gomega.Equal("encrypted-secret-value")) // With() does pure conversion - no masking
+	g.Expect(r.Secret).To(gomega.Equal(SecretMask))
 	g.Expect(r.ApplicationType).To(gomega.Equal("web"))
 	g.Expect(r.Grants).To(gomega.Equal([]string{"authorization_code", "refresh_token"}))
 	g.Expect(r.RedirectURIs).To(gomega.Equal([]string{"https://example.com/callback"}))
