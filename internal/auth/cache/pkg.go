@@ -3,6 +3,7 @@ package cache
 import (
 	"sort"
 	"strconv"
+	"strings"
 
 	as "github.com/konveyor/tackle2-hub/internal/auth/settings"
 	"github.com/konveyor/tackle2-hub/internal/model"
@@ -71,6 +72,23 @@ type Task struct {
 func (m Task) Subject() (s string) {
 	id := strconv.Itoa(int(m.ID))
 	s = "task." + id
+	return
+}
+
+// With populates the task.
+// matched indicates the encoded subject is a task.
+func (m *Task) With(subject string) (matched bool) {
+	part := strings.Split(subject, ".")
+	if len(part) != 2 {
+		return
+	}
+	if part[0] == "task" {
+		id, err := strconv.Atoi(part[1])
+		if err == nil {
+			m.ID = uint(id)
+			matched = true
+		}
+	}
 	return
 }
 

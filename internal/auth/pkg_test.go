@@ -234,8 +234,8 @@ func TestTaskSubjectFormat(t *testing.T) {
 	g.Expect(provider.User(jwToken3)).To(Equal(expectedSubject3))
 }
 
-// TestTaskGrantedCacheUpdate tests that TaskGranted updates the cache.
-func TestTaskGrantedCacheUpdate(t *testing.T) {
+// TestTaskSubjectParsing tests that task subjects are parsed on-demand.
+func TestTaskSubjectParsing(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	db, err := setupTestDB()
@@ -249,11 +249,11 @@ func TestTaskGrantedCacheUpdate(t *testing.T) {
 	err = db.Create(task).Error
 	g.Expect(err).To(BeNil())
 
-	// Grant token - should add task to cache
+	// Grant token
 	token, err := provider.TaskGrant(task)
 	g.Expect(err).To(BeNil())
 
-	// Verify task is in cache by finding its subject
+	// Verify task subject is parsed on-demand (not cached)
 	expectedSubject := task.Subject()
 	subject, err := provider.cache.FindSubject(expectedSubject)
 	g.Expect(err).To(BeNil())
@@ -309,8 +309,8 @@ func TestTaskSubjectScopes(t *testing.T) {
 	g.Expect(scopeStrings).To(ContainElement("identities:get"))
 }
 
-// TestTaskSubjectCacheLifecycle tests the full lifecycle of task subjects in cache.
-func TestTaskSubjectCacheLifecycle(t *testing.T) {
+// TestTaskTokenLifecycle tests the full lifecycle of task tokens.
+func TestTaskTokenLifecycle(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	db, err := setupTestDB()
@@ -324,34 +324,32 @@ func TestTaskSubjectCacheLifecycle(t *testing.T) {
 	err = db.Create(task).Error
 	g.Expect(err).To(BeNil())
 
-	// Task not in cache initially
+	// Task subject is always parseable (not cached)
 	expectedSubject := task.Subject()
-	_, err = provider.cache.FindSubject(expectedSubject)
-	g.Expect(err).NotTo(BeNil())
-
-	// Grant token - adds task to cache
-	token, err := provider.TaskGrant(task)
-	g.Expect(err).To(BeNil())
-
-	// Task now in cache
 	subject, err := provider.cache.FindSubject(expectedSubject)
 	g.Expect(err).To(BeNil())
 	g.Expect(subject.IsTask()).To(BeTrue())
+	g.Expect(subject.Task.ID).To(Equal(uint(300)))
 
-	// Authentication works
+	// Grant token
+	token, err := provider.TaskGrant(task)
+	g.Expect(err).To(BeNil())
+
+	// Authentication works with token
 	request := newTestRequest()
 	request.With("Bearer " + token.Secret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
 
-	// Revoke task - removes from cache
+	// Revoke task - removes tokens (but subject still parseable)
 	provider.TaskRevoke(300)
 
-	// Task removed from cache
-	_, err = provider.cache.FindSubject(expectedSubject)
-	g.Expect(err).NotTo(BeNil())
+	// Subject still parseable
+	subject, err = provider.cache.FindSubject(expectedSubject)
+	g.Expect(err).To(BeNil())
+	g.Expect(subject.IsTask()).To(BeTrue())
 
-	// Authentication fails
+	// Authentication fails (token removed)
 	request = newTestRequest()
 	request.With("Bearer " + token.Secret)
 	_, err = provider.Authenticate(request)
@@ -386,11 +384,11 @@ func TestMultipleTasksWithTokens(t *testing.T) {
 		g.Expect(err).To(BeNil())
 	}
 
-	// All tasks should be in cache and authenticate
+	// All task subjects are parseable and authenticate with tokens
 	for i, task := range tasks {
 		expectedSubject := task.Subject()
 
-		// Check cache
+		// Subject is always parseable (not cached)
 		subject, err := provider.cache.FindSubject(expectedSubject)
 		g.Expect(err).To(BeNil())
 		g.Expect(subject.IsTask()).To(BeTrue())
@@ -409,11 +407,13 @@ func TestMultipleTasksWithTokens(t *testing.T) {
 	// Revoke one task - others still work
 	provider.TaskRevoke(2)
 
-	// Task 2 should be gone
+	// Task 2 subject still parseable
 	task2Subject := Task{ID: 2}.Subject()
-	_, err = provider.cache.FindSubject(task2Subject)
-	g.Expect(err).NotTo(BeNil())
+	subject, err := provider.cache.FindSubject(task2Subject)
+	g.Expect(err).To(BeNil())
+	g.Expect(subject.IsTask()).To(BeTrue())
 
+	// Task 2 token authentication fails (token removed)
 	request := newTestRequest()
 	request.With("Bearer " + tokens[1].Secret)
 	_, err = provider.Authenticate(request)
@@ -2067,7 +2067,7 @@ func TestTokenBindingEdgeCases(t *testing.T) {
 	// Verify task subject format
 	claims := jwToken.Claims.(jwt.MapClaims)
 	subject := claims[ClaimSub].(string)
-	g.Expect(subject).To(ContainSubstring("task:"))
+	g.Expect(subject).To(Equal(taskRef.Subject()))
 }
 
 // TestCacheFindSubject tests finding subjects (users and identities) by subject string.

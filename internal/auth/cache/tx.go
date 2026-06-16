@@ -60,24 +60,10 @@ func (r *Tx) UserDeleted(id uint) {
 		})
 }
 
-// TaskGranted task token has been created.
-func (r *Tx) TaskGranted(m *Task) {
-	r.changes = append(
-		r.changes, func(d *Data) {
-			d.taskById[m.ID] = m
-			d.taskBySubject[m.Subject()] = m
-		})
-}
-
 // TaskRevoked task token revoked.
 func (r *Tx) TaskRevoked(id uint) {
 	r.changes = append(
 		r.changes, func(d *Data) {
-			m, found := d.taskById[id]
-			if found {
-				delete(d.taskById, id)
-				delete(d.taskBySubject, m.Subject())
-			}
 			for _, m := range d.tokenById {
 				if m.TaskID != nil && *m.TaskID == id {
 					delete(d.tokenByDigest, m.Digest)

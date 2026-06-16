@@ -360,8 +360,8 @@ func TestTaskRevokedTransaction(t *testing.T) {
 	g.Expect(err).To(BeNil())
 }
 
-// TestTaskGrantedAddsToCache tests that TaskGranted adds task to cache.
-func TestTaskGrantedAddsToCache(t *testing.T) {
+// TestTaskSubjectParsing tests that task subjects are parsed on-demand.
+func TestTaskSubjectParsing(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	db, err := setupTestDB()
@@ -371,16 +371,9 @@ func TestTaskGrantedAddsToCache(t *testing.T) {
 	err = cache.Refresh()
 	g.Expect(err).To(BeNil())
 
-	// Task not in cache initially
+	// Task subject is always parseable (not cached)
 	task := &Task{ID: 800}
 	expectedSubject := task.Subject()
-	_, err = cache.FindSubject(expectedSubject)
-	g.Expect(err).NotTo(BeNil())
-
-	// Grant task token
-	cache.TaskGranted(task)
-
-	// Task now in cache
 	subject, err := cache.FindSubject(expectedSubject)
 	g.Expect(err).To(BeNil())
 	g.Expect(subject).NotTo(BeNil())
@@ -506,7 +499,7 @@ func TestSubjectLogin(t *testing.T) {
 	g.Expect(emptySubject.Login()).To(BeEmpty())
 }
 
-// TestCacheFindSubjectTask tests finding task subjects.
+// TestCacheFindSubjectTask tests finding task subjects via parsing.
 func TestCacheFindSubjectTask(t *testing.T) {
 	g := NewGomegaWithT(t)
 
@@ -517,11 +510,8 @@ func TestCacheFindSubjectTask(t *testing.T) {
 	err = cache.Refresh()
 	g.Expect(err).To(BeNil())
 
-	// Add task to cache
+	// Task subject is parsed on-demand (not cached)
 	task := &Task{ID: 999}
-	cache.TaskGranted(task)
-
-	// Find task subject
 	expectedSubject := task.Subject()
 	subject, err := cache.FindSubject(expectedSubject)
 	g.Expect(err).To(BeNil())
@@ -548,7 +538,7 @@ func TestCacheFindSubjectTaskNotFound(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Try to find non-existent task subject
-	nonExistentSubject := Task{ID: 9999}.Subject()
+	nonExistentSubject := "1234"
 	_, err = cache.FindSubject(nonExistentSubject)
 	g.Expect(err).NotTo(BeNil())
 
@@ -558,8 +548,8 @@ func TestCacheFindSubjectTaskNotFound(t *testing.T) {
 	g.Expect(notFound.Id).To(Equal(nonExistentSubject))
 }
 
-// TestTaskRevokedRemovesTaskSubject tests that TaskRevoked removes task from subject cache.
-func TestTaskRevokedRemovesTaskSubject(t *testing.T) {
+// TestTaskSubjectAlwaysParseable tests that task subjects are always parseable.
+func TestTaskSubjectAlwaysParseable(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	db, err := setupTestDB()
@@ -569,26 +559,24 @@ func TestTaskRevokedRemovesTaskSubject(t *testing.T) {
 	err = cache.Refresh()
 	g.Expect(err).To(BeNil())
 
-	// Add task
+	// Task subject is always parseable
 	task := &Task{ID: 1111}
-	cache.TaskGranted(task)
-
-	// Verify task in cache
 	expectedSubject := task.Subject()
 	subject, err := cache.FindSubject(expectedSubject)
 	g.Expect(err).To(BeNil())
 	g.Expect(subject.IsTask()).To(BeTrue())
 
-	// Revoke task
+	// TaskRevoked only removes tokens, not the parsing capability
 	cache.TaskRevoked(1111)
 
-	// Verify task removed from subject cache
-	_, err = cache.FindSubject(expectedSubject)
-	g.Expect(err).NotTo(BeNil())
+	// Task subject still parseable
+	subject, err = cache.FindSubject(expectedSubject)
+	g.Expect(err).To(BeNil())
+	g.Expect(subject.IsTask()).To(BeTrue())
 }
 
-// TestCacheTaskLifecycle tests full task lifecycle in cache.
-func TestCacheTaskLifecycle(t *testing.T) {
+// TestTaskSubjectParsing tests task subject parsing behavior.
+func TestTaskSubjectParsingBehavior(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	db, err := setupTestDB()
@@ -598,31 +586,25 @@ func TestCacheTaskLifecycle(t *testing.T) {
 	err = cache.Refresh()
 	g.Expect(err).To(BeNil())
 
-	// Initially not in cache
+	// Task subject always parseable (not cached)
 	task := &Task{ID: 2222}
 	expectedSubject := task.Subject()
-	_, err = cache.FindSubject(expectedSubject)
-	g.Expect(err).NotTo(BeNil())
-
-	// Grant adds to cache
-	cache.TaskGranted(task)
-
-	// Now in cache
 	subject, err := cache.FindSubject(expectedSubject)
 	g.Expect(err).To(BeNil())
 	g.Expect(subject.IsTask()).To(BeTrue())
 	g.Expect(subject.Login()).To(Equal(expectedSubject))
 
-	// Revoke removes from cache
+	// TaskRevoked doesn't affect parsing
 	cache.TaskRevoked(2222)
 
-	// No longer in cache
-	_, err = cache.FindSubject(expectedSubject)
-	g.Expect(err).NotTo(BeNil())
+	// Still parseable
+	subject, err = cache.FindSubject(expectedSubject)
+	g.Expect(err).To(BeNil())
+	g.Expect(subject.IsTask()).To(BeTrue())
 }
 
-// TestMultipleTasksInCache tests multiple tasks can coexist in cache.
-func TestMultipleTasksInCache(t *testing.T) {
+// TestMultipleTaskSubjectsParseable tests multiple task subjects are parseable.
+func TestMultipleTaskSubjectsParseable(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	db, err := setupTestDB()
@@ -632,7 +614,7 @@ func TestMultipleTasksInCache(t *testing.T) {
 	err = cache.Refresh()
 	g.Expect(err).To(BeNil())
 
-	// Add multiple tasks
+	// All task subjects are parseable (not cached)
 	tasks := []*Task{
 		{ID: 1},
 		{ID: 2},
@@ -641,11 +623,7 @@ func TestMultipleTasksInCache(t *testing.T) {
 		{ID: 999},
 	}
 
-	for _, task := range tasks {
-		cache.TaskGranted(task)
-	}
-
-	// All tasks should be findable
+	// All tasks should be parseable
 	for _, task := range tasks {
 		expectedSubject := task.Subject()
 		subject, err := cache.FindSubject(expectedSubject)
@@ -654,25 +632,20 @@ func TestMultipleTasksInCache(t *testing.T) {
 		g.Expect(subject.Login()).To(Equal(expectedSubject))
 	}
 
-	// Revoke one task
+	// TaskRevoked only removes tokens
 	cache.TaskRevoked(2)
 
-	// Task 2 should be gone
-	task2Subject := Task{ID: 2}.Subject()
-	_, err = cache.FindSubject(task2Subject)
-	g.Expect(err).NotTo(BeNil())
-
-	// Others still present
-	for _, taskID := range []uint{1, 3, 100, 999} {
-		expectedSubject := Task{ID: taskID}.Subject()
+	// All task subjects still parseable
+	for _, task := range tasks {
+		expectedSubject := task.Subject()
 		subject, err := cache.FindSubject(expectedSubject)
 		g.Expect(err).To(BeNil())
 		g.Expect(subject.IsTask()).To(BeTrue())
 	}
 }
 
-// TestCacheConcurrentTaskOperations tests concurrent task operations on cache.
-func TestCacheConcurrentTaskOperations(t *testing.T) {
+// TestConcurrentTaskSubjectParsing tests concurrent task subject parsing.
+func TestConcurrentTaskSubjectParsing(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	db, err := setupTestDB()
@@ -685,19 +658,7 @@ func TestCacheConcurrentTaskOperations(t *testing.T) {
 	var wg sync.WaitGroup
 	iterations := 100
 
-	// Concurrent TaskGranted
-	for i := 0; i < 10; i++ {
-		wg.Add(1)
-		go func(id int) {
-			defer wg.Done()
-			for j := 0; j < iterations; j++ {
-				task := &Task{ID: uint(id*1000 + j)}
-				cache.TaskGranted(task)
-			}
-		}(i)
-	}
-
-	// Concurrent TaskRevoked
+	// Concurrent TaskRevoked (only removes tokens)
 	for i := 0; i < 10; i++ {
 		wg.Add(1)
 		go func(id int) {
@@ -708,14 +669,18 @@ func TestCacheConcurrentTaskOperations(t *testing.T) {
 		}(i)
 	}
 
-	// Concurrent FindSubject (task)
+	// Concurrent FindSubject (parsing)
 	for i := 0; i < 20; i++ {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
 			for j := 0; j < iterations; j++ {
 				taskID := j % 100
-				cache.FindSubject(Task{ID: uint(taskID)}.Subject())
+				subject, parseErr := cache.FindSubject(Task{ID: uint(taskID)}.Subject())
+				// Parsing should always succeed
+				if parseErr == nil {
+					g.Expect(subject.IsTask()).To(BeTrue())
+				}
 			}
 		}(i)
 	}
@@ -725,35 +690,33 @@ func TestCacheConcurrentTaskOperations(t *testing.T) {
 	// Verify cache is still consistent
 	d := cache.data.Load()
 	g.Expect(d).NotTo(BeNil())
-	// Some tasks may remain (race between grant/revoke)
-	g.Expect(len(d.taskById)).To(BeNumerically(">=", 0))
 }
 
-// TestTaskRefresh tests that task cache is properly loaded on refresh.
-func TestTaskRefresh(t *testing.T) {
+// TestTaskSubjectWithoutCache tests that tasks don't need cache refresh.
+func TestTaskSubjectWithoutCache(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	// Create tasks in database (no cache yet)
-	task1 := &Task{ID: 100}
-	task2 := &Task{ID: 200}
-	err = db.Create(task1).Error
-	g.Expect(err).To(BeNil())
-	err = db.Create(task2).Error
-	g.Expect(err).To(BeNil())
-
-	// Create cache and refresh
+	// Create cache and refresh (tasks not loaded from DB)
 	cache := New(db)
 	err = cache.Refresh()
 	g.Expect(err).To(BeNil())
 
-	// Tasks should be loaded into cache if they exist in DB
-	// (Current implementation may not load tasks on refresh - only on TaskGranted)
-	// This test documents current behavior
-	d := cache.data.Load()
-	g.Expect(d).NotTo(BeNil())
+	// Task subjects are parsed on-demand, no DB/cache needed
+	task1 := &Task{ID: 100}
+	task2 := &Task{ID: 200}
+
+	subject1, err := cache.FindSubject(task1.Subject())
+	g.Expect(err).To(BeNil())
+	g.Expect(subject1.IsTask()).To(BeTrue())
+	g.Expect(subject1.Task.ID).To(Equal(uint(100)))
+
+	subject2, err := cache.FindSubject(task2.Subject())
+	g.Expect(err).To(BeNil())
+	g.Expect(subject2.IsTask()).To(BeTrue())
+	g.Expect(subject2.Task.ID).To(Equal(uint(200)))
 }
 
 // TestCacheMixedSubjectTypes tests that different subject types (User, Identity, Client, Task) coexist.
@@ -792,9 +755,8 @@ func TestCacheMixedSubjectTypes(t *testing.T) {
 	}
 	cache.ClientSaved(client)
 
-	// Add task
+	// Task subject parseable (not cached)
 	task := &Task{ID: 1}
-	cache.TaskGranted(task)
 
 	// All should be findable
 	userSubj, err := cache.FindSubject("user-subject-1")
@@ -894,29 +856,30 @@ func TestCacheConcurrentMixedOperations(t *testing.T) {
 		}(i)
 	}
 
-	// Concurrent TaskGranted/TaskRevoked
+	// Concurrent TaskRevoked
 	for i := 0; i < 10; i++ {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
 			for j := 0; j < iterations; j++ {
-				task := &Task{ID: uint(id*1000 + j)}
-				cache.TaskGranted(task)
-				if j%3 == 0 {
-					cache.TaskRevoked(task.ID)
-				}
+				taskID := uint(id*1000 + j)
+				cache.TaskRevoked(taskID)
 			}
 		}(i)
 	}
 
-	// Concurrent FindSubject (task)
+	// Concurrent FindSubject (task parsing)
 	for i := 0; i < 10; i++ {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
 			for j := 0; j < iterations; j++ {
 				taskID := j % 100
-				cache.FindSubject(Task{ID: uint(taskID)}.Subject())
+				subject, parseErr := cache.FindSubject(Task{ID: uint(taskID)}.Subject())
+				// Parsing always succeeds
+				if parseErr == nil {
+					g.Expect(subject.IsTask()).To(BeTrue())
+				}
 			}
 		}(i)
 	}
@@ -927,6 +890,4 @@ func TestCacheConcurrentMixedOperations(t *testing.T) {
 	d := cache.data.Load()
 	// Should have some users (not all, some deleted/not found)
 	g.Expect(len(d.userById)).To(BeNumerically(">", 0))
-	// Should have some tasks (some granted, some revoked)
-	g.Expect(len(d.taskById)).To(BeNumerically(">=", 0))
 }
