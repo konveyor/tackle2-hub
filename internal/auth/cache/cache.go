@@ -9,7 +9,9 @@ import (
 
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
+	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
+	taskapi "github.com/konveyor/tackle2-hub/shared/task"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -97,6 +99,14 @@ func (r *Cache) UserSaved(m *User) {
 func (r *Cache) UserDeleted(id uint) {
 	_ = r.Transaction(func(tx *Tx) (_ error) {
 		tx.UserDeleted(id)
+		return
+	})
+}
+
+// TaskGranted updates the cache when a task grant created.
+func (r *Cache) TaskGranted(m *Task) {
+	_ = r.Transaction(func(tx *Tx) (_ error) {
+		tx.TaskGranted(m)
 		return
 	})
 }
@@ -195,7 +205,7 @@ func (r *Cache) FindToken(token string) (m *Token, err error) {
 	}
 	// task binding.
 	if m.TaskID != nil {
-		m.Subject = "task:" + strconv.Itoa(int(*m.TaskID))
+		m.Subject = Task{ID: *m.TaskID}.Subject()
 		m.Scopes = AddonScopes
 		return
 	}
@@ -250,6 +260,12 @@ func (r *Cache) FindSubject(subject string) (s *Subject, err error) {
 	if found {
 		s = &Subject{}
 		s.WithClient(client, r)
+		return
+	}
+	task, found := d.taskBySubject[subject]
+	if found {
+		s = &Subject{}
+		s.WithTask(task)
 		return
 	}
 	err = &NotFound{
@@ -373,6 +389,8 @@ type Data struct {
 	identByLogin    map[string]*Identity
 	clientById      map[uint]*IdpClient
 	clientBySubject map[string]*IdpClient
+	taskById        map[uint]*Task
+	taskBySubject   map[string]*Task
 	tokenById       map[uint]*Token
 	tokenByDigest   map[string]*Token
 }
@@ -385,12 +403,14 @@ func (d *Data) reset() {
 	d.userById = make(map[uint]*User)
 	d.userBySubject = make(map[string]*User)
 	d.userByLogin = make(map[string]*User)
-	d.tokenById = make(map[uint]*Token)
 	d.identById = make(map[uint]*Identity)
 	d.identBySubject = make(map[string]*Identity)
 	d.identByLogin = make(map[string]*Identity)
 	d.clientById = make(map[uint]*IdpClient)
 	d.clientBySubject = make(map[string]*IdpClient)
+	d.taskById = make(map[uint]*Task)
+	d.taskBySubject = make(map[string]*Task)
+	d.tokenById = make(map[uint]*Token)
 	d.tokenByDigest = make(map[string]*Token)
 }
 
@@ -407,12 +427,14 @@ func (d *Data) clone() *Data {
 		userById:        cloneMap(d.userById),
 		userBySubject:   cloneMap(d.userBySubject),
 		userByLogin:     cloneMap(d.userByLogin),
-		tokenById:       cloneMap(d.tokenById),
 		identById:       cloneMap(d.identById),
 		identBySubject:  cloneMap(d.identBySubject),
 		identByLogin:    cloneMap(d.identByLogin),
 		clientById:      cloneMap(d.clientById),
 		clientBySubject: cloneMap(d.clientBySubject),
+		taskById:        cloneMap(d.taskById),
+		taskBySubject:   cloneMap(d.taskBySubject),
+		tokenById:       cloneMap(d.tokenById),
 		tokenByDigest:   cloneMap(d.tokenByDigest),
 	}
 }
@@ -437,6 +459,10 @@ func (d *Data) refresh(db *gorm.DB) (err error) {
 		return
 	}
 	err = d.getClients(db)
+	if err != nil {
+		return
+	}
+	err = d.getTasks(db)
 	if err != nil {
 		return
 	}
@@ -527,6 +553,28 @@ func (d *Data) getClients(db *gorm.DB) (err error) {
 	for _, m := range list {
 		d.clientById[m.ID] = m
 		d.clientBySubject[m.Subject] = m
+	}
+	return
+}
+
+// getTasks fetches tasks from the DB and populates.
+func (d *Data) getTasks(db *gorm.DB) (err error) {
+	list := make([]*model.Task, 0)
+	db = db.Where(
+		"state in (?)",
+		[]string{
+			taskapi.Pending,
+			taskapi.Running,
+		})
+	err = db.Find(&list).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for _, m := range list {
+		task := &Task{ID: m.ID}
+		d.taskById[task.ID] = task
+		d.taskBySubject[task.Subject()] = task
 	}
 	return
 }

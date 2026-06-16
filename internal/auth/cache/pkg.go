@@ -2,6 +2,7 @@ package cache
 
 import (
 	"sort"
+	"strconv"
 
 	as "github.com/konveyor/tackle2-hub/internal/auth/settings"
 	"github.com/konveyor/tackle2-hub/internal/model"
@@ -61,8 +62,23 @@ func (m *Role) GetScopes() (scopes []string) {
 // Permission alias.
 type Permission = model.Permission
 
-// Task alias.
-type Task = model.Task
+// Task (lightweight) model.
+type Task struct {
+	ID uint
+}
+
+// Subject returns the task (encoded) subject.
+func (m Task) Subject() (s string) {
+	id := strconv.Itoa(int(m.ID))
+	s = "task." + id
+	return
+}
+
+// GetScopes returns the task scopes.
+func (m Task) GetScopes() (scopes []string) {
+	scopes = AddonScopes
+	return
+}
 
 // Identity alias.
 type Identity = model.IdpIdentity
