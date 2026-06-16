@@ -3,6 +3,8 @@ package resource
 import (
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/model/reflect"
+	"github.com/konveyor/tackle2-hub/internal/ptr"
+	"github.com/konveyor/tackle2-hub/internal/secret"
 	"github.com/konveyor/tackle2-hub/shared/api"
 )
 
@@ -41,6 +43,15 @@ func baseWith(r *api.Resource, m *model.Model) {
 func ref(id uint, m any) (r Ref) {
 	r.ID = id
 	r.Name = reflect.NameOf(m)
+	return
+}
+
+func mustRedact[T any](p *T) (redacted *T) {
+	redacted = ptr.Copy(p)
+	err := secret.Redact(redacted, SecretMask)
+	if err != nil {
+		panic(err)
+	}
 	return
 }
 

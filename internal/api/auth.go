@@ -110,11 +110,6 @@ func (h AuthHandler) IdpClientGet(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	err = secret.Redact(m, SecretMask)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
 	r := IdpClient{}
 	r.With(m)
 	h.Respond(ctx, http.StatusOK, r)
@@ -138,11 +133,6 @@ func (h AuthHandler) IdpClientList(ctx *gin.Context) {
 	resources := []IdpClient{}
 	for i := range list {
 		m := &list[i]
-		err = secret.Redact(m, SecretMask)
-		if err != nil {
-			_ = ctx.Error(err)
-			return
-		}
 		r := IdpClient{}
 		r.With(m)
 		resources = append(resources, r)
@@ -193,12 +183,6 @@ func (h AuthHandler) IdpClientCreate(ctx *gin.Context) {
 	}
 
 	auth.IdP.Cache().ClientSaved((*cache.IdpClient)(m))
-
-	err = secret.Redact(m, SecretMask)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
 
 	r.With(m)
 
@@ -450,11 +434,6 @@ func (h AuthHandler) UserGet(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	err = secret.Redact(m, SecretMask)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
 	r := User{}
 	r.With(m)
 	h.Respond(ctx, http.StatusOK, r)
@@ -478,11 +457,6 @@ func (h AuthHandler) UserList(ctx *gin.Context) {
 	resources := []User{}
 	for i := range list {
 		m := &list[i]
-		err = secret.Redact(m, SecretMask)
-		if err != nil {
-			_ = ctx.Error(err)
-			return
-		}
 		r := User{}
 		r.With(m)
 		resources = append(resources, r)
@@ -549,12 +523,6 @@ func (h AuthHandler) UserCreate(ctx *gin.Context) {
 
 	auth.IdP.Cache().UserSaved((*auth.User)(m))
 
-	err = secret.Redact(m, SecretMask)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	
 	r.With(m)
 
 	h.Respond(ctx, http.StatusCreated, r)
