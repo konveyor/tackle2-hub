@@ -268,7 +268,6 @@ func (r *Storage) DeleteAuthRequest(_ context.Context, id string) (err error) {
 }
 
 // CreateAccessToken creates an access token.
-// CreateAccessToken creates an access token.
 func (r *Storage) CreateAccessToken(
 	ctx context.Context,
 	req op.TokenRequest) (tokenId string, expiration time.Time, err error) {
@@ -291,7 +290,6 @@ func (r *Storage) CreateAccessToken(
 	case *AuthRequest:
 		authId = req.GetID()
 		grantId = authId
-		// Create grant for new authentication
 		_, err = r.createGrant(ctx, req)
 		if err != nil {
 			return
@@ -299,12 +297,11 @@ func (r *Storage) CreateAccessToken(
 	case *RefreshRequest:
 		authId = req.grantId
 		grantId = authId
-		// Grant already exists, upsert token
 	case *ClientRequest:
 		authId = req.authId
-		// No grant needed for client credentials
 	default:
-		err = oidc.ErrServerError().WithDescription("unsupported token request type")
+		err = oidc.ErrServerError().
+			WithDescription("unsupported token request type")
 		return
 	}
 	tokenId = authId
