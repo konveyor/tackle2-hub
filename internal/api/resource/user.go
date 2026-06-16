@@ -15,10 +15,11 @@ type User api.User
 // With converts model to REST resource.
 func (r *User) With(m *model.User) {
 	baseWith(&r.Resource, &m.Model)
+	m = mustRedact(m)
 	r.Subject = m.Subject
 	r.Login = m.Login
 	r.Name = m.Name
-	r.Password = SecretMask
+	r.Password = m.Password
 	r.Email = m.Email
 	r.Roles = []Ref{}
 	for _, role := range m.Roles {

@@ -120,7 +120,7 @@ func (r Secret) Encode(object any) (fields []Field, err error) {
 // - *string - the string is decrypted.
 // - struct - (string) fields with `secret:` tag are decoded based on tag (value).
 // - map[string]any - string fields are decrypted.
-func (r Secret) Decode(object any) (err error) {
+func (r Secret) Decode(object any) (fields []Field, err error) {
 	selector := func(f Field) func(string) string {
 		switch f.tag {
 		case "", TagEncrypted:
@@ -140,7 +140,47 @@ func (r Secret) Decode(object any) (err error) {
 			panic("unknown tag: " + f.tag)
 		}
 	}
+	fields, err = r.Update(object, selector, Field{})
+	return
+}
+
+// Fields returns secret fields.
+func (r Secret) Fields(object any) (fields []Field, err error) {
+	selector := func(f Field) func(string) string {
+		return func(in string) (out string) {
+			out = in
+			return
+		}
+	}
+	fields, err = r.Update(object, selector, Field{})
+	return
+}
+
+// Redact updates the value of secret fields with a `mask`.
+func (r Secret) Redact(object any, mask string) (err error) {
+	selector := func(f Field) func(string) string {
+		return func(in string) (out string) {
+			out = mask
+			return
+		}
+	}
 	_, err = r.Update(object, selector, Field{})
+	return
+}
+
+// RevertRedacted restores redacted fields (defined by mask).
+// When a secret field Secret() matches the mask, it is updated with the
+// corresponding field in (other) fields.
+func (r Secret) RevertRedacted(fields []Field, other any, mask string) (err error) {
+	otherFields, err := r.Fields(other)
+	if err != nil {
+		return
+	}
+	for _, f := range fields {
+		if f.Secret() == mask {
+			f.SetWith(otherFields)
+		}
+	}
 	return
 }
 
@@ -250,6 +290,7 @@ type Field struct {
 	name     string
 	tag      string
 	secret   string
+	fv       reflect.Value
 }
 
 // Fqn returns the fully qualified field name.
@@ -273,10 +314,27 @@ func (f Field) Secret() (s string) {
 	return
 }
 
+// Set updates the field value.
+func (f Field) Set(v string) {
+	if f.fv.IsValid() && f.fv.CanSet() {
+		f.fv.SetString(v)
+	}
+}
+
+// SetWith set field using fields from another object.
+func (f Field) SetWith(fields []Field) {
+	for _, other := range fields {
+		if other.Fqn() == f.Fqn() {
+			f.Set(other.secret)
+		}
+	}
+}
+
 func (r Secret) field(parent *Field, ft reflect.StructField, fv reflect.Value) (f Field) {
 	f.parent = parent
 	f.name = ft.Name
 	f.exported = ft.IsExported()
+	f.fv = fv
 	if fv.Kind() == reflect.String {
 		f.secret = fv.String()
 	}

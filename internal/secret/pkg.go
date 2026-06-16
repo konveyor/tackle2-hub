@@ -65,7 +65,27 @@ func Decode(object any) (err error) {
 	cipher := &AESGCM{}
 	cipher.Use(Settings.Passphrase)
 	secret := Secret{Cipher: cipher}
-	err = secret.Decode(object)
+	_, err = secret.Decode(object)
 	err = liberr.Wrap(err)
+	return
+}
+
+// Fields returns secret fields.
+func Fields(object any) (fields []Field, err error) {
+	fields, err = Secret{}.Fields(object)
+	return
+}
+
+// Redact updates the value of secret fields with a `mask`.
+func Redact(object any, mask string) (err error) {
+	err = Secret{}.Redact(object, mask)
+	return
+}
+
+// RevertRedacted reverts redacted fields (defined by mask).
+// When a secret field Secret() matches the mask, it is updated with the
+// corresponding field in (other) fields.
+func RevertRedacted(fields []Field, other any, mask string) (err error) {
+	err = Secret{}.RevertRedacted(fields, other, mask)
 	return
 }

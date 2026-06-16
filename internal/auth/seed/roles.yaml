@@ -501,9 +501,17 @@
         - delete
         - get
         - put
+    - name: roles
+      verbs:
+        - get
+    - name: permissions
+      verbs:
+        - get
     - name: tokens
       verbs:
         - post
+        - get
+        - delete
 - role: migrator
   id: 3
   resources:
@@ -645,9 +653,17 @@
         - delete
         - get
         - put
+    - name: roles
+      verbs:
+        - get
+    - name: permissions
+      verbs:
+        - get
     - name: tokens
       verbs:
         - post
+        - get
+        - delete
 - role: project-manager
   id: 4
   resources:
@@ -782,3 +798,5 @@
     - name: tokens
       verbs:
         - post
+        - get
+        - delete

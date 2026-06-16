@@ -16,6 +16,7 @@ This document describes the design patterns, conventions, and standards for impl
 - [Associations and Relationships](#associations-and-relationships)
 - [Sub-Resources](#sub-resources)
 - [Pagination and Filtering](#pagination-and-filtering)
+- [Secret Handling (Preferred Pattern)](#secret-handling-preferred-pattern)
 - [Testing API Handlers](#testing-api-handlers)
 
 ---
@@ -1332,6 +1333,180 @@ func (h ResourceHandler) Get(ctx *gin.Context) {
 // @router /resources/{id} [delete]
 // @param id path int true "Resource ID"
 ```
+
+---
+
+## Secret Handling
+
+### Overview
+
+Resources containing secrets (passwords, API keys, tokens) must prevent those secrets from being exposed in API responses. This is handled automatically through the resource `With()` method.
+
+**Approach:** The `With()` method redacts secrets before converting a model to a REST resource. Handlers manage encoding/decoding secrets but do not handle redaction.
+
+### When Secrets Need Redaction
+
+A resource needs secret redaction if:
+1. The model has fields tagged with `secret:` (encrypted or hashed)
+2. Those fields are exposed in the REST API type
+
+**Example - needs redaction:**
+```go
+// Model
+type User struct {
+    Password string `secret:"hashed"`  // In model
+}
+
+// REST API type
+type User struct {
+    Password string `json:"password"`  // Also in API - needs redaction
+}
+```
+
+**Example - no redaction needed:**
+```go
+// Model
+type IdpIdentity struct {
+    RefreshToken string `secret:""`  // In model only
+}
+
+// REST API type
+type IdpIdentity struct {
+    // RefreshToken NOT exposed - no redaction needed
+}
+```
+
+### Implementation
+
+#### Resource With() Method
+
+For resources with secrets, call `mustRedact()` in the `With()` method:
+
+```go
+// File: internal/api/resource/user.go
+func (r *User) With(m *model.User) {
+    baseWith(&r.Resource, &m.Model)
+    m = mustRedact(m)
+    r.Subject = m.Subject
+    r.Login = m.Login
+    r.Password = m.Password  // Contains "***"
+    r.Email = m.Email
+    // ... rest of fields
+}
+```
+
+The `mustRedact()` helper (in `internal/api/resource/base.go`) deep copies the model and replaces secret fields with `"***"`.
+
+#### Handler Patterns
+
+Handlers use standard patterns without explicit redaction:
+
+**GET:**
+```go
+m := &model.User{}
+err := db.First(m, id).Error
+if err != nil {
+    _ = ctx.Error(err)
+    return
+}
+r := User{}
+r.With(m)
+h.Respond(ctx, http.StatusOK, r)
+```
+
+**Create:**
+```go
+m := r.Model()
+m.CreateUser = h.CurrentUser(ctx)
+_, err := secret.Encode(m)
+if err != nil {
+    _ = ctx.Error(err)
+    return
+}
+err = db.Create(m).Error
+if err != nil {
+    _ = ctx.Error(err)
+    return
+}
+
+auth.Cache().UserSaved(m)
+
+r.With(m)
+h.Respond(ctx, http.StatusCreated, r)
+```
+
+**Update:**
+```go
+current := &model.User{}
+err := db.First(current, id).Error
+if err != nil {
+    _ = ctx.Error(err)
+    return
+}
+updated := r.Model()
+updated.ID = id
+updated.UpdateUser = h.CurrentUser(ctx)
+fields, err := secret.Encode(updated)
+if err != nil {
+    _ = ctx.Error(err)
+    return
+}
+err = secret.RevertRedacted(fields, current, SecretMask)
+if err != nil {
+    _ = ctx.Error(err)
+    return
+}
+err = db.Save(updated).Error
+if err != nil {
+    _ = ctx.Error(err)
+    return
+}
+
+auth.Cache().UserSaved(updated)
+
+h.Status(ctx, http.StatusNoContent)
+```
+
+### Secret Functions
+
+**Handler operations:**
+- `secret.Encode(m)` - Encrypt/hash secrets for storage, returns `([]Field, error)`
+- `secret.RevertRedacted(fields, current, mask)` - Restore masked fields during update
+
+**Resource operations:**
+- `mustRedact(m)` - Deep copy and mask secrets (internal use only)
+
+### SecretMask Constant
+
+The `SecretMask` constant (`"***"`) has specific meanings:
+
+- **Responses:** Secrets are replaced with `"***"` in API responses
+- **Create:** If client sends `"***"`, reject as invalid input
+- **Update:** If client sends `"***"`, preserve existing value (don't change)
+
+### Model Tags
+
+Mark secret fields with the `secret:` struct tag:
+
+```go
+type User struct {
+    Password string `secret:"hashed"`      // bcrypt hash
+    Token    string `secret:"encrypted"`   // AES-GCM
+    ApiKey   string `secret:""`            // encrypted (default)
+}
+```
+
+Tag values:
+- `secret:"hashed"` - Use bcrypt
+- `secret:"encrypted"` - Use AES-GCM encryption
+- `secret:""` - Use AES-GCM encryption (default)
+
+### Examples
+
+See these files for reference:
+- `internal/api/auth.go` - Handler patterns (UserGet, UserCreate, UserUpdate)
+- `internal/api/resource/user.go` - Resource With() implementation
+- `internal/api/resource/idpclient.go` - Resource With() implementation
 
 ---
 

@@ -11,8 +11,9 @@ type IdpClient api.IdpClient
 // With converts model to REST resource.
 func (r *IdpClient) With(m *model.IdpClient) {
 	baseWith(&r.Resource, &m.Model)
+	m = mustRedact(m)
 	r.ClientId = m.ClientId
-	r.Secret = SecretMask
+	r.Secret = m.Secret
 	r.ApplicationType = m.ApplicationType
 	r.Grants = m.Grants
 	r.RedirectURIs = m.RedirectURIs
