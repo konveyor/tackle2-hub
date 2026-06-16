@@ -19,15 +19,11 @@ type TokenReaper struct {
 // Access tokens are CASCADE deleted when their grant is reaped.
 func (r *TokenReaper) Run() {
 	Log.V(1).Info("Reaping API key tokens.")
-
 	mark := time.Now().Add(-time.Hour)
-
 	err := r.DB.Transaction(
 		func(tx *gorm.DB) (err error) {
 			var list []*model.Token
-			err = tx.Find(&list,
-				"kind = ? AND expiration < ?",
-				auth.KindAPIKey, mark).Error
+			err = tx.Find(&list, "kind = ? AND expiration < ?", auth.KindAPIKey, mark).Error
 			if err != nil {
 				err = liberr.Wrap(err)
 				return
@@ -38,6 +34,7 @@ func (r *TokenReaper) Run() {
 					err = liberr.Wrap(err)
 					return
 				}
+				auth.IdP.Cache().TokenDeleted(token.ID)
 				Log.Info(
 					"Expired API key token deleted.",
 					"id",
