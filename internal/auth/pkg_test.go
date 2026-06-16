@@ -21,6 +21,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/zitadel/oidc/v3/pkg/client/rp"
 	httphelper "github.com/zitadel/oidc/v3/pkg/http"
+	"github.com/zitadel/oidc/v3/pkg/oidc"
 	"github.com/zitadel/oidc/v3/pkg/op"
 	"golang.org/x/oauth2"
 	"gorm.io/gorm"
@@ -3078,4 +3079,360 @@ func TestEndSessionURLNoClient(t *testing.T) {
 	logoutURL, err := h.EndSessionURL("https://app.example.com/")
 	g.Expect(err).NotTo(BeNil())
 	g.Expect(logoutURL).To(BeEmpty())
+}
+
+// TestCreateAccessToken_UpdatesExistingToken tests that refreshing a token
+// updates the existing token record instead of creating a new one.
+func TestCreateAccessToken_UpdatesExistingToken(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := database.OpenTest()
+	g.Expect(err).To(BeNil())
+	db.AutoMigrate(
+		&IdpClient{},
+		&User{},
+		&Task{},
+		&model.Bucket{},
+		&Role{},
+		&Permission{},
+		&Token{},
+		&Grant{},
+		&RsaKey{},
+		&Identity{})
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	user := &User{Login: "testuser"}
+	err = db.Create(user).Error
+	g.Expect(err).To(BeNil())
+
+	subject := &Subject{}
+	subject.WithUser(user, provider.cache)
+
+	grantId := provider.storage.genId()
+	grant := &Grant{
+		Kind:       KindAuthCode,
+		AuthId:     grantId,
+		Subject:    subject.Key,
+		Scopes:     "openid profile",
+		Issued:     time.Now(),
+		Expiration: time.Now().Add(48 * time.Hour),
+	}
+	err = db.Create(grant).Error
+	g.Expect(err).To(BeNil())
+
+	refreshReq := &RefreshRequest{
+		grantId:  grantId,
+		clientId: "test-client",
+		subject:  subject.Key,
+		scopes:   []string{"openid", "profile"},
+		issued:   time.Now(),
+	}
+
+	tokenId1, expiration1, err := provider.storage.CreateAccessToken(context.Background(), refreshReq)
+	g.Expect(err).To(BeNil())
+	g.Expect(tokenId1).To(Equal(grantId))
+
+	var tokens1 []Token
+	err = db.Find(&tokens1, "authId = ?", tokenId1).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(tokens1).To(HaveLen(1))
+
+	firstToken := tokens1[0]
+	firstExpiration := firstToken.Expiration
+	firstScopes := firstToken.Scopes
+
+	time.Sleep(100 * time.Millisecond)
+
+	refreshReq.scopes = []string{"openid", "profile", "email"}
+	tokenId2, expiration2, err := provider.storage.CreateAccessToken(context.Background(), refreshReq)
+	g.Expect(err).To(BeNil())
+	g.Expect(tokenId2).To(Equal(grantId))
+	g.Expect(tokenId2).To(Equal(tokenId1))
+
+	var tokens2 []Token
+	err = db.Find(&tokens2, "authId = ?", tokenId1).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(tokens2).To(HaveLen(1))
+
+	g.Expect(tokens2[0].Expiration).To(BeTemporally(">", firstExpiration))
+	g.Expect(expiration2).To(BeTemporally(">", expiration1))
+
+	g.Expect(tokens2[0].Scopes).To(Equal([]string{"openid", "profile", "email"}))
+	g.Expect(tokens2[0].Scopes).NotTo(Equal(firstScopes))
+
+	g.Expect(tokens2[0].Subject).To(Equal(firstToken.Subject))
+	g.Expect(tokens2[0].Issued).To(Equal(firstToken.Issued))
+	g.Expect(tokens2[0].ID).To(Equal(firstToken.ID))
+}
+
+// TestCreateAccessToken_CascadeDeleteOnGrantDeletion tests that deleting
+// a grant CASCADE deletes its associated access token.
+func TestCreateAccessToken_CascadeDeleteOnGrantDeletion(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := database.OpenTest()
+	g.Expect(err).To(BeNil())
+	db.AutoMigrate(
+		&IdpClient{},
+		&User{},
+		&Task{},
+		&model.Bucket{},
+		&Role{},
+		&Permission{},
+		&Token{},
+		&Grant{},
+		&RsaKey{},
+		&Identity{})
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	user := &User{Login: "testuser"}
+	err = db.Create(user).Error
+	g.Expect(err).To(BeNil())
+
+	subject := &Subject{}
+	subject.WithUser(user, provider.cache)
+
+	grantId := provider.storage.genId()
+	grant := &Grant{
+		Kind:       KindAuthCode,
+		AuthId:     grantId,
+		Subject:    subject.Key,
+		Scopes:     "openid profile",
+		Issued:     time.Now(),
+		Expiration: time.Now().Add(48 * time.Hour),
+	}
+	err = db.Create(grant).Error
+	g.Expect(err).To(BeNil())
+
+	refreshReq := &RefreshRequest{
+		grantId:  grantId,
+		clientId: "test-client",
+		subject:  subject.Key,
+		scopes:   []string{"openid", "profile"},
+		issued:   time.Now(),
+	}
+
+	tokenId, _, err := provider.storage.CreateAccessToken(context.Background(), refreshReq)
+	g.Expect(err).To(BeNil())
+
+	var tokens []Token
+	err = db.Find(&tokens, "authId = ?", tokenId).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(tokens).To(HaveLen(1))
+
+	err = db.Delete(grant).Error
+	g.Expect(err).To(BeNil())
+
+	var tokensAfter []Token
+	err = db.Find(&tokensAfter, "authId = ?", tokenId).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(tokensAfter).To(BeEmpty())
+}
+
+// TestAuthRequest_CreatesGrantAndLinksToken tests that AuthRequest creates
+// a grant first, then creates a token linked to that grant.
+func TestAuthRequest_CreatesGrantAndLinksToken(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := database.OpenTest()
+	g.Expect(err).To(BeNil())
+	db.AutoMigrate(
+		&IdpClient{},
+		&User{},
+		&Task{},
+		&model.Bucket{},
+		&Role{},
+		&Permission{},
+		&Token{},
+		&Grant{},
+		&RsaKey{},
+		&Identity{})
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	user := &User{Login: "testuser"}
+	err = db.Create(user).Error
+	g.Expect(err).To(BeNil())
+
+	subject := &Subject{}
+	subject.WithUser(user, provider.cache)
+
+	// Create AuthRequest
+	authReq := &AuthRequest{
+		requestId: provider.storage.genId(),
+		subject:   subject.Key,
+		AuthRequest: &oidc.AuthRequest{
+			ClientID: "test-client",
+			Scopes:   []string{"openid", "profile"},
+		},
+		issued: time.Now(),
+	}
+
+	// CreateAccessToken with AuthRequest should create grant first
+	tokenId, _, err := provider.storage.CreateAccessToken(context.Background(), authReq)
+	g.Expect(err).To(BeNil())
+	g.Expect(tokenId).To(Equal(authReq.GetID()))
+
+	// Verify grant was created with matching authId
+	var grant Grant
+	err = db.First(&grant, "authId = ?", authReq.GetID()).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(grant.AuthId).To(Equal(authReq.GetID()))
+	g.Expect(grant.Subject).To(Equal(subject.Key))
+
+	// Verify token was created and linked to grant
+	var token Token
+	err = db.First(&token, "authId = ?", authReq.GetID()).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(token.AuthId).To(Equal(authReq.GetID()))
+	g.Expect(token.GrantID).NotTo(BeNil())
+	g.Expect(*token.GrantID).To(Equal(grant.ID))
+}
+
+// TestClientRequest_NoGrantCreated tests that ClientRequest creates tokens
+// without creating grants, and each request gets a new token.
+func TestClientRequest_NoGrantCreated(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := database.OpenTest()
+	g.Expect(err).To(BeNil())
+	db.AutoMigrate(
+		&IdpClient{},
+		&User{},
+		&Task{},
+		&model.Bucket{},
+		&Role{},
+		&Permission{},
+		&Token{},
+		&Grant{},
+		&RsaKey{},
+		&Identity{})
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Create two client requests with different authIds
+	// Use empty subject to skip scope injection (client creds don't need it)
+	clientReq1 := &ClientRequest{
+		authId:   provider.storage.genId(),
+		clientId: "test-client-id",
+		subject:  "",
+		scopes:   []string{"openid"},
+		issued:   time.Now(),
+	}
+
+	clientReq2 := &ClientRequest{
+		authId:   provider.storage.genId(),
+		clientId: "test-client-id",
+		subject:  "",
+		scopes:   []string{"openid"},
+		issued:   time.Now(),
+	}
+
+	// Create first token
+	tokenId1, _, err := provider.storage.CreateAccessToken(context.Background(), clientReq1)
+	g.Expect(err).To(BeNil())
+	g.Expect(tokenId1).To(Equal(clientReq1.authId))
+
+	// Verify no grant was created
+	var grants []Grant
+	err = db.Find(&grants, "authId = ?", clientReq1.authId).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(grants).To(BeEmpty())
+
+	// Verify token was created with nil GrantID
+	var token1 Token
+	err = db.First(&token1, "authId = ?", clientReq1.authId).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(token1.GrantID).To(BeNil())
+
+	// Create second token (different authId)
+	tokenId2, _, err := provider.storage.CreateAccessToken(context.Background(), clientReq2)
+	g.Expect(err).To(BeNil())
+	g.Expect(tokenId2).To(Equal(clientReq2.authId))
+	g.Expect(tokenId2).NotTo(Equal(tokenId1))
+
+	// Verify second token was created (not upserted)
+	var tokens []Token
+	err = db.Find(&tokens).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(tokens).To(HaveLen(2))
+}
+
+// TestCreateAccessAndRefreshTokens_FullFlow tests the complete flow:
+// AuthRequest creates grant and token, then refresh token updates the grant.
+func TestCreateAccessAndRefreshTokens_FullFlow(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := database.OpenTest()
+	g.Expect(err).To(BeNil())
+	db.AutoMigrate(
+		&IdpClient{},
+		&User{},
+		&Task{},
+		&model.Bucket{},
+		&Role{},
+		&Permission{},
+		&Token{},
+		&Grant{},
+		&RsaKey{},
+		&Identity{})
+
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	user := &User{Login: "testuser"}
+	err = db.Create(user).Error
+	g.Expect(err).To(BeNil())
+
+	subject := &Subject{}
+	subject.WithUser(user, provider.cache)
+
+	// Create AuthRequest
+	requestId := provider.storage.genId()
+	authReq := &AuthRequest{
+		requestId: requestId,
+		subject:   subject.Key,
+		AuthRequest: &oidc.AuthRequest{
+			ClientID: "test-client",
+			Scopes:   []string{"openid", "profile", "offline_access"},
+		},
+		issued: time.Now(),
+	}
+
+	// Store authReq so createRefreshToken can find it
+	provider.storage.mutex.Lock()
+	provider.storage.authReqById[requestId] = authReq
+	provider.storage.mutex.Unlock()
+
+	// Call CreateAccessAndRefreshTokens
+	accessTokenId, refreshToken, _, err := provider.storage.CreateAccessAndRefreshTokens(
+		context.Background(),
+		authReq,
+		"")
+	g.Expect(err).To(BeNil())
+	g.Expect(accessTokenId).To(Equal(requestId))
+	g.Expect(refreshToken).NotTo(BeEmpty())
+
+	// Verify grant was created
+	var grant Grant
+	err = db.First(&grant, "authId = ?", requestId).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(grant.AuthId).To(Equal(requestId))
+
+	// Verify grant has refresh token hash
+	g.Expect(grant.RefreshToken).NotTo(BeEmpty())
+
+	// Verify access token was created and linked to grant
+	var token Token
+	err = db.First(&token, "authId = ?", requestId).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(token.AuthId).To(Equal(requestId))
+	g.Expect(token.GrantID).NotTo(BeNil())
+	g.Expect(*token.GrantID).To(Equal(grant.ID))
 }

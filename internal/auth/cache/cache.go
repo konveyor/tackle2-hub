@@ -157,6 +157,14 @@ func (r *Cache) TokenDeleted(id uint) {
 	})
 }
 
+// GrantDeleted removes a grant and all associated tokens from the cache.
+func (r *Cache) GrantDeleted(id uint) {
+	_ = r.Transaction(func(tx *Tx) (_ error) {
+		tx.GrantDeleted(id)
+		return
+	})
+}
+
 // FindToken returns a PAT.
 func (r *Cache) FindToken(token string) (m *Token, err error) {
 	defer r.ensureRefreshed()

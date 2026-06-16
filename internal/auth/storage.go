@@ -22,6 +22,7 @@ import (
 	"github.com/zitadel/oidc/v3/pkg/oidc"
 	"github.com/zitadel/oidc/v3/pkg/op"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // Storage implements op.Storage.
@@ -133,11 +134,12 @@ func (r *Storage) ClientCredentialsTokenRequest(
 		return
 	}
 	c := client.(*Client)
-	req = &RefreshRequest{
-		grantId:  r.genId(),
+	req = &ClientRequest{
+		authId:   r.genId(),
 		clientId: clientId,
 		subject:  c.subject,
 		scopes:   scopes,
+		issued:   time.Now(),
 	}
 	return
 }
@@ -266,15 +268,20 @@ func (r *Storage) DeleteAuthRequest(_ context.Context, id string) (err error) {
 }
 
 // CreateAccessToken creates an access token.
+// For AuthRequest: Creates a grant using req.GetID() as the authId, then creates
+// a token with the same authId and links it to the grant via GrantID.
+// For RefreshRequest: Uses the existing grant's authId. The upsert on authId
+// updates the existing token instead of creating a new one.
+// For ClientRequest: Creates a token with no associated grant.
+// For DeviceAuthorizationState: Creates a grant and token for device authorization flow.
 func (r *Storage) CreateAccessToken(
-	_ context.Context,
+	ctx context.Context,
 	req op.TokenRequest) (tokenId string, expiration time.Time, err error) {
 	//
 	err = r.injectScopes(req)
 	if err != nil {
 		return
 	}
-	tokenId = r.genId()
 	subject := req.GetSubject()
 	s, err := r.findSubject(subject)
 	if err != nil {
@@ -282,19 +289,39 @@ func (r *Storage) CreateAccessToken(
 			err = nil
 		}
 	}
-	grantId := ""
+	var authId string
+	var grantId string
 	expiration = time.Now().Add(Settings.Token.Lifespan)
-	switch r := req.(type) {
-	case *RefreshRequest:
-		grantId = r.grantId
+	switch req := req.(type) {
 	case *AuthRequest:
-		//
+		authId = req.GetID()
+		grantId = authId
+		authCode := r.authCodeById(authId)
+		_, err = r.createGrant(ctx, req, authId, authCode)
+		if err != nil {
+			return
+		}
+	case *RefreshRequest:
+		authId = req.grantId
+		grantId = authId
+	case *ClientRequest:
+		authId = req.authId
+	case *op.DeviceAuthorizationState:
+		authId = r.genId()
+		grantId = authId
+		_, err = r.createGrant(ctx, req, authId, "")
+		if err != nil {
+			return
+		}
 	default:
+		err = oidc.ErrServerError().
+			WithDescription("unsupported token request type")
 		return
 	}
+	tokenId = authId
 	m := &Token{}
 	m.Kind = KindAccessToken
-	m.AuthId = tokenId
+	m.AuthId = authId
 	m.Subject = subject
 	m.Scopes = req.GetScopes()
 	m.Issued = time.Now()
@@ -305,7 +332,14 @@ func (r *Storage) CreateAccessToken(
 		m.IdpIdentityID = s.IdentityId
 		m.IdpClientID = s.ClientId
 	}
-	err = r.db.Create(m).Error
+	db := r.db.Clauses(clause.OnConflict{
+		Columns: []clause.Column{{Name: "authId"}},
+		DoUpdates: clause.AssignmentColumns([]string{
+			"expiration",
+			"scopes",
+		}),
+	})
+	err = db.Create(m).Error
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -749,6 +783,9 @@ func (r *Login) complete() (err error) {
 
 	err = r.authenticate()
 	if err != nil {
+		Log.Info(err.Error())
+		_ = r.renderPage()
+		err = nil
 		return
 	}
 
@@ -781,16 +818,18 @@ func (r *Login) authenticate() (err error) {
 		r.authLdapUser,
 	} {
 		err = method()
-		if errors.Is(err, &NotFound{}) {
-			continue
-		} else {
+		if err == nil {
+			// authenticated
 			return
 		}
-	}
-	_ = r.renderPage()
-	err = &NotAuthenticated{
-		Reason: "user not found",
-		Token:  r.login,
+		if errors.Is(err, &NotFound{}) {
+			// next
+			continue
+		}
+		if errors.Is(err, &NotAuthenticated{}) {
+			// rejected
+			break
+		}
 	}
 	return
 }
@@ -1038,23 +1077,35 @@ func (r *Storage) injectScopes(req op.TokenRequest) (err error) {
 		r.SetCurrentScopes(scopes)
 	case *AuthRequest:
 		r.Scopes = scopes
+	case *ClientRequest:
+		r.scopes = scopes
 	case *op.DeviceAuthorizationState:
 		r.Scopes = scopes
 	}
 	return
 }
 
-// createRefreshToken creates a refresh token.
+// createRefreshToken creates a refresh token and updates the grant.
 func (r *Storage) createRefreshToken(ctx context.Context, req op.TokenRequest) (tokenId string, err error) {
 	authReq, cast := req.(op.AuthRequest)
 	if !cast {
 		return
 	}
 	refreshToken := r.genId()
-	_, err = r.createGrant(ctx, authReq, refreshToken)
+	refreshTokenHash := secret.Hash(refreshToken)
+	grant := &Grant{}
+	err = r.db.First(grant, "authId = ?", authReq.GetID()).Error
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
+	grant.RefreshToken = refreshTokenHash
+	err = r.db.Save(grant).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+
 	authCode := r.authCodeById(authReq.GetID())
 	if authCode != "" {
 		// Auth code flow - delete auth request
@@ -1225,27 +1276,30 @@ func (r *Storage) orphaned(grant *Grant) (err error) {
 	return
 }
 
-// createGrant creates a grant from an auth request.
+// createGrant creates a grant for an authorization request.
+// The authId parameter is used as the grant ID and for linking tokens.
+// The authCode parameter is optional (empty string for device flow).
+// A temporary refresh token is generated to avoid UNIQUE constraint race conditions;
+// it will be replaced by createRefreshToken() for auth code flows.
 func (r *Storage) createGrant(
 	_ context.Context,
-	authReq op.AuthRequest,
-	refreshToken string) (grantId string, err error) {
+	req GrantRequest,
+	authId string,
+	authCode string) (grantId string, err error) {
 	//
-	grantId = r.genId()
+	grantId = authId
 	expiration := time.Now().Add(Settings.Token.RefreshLifespan)
-	scopes := strings.Join(authReq.GetScopes(), " ")
-	authCode := r.authCodeById(authReq.GetID())
-	refreshTokenHash := secret.Hash(refreshToken)
+	scopes := strings.Join(req.GetScopes(), " ")
 
 	m := &Grant{}
 	m.Kind = KindAuthCode
-	m.ClientId = authReq.GetClientID()
+	m.ClientId = req.GetClientID()
 	m.AuthId = grantId
-	m.Subject = authReq.GetSubject()
-	m.RefreshToken = refreshTokenHash
+	m.Subject = req.GetSubject()
 	m.AuthCode = authCode
+	m.RefreshToken = r.genId()
 	m.Scopes = scopes
-	m.Issued = authReq.GetAuthTime()
+	m.Issued = req.GetAuthTime()
 	m.Expiration = expiration
 	err = r.db.Create(m).Error
 	if err != nil {
@@ -1783,6 +1837,51 @@ func (r *RefreshRequest) SetCurrentScopes(scopes []string) {
 	return
 }
 
+// ClientRequest implements op.TokenRequest for client credentials flow.
+type ClientRequest struct {
+	authId   string
+	clientId string
+	subject  string
+	scopes   []string
+	issued   time.Time
+}
+
+// GetAMR returns the AMR.
+func (r *ClientRequest) GetAMR() (amr []string) {
+	amr = []string{"client_credentials"}
+	return
+}
+
+// GetAudience returns the audience.
+func (r *ClientRequest) GetAudience() (aud []string) {
+	aud = []string{r.clientId}
+	return
+}
+
+// GetAuthTime returns the authentication time.
+func (r *ClientRequest) GetAuthTime() (t time.Time) {
+	t = r.issued
+	return
+}
+
+// GetClientID returns the client ID.
+func (r *ClientRequest) GetClientID() (s string) {
+	s = r.clientId
+	return
+}
+
+// GetScopes returns the scopes.
+func (r *ClientRequest) GetScopes() (scopes []string) {
+	scopes = r.scopes
+	return
+}
+
+// GetSubject returns the subject.
+func (r *ClientRequest) GetSubject() (s string) {
+	s = r.subject
+	return
+}
+
 // DeviceAuthRequest holds device authorization state.
 type DeviceAuthRequest struct {
 	deviceCode string
@@ -1846,4 +1945,12 @@ func (k *Key) Key() (key any) {
 func (k *Key) ID() (s string) {
 	s = k.jwk.KeyID
 	return
+}
+
+// GrantRequest defines the interface needed for creating grants.
+type GrantRequest interface {
+	GetClientID() string
+	GetSubject() string
+	GetScopes() []string
+	GetAuthTime() time.Time
 }

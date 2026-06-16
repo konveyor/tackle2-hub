@@ -15,36 +15,30 @@ type TokenReaper struct {
 	DB *gorm.DB
 }
 
-// Run delete tokens that have been expired for more than 1 hour.
-// The delay prevents deleting a token in use by auth.
+// Run delete API key tokens that have been expired for more than 1 hour.
+// Access tokens are CASCADE deleted when their grant is reaped.
 func (r *TokenReaper) Run() {
-	Log.V(1).Info("Reaping tokens.")
-
-	mark := time.Now().Add(-time.Minute)
-
-	cache := auth.IdP.Cache()
-
+	Log.V(1).Info("Reaping API key tokens.")
+	mark := time.Now().Add(-time.Hour)
 	err := r.DB.Transaction(
 		func(tx *gorm.DB) (err error) {
 			var list []*model.Token
-			err = tx.Find(&list, "expiration < ?", mark).Error
+			err = tx.Find(&list, "kind = ? AND expiration < ?", auth.KindAPIKey, mark).Error
 			if err != nil {
 				err = liberr.Wrap(err)
 				return
 			}
 			for _, token := range list {
-				cache.TokenDeleted(token.ID)
 				err = tx.Delete(token).Error
 				if err != nil {
 					err = liberr.Wrap(err)
 					return
 				}
+				auth.IdP.Cache().TokenDeleted(token.ID)
 				Log.Info(
-					"Expired token deleted.",
+					"Expired API key token deleted.",
 					"id",
-					token.ID,
-					"grant",
-					token.GrantID)
+					token.ID)
 			}
 			return
 		})
@@ -79,6 +73,7 @@ func (r *GrantReaper) Run() {
 					err = liberr.Wrap(err)
 					return
 				}
+				auth.IdP.Cache().GrantDeleted(grant.ID)
 				Log.Info(
 					"Expired grant deleted.",
 					"id",
