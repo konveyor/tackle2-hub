@@ -268,6 +268,11 @@ func (r *Storage) DeleteAuthRequest(_ context.Context, id string) (err error) {
 }
 
 // CreateAccessToken creates an access token.
+// For AuthRequest: Creates a grant using req.GetID() as the authId, then creates
+// a token with the same authId and links it to the grant via GrantID.
+// For RefreshRequest: Uses the existing grant's authId. The upsert on authId
+// updates the existing token instead of creating a new one.
+// For ClientRequest: Creates a token with no associated grant.
 func (r *Storage) CreateAccessToken(
 	ctx context.Context,
 	req op.TokenRequest) (tokenId string, expiration time.Time, err error) {

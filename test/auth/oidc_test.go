@@ -477,7 +477,7 @@ func TestAuthorizationCodeFlowWithScopes(t *testing.T) {
 	// Verify scopes are in the token
 	scopeRaw, ok := claims["scope"].(string)
 	g.Expect(ok).To(BeTrue())
-	g.Expect(scopeRaw).To(ContainSubstring("addons:delete"))
+	g.Expect(scopeRaw).To(ContainSubstring(permissions[0].Scope))
 
 	// Test using the access token
 	req, _ := http.NewRequest("GET", Settings.Addon.Hub.URL+"/applications", nil)
