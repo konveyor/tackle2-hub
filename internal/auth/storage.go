@@ -273,6 +273,7 @@ func (r *Storage) DeleteAuthRequest(_ context.Context, id string) (err error) {
 // For RefreshRequest: Uses the existing grant's authId. The upsert on authId
 // updates the existing token instead of creating a new one.
 // For ClientRequest: Creates a token with no associated grant.
+// For DeviceAuthorizationState: Creates a grant and token for device authorization flow.
 func (r *Storage) CreateAccessToken(
 	ctx context.Context,
 	req op.TokenRequest) (tokenId string, expiration time.Time, err error) {
@@ -295,7 +296,8 @@ func (r *Storage) CreateAccessToken(
 	case *AuthRequest:
 		authId = req.GetID()
 		grantId = authId
-		_, err = r.createGrant(ctx, req)
+		authCode := r.authCodeById(authId)
+		_, err = r.createGrant(ctx, req, authId, authCode)
 		if err != nil {
 			return
 		}
@@ -304,6 +306,13 @@ func (r *Storage) CreateAccessToken(
 		grantId = authId
 	case *ClientRequest:
 		authId = req.authId
+	case *op.DeviceAuthorizationState:
+		authId = r.genId()
+		grantId = authId
+		_, err = r.createGrant(ctx, req, authId, "")
+		if err != nil {
+			return
+		}
 	default:
 		err = oidc.ErrServerError().
 			WithDescription("unsupported token request type")
@@ -1267,24 +1276,30 @@ func (r *Storage) orphaned(grant *Grant) (err error) {
 	return
 }
 
-// createGrant creates a grant for an auth request.
+// createGrant creates a grant for an authorization request.
+// The authId parameter is used as the grant ID and for linking tokens.
+// The authCode parameter is optional (empty string for device flow).
+// A temporary refresh token is generated to avoid UNIQUE constraint race conditions;
+// it will be replaced by createRefreshToken() for auth code flows.
 func (r *Storage) createGrant(
 	_ context.Context,
-	authReq op.AuthRequest) (grantId string, err error) {
+	req GrantRequest,
+	authId string,
+	authCode string) (grantId string, err error) {
 	//
-	grantId = authReq.GetID()
+	grantId = authId
 	expiration := time.Now().Add(Settings.Token.RefreshLifespan)
-	scopes := strings.Join(authReq.GetScopes(), " ")
-	authCode := r.authCodeById(authReq.GetID())
+	scopes := strings.Join(req.GetScopes(), " ")
 
 	m := &Grant{}
 	m.Kind = KindAuthCode
-	m.ClientId = authReq.GetClientID()
+	m.ClientId = req.GetClientID()
 	m.AuthId = grantId
-	m.Subject = authReq.GetSubject()
+	m.Subject = req.GetSubject()
 	m.AuthCode = authCode
+	m.RefreshToken = r.genId()
 	m.Scopes = scopes
-	m.Issued = authReq.GetAuthTime()
+	m.Issued = req.GetAuthTime()
 	m.Expiration = expiration
 	err = r.db.Create(m).Error
 	if err != nil {
@@ -1930,4 +1945,12 @@ func (k *Key) Key() (key any) {
 func (k *Key) ID() (s string) {
 	s = k.jwk.KeyID
 	return
+}
+
+// GrantRequest defines the interface needed for creating grants.
+type GrantRequest interface {
+	GetClientID() string
+	GetSubject() string
+	GetScopes() []string
+	GetAuthTime() time.Time
 }
