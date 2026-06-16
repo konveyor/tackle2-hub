@@ -774,6 +774,9 @@ func (r *Login) complete() (err error) {
 
 	err = r.authenticate()
 	if err != nil {
+		Log.Info(err.Error())
+		_ = r.renderPage()
+		err = nil
 		return
 	}
 
@@ -806,16 +809,18 @@ func (r *Login) authenticate() (err error) {
 		r.authLdapUser,
 	} {
 		err = method()
-		if errors.Is(err, &NotFound{}) {
-			continue
-		} else {
+		if err == nil {
+			// authenticated
 			return
 		}
-	}
-	_ = r.renderPage()
-	err = &NotAuthenticated{
-		Reason: "user not found",
-		Token:  r.login,
+		if errors.Is(err, &NotFound{}) {
+			// next
+			continue
+		}
+		if errors.Is(err, &NotAuthenticated{}) {
+			// rejected
+			break
+		}
 	}
 	return
 }

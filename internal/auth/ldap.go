@@ -29,9 +29,9 @@ type LdapHandler struct {
 // Authenticated with the DS when cached identity not found or expired.
 func (h *LdapHandler) Authenticate(login, password string, lifespan time.Duration) (subject *Subject, err error) {
 	if !h.enabled {
-		err = &NotAuthenticated{
-			Reason: "LDAP authentication disabled",
-			Token:  login,
+		err = &NotFound{
+			Resource: "User",
+			Id:       login,
 		}
 		return
 	}
