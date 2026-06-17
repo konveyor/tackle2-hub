@@ -844,24 +844,34 @@ func TestFindTokenById(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	cache := New(db)
-	err = cache.Refresh()
+	// Create a task in DB first
+	task := &model.Task{
+		Model: Model{ID: 1000},
+	}
+	err = db.Create(task).Error
 	g.Expect(err).To(BeNil())
 
-	// Create a task token
+	// Create a task token in DB
 	taskID := uint(1000)
 	taskToken := &Token{
 		Token: model.Token{
 			Model:      Model{ID: 1000},
+			Kind:       KindAPIKey,
 			TaskID:     &taskID,
 			Digest:     secret.Hash("task-token-1000"),
 			Expiration: time.Now().Add(24 * time.Hour),
 		},
 		Secret: "task-token-1000",
 	}
-	cache.TokenSaved(taskToken)
+	err = db.Create(&taskToken.Token).Error
+	g.Expect(err).To(BeNil())
 
-	// Find token by ID
+	// Refresh cache to load token with scopes assigned
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	// Find token by ID - should have scopes
 	foundToken, err := cache.FindTokenById(1000)
 	g.Expect(err).To(BeNil())
 	g.Expect(foundToken).NotTo(BeNil())
@@ -885,8 +895,23 @@ func TestFindTokenByIdWithUser(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	cache := New(db)
-	err = cache.Refresh()
+	// Create permission
+	perm := &Permission{
+		Model: Model{ID: 1},
+		Scope: "applications:get",
+	}
+	err = db.Create(perm).Error
+	g.Expect(err).To(BeNil())
+
+	// Create role with permission
+	role := &Role{
+		Model: Model{ID: 1},
+		Name:  "Developer",
+	}
+	err = db.Create(role).Error
+	g.Expect(err).To(BeNil())
+
+	err = db.Model(role).Association("Permissions").Append(perm)
 	g.Expect(err).To(BeNil())
 
 	// Create user
@@ -895,27 +920,40 @@ func TestFindTokenByIdWithUser(t *testing.T) {
 		Subject: "user-subject",
 		Login:   "testuser",
 	}
-	cache.UserSaved(user)
+	err = db.Create(user).Error
+	g.Expect(err).To(BeNil())
 
-	// Create user token
+	// Associate user with role
+	err = db.Exec("INSERT INTO UserRole (UserID, RoleID) VALUES (?, ?)", user.ID, role.ID).Error
+	g.Expect(err).To(BeNil())
+
+	// Create user token in DB
 	userID := uint(2000)
 	userToken := &Token{
 		Token: model.Token{
 			Model:      Model{ID: 2001},
+			Kind:       KindAPIKey,
 			UserID:     &userID,
 			Digest:     secret.Hash("user-token-2001"),
 			Expiration: time.Now().Add(24 * time.Hour),
 		},
 		Secret: "user-token-2001",
 	}
-	cache.TokenSaved(userToken)
+	err = db.Create(&userToken.Token).Error
+	g.Expect(err).To(BeNil())
 
-	// Find token by ID - should have user subject populated
+	// Refresh cache to load token with scopes assigned
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	// Find token by ID - should have user subject and scopes
 	foundToken, err := cache.FindTokenById(2001)
 	g.Expect(err).To(BeNil())
 	g.Expect(foundToken).NotTo(BeNil())
 	g.Expect(foundToken.Subject).To(Equal("user-subject"))
-	g.Expect(foundToken.Scopes).NotTo(BeNil())
+	g.Expect(foundToken.Scopes).NotTo(BeEmpty())
+	g.Expect(foundToken.Scopes).To(ContainElement("applications:get"))
 }
 
 // TestFindTokenWithScopes tests that FindToken returns tokens with scopes populated.
@@ -925,22 +963,32 @@ func TestFindTokenWithScopes(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	cache := New(db)
-	err = cache.Refresh()
+	// Create a task in DB first
+	task := &model.Task{
+		Model: Model{ID: 3000},
+	}
+	err = db.Create(task).Error
 	g.Expect(err).To(BeNil())
 
-	// Create a task token
+	// Create a task token in DB
 	taskID := uint(3000)
 	taskToken := &Token{
 		Token: model.Token{
 			Model:      Model{ID: 3000},
+			Kind:       KindAPIKey,
 			TaskID:     &taskID,
 			Digest:     secret.Hash("task-token-3000"),
 			Expiration: time.Now().Add(24 * time.Hour),
 		},
 		Secret: "task-token-3000",
 	}
-	cache.TokenSaved(taskToken)
+	err = db.Create(&taskToken.Token).Error
+	g.Expect(err).To(BeNil())
+
+	// Refresh cache to load token with scopes assigned
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
 
 	// Find token by secret - should have scopes
 	foundToken, err := cache.FindToken("task-token-3000")
@@ -958,11 +1006,7 @@ func TestFindTokenWithIdentity(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	cache := New(db)
-	err = cache.Refresh()
-	g.Expect(err).To(BeNil())
-
-	// Create identity
+	// Create identity in DB
 	identity := &Identity{
 		Model:   Model{ID: 4000},
 		Issuer:  "https://idp.example.com",
@@ -970,20 +1014,28 @@ func TestFindTokenWithIdentity(t *testing.T) {
 		Login:   "identityuser",
 		Scopes:  "applications:get applications:post",
 	}
-	cache.IdentitySaved(identity)
+	err = db.Create(identity).Error
+	g.Expect(err).To(BeNil())
 
-	// Create identity token
+	// Create identity token in DB
 	identityID := uint(4000)
 	identityToken := &Token{
 		Token: model.Token{
 			Model:         Model{ID: 4001},
+			Kind:          KindAPIKey,
 			IdpIdentityID: &identityID,
 			Digest:        secret.Hash("identity-token-4001"),
 			Expiration:    time.Now().Add(24 * time.Hour),
 		},
 		Secret: "identity-token-4001",
 	}
-	cache.TokenSaved(identityToken)
+	err = db.Create(&identityToken.Token).Error
+	g.Expect(err).To(BeNil())
+
+	// Refresh cache to load token with scopes assigned
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
 
 	// Find token - should have identity scopes
 	foundToken, err := cache.FindToken("identity-token-4001")
@@ -1001,31 +1053,35 @@ func TestFindTokenWithClient(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	cache := New(db)
-	err = cache.Refresh()
-	g.Expect(err).To(BeNil())
-
-	// Create client
+	// Create client in DB
 	client := &IdpClient{
 		Model:    Model{ID: 5000},
 		Subject:  "client-subject-5000",
 		ClientId: "client-5000",
 		Scopes:   []string{"applications:get", "applications:post"},
 	}
-	cache.ClientSaved(client)
+	err = db.Create(client).Error
+	g.Expect(err).To(BeNil())
 
-	// Create client token
+	// Create client token in DB
 	clientID := uint(5000)
 	clientToken := &Token{
 		Token: model.Token{
 			Model:       Model{ID: 5001},
+			Kind:        KindAPIKey,
 			IdpClientID: &clientID,
 			Digest:      secret.Hash("client-token-5001"),
 			Expiration:  time.Now().Add(24 * time.Hour),
 		},
 		Secret: "client-token-5001",
 	}
-	cache.TokenSaved(clientToken)
+	err = db.Create(&clientToken.Token).Error
+	g.Expect(err).To(BeNil())
+
+	// Refresh cache to load token with scopes assigned
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
 
 	// Find token - should have client scopes
 	foundToken, err := cache.FindToken("client-token-5001")

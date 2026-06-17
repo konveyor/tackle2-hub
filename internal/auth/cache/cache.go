@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -177,7 +178,6 @@ func (r *Cache) FindTokenById(id uint) (m *Token, err error) {
 		}
 		return
 	}
-	m, err = r.addScopes(m)
 	return
 }
 
@@ -193,7 +193,6 @@ func (r *Cache) FindToken(token string) (m *Token, err error) {
 		}
 		return
 	}
-	m, err = r.addScopes(m)
 	return
 }
 
@@ -332,66 +331,6 @@ func (r *Cache) ensureRefreshed() {
 			}
 		}()
 	})
-}
-
-// addScopes returns a new (copied) token with scopes added as needed.
-// Tokens already having scopes are not altered.
-func (r *Cache) addScopes(in *Token) (m *Token, err error) {
-	m = &Token{Token: in.Token}
-	if len(in.Scopes) > 0 {
-		m.Scopes = in.Scopes
-		return
-	}
-	d := r.data.Load()
-	// user binding.
-	if m.UserID != nil {
-		user, found := d.userById[*m.UserID]
-		if !found {
-			err = &NotFound{
-				Resource: "user",
-				Id:       strconv.Itoa(int(*m.UserID)),
-			}
-			return
-		}
-		m.Subject = user.Subject
-		m.Scopes = user.GetScopes(r)
-		return
-	}
-	// task binding.
-	if m.TaskID != nil {
-		m.Subject = Task{ID: *m.TaskID}.Subject()
-		m.Scopes = AddonScopes
-		return
-	}
-	// IdP identity binding.
-	if m.IdpIdentityID != nil {
-		identity, found := d.identById[*m.IdpIdentityID]
-		if !found {
-			err = &NotFound{
-				Resource: "identity",
-				Id:       strconv.Itoa(int(*m.IdpIdentityID)),
-			}
-			return
-		}
-		m.Subject = identity.Subject
-		m.Scopes = strings.Fields(identity.Scopes)
-		return
-	}
-	// IdP client binding.
-	if m.IdpClientID != nil {
-		client, found := d.clientById[*m.IdpClientID]
-		if !found {
-			err = &NotFound{
-				Resource: "client",
-				Id:       strconv.Itoa(int(*m.IdpClientID)),
-			}
-			return
-		}
-		m.Subject = client.Subject
-		m.Scopes = client.GetScopes()
-		return
-	}
-	return
 }
 
 // Data contains cached maps.
@@ -580,8 +519,85 @@ func (d *Data) getTokens(db *gorm.DB) (err error) {
 		return
 	}
 	for _, m := range list {
+		d.assignScopes(m)
 		d.tokenById[m.ID] = m
 		d.tokenByDigest[m.Digest] = m
+	}
+	return
+}
+
+// assignScopes determines scopes for PAT and assigns them.
+func (d *Data) assignScopes(m *Token) {
+	if m.Kind != KindAPIKey {
+		return
+	}
+	var err error
+	defer func() {
+		if err != nil {
+			Log.Info(err.Error())
+		}
+	}()
+	m.Scopes = []string{}
+	// user binding.
+	if m.UserID != nil {
+		user, found := d.userById[*m.UserID]
+		if !found {
+			err = &NotFound{
+				Resource: "user",
+				Id:       strconv.Itoa(int(*m.UserID)),
+			}
+			return
+		}
+		m.Subject = user.Subject
+		for _, r := range user.Roles {
+			var role *Role
+			role, found = d.roleById[r.ID]
+			if !found {
+				continue
+			}
+			for _, scope := range role.GetScopes() {
+				m.Scopes = append(
+					m.Scopes,
+					scope)
+			}
+		}
+		m.Scopes = uniqueStrings(m.Scopes)
+		sort.Strings(m.Scopes)
+		return
+	}
+	// task binding.
+	if m.TaskID != nil {
+		m.Subject = Task{ID: *m.TaskID}.Subject()
+		m.Scopes = AddonScopes
+		return
+	}
+	// IdP identity binding.
+	if m.IdpIdentityID != nil {
+		identity, found := d.identById[*m.IdpIdentityID]
+		if !found {
+			err = &NotFound{
+				Resource: "identity",
+				Id:       strconv.Itoa(int(*m.IdpIdentityID)),
+			}
+			return
+		}
+		m.Subject = identity.Subject
+		m.Scopes = strings.Fields(identity.Scopes)
+		return
+	}
+	// IdP client binding.
+	if m.IdpClientID != nil {
+		client, found := d.clientById[*m.IdpClientID]
+		if !found {
+			err = &NotFound{
+				Resource: "client",
+				Id:       strconv.Itoa(int(*m.IdpClientID)),
+			}
+			return
+		}
+		m.Subject = client.Subject
+		m.Scopes = client.GetScopes()
+		return
 	}
 	return
 }
