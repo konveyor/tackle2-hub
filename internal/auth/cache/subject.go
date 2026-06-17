@@ -17,6 +17,7 @@ type Subject struct {
 	User       *User
 	Identity   *Identity
 	Client     *IdpClient
+	Task       *Task
 }
 
 // WithUser populates Subject from a User model.
@@ -56,6 +57,13 @@ func (r *Subject) WithClient(client *IdpClient, cache *Cache) {
 	r.Scopes = client.GetScopes()
 }
 
+// WithTask populates with the task.
+func (r *Subject) WithTask(task *Task) {
+	r.Task = task
+	r.Key = task.Subject()
+	r.Scopes = task.GetScopes()
+}
+
 // Login returns the user (login) name (Eg: jsmith).
 func (r *Subject) Login() (login string) {
 	if r.IsUser() {
@@ -65,6 +73,13 @@ func (r *Subject) Login() (login string) {
 	if r.IsIdentity() {
 		login = r.Identity.Login
 		return
+	}
+	if r.IsClient() {
+		login = r.Client.ClientId
+		return
+	}
+	if r.IsTask() {
+		login = r.Task.Login()
 	}
 	return
 }
@@ -82,4 +97,9 @@ func (r *Subject) IsIdentity() bool {
 // IsClient returns true if this subject is an IdpClient.
 func (r *Subject) IsClient() bool {
 	return r.ClientId != nil
+}
+
+// IsTask returns true if the subject is a Task.
+func (r *Subject) IsTask() bool {
+	return r.Task != nil
 }

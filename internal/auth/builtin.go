@@ -195,9 +195,9 @@ func (p *Builtin) NewToken(subject string, lifespan time.Duration) (m Token, err
 }
 
 // TaskGrant creates a new task api-key.
-func (p *Builtin) TaskGrant(taskId uint) (m Token, err error) {
-	m = p.newToken("", 0)
-	m.TaskID = &taskId
+func (p *Builtin) TaskGrant(task *Task) (m Token, err error) {
+	m = p.newToken(task.Subject(), 0)
+	m.TaskID = &task.ID
 	err = p.db.Create(&m).Error
 	if err != nil {
 		err = liberr.Wrap(err)

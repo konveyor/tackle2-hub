@@ -1109,6 +1109,10 @@ func (h AuthHandler) GetSelf(ctx *gin.Context) {
 	s := h.CurrentSubject(ctx)
 	subject, err := auth.IdP.Cache().FindSubject(s)
 	if err == nil {
+		r.Login = h.CurrentUser(ctx)
+		r.Subject = h.CurrentSubject(ctx)
+		r.Scopes = subject.Scopes
+		//
 		if subject.IsUser() {
 			r.User = &User{}
 			m := model.User(*subject.User)
@@ -1124,8 +1128,18 @@ func (h AuthHandler) GetSelf(ctx *gin.Context) {
 			m := model.IdpClient(*subject.Client)
 			r.Client.With(&m)
 		}
-
-		r.Scopes = subject.Scopes
+		if subject.IsTask() {
+			id := subject.Task.ID
+			db := h.DB(ctx)
+			m := &model.Task{}
+			err = db.First(m, id).Error
+			if err != nil {
+				_ = ctx.Error(err)
+				return
+			}
+			r.Task = &Task{}
+			r.Task.With(m)
+		}
 	} else {
 		if !errors.Is(err, &auth.NotFound{}) {
 			_ = ctx.Error(err)
@@ -1196,10 +1210,13 @@ type PAT api.PAT
 
 // AuthSelf REST resource.
 type AuthSelf struct {
+	Login    string       `json:"login"`
+	Subject  string       `json:"subject"`
+	Scopes   []string     `json:"scopes"`
 	User     *User        `json:"user,omitempty" yaml:",omitempty"`
 	Identity *IdpIdentity `json:"identity,omitempty" yaml:",omitempty"`
 	Client   *IdpClient   `json:"client,omitempty" yaml:",omitempty"`
-	Scopes   []string     `json:"scopes"`
+	Task     *Task        `json:"task,omitempty" yaml:",omitempty"`
 }
 
 // Authenticate the user.

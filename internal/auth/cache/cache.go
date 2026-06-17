@@ -195,7 +195,7 @@ func (r *Cache) FindToken(token string) (m *Token, err error) {
 	}
 	// task binding.
 	if m.TaskID != nil {
-		m.Subject = "task:" + strconv.Itoa(int(*m.TaskID))
+		m.Subject = Task{ID: *m.TaskID}.Subject()
 		m.Scopes = AddonScopes
 		return
 	}
@@ -231,6 +231,9 @@ func (r *Cache) FindToken(token string) (m *Token, err error) {
 }
 
 // FindSubject returns a subject.
+// Tasks are not stored for performance reasons. They are found
+// by matching the encoded task subject. There is nothing to be
+// gained by storing them.
 func (r *Cache) FindSubject(subject string) (s *Subject, err error) {
 	defer r.ensureRefreshed()
 	d := r.data.Load()
@@ -250,6 +253,13 @@ func (r *Cache) FindSubject(subject string) (s *Subject, err error) {
 	if found {
 		s = &Subject{}
 		s.WithClient(client, r)
+		return
+	}
+	task := &Task{}
+	matched := task.With(subject)
+	if matched {
+		s = &Subject{}
+		s.WithTask(task)
 		return
 	}
 	err = &NotFound{
@@ -385,12 +395,12 @@ func (d *Data) reset() {
 	d.userById = make(map[uint]*User)
 	d.userBySubject = make(map[string]*User)
 	d.userByLogin = make(map[string]*User)
-	d.tokenById = make(map[uint]*Token)
 	d.identById = make(map[uint]*Identity)
 	d.identBySubject = make(map[string]*Identity)
 	d.identByLogin = make(map[string]*Identity)
 	d.clientById = make(map[uint]*IdpClient)
 	d.clientBySubject = make(map[string]*IdpClient)
+	d.tokenById = make(map[uint]*Token)
 	d.tokenByDigest = make(map[string]*Token)
 }
 
@@ -407,12 +417,12 @@ func (d *Data) clone() *Data {
 		userById:        cloneMap(d.userById),
 		userBySubject:   cloneMap(d.userBySubject),
 		userByLogin:     cloneMap(d.userByLogin),
-		tokenById:       cloneMap(d.tokenById),
 		identById:       cloneMap(d.identById),
 		identBySubject:  cloneMap(d.identBySubject),
 		identByLogin:    cloneMap(d.identByLogin),
 		clientById:      cloneMap(d.clientById),
 		clientBySubject: cloneMap(d.clientBySubject),
+		tokenById:       cloneMap(d.tokenById),
 		tokenByDigest:   cloneMap(d.tokenByDigest),
 	}
 }

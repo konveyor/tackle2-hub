@@ -73,7 +73,7 @@ type Provider interface {
 	// NewToken creates a new personal access token.
 	NewToken(subject string, lifespan time.Duration) (token Token, err error)
 	// TaskGrant creates a new api-key.
-	TaskGrant(taskId uint) (token Token, err error)
+	TaskGrant(task *Task) (token Token, err error)
 	// TaskRevoke revokes task tokens.
 	TaskRevoke(taskId uint)
 	// Revoke a token.
