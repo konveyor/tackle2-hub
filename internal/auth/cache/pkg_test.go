@@ -837,6 +837,205 @@ func TestCacheMixedSubjectTypes(t *testing.T) {
 	g.Expect(taskSubj.Login()).To(Equal(task.Login()))
 }
 
+// TestFindTokenById tests FindTokenById method.
+func TestFindTokenById(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	// Create a task token
+	taskID := uint(1000)
+	taskToken := &Token{
+		Token: model.Token{
+			Model:      Model{ID: 1000},
+			TaskID:     &taskID,
+			Digest:     secret.Hash("task-token-1000"),
+			Expiration: time.Now().Add(24 * time.Hour),
+		},
+		Secret: "task-token-1000",
+	}
+	cache.TokenSaved(taskToken)
+
+	// Find token by ID
+	foundToken, err := cache.FindTokenById(1000)
+	g.Expect(err).To(BeNil())
+	g.Expect(foundToken).NotTo(BeNil())
+	g.Expect(foundToken.ID).To(Equal(uint(1000)))
+	g.Expect(*foundToken.TaskID).To(Equal(taskID))
+	g.Expect(foundToken.Scopes).NotTo(BeEmpty())
+	g.Expect(foundToken.Scopes).To(ContainElement("addons:get"))
+
+	// Try to find non-existent token
+	_, err = cache.FindTokenById(9999)
+	g.Expect(err).NotTo(BeNil())
+	var notFound *NotFound
+	g.Expect(errors.As(err, &notFound)).To(BeTrue())
+	g.Expect(notFound.Resource).To(Equal("token"))
+}
+
+// TestFindTokenByIdWithUser tests FindTokenById returns scopes for user tokens.
+func TestFindTokenByIdWithUser(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	// Create user
+	user := &User{
+		Model:   Model{ID: 2000},
+		Subject: "user-subject",
+		Login:   "testuser",
+	}
+	cache.UserSaved(user)
+
+	// Create user token
+	userID := uint(2000)
+	userToken := &Token{
+		Token: model.Token{
+			Model:      Model{ID: 2001},
+			UserID:     &userID,
+			Digest:     secret.Hash("user-token-2001"),
+			Expiration: time.Now().Add(24 * time.Hour),
+		},
+		Secret: "user-token-2001",
+	}
+	cache.TokenSaved(userToken)
+
+	// Find token by ID - should have user subject populated
+	foundToken, err := cache.FindTokenById(2001)
+	g.Expect(err).To(BeNil())
+	g.Expect(foundToken).NotTo(BeNil())
+	g.Expect(foundToken.Subject).To(Equal("user-subject"))
+	g.Expect(foundToken.Scopes).NotTo(BeNil())
+}
+
+// TestFindTokenWithScopes tests that FindToken returns tokens with scopes populated.
+func TestFindTokenWithScopes(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	// Create a task token
+	taskID := uint(3000)
+	taskToken := &Token{
+		Token: model.Token{
+			Model:      Model{ID: 3000},
+			TaskID:     &taskID,
+			Digest:     secret.Hash("task-token-3000"),
+			Expiration: time.Now().Add(24 * time.Hour),
+		},
+		Secret: "task-token-3000",
+	}
+	cache.TokenSaved(taskToken)
+
+	// Find token by secret - should have scopes
+	foundToken, err := cache.FindToken("task-token-3000")
+	g.Expect(err).To(BeNil())
+	g.Expect(foundToken).NotTo(BeNil())
+	g.Expect(foundToken.Scopes).NotTo(BeEmpty())
+	g.Expect(foundToken.Scopes).To(ContainElement("addons:get"))
+	g.Expect(foundToken.Subject).To(Equal(Task{ID: taskID}.Subject()))
+}
+
+// TestFindTokenWithIdentity tests FindToken with IdP identity token.
+func TestFindTokenWithIdentity(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	// Create identity
+	identity := &Identity{
+		Model:   Model{ID: 4000},
+		Issuer:  "https://idp.example.com",
+		Subject: "identity-subject-4000",
+		Login:   "identityuser",
+		Scopes:  "applications:get applications:post",
+	}
+	cache.IdentitySaved(identity)
+
+	// Create identity token
+	identityID := uint(4000)
+	identityToken := &Token{
+		Token: model.Token{
+			Model:         Model{ID: 4001},
+			IdpIdentityID: &identityID,
+			Digest:        secret.Hash("identity-token-4001"),
+			Expiration:    time.Now().Add(24 * time.Hour),
+		},
+		Secret: "identity-token-4001",
+	}
+	cache.TokenSaved(identityToken)
+
+	// Find token - should have identity scopes
+	foundToken, err := cache.FindToken("identity-token-4001")
+	g.Expect(err).To(BeNil())
+	g.Expect(foundToken).NotTo(BeNil())
+	g.Expect(foundToken.Subject).To(Equal("identity-subject-4000"))
+	g.Expect(foundToken.Scopes).To(ContainElement("applications:get"))
+	g.Expect(foundToken.Scopes).To(ContainElement("applications:post"))
+}
+
+// TestFindTokenWithClient tests FindToken with IdP client token.
+func TestFindTokenWithClient(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	// Create client
+	client := &IdpClient{
+		Model:    Model{ID: 5000},
+		Subject:  "client-subject-5000",
+		ClientId: "client-5000",
+		Scopes:   []string{"applications:get", "applications:post"},
+	}
+	cache.ClientSaved(client)
+
+	// Create client token
+	clientID := uint(5000)
+	clientToken := &Token{
+		Token: model.Token{
+			Model:       Model{ID: 5001},
+			IdpClientID: &clientID,
+			Digest:      secret.Hash("client-token-5001"),
+			Expiration:  time.Now().Add(24 * time.Hour),
+		},
+		Secret: "client-token-5001",
+	}
+	cache.TokenSaved(clientToken)
+
+	// Find token - should have client scopes
+	foundToken, err := cache.FindToken("client-token-5001")
+	g.Expect(err).To(BeNil())
+	g.Expect(foundToken).NotTo(BeNil())
+	g.Expect(foundToken.Subject).To(Equal("client-subject-5000"))
+	g.Expect(foundToken.Scopes).To(ContainElement("applications:get"))
+	g.Expect(foundToken.Scopes).To(ContainElement("applications:post"))
+}
+
 // TestCacheConcurrentMixedOperations tests mixed concurrent operations.
 func TestCacheConcurrentMixedOperations(t *testing.T) {
 	g := NewGomegaWithT(t)
