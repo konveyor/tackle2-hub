@@ -68,6 +68,13 @@ type Task struct {
 	ID uint
 }
 
+// Login returns the (simulated) login.
+func (m Task) Login() (s string) {
+	id := strconv.Itoa(int(m.ID))
+	s = "task." + id
+	return
+}
+
 // Subject returns the task (encoded) subject.
 func (m Task) Subject() (s string) {
 	id := strconv.Itoa(int(m.ID))

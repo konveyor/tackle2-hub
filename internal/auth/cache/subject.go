@@ -79,7 +79,7 @@ func (r *Subject) Login() (login string) {
 		return
 	}
 	if r.IsTask() {
-		login = r.Task.Subject()
+		login = r.Task.Login()
 	}
 	return
 }
