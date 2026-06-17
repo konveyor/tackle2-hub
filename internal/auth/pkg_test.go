@@ -147,15 +147,15 @@ func TestTaskGrant(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(jwToken).NotTo(BeNil())
 
-	// Verify token claims contain task subject
+	// Verify token claims contain task subject (hex format)
 	claims := jwToken.Claims.(jwt.MapClaims)
 	subject := claims[ClaimSub].(string)
 	expectedSubject := Task{ID: 445}.Subject()
 	g.Expect(subject).To(Equal(expectedSubject))
 
-	// Verify User() returns task subject
+	// Verify User() returns task login (decimal format)
 	user := provider.User(jwToken)
-	g.Expect(user).To(Equal(expectedSubject))
+	g.Expect(user).To(Equal(Task{ID: 445}.Login()))
 
 	// Verify scopes are AddonScopes
 	scopes := provider.Scopes(jwToken)
@@ -197,7 +197,7 @@ func TestTaskSubjectFormat(t *testing.T) {
 	provider, err := NewBuiltin(db)
 	g.Expect(err).To(BeNil())
 
-	// Test task.1
+	// Test task.1 - Subject() returns hex format, User() returns login (decimal)
 	token1, err := provider.TaskGrant(task1)
 	g.Expect(err).To(BeNil())
 	request := newTestRequest()
@@ -207,7 +207,7 @@ func TestTaskSubjectFormat(t *testing.T) {
 	claims := jwToken1.Claims.(jwt.MapClaims)
 	expectedSubject1 := Task{ID: 1}.Subject()
 	g.Expect(claims[ClaimSub]).To(Equal(expectedSubject1))
-	g.Expect(provider.User(jwToken1)).To(Equal(expectedSubject1))
+	g.Expect(provider.User(jwToken1)).To(Equal(Task{ID: 1}.Login()))
 
 	// Test task.999
 	token2, err := provider.TaskGrant(task2)
@@ -219,7 +219,7 @@ func TestTaskSubjectFormat(t *testing.T) {
 	claims = jwToken2.Claims.(jwt.MapClaims)
 	expectedSubject2 := Task{ID: 999}.Subject()
 	g.Expect(claims[ClaimSub]).To(Equal(expectedSubject2))
-	g.Expect(provider.User(jwToken2)).To(Equal(expectedSubject2))
+	g.Expect(provider.User(jwToken2)).To(Equal(Task{ID: 999}.Login()))
 
 	// Test task.12345
 	token3, err := provider.TaskGrant(task3)
@@ -231,7 +231,7 @@ func TestTaskSubjectFormat(t *testing.T) {
 	claims = jwToken3.Claims.(jwt.MapClaims)
 	expectedSubject3 := Task{ID: 12345}.Subject()
 	g.Expect(claims[ClaimSub]).To(Equal(expectedSubject3))
-	g.Expect(provider.User(jwToken3)).To(Equal(expectedSubject3))
+	g.Expect(provider.User(jwToken3)).To(Equal(Task{ID: 12345}.Login()))
 }
 
 // TestTaskSubjectParsing tests that task subjects are parsed on-demand.
@@ -261,7 +261,7 @@ func TestTaskSubjectParsing(t *testing.T) {
 	g.Expect(subject.IsTask()).To(BeTrue())
 	g.Expect(subject.Task).NotTo(BeNil())
 	g.Expect(subject.Task.ID).To(Equal(uint(100)))
-	g.Expect(subject.Login()).To(Equal(expectedSubject))
+	g.Expect(subject.Login()).To(Equal(task.Login()))
 
 	// Verify authentication works
 	request := newTestRequest()
@@ -392,7 +392,7 @@ func TestMultipleTasksWithTokens(t *testing.T) {
 		subject, err := provider.cache.FindSubject(expectedSubject)
 		g.Expect(err).To(BeNil())
 		g.Expect(subject.IsTask()).To(BeTrue())
-		g.Expect(subject.Login()).To(Equal(expectedSubject))
+		g.Expect(subject.Login()).To(Equal(task.Login()))
 
 		// Check authentication
 		request := newTestRequest()
@@ -401,7 +401,7 @@ func TestMultipleTasksWithTokens(t *testing.T) {
 		g.Expect(err).To(BeNil())
 		claims := jwToken.Claims.(jwt.MapClaims)
 		g.Expect(claims[ClaimSub]).To(Equal(expectedSubject))
-		g.Expect(provider.User(jwToken)).To(Equal(expectedSubject))
+		g.Expect(provider.User(jwToken)).To(Equal(task.Login()))
 	}
 
 	// Revoke one task - others still work

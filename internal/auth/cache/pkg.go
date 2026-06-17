@@ -69,32 +69,32 @@ type Task struct {
 }
 
 // Login returns the (simulated) login.
+// Format: task.{id}
 func (m Task) Login() (s string) {
-	id := strconv.Itoa(int(m.ID))
+	id := strconv.FormatUint(uint64(m.ID), 10)
 	s = "task." + id
 	return
 }
 
 // Subject returns the task (encoded) subject.
+// Format: task.0x{id}.
 func (m Task) Subject() (s string) {
-	id := strconv.Itoa(int(m.ID))
-	s = "task." + id
+	id := strconv.FormatUint(uint64(m.ID), 16)
+	s = "task.0x" + id
 	return
 }
 
 // With populates the task.
 // matched indicates the encoded subject is a task.
 func (m *Task) With(subject string) (matched bool) {
-	part := strings.Split(subject, ".")
-	if len(part) != 2 {
+	if !strings.HasPrefix(subject, "task.0x") {
 		return
 	}
-	if part[0] == "task" {
-		id, err := strconv.Atoi(part[1])
-		if err == nil {
-			m.ID = uint(id)
-			matched = true
-		}
+	id := subject[7:]
+	uintId, err := strconv.ParseUint(id, 16, 64)
+	if err == nil {
+		m.ID = uint(uintId)
+		matched = true
 	}
 	return
 }

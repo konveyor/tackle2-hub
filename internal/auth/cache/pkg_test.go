@@ -381,11 +381,32 @@ func TestTaskSubjectParsing(t *testing.T) {
 	g.Expect(subject.Task).NotTo(BeNil())
 	g.Expect(subject.Task.ID).To(Equal(uint(800)))
 	g.Expect(subject.Key).To(Equal(expectedSubject))
-	g.Expect(subject.Login()).To(Equal(expectedSubject))
+	g.Expect(subject.Login()).To(Equal(task.Login()))
 }
 
-// TestTaskSubject tests Task.Subject() method.
+// TestTaskSubject tests Task.Subject() method returns hex format.
 func TestTaskSubject(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	tests := []struct {
+		taskID   uint
+		expected string
+	}{
+		{1, "task.0x1"},
+		{42, "task.0x2a"},
+		{999, "task.0x3e7"},
+		{12345, "task.0x3039"},
+		{445, "task.0x1bd"},
+	}
+
+	for _, tt := range tests {
+		task := &Task{ID: tt.taskID}
+		g.Expect(task.Subject()).To(Equal(tt.expected))
+	}
+}
+
+// TestTaskLogin tests Task.Login() method returns decimal format.
+func TestTaskLogin(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	tests := []struct {
@@ -396,11 +417,46 @@ func TestTaskSubject(t *testing.T) {
 		{42, "task.42"},
 		{999, "task.999"},
 		{12345, "task.12345"},
+		{445, "task.445"},
 	}
 
 	for _, tt := range tests {
 		task := &Task{ID: tt.taskID}
-		g.Expect(task.Subject()).To(Equal(tt.expected))
+		g.Expect(task.Login()).To(Equal(tt.expected))
+	}
+}
+
+// TestTaskWith tests Task.With() parser for hex format.
+func TestTaskWith(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	tests := []struct {
+		subject     string
+		shouldMatch bool
+		expectedID  uint
+	}{
+		{"task.0x1", true, 1},
+		{"task.0x2a", true, 42},
+		{"task.0x3e7", true, 999},
+		{"task.0x3039", true, 12345},
+		{"task.0x1bd", true, 445},
+		{"task.0xff", true, 255},
+		{"task.0xFFFF", true, 65535},
+		{"task.123", false, 0},   // decimal format should not match
+		{"task.0x", false, 0},    // invalid hex
+		{"task.0xGHI", false, 0}, // invalid hex chars
+		{"user.0x1", false, 0},   // wrong prefix
+		{"task.1", false, 0},     // missing 0x
+		{"", false, 0},           // empty string
+	}
+
+	for _, tt := range tests {
+		task := &Task{}
+		matched := task.With(tt.subject)
+		g.Expect(matched).To(Equal(tt.shouldMatch), "subject: %s", tt.subject)
+		if tt.shouldMatch {
+			g.Expect(task.ID).To(Equal(tt.expectedID), "subject: %s", tt.subject)
+		}
 	}
 }
 
@@ -474,10 +530,10 @@ func TestSubjectIsTask(t *testing.T) {
 func TestSubjectLogin(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	// Task login
+	// Task login (decimal format)
 	task := &Task{ID: 445}
 	taskSubject := &Subject{Task: task}
-	g.Expect(taskSubject.Login()).To(Equal(task.Subject()))
+	g.Expect(taskSubject.Login()).To(Equal("task.445"))
 
 	// User login
 	userID := uint(1)
@@ -519,7 +575,7 @@ func TestCacheFindSubjectTask(t *testing.T) {
 	g.Expect(subject.IsTask()).To(BeTrue())
 	g.Expect(subject.Task.ID).To(Equal(uint(999)))
 	g.Expect(subject.Key).To(Equal(expectedSubject))
-	g.Expect(subject.Login()).To(Equal(expectedSubject))
+	g.Expect(subject.Login()).To(Equal(task.Login()))
 
 	// Verify scopes
 	g.Expect(subject.Scopes).NotTo(BeEmpty())
@@ -592,7 +648,7 @@ func TestTaskSubjectParsingBehavior(t *testing.T) {
 	subject, err := cache.FindSubject(expectedSubject)
 	g.Expect(err).To(BeNil())
 	g.Expect(subject.IsTask()).To(BeTrue())
-	g.Expect(subject.Login()).To(Equal(expectedSubject))
+	g.Expect(subject.Login()).To(Equal(task.Login()))
 
 	// TaskRevoked doesn't affect parsing
 	cache.TaskRevoked(2222)
@@ -629,7 +685,7 @@ func TestMultipleTaskSubjectsParseable(t *testing.T) {
 		subject, err := cache.FindSubject(expectedSubject)
 		g.Expect(err).To(BeNil())
 		g.Expect(subject.IsTask()).To(BeTrue())
-		g.Expect(subject.Login()).To(Equal(expectedSubject))
+		g.Expect(subject.Login()).To(Equal(task.Login()))
 	}
 
 	// TaskRevoked only removes tokens
@@ -778,7 +834,7 @@ func TestCacheMixedSubjectTypes(t *testing.T) {
 	taskSubj, err := cache.FindSubject(taskSubject)
 	g.Expect(err).To(BeNil())
 	g.Expect(taskSubj.IsTask()).To(BeTrue())
-	g.Expect(taskSubj.Login()).To(Equal(taskSubject))
+	g.Expect(taskSubj.Login()).To(Equal(task.Login()))
 }
 
 // TestCacheConcurrentMixedOperations tests mixed concurrent operations.
