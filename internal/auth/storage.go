@@ -839,16 +839,16 @@ func (r *Login) authUser() (err error) {
 	cache := r.storage.cache
 	user, err := cache.FindUserByLogin(r.login)
 	if err == nil {
-		var scopes []string
-		scopes, err = cache.FindUserScopes(user.ID)
-		if err == nil {
-			return
-		}
 		if !secret.MatchPassword(r.password, user.Password) {
 			err = &NotAuthenticated{
 				Reason: "invalid password",
 				Token:  r.login,
 			}
+			return
+		}
+		var scopes []string
+		scopes, err = cache.FindUserScopes(user.ID)
+		if err != nil {
 			return
 		}
 		subject := &Subject{}
