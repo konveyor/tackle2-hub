@@ -291,6 +291,7 @@ func (r *Cache) FindUserByLogin(login string) (m *User, err error) {
 	return
 }
 
+// FindUserScopes returns the user scopes.
 func (r *Cache) FindUserScopes(id uint) (scopes []string, err error) {
 	defer r.ensureRefreshed()
 	d := r.data.Load()
