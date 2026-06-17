@@ -615,6 +615,7 @@ func (d *Data) addUserScopes(m *User) {
 				Id:       strconv.Itoa(int(r.ID)),
 			}
 			Log.Info(err.Error())
+			continue
 		}
 		for _, p := range r.Permissions {
 			scopes = append(scopes, p.Scope)
