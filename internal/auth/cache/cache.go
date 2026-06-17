@@ -165,11 +165,27 @@ func (r *Cache) GrantDeleted(id uint) {
 	})
 }
 
+// FindTokenById returns a PAT.
+func (r *Cache) FindTokenById(id uint) (m *Token, err error) {
+	defer r.ensureRefreshed()
+	d := r.data.Load()
+	m, found := d.tokenById[id]
+	if !found {
+		err = &NotFound{
+			Resource: "token",
+			Id:       strconv.Itoa(int(id)),
+		}
+		return
+	}
+	m, err = r.addScopes(m)
+	return
+}
+
 // FindToken returns a PAT.
 func (r *Cache) FindToken(token string) (m *Token, err error) {
 	defer r.ensureRefreshed()
 	d := r.data.Load()
-	cached, found := d.tokenByDigest[secret.Hash(token)]
+	m, found := d.tokenByDigest[secret.Hash(token)]
 	if !found {
 		err = &NotFound{
 			Resource: "token",
@@ -177,56 +193,7 @@ func (r *Cache) FindToken(token string) (m *Token, err error) {
 		}
 		return
 	}
-	// Create a copy to avoid modifying cached instance
-	m = &Token{Token: cached.Token}
-	// user binding.
-	if m.UserID != nil {
-		user, found := d.userById[*m.UserID]
-		if !found {
-			err = &NotFound{
-				Resource: "user",
-				Id:       strconv.Itoa(int(*m.UserID)),
-			}
-			return
-		}
-		m.Subject = user.Subject
-		m.Scopes = user.GetScopes(r)
-		return
-	}
-	// task binding.
-	if m.TaskID != nil {
-		m.Subject = Task{ID: *m.TaskID}.Subject()
-		m.Scopes = AddonScopes
-		return
-	}
-	// IdP identity binding.
-	if m.IdpIdentityID != nil {
-		identity, found := d.identById[*m.IdpIdentityID]
-		if !found {
-			err = &NotFound{
-				Resource: "identity",
-				Id:       strconv.Itoa(int(*m.IdpIdentityID)),
-			}
-			return
-		}
-		m.Subject = identity.Subject
-		m.Scopes = strings.Fields(identity.Scopes)
-		return
-	}
-	// IdP client binding.
-	if m.IdpClientID != nil {
-		client, found := d.clientById[*m.IdpClientID]
-		if !found {
-			err = &NotFound{
-				Resource: "client",
-				Id:       strconv.Itoa(int(*m.IdpClientID)),
-			}
-			return
-		}
-		m.Subject = client.Subject
-		m.Scopes = client.GetScopes()
-		return
-	}
+	m, err = r.addScopes(m)
 	return
 }
 
@@ -365,6 +332,66 @@ func (r *Cache) ensureRefreshed() {
 			}
 		}()
 	})
+}
+
+// addScopes returns a new (copied) token with scopes added as needed.
+// Tokens already having scopes are not altered.
+func (r *Cache) addScopes(in *Token) (m *Token, err error) {
+	m = &Token{Token: in.Token}
+	if len(in.Scopes) > 0 {
+		m.Scopes = in.Scopes
+		return
+	}
+	d := r.data.Load()
+	// user binding.
+	if m.UserID != nil {
+		user, found := d.userById[*m.UserID]
+		if !found {
+			err = &NotFound{
+				Resource: "user",
+				Id:       strconv.Itoa(int(*m.UserID)),
+			}
+			return
+		}
+		m.Subject = user.Subject
+		m.Scopes = user.GetScopes(r)
+		return
+	}
+	// task binding.
+	if m.TaskID != nil {
+		m.Subject = Task{ID: *m.TaskID}.Subject()
+		m.Scopes = AddonScopes
+		return
+	}
+	// IdP identity binding.
+	if m.IdpIdentityID != nil {
+		identity, found := d.identById[*m.IdpIdentityID]
+		if !found {
+			err = &NotFound{
+				Resource: "identity",
+				Id:       strconv.Itoa(int(*m.IdpIdentityID)),
+			}
+			return
+		}
+		m.Subject = identity.Subject
+		m.Scopes = strings.Fields(identity.Scopes)
+		return
+	}
+	// IdP client binding.
+	if m.IdpClientID != nil {
+		client, found := d.clientById[*m.IdpClientID]
+		if !found {
+			err = &NotFound{
+				Resource: "client",
+				Id:       strconv.Itoa(int(*m.IdpClientID)),
+			}
+			return
+		}
+		m.Subject = client.Subject
+		m.Scopes = client.GetScopes()
+		return
+	}
+	return
 }
 
 // Data contains cached maps.
