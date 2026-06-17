@@ -291,6 +291,19 @@ func (r *Cache) FindUserByLogin(login string) (m *User, err error) {
 	return
 }
 
+func (r *Cache) FindUserScopes(id uint) (scopes []string, err error) {
+	defer r.ensureRefreshed()
+	d := r.data.Load()
+	scopes, found := d.userScopes[id]
+	if !found {
+		err = &NotFound{
+			Resource: "user",
+			Id:       strconv.Itoa(int(id)),
+		}
+	}
+	return
+}
+
 // Begin returns a cache transaction.
 // The transaction holds a changelog of cache operations.
 // Changes are applied atomically on Commit().
@@ -344,6 +357,7 @@ type Data struct {
 	userById        map[uint]*User
 	userBySubject   map[string]*User
 	userByLogin     map[string]*User
+	userScopes      map[uint][]string
 	identById       map[uint]*Identity
 	identBySubject  map[string]*Identity
 	identByLogin    map[string]*Identity
@@ -361,6 +375,7 @@ func (d *Data) reset() {
 	d.userById = make(map[uint]*User)
 	d.userBySubject = make(map[string]*User)
 	d.userByLogin = make(map[string]*User)
+	d.userScopes = make(map[uint][]string)
 	d.identById = make(map[uint]*Identity)
 	d.identBySubject = make(map[string]*Identity)
 	d.identByLogin = make(map[string]*Identity)
@@ -383,6 +398,7 @@ func (d *Data) clone() *Data {
 		userById:        cloneMap(d.userById),
 		userBySubject:   cloneMap(d.userBySubject),
 		userByLogin:     cloneMap(d.userByLogin),
+		userScopes:      cloneMap(d.userScopes),
 		identById:       cloneMap(d.identById),
 		identBySubject:  cloneMap(d.identBySubject),
 		identByLogin:    cloneMap(d.identByLogin),
@@ -420,7 +436,11 @@ func (d *Data) refresh(db *gorm.DB) (err error) {
 	if err != nil {
 		return
 	}
+
+	d.updateScopes()
+
 	d.refreshed = time.Now()
+
 	return
 }
 
@@ -519,15 +539,14 @@ func (d *Data) getTokens(db *gorm.DB) (err error) {
 		return
 	}
 	for _, m := range list {
-		d.assignScopes(m)
 		d.tokenById[m.ID] = m
 		d.tokenByDigest[m.Digest] = m
 	}
 	return
 }
 
-// assignScopes determines scopes for PAT and assigns them.
-func (d *Data) assignScopes(m *Token) {
+// addTokenScopes
+func (d *Data) addTokenScopes(m *Token) {
 	if m.Kind != KindAPIKey {
 		return
 	}
@@ -537,37 +556,21 @@ func (d *Data) assignScopes(m *Token) {
 			Log.Info(err.Error())
 		}
 	}()
-	m.Scopes = []string{}
 	// user binding.
 	if m.UserID != nil {
-		user, found := d.userById[*m.UserID]
+		scopes, found := d.userScopes[*m.UserID]
 		if !found {
 			err = &NotFound{
-				Resource: "user",
+				Resource: "user.scopes",
 				Id:       strconv.Itoa(int(*m.UserID)),
 			}
 			return
 		}
-		m.Subject = user.Subject
-		for _, r := range user.Roles {
-			var role *Role
-			role, found = d.roleById[r.ID]
-			if !found {
-				continue
-			}
-			for _, scope := range role.GetScopes() {
-				m.Scopes = append(
-					m.Scopes,
-					scope)
-			}
-		}
-		m.Scopes = uniqueStrings(m.Scopes)
-		sort.Strings(m.Scopes)
+		m.Scopes = scopes
 		return
 	}
 	// task binding.
 	if m.TaskID != nil {
-		m.Subject = Task{ID: *m.TaskID}.Subject()
 		m.Scopes = AddonScopes
 		return
 	}
@@ -581,7 +584,6 @@ func (d *Data) assignScopes(m *Token) {
 			}
 			return
 		}
-		m.Subject = identity.Subject
 		m.Scopes = strings.Fields(identity.Scopes)
 		return
 	}
@@ -595,11 +597,42 @@ func (d *Data) assignScopes(m *Token) {
 			}
 			return
 		}
-		m.Subject = client.Subject
 		m.Scopes = client.GetScopes()
 		return
 	}
 	return
+}
+
+// addUserScopes
+func (d *Data) addUserScopes(m *User) {
+	scopes := []string{}
+	for _, r := range m.Roles {
+		r, found := d.roleById[r.ID]
+		if !found {
+			err := &NotFound{
+				Resource: "role",
+				Id:       strconv.Itoa(int(r.ID)),
+			}
+			Log.Info(err.Error())
+		}
+		for _, p := range r.Permissions {
+			scopes = append(scopes, p.Scope)
+		}
+	}
+	scopes = uniqueStrings(scopes)
+	sort.Strings(scopes)
+	d.userScopes[m.ID] = scopes
+}
+
+// updateScopes
+func (d *Data) updateScopes() {
+	d.userScopes = make(map[uint][]string)
+	for _, m := range d.userById {
+		d.addUserScopes(m)
+	}
+	for _, m := range d.tokenById {
+		d.addTokenScopes(m)
+	}
 }
 
 // cloneMap returns a shallow clone.

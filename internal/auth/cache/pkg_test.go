@@ -947,11 +947,10 @@ func TestFindTokenByIdWithUser(t *testing.T) {
 	err = cache.Refresh()
 	g.Expect(err).To(BeNil())
 
-	// Find token by ID - should have user subject and scopes
+	// Find token by ID - should have scopes
 	foundToken, err := cache.FindTokenById(2001)
 	g.Expect(err).To(BeNil())
 	g.Expect(foundToken).NotTo(BeNil())
-	g.Expect(foundToken.Subject).To(Equal("user-subject"))
 	g.Expect(foundToken.Scopes).NotTo(BeEmpty())
 	g.Expect(foundToken.Scopes).To(ContainElement("applications:get"))
 }
@@ -996,7 +995,6 @@ func TestFindTokenWithScopes(t *testing.T) {
 	g.Expect(foundToken).NotTo(BeNil())
 	g.Expect(foundToken.Scopes).NotTo(BeEmpty())
 	g.Expect(foundToken.Scopes).To(ContainElement("addons:get"))
-	g.Expect(foundToken.Subject).To(Equal(Task{ID: taskID}.Subject()))
 }
 
 // TestFindTokenWithIdentity tests FindToken with IdP identity token.
@@ -1041,7 +1039,6 @@ func TestFindTokenWithIdentity(t *testing.T) {
 	foundToken, err := cache.FindToken("identity-token-4001")
 	g.Expect(err).To(BeNil())
 	g.Expect(foundToken).NotTo(BeNil())
-	g.Expect(foundToken.Subject).To(Equal("identity-subject-4000"))
 	g.Expect(foundToken.Scopes).To(ContainElement("applications:get"))
 	g.Expect(foundToken.Scopes).To(ContainElement("applications:post"))
 }
@@ -1087,7 +1084,6 @@ func TestFindTokenWithClient(t *testing.T) {
 	foundToken, err := cache.FindToken("client-token-5001")
 	g.Expect(err).To(BeNil())
 	g.Expect(foundToken).NotTo(BeNil())
-	g.Expect(foundToken.Subject).To(Equal("client-subject-5000"))
 	g.Expect(foundToken.Scopes).To(ContainElement("applications:get"))
 	g.Expect(foundToken.Scopes).To(ContainElement("applications:post"))
 }

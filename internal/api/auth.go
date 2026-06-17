@@ -521,7 +521,7 @@ func (h AuthHandler) UserCreate(ctx *gin.Context) {
 		return
 	}
 
-	auth.IdP.Cache().UserSaved((*auth.User)(m))
+	auth.IdP.Cache().UserSaved(m)
 
 	r.With(m)
 
@@ -596,7 +596,7 @@ func (h AuthHandler) UserUpdate(ctx *gin.Context) {
 		return
 	}
 
-	auth.IdP.Cache().UserSaved((*auth.User)(updated))
+	auth.IdP.Cache().UserSaved(updated)
 
 	h.Status(ctx, http.StatusNoContent)
 }

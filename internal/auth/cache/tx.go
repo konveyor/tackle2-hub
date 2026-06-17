@@ -165,9 +165,7 @@ func (r *Tx) GrantDeleted(id uint) {
 
 // changed notification that Data has changed.
 func (r *Tx) changed(d *Data) {
-	for _, m := range d.tokenById {
-		d.assignScopes(m)
-	}
+	d.updateScopes()
 }
 
 // Commit applies all changelog operations atomically.

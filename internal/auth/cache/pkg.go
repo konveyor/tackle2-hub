@@ -29,36 +29,10 @@ const (
 type Model = model.Model
 
 // User alias.
-type User model.User
-
-// GetScopes returns the user's scopes.
-func (m *User) GetScopes(cache *Cache) (scopes []string) {
-	for _, r := range m.Roles {
-		role, nErr := cache.FindRoleById(r.ID)
-		if nErr != nil {
-			continue
-		}
-		for _, scope := range role.GetScopes() {
-			scopes = append(scopes, scope)
-		}
-	}
-	scopes = uniqueStrings(scopes)
-	sort.Strings(scopes)
-	return
-}
+type User = model.User
 
 // Role alias.
-type Role model.Role
-
-// GetScopes returns the roles scopes.
-func (m *Role) GetScopes() (scopes []string) {
-	for _, p := range m.Permissions {
-		scopes = append(scopes, p.Scope)
-	}
-	scopes = uniqueStrings(scopes)
-	sort.Strings(scopes)
-	return
-}
+type Role = model.Role
 
 // Permission alias.
 type Permission = model.Permission

@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"sort"
 	"strings"
 )
 
@@ -26,15 +25,7 @@ func (r *Subject) WithUser(user *User, cache *Cache) {
 	r.Key = user.Subject
 	r.User = user
 	r.Email = user.Email
-	for _, ref := range user.Roles {
-		role, err := cache.FindRoleById(ref.ID)
-		if err != nil {
-			continue
-		}
-		r.Scopes = append(r.Scopes, role.GetScopes()...)
-	}
-	r.Scopes = uniqueStrings(r.Scopes)
-	sort.Strings(r.Scopes)
+	r.Scopes, _ = cache.FindUserScopes(user.ID)
 }
 
 // WithIdentity populates Subject from an IdpIdentity model.
@@ -43,7 +34,6 @@ func (r *Subject) WithIdentity(idp *Identity) {
 	r.Identity = idp
 	r.Key = idp.Subject
 	r.Email = idp.Email
-
 	if idp.Scopes != "" {
 		r.Scopes = strings.Fields(idp.Scopes)
 	}
