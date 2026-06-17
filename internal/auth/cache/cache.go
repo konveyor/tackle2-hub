@@ -206,7 +206,12 @@ func (r *Cache) FindSubject(subject string) (s *Subject, err error) {
 	user, found := d.userBySubject[subject]
 	if found {
 		s = &Subject{}
-		s.WithUser(user, r)
+		var scopes []string
+		scopes, err = r.FindUserScopes(user.ID)
+		if err != nil {
+			return
+		}
+		s.WithUser(user, scopes)
 		return
 	}
 	identity, found := d.identBySubject[subject]
@@ -218,7 +223,7 @@ func (r *Cache) FindSubject(subject string) (s *Subject, err error) {
 	client, found := d.clientBySubject[subject]
 	if found {
 		s = &Subject{}
-		s.WithClient(client, r)
+		s.WithClient(client)
 		return
 	}
 	task := &Task{}

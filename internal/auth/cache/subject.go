@@ -20,12 +20,12 @@ type Subject struct {
 }
 
 // WithUser populates Subject from a User model.
-func (r *Subject) WithUser(user *User, cache *Cache) {
+func (r *Subject) WithUser(user *User, scopes []string) {
 	r.UserId = &user.ID
 	r.Key = user.Subject
 	r.User = user
 	r.Email = user.Email
-	r.Scopes, _ = cache.FindUserScopes(user.ID)
+	r.Scopes = scopes
 }
 
 // WithIdentity populates Subject from an IdpIdentity model.
@@ -40,7 +40,7 @@ func (r *Subject) WithIdentity(idp *Identity) {
 }
 
 // WithClient populates Subject from an IdpClient model.
-func (r *Subject) WithClient(client *IdpClient, cache *Cache) {
+func (r *Subject) WithClient(client *IdpClient) {
 	r.ClientId = &client.ID
 	r.Client = client
 	r.Key = client.Subject
