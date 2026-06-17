@@ -1124,6 +1124,18 @@ func (h AuthHandler) GetSelf(ctx *gin.Context) {
 			m := model.IdpClient(*subject.Client)
 			r.Client.With(&m)
 		}
+		if subject.IsTask() {
+			id := subject.Task.ID
+			db := h.DB(ctx)
+			m := &model.Task{}
+			err = db.First(m, id).Error
+			if err != nil {
+				_ = ctx.Error(err)
+				return
+			}
+			r.Task = &Task{}
+			r.Task.With(m)
+		}
 
 		r.Scopes = subject.Scopes
 	} else {
@@ -1199,6 +1211,7 @@ type AuthSelf struct {
 	User     *User        `json:"user,omitempty" yaml:",omitempty"`
 	Identity *IdpIdentity `json:"identity,omitempty" yaml:",omitempty"`
 	Client   *IdpClient   `json:"client,omitempty" yaml:",omitempty"`
+	Task     *Task        `json:"task,omitempty" yaml:",omitempty"`
 	Scopes   []string     `json:"scopes"`
 }
 
