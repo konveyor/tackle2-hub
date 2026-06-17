@@ -545,7 +545,7 @@ func (d *Data) getTokens(db *gorm.DB) (err error) {
 	return
 }
 
-// addTokenScopes
+// addTokenScopes determine token scopes and update the map.
 func (d *Data) addTokenScopes(m *Token) {
 	if m.Kind != KindAPIKey {
 		return
@@ -603,7 +603,7 @@ func (d *Data) addTokenScopes(m *Token) {
 	return
 }
 
-// addUserScopes
+// addUserScopes determine user scopes and add to the map.
 func (d *Data) addUserScopes(m *User) {
 	scopes := []string{}
 	for _, r := range m.Roles {
