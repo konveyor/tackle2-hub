@@ -4,7 +4,6 @@ import (
 	"crypto/rsa"
 	"errors"
 	"net/http"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -551,19 +550,14 @@ func (p *Builtin) authUser(req *Request) (jwToken *jwt.Token, err error) {
 		}
 		return
 	}
-	scopes := make([]string, 0)
-	for _, ref := range user.Roles {
-		role, nErr := p.cache.FindRoleById(ref.ID)
-		if nErr != nil {
-			// not found.
-			continue
+	scopes, err := p.cache.FindUserScopes(user.ID)
+	if err != nil {
+		err = &NotAuthenticated{
+			Reason: "scopes not found",
+			Token:  login,
 		}
-		for _, scope := range role.GetScopes() {
-			scopes = append(scopes, scope)
-		}
+		return
 	}
-	scopes = uniqueStrings(scopes)
-	sort.Strings(scopes)
 	jwToken = jwt.New(jwt.SigningMethodRS256)
 	jwtClaims := jwToken.Claims.(jwt.MapClaims)
 	jwtClaims[ClaimId] = user.Login

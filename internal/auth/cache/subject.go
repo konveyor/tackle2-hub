@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"sort"
 	"strings"
 )
 
@@ -21,20 +20,12 @@ type Subject struct {
 }
 
 // WithUser populates Subject from a User model.
-func (r *Subject) WithUser(user *User, cache *Cache) {
+func (r *Subject) WithUser(user *User, scopes []string) {
 	r.UserId = &user.ID
 	r.Key = user.Subject
 	r.User = user
 	r.Email = user.Email
-	for _, ref := range user.Roles {
-		role, err := cache.FindRoleById(ref.ID)
-		if err != nil {
-			continue
-		}
-		r.Scopes = append(r.Scopes, role.GetScopes()...)
-	}
-	r.Scopes = uniqueStrings(r.Scopes)
-	sort.Strings(r.Scopes)
+	r.Scopes = scopes
 }
 
 // WithIdentity populates Subject from an IdpIdentity model.
@@ -43,14 +34,13 @@ func (r *Subject) WithIdentity(idp *Identity) {
 	r.Identity = idp
 	r.Key = idp.Subject
 	r.Email = idp.Email
-
 	if idp.Scopes != "" {
 		r.Scopes = strings.Fields(idp.Scopes)
 	}
 }
 
 // WithClient populates Subject from an IdpClient model.
-func (r *Subject) WithClient(client *IdpClient, cache *Cache) {
+func (r *Subject) WithClient(client *IdpClient) {
 	r.ClientId = &client.ID
 	r.Client = client
 	r.Key = client.Subject

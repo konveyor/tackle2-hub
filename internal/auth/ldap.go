@@ -65,7 +65,9 @@ func (h *LdapHandler) buildIdentity(ldapUser *LdapUser, password string, lifespa
 		if err != nil {
 			continue
 		}
-		scopes = append(scopes, role.GetScopes()...)
+		for _, p := range role.Permissions {
+			scopes = append(scopes, p.Scope)
+		}
 	}
 	scopes = uniqueStrings(scopes)
 	sort.Strings(scopes)

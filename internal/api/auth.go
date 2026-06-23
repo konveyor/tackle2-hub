@@ -521,7 +521,7 @@ func (h AuthHandler) UserCreate(ctx *gin.Context) {
 		return
 	}
 
-	auth.IdP.Cache().UserSaved((*auth.User)(m))
+	auth.IdP.Cache().UserSaved(m)
 
 	r.With(m)
 
@@ -596,7 +596,7 @@ func (h AuthHandler) UserUpdate(ctx *gin.Context) {
 		return
 	}
 
-	auth.IdP.Cache().UserSaved((*auth.User)(updated))
+	auth.IdP.Cache().UserSaved(updated)
 
 	h.Status(ctx, http.StatusNoContent)
 }
@@ -1022,6 +1022,12 @@ func (h AuthHandler) TokenGet(ctx *gin.Context) {
 
 	r := Token{}
 	r.With(m)
+	err = h.addScopes(&r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
 	h.Respond(ctx, http.StatusOK, r)
 }
 
@@ -1047,6 +1053,11 @@ func (h AuthHandler) TokenList(ctx *gin.Context) {
 	for i := range list {
 		r := Token{}
 		r.With(&list[i])
+		err = h.addScopes(&r)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
 		resources = append(resources, r)
 	}
 
@@ -1196,6 +1207,19 @@ func (h AuthHandler) OIDC() func(*gin.Context) {
 			strippedHandler.ServeHTTP(ctx.Writer, ctx.Request)
 		}
 	}
+}
+
+// addScopes adds PAT scopes.
+func (h *AuthHandler) addScopes(m *Token) (err error) {
+	if m.Kind != auth.KindAPIKey {
+		return
+	}
+	token, err := auth.IdP.Cache().FindTokenById(m.ID)
+	if err != nil {
+		return
+	}
+	m.Scopes = token.Scopes
+	return
 }
 
 // Auth REST Resources.

@@ -3388,9 +3388,12 @@ func TestCreateAccessToken_UpdatesExistingToken(t *testing.T) {
 	user := &User{Login: "testuser"}
 	err = db.Create(user).Error
 	g.Expect(err).To(BeNil())
+	provider.cache.UserSaved(user)
 
 	subject := &Subject{}
-	subject.WithUser(user, provider.cache)
+	scopes, err := provider.cache.FindUserScopes(user.ID)
+	g.Expect(err).To(BeNil())
+	subject.WithUser(user, scopes)
 
 	grantId := provider.storage.genId()
 	grant := &Grant{
@@ -3474,9 +3477,12 @@ func TestCreateAccessToken_CascadeDeleteOnGrantDeletion(t *testing.T) {
 	user := &User{Login: "testuser"}
 	err = db.Create(user).Error
 	g.Expect(err).To(BeNil())
+	provider.cache.UserSaved(user)
 
 	subject := &Subject{}
-	subject.WithUser(user, provider.cache)
+	scopes, err := provider.cache.FindUserScopes(user.ID)
+	g.Expect(err).To(BeNil())
+	subject.WithUser(user, scopes)
 
 	grantId := provider.storage.genId()
 	grant := &Grant{
@@ -3540,9 +3546,12 @@ func TestAuthRequest_CreatesGrantAndLinksToken(t *testing.T) {
 	user := &User{Login: "testuser"}
 	err = db.Create(user).Error
 	g.Expect(err).To(BeNil())
+	provider.cache.UserSaved(user)
 
 	subject := &Subject{}
-	subject.WithUser(user, provider.cache)
+	scopes, err := provider.cache.FindUserScopes(user.ID)
+	g.Expect(err).To(BeNil())
+	subject.WithUser(user, scopes)
 
 	// Create AuthRequest
 	authReq := &AuthRequest{
@@ -3671,9 +3680,12 @@ func TestCreateAccessAndRefreshTokens_FullFlow(t *testing.T) {
 	user := &User{Login: "testuser"}
 	err = db.Create(user).Error
 	g.Expect(err).To(BeNil())
+	provider.cache.UserSaved(user)
 
 	subject := &Subject{}
-	subject.WithUser(user, provider.cache)
+	scopes, err := provider.cache.FindUserScopes(user.ID)
+	g.Expect(err).To(BeNil())
+	subject.WithUser(user, scopes)
 
 	// Create AuthRequest
 	requestId := provider.storage.genId()

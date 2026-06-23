@@ -163,6 +163,11 @@ func (r *Tx) GrantDeleted(id uint) {
 		})
 }
 
+// changed notification that Data has changed.
+func (r *Tx) changed(d *Data) {
+	d.updateScopes()
+}
+
 // Commit applies all changelog operations atomically.
 func (r *Tx) Commit() {
 	r.cache.txMutex.Lock()
@@ -172,6 +177,7 @@ func (r *Tx) Commit() {
 	for _, fn := range r.changes {
 		fn(clone)
 	}
+	r.changed(clone)
 	r.cache.data.Store(clone)
 	r.changes = nil
 }

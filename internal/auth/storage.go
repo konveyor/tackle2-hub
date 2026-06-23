@@ -836,10 +836,9 @@ func (r *Login) authenticate() (err error) {
 
 // authUser authenticates a user.
 func (r *Login) authUser() (err error) {
-	user, err := r.storage.cache.FindUserByLogin(r.login)
+	cache := r.storage.cache
+	user, err := cache.FindUserByLogin(r.login)
 	if err == nil {
-		subject := &Subject{}
-		subject.WithUser(user, r.storage.cache)
 		if !secret.MatchPassword(r.password, user.Password) {
 			err = &NotAuthenticated{
 				Reason: "invalid password",
@@ -847,6 +846,13 @@ func (r *Login) authUser() (err error) {
 			}
 			return
 		}
+		var scopes []string
+		scopes, err = cache.FindUserScopes(user.ID)
+		if err != nil {
+			return
+		}
+		subject := &Subject{}
+		subject.WithUser(user, scopes)
 		r.subject = subject
 		return
 	}
