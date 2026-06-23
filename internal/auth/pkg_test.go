@@ -3388,9 +3388,10 @@ func TestCreateAccessToken_UpdatesExistingToken(t *testing.T) {
 	user := &User{Login: "testuser"}
 	err = db.Create(user).Error
 	g.Expect(err).To(BeNil())
+	provider.cache.UserSaved(user)
 
 	subject := &Subject{}
-	scopes, _ := provider.cache.FindUserScopes(user.ID)
+	scopes, err := provider.cache.FindUserScopes(user.ID)
 	g.Expect(err).To(BeNil())
 	subject.WithUser(user, scopes)
 
@@ -3476,9 +3477,10 @@ func TestCreateAccessToken_CascadeDeleteOnGrantDeletion(t *testing.T) {
 	user := &User{Login: "testuser"}
 	err = db.Create(user).Error
 	g.Expect(err).To(BeNil())
+	provider.cache.UserSaved(user)
 
 	subject := &Subject{}
-	scopes, _ := provider.cache.FindUserScopes(user.ID)
+	scopes, err := provider.cache.FindUserScopes(user.ID)
 	g.Expect(err).To(BeNil())
 	subject.WithUser(user, scopes)
 
@@ -3544,9 +3546,10 @@ func TestAuthRequest_CreatesGrantAndLinksToken(t *testing.T) {
 	user := &User{Login: "testuser"}
 	err = db.Create(user).Error
 	g.Expect(err).To(BeNil())
+	provider.cache.UserSaved(user)
 
 	subject := &Subject{}
-	scopes, _ := provider.cache.FindUserScopes(user.ID)
+	scopes, err := provider.cache.FindUserScopes(user.ID)
 	g.Expect(err).To(BeNil())
 	subject.WithUser(user, scopes)
 
@@ -3677,9 +3680,10 @@ func TestCreateAccessAndRefreshTokens_FullFlow(t *testing.T) {
 	user := &User{Login: "testuser"}
 	err = db.Create(user).Error
 	g.Expect(err).To(BeNil())
+	provider.cache.UserSaved(user)
 
 	subject := &Subject{}
-	scopes, _ := provider.cache.FindUserScopes(user.ID)
+	scopes, err := provider.cache.FindUserScopes(user.ID)
 	g.Expect(err).To(BeNil())
 	subject.WithUser(user, scopes)
 
