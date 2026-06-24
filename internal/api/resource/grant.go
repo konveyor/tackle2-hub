@@ -17,4 +17,7 @@ func (r *Grant) With(m *model.Grant) {
 	r.Scopes = m.Scopes
 	r.Issued = m.Issued
 	r.Expiration = m.Expiration
+	r.User = refPtr(m.UserID, m.User)
+	r.IdpIdentity = refPtr(m.IdpIdentityID, m.IdpIdentity)
+	r.IdpClient = refPtr(m.IdpClientID, m.IdpClient)
 }

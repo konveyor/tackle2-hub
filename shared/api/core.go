@@ -197,13 +197,16 @@ type Permission struct {
 
 // Grant REST resource.
 type Grant struct {
-	Resource   `yaml:",inline"`
-	Kind       string    `json:"kind"`
-	AuthId     string    `json:"authId"`
-	Subject    string    `json:"subject"`
-	Scopes     string    `json:"scopes"`
-	Issued     time.Time `json:"issued"`
-	Expiration time.Time `json:"expiration"`
+	Resource    `yaml:",inline"`
+	Kind        string    `json:"kind"`
+	AuthId      string    `json:"authId"`
+	Subject     string    `json:"subject"`
+	Scopes      string    `json:"scopes"`
+	Issued      time.Time `json:"issued"`
+	Expiration  time.Time `json:"expiration"`
+	User        *Ref      `json:"user,omitempty" yaml:",omitempty"`
+	IdpIdentity *Ref      `json:"idpIdentity,omitempty" yaml:",omitempty"`
+	IdpClient   *Ref      `json:"idpClient,omitempty" yaml:",omitempty"`
 }
 
 // Token REST resource.

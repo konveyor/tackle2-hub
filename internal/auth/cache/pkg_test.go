@@ -1010,7 +1010,6 @@ func TestFindTokenWithIdentity(t *testing.T) {
 		Issuer:  "https://idp.example.com",
 		Subject: "identity-subject-4000",
 		Login:   "identityuser",
-		Scopes:  "applications:get applications:post",
 	}
 	err = db.Create(identity).Error
 	g.Expect(err).To(BeNil())
@@ -1024,18 +1023,19 @@ func TestFindTokenWithIdentity(t *testing.T) {
 			IdpIdentityID: &identityID,
 			Digest:        secret.Hash("identity-token-4001"),
 			Expiration:    time.Now().Add(24 * time.Hour),
+			Scopes:        []string{"applications:get", "applications:post"},
 		},
 		Secret: "identity-token-4001",
 	}
 	err = db.Create(&identityToken.Token).Error
 	g.Expect(err).To(BeNil())
 
-	// Refresh cache to load token with scopes assigned
+	// Refresh cache to load token with scopes
 	cache := New(db)
 	err = cache.Refresh()
 	g.Expect(err).To(BeNil())
 
-	// Find token - should have identity scopes
+	// Find token - should have scopes
 	foundToken, err := cache.FindToken("identity-token-4001")
 	g.Expect(err).To(BeNil())
 	g.Expect(foundToken).NotTo(BeNil())

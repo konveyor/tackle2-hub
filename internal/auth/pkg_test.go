@@ -103,8 +103,7 @@ func TestUserGrant(t *testing.T) {
 	// Test that expired keys are rejected
 	expiredSecret := "expired-secret-key"
 	expiredKey := &model.Token{
-		UserID:     &user.ID,
-		Expiration: time.Now().Add(-1 * time.Hour), // Expired 1 hour ago
+		UserID: &user.ID,
 	}
 	err = db.Create(expiredKey).Error
 	g.Expect(err).To(BeNil())
@@ -1015,11 +1014,10 @@ func TestTaskRevokeMultipleTokens(t *testing.T) {
 	// Manually create second token for same task (shouldn't normally happen)
 	token2Secret := "second-task-token"
 	token2 := &model.Token{
-		Kind:       KindAPIKey,
-		AuthId:     "second-auth-id",
-		Digest:     secret.Hash(token2Secret),
-		Expiration: time.Now().Add(24 * time.Hour),
-		TaskID:     &task.ID,
+		Kind:   KindAPIKey,
+		AuthId: "second-auth-id",
+		Digest: secret.Hash(token2Secret),
+		TaskID: &task.ID,
 	}
 	err = db.Create(token2).Error
 	g.Expect(err).To(BeNil())
@@ -1281,13 +1279,10 @@ func TestCascadeDeleteIdpIdentity(t *testing.T) {
 
 	// Create IdP identity
 	identity := &Identity{
-		Issuer:       "https://cascade.idp.com",
-		Subject:      "cascade-idp-subject",
-		RefreshToken: "refresh-token",
-		Expiration:   time.Now().Add(24 * time.Hour),
-		Scopes:       "openid profile",
-		Login:        "cascadeidentity",
-		Email:        "cascadeidentity@example.com",
+		Issuer:  "https://cascade.idp.com",
+		Subject: "cascade-idp-subject",
+		Login:   "cascadeidentity",
+		Email:   "cascadeidentity@example.com",
 	}
 	err = secret.Encrypt(identity)
 	g.Expect(err).To(BeNil())
@@ -1850,13 +1845,10 @@ func TestIdpIdentityTokenBinding(t *testing.T) {
 
 	// Create IdP identity
 	identity := &Identity{
-		Issuer:       "https://idp.example.com",
-		Subject:      "idp-user-123",
-		RefreshToken: "refresh-token",
-		Expiration:   time.Now().Add(24 * time.Hour),
-		Scopes:       "openid profile email",
-		Login:        "idpuser",
-		Email:        "idpuser@example.com",
+		Issuer:  "https://idp.example.com",
+		Subject: "idp-user-123",
+		Login:   "idpuser",
+		Email:   "idpuser@example.com",
 	}
 	err = secret.Encrypt(identity)
 	g.Expect(err).To(BeNil())
@@ -2029,7 +2021,6 @@ func TestTokenBindingEdgeCases(t *testing.T) {
 		UserID:        nil,
 		TaskID:        nil,
 		IdpIdentityID: nil,
-		Expiration:    time.Now().Add(24 * time.Hour),
 	}
 	err = db.Create(unboundToken).Error
 	g.Expect(err).To(BeNil())
@@ -2112,13 +2103,9 @@ func TestCacheFindSubject(t *testing.T) {
 
 	// Create test IdP identity
 	identity := &Identity{
-		Issuer:       "https://idp.example.com",
-		Subject:      "idp-subject-456",
-		RefreshToken: "refresh-token",
-		Expiration:   time.Now().Add(24 * time.Hour),
-		Scopes:       "openid profile email",
-		Login:        "idpuser",
-		Email:        "idp@example.com",
+		Issuer:  "https://idp.example.com",
+		Subject: "idp-subject-456",
+		Email:   "idp@example.com",
 	}
 	err = secret.Encrypt(identity)
 	g.Expect(err).To(BeNil())
@@ -2235,9 +2222,7 @@ func TestStorageFindSubject(t *testing.T) {
 		Subject: "storage-identity-subject",
 		Login:   "storageidentity",
 		Email:   "storageidentity@example.com",
-		Scopes:  "openid",
 	}
-	err = secret.Encrypt(identity)
 	g.Expect(err).To(BeNil())
 	err = db.Create(identity).Error
 	g.Expect(err).To(BeNil())
@@ -3396,15 +3381,6 @@ func TestCreateAccessToken_UpdatesExistingToken(t *testing.T) {
 	subject.WithUser(user, scopes)
 
 	grantId := provider.storage.genId()
-	grant := &Grant{
-		Kind:       KindAuthCode,
-		AuthId:     grantId,
-		Subject:    subject.Key,
-		Scopes:     "openid profile",
-		Issued:     time.Now(),
-		Expiration: time.Now().Add(48 * time.Hour),
-	}
-	err = db.Create(grant).Error
 	g.Expect(err).To(BeNil())
 
 	refreshReq := &RefreshRequest{
@@ -3425,7 +3401,6 @@ func TestCreateAccessToken_UpdatesExistingToken(t *testing.T) {
 	g.Expect(tokens1).To(HaveLen(1))
 
 	firstToken := tokens1[0]
-	firstExpiration := firstToken.Expiration
 	firstScopes := firstToken.Scopes
 
 	time.Sleep(100 * time.Millisecond)
@@ -3441,7 +3416,6 @@ func TestCreateAccessToken_UpdatesExistingToken(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(tokens2).To(HaveLen(1))
 
-	g.Expect(tokens2[0].Expiration).To(BeTemporally(">", firstExpiration))
 	g.Expect(expiration2).To(BeTemporally(">", expiration1))
 
 	g.Expect(tokens2[0].Scopes).To(Equal([]string{"openid", "profile", "email"}))
@@ -3486,15 +3460,13 @@ func TestCreateAccessToken_CascadeDeleteOnGrantDeletion(t *testing.T) {
 
 	grantId := provider.storage.genId()
 	grant := &Grant{
-		Kind:       KindAuthCode,
-		AuthId:     grantId,
-		Subject:    subject.Key,
-		Scopes:     "openid profile",
-		Issued:     time.Now(),
-		Expiration: time.Now().Add(48 * time.Hour),
+		Kind:    KindAuthCode,
+		AuthId:  grantId,
+		Subject: subject.Key,
+		Scopes:  "openid profile",
+		Issued:  time.Now(),
 	}
 	err = db.Create(grant).Error
-	g.Expect(err).To(BeNil())
 
 	refreshReq := &RefreshRequest{
 		grantId:  grantId,

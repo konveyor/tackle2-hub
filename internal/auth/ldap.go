@@ -35,19 +35,11 @@ func (h *LdapHandler) Authenticate(login, password string, lifespan time.Duratio
 		}
 		return
 	}
-	identity, err := h.cache.FindIdentityByLogin(login)
-	if err == nil &&
-		identity.Kind == IdentityKindLDAP &&
-		identity.Expiration.After(time.Now()) {
-		subject = &Subject{}
-		subject.WithIdentity(identity)
-		return
-	}
 	ldapUser, err := h.ds.Authenticate(login, password)
 	if err != nil {
 		return
 	}
-	identity = h.buildIdentity(ldapUser, password, lifespan)
+	identity := h.buildIdentity(ldapUser, password, lifespan)
 	err = h.ensureIdentity(identity)
 	if err != nil {
 		return
@@ -77,11 +69,7 @@ func (h *LdapHandler) buildIdentity(ldapUser *LdapUser, password string, lifespa
 		Issuer:            h.ds.URL,
 		Subject:           ldapUser.Subject,
 		Login:             ldapUser.Login,
-		RefreshToken:      password,
-		Expiration:        time.Now().Add(lifespan),
 		LastAuthenticated: time.Now(),
-		LastRefreshed:     time.Now(),
-		Scopes:            strings.Join(scopes, " "),
 	}
 
 	return
@@ -95,21 +83,13 @@ func (h *LdapHandler) ensureIdentity(identity *Identity) (err error) {
 		},
 		DoUpdates: clause.AssignmentColumns([]string{
 			"kind",
-			"refreshToken",
-			"expiration",
 			"lastAuthenticated",
-			"lastRefreshed",
-			"scopes",
 			"login",
 			"name",
 			"email",
 			"updateUser",
 		}),
 	})
-	err = secret.Encrypt(identity)
-	if err != nil {
-		return
-	}
 	err = db.Create(identity).Error
 	if err != nil {
 		err = liberr.Wrap(err)

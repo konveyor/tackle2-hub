@@ -403,7 +403,7 @@ func (r *Storage) TokenRequestByRefreshToken(
 		scopes:   strings.Fields(grant.Scopes),
 		issued:   grant.Issued,
 	}
-	err = r.refreshIdentity(req)
+	err = r.refreshIdentity(req, grant)
 	if err == nil {
 		return
 	}
@@ -1131,7 +1131,7 @@ func (r *Storage) createRefreshToken(ctx context.Context, req op.TokenRequest) (
 }
 
 // refreshIdentity refreshes the Idp identity.
-func (r *Storage) refreshIdentity(req op.RefreshTokenRequest) (err error) {
+func (r *Storage) refreshIdentity(req op.RefreshTokenRequest, grant *Grant) (err error) {
 	subject := req.GetSubject()
 	s, err := r.findSubject(subject)
 	if err != nil {
@@ -1147,24 +1147,51 @@ func (r *Storage) refreshIdentity(req op.RefreshTokenRequest) (err error) {
 	// Refresh based on identity kind
 	switch s.Identity.Kind {
 	case IdentityKindLDAP:
-		err = r.refreshLdapIdentity(s.Identity)
+		err = r.refreshLdapIdentity(s.Identity, grant)
+		if err != nil {
+			return
+		}
+		_, err = secret.Encode(grant)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		err = r.db.Save(grant).Error
+		if err != nil {
+			err = liberr.Wrap(err)
+		}
 	case IdentityKindOpenid:
 		login := &FedIdpLogin{
 			handler:  r.idpHandler,
 			identity: s.Identity,
 		}
-		err = login.RefreshIdentity()
+		err = login.RefreshIdentity(grant)
+		if err != nil {
+			return
+		}
+		_, err = secret.Encode(grant)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		err = r.db.Save(grant).Error
+		if err != nil {
+			err = liberr.Wrap(err)
+		}
 	}
 	return
 }
 
 // refreshLdapIdentity re-authenticates with LDAP and updates the identity.
-func (r *Storage) refreshLdapIdentity(identity *Identity) (err error) {
+func (r *Storage) refreshLdapIdentity(identity *Identity, grant *Grant) (err error) {
 	if !r.dsHandler.enabled {
 		return
 	}
-	password := identity.RefreshToken
-	subject, err := r.dsHandler.Authenticate(identity.Login, password, Settings.Auth.Token.Lifespan)
+	password := grant.IdpRefreshToken
+	subject, err := r.dsHandler.Authenticate(
+		identity.Login,
+		password,
+		Settings.Auth.Token.Lifespan)
 	if err != nil {
 		return
 	}
@@ -1307,6 +1334,27 @@ func (r *Storage) createGrant(
 	m.Scopes = scopes
 	m.Issued = req.GetAuthTime()
 	m.Expiration = expiration
+
+	// Set FKs based on subject type
+	subject, err := r.findSubject(req.GetSubject())
+	if err == nil {
+		m.UserID = subject.UserId
+		m.IdpIdentityID = subject.IdentityId
+		m.IdpClientID = subject.ClientId
+	}
+
+	// For federated logins, set external IDP refresh token and scopes
+	if authReq, cast := req.(*AuthRequest); cast {
+		if authReq.idpRefreshToken != "" {
+			m.IdpRefreshToken = authReq.idpRefreshToken
+			m.IdpScopes = req.GetScopes()
+		}
+	}
+	_, err = secret.Encode(m)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
 	err = r.db.Create(m).Error
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -1681,12 +1729,14 @@ func (c *Client) requestedURI() (u string) {
 // AuthRequest implements op.AuthRequest.
 type AuthRequest struct {
 	*oidc.AuthRequest
-	requestId  string
-	subject    string
-	authCode   string
-	issued     time.Time
-	expiration time.Time
-	done       bool
+	requestId       string
+	subject         string
+	authCode        string
+	issued          time.Time
+	expiration      time.Time
+	done            bool
+	idpRefreshToken string
+	idpIdentityId   uint
 }
 
 // GetID returns the request ID.

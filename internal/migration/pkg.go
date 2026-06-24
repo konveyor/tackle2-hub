@@ -17,6 +17,7 @@ import (
 	v21 "github.com/konveyor/tackle2-hub/internal/migration/v21"
 	v22 "github.com/konveyor/tackle2-hub/internal/migration/v22"
 	v23 "github.com/konveyor/tackle2-hub/internal/migration/v23"
+	v24 "github.com/konveyor/tackle2-hub/internal/migration/v24"
 	v3 "github.com/konveyor/tackle2-hub/internal/migration/v3"
 	v4 "github.com/konveyor/tackle2-hub/internal/migration/v4"
 	v5 "github.com/konveyor/tackle2-hub/internal/migration/v5"
@@ -74,5 +75,6 @@ func All() []Migration {
 		v21.Migration{},
 		v22.Migration{},
 		v23.Migration{},
+		v24.Migration{},
 	}
 }

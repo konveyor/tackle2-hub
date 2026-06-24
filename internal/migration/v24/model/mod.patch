@@ -1,0 +1,12 @@
+diff -urN '--exclude=mod.patch' v22/model/core.go v23/model/core.go
+--- v22/model/core.go	2026-06-11 11:46:45.782339667 -0500
++++ v23/model/core.go	2026-06-11 12:16:02.639197779 -0500
+@@ -289,7 +289,7 @@
+ 	AuthId        string    `gorm:"uniqueIndex;not null"`
+ 	Subject       string    `gorm:"index"`
+ 	Digest        string    `gorm:"index"`
+-	Scopes        string    `gorm:"not null"`
++	Scopes        []string  `gorm:"type:json;serializer:json"`
+ 	Issued        time.Time `gorm:"not null"`
+ 	Expiration    time.Time
+ 	Revoked       time.Time

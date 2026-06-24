@@ -3,7 +3,6 @@ package cache
 import (
 	"sort"
 	"strconv"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -582,7 +581,7 @@ func (d *Data) addTokenScopes(m *Token) {
 	}
 	// IdP identity binding.
 	if m.IdpIdentityID != nil {
-		identity, found := d.identById[*m.IdpIdentityID]
+		_, found := d.identById[*m.IdpIdentityID]
 		if !found {
 			err = &NotFound{
 				Resource: "identity",
@@ -590,7 +589,7 @@ func (d *Data) addTokenScopes(m *Token) {
 			}
 			return
 		}
-		m.Scopes = strings.Fields(identity.Scopes)
+		// Token already has Scopes field populated
 		return
 	}
 	// IdP client binding.
