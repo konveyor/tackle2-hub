@@ -263,6 +263,7 @@ func (p *Builtin) Authenticate(req *Request) (jwToken *jwt.Token, err error) {
 
 // Revoke revokes a token and its associated grant.
 func (p *Builtin) Revoke(tokenId uint) (err error) {
+	p.cache.TokenDeleted(tokenId)
 	err = p.db.Transaction(func(tx *gorm.DB) (err error) {
 		m := &Token{}
 		err = tx.First(m, tokenId).Error
@@ -270,10 +271,10 @@ func (p *Builtin) Revoke(tokenId uint) (err error) {
 			err = liberr.Wrap(err)
 			return
 		}
-		grantId := m.GrantID
-		if grantId != nil {
+		if m.GrantID != nil {
+			p.cache.GrantDeleted(*m.GrantID)
 			grant := &Grant{}
-			result := tx.Delete(grant, *grantId)
+			result := tx.Delete(grant, *m.GrantID)
 			if result.Error != nil {
 				err = liberr.Wrap(result.Error)
 				return
@@ -287,11 +288,6 @@ func (p *Builtin) Revoke(tokenId uint) (err error) {
 
 		return
 	})
-
-	if grantId != nil {
-		p.cache.GrantDeleted(*grantId)
-	}
-	p.cache.TokenDeleted(tokenId)
 	return
 }
 
