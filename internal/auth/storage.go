@@ -1111,6 +1111,7 @@ func (r *Storage) createRefreshToken(ctx context.Context, req op.TokenRequest) (
 		err = liberr.Wrap(err)
 		return
 	}
+	r.cache.GrantSaved(grant)
 
 	authCode := r.authCodeById(authReq.GetID())
 	if authCode != "" {

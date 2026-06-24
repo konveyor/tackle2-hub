@@ -270,9 +270,10 @@ func (p *Builtin) Revoke(tokenId uint) (err error) {
 			err = liberr.Wrap(err)
 			return
 		}
-		if m.GrantID != nil {
+		grantId := m.GrantID
+		if grantId != nil {
 			grant := &Grant{}
-			result := tx.Delete(grant, *m.GrantID)
+			result := tx.Delete(grant, *grantId)
 			if result.Error != nil {
 				err = liberr.Wrap(result.Error)
 				return
@@ -287,6 +288,9 @@ func (p *Builtin) Revoke(tokenId uint) (err error) {
 		return
 	})
 
+	if grantId != nil {
+		p.cache.GrantDeleted(*grantId)
+	}
 	p.cache.TokenDeleted(tokenId)
 	return
 }
