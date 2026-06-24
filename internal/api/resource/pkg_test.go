@@ -3669,6 +3669,7 @@ func TestPermission_Model(t *testing.T) {
 func TestGrant_With(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
+	grantID := uint(1)
 	m := &model.Grant{
 		Model: model.Model{
 			ID:         1,
@@ -3680,6 +3681,10 @@ func TestGrant_With(t *testing.T) {
 		Kind:       "authorization_code",
 		Scopes:     "openid profile email",
 		Expiration: time.Now().Add(24 * time.Hour),
+		Tokens: []model.Token{
+			{Model: model.Model{ID: 10}, GrantID: &grantID},
+			{Model: model.Model{ID: 11}, GrantID: &grantID},
+		},
 	}
 
 	r := &Grant{}
@@ -3692,6 +3697,9 @@ func TestGrant_With(t *testing.T) {
 	g.Expect(r.Kind).To(gomega.Equal("authorization_code"))
 	g.Expect(r.Scopes).To(gomega.Equal("openid profile email"))
 	g.Expect(r.Expiration).To(gomega.Equal(m.Expiration))
+	g.Expect(len(r.Tokens)).To(gomega.Equal(2))
+	g.Expect(r.Tokens[0].ID).To(gomega.Equal(uint(10)))
+	g.Expect(r.Tokens[1].ID).To(gomega.Equal(uint(11)))
 }
 
 // TestGrant_With_DeviceFlow tests Grant.With() with device flow fields.

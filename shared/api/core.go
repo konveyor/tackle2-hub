@@ -207,6 +207,7 @@ type Grant struct {
 	User        *Ref      `json:"user,omitempty" yaml:",omitempty"`
 	IdpIdentity *Ref      `json:"idpIdentity,omitempty" yaml:",omitempty"`
 	IdpClient   *Ref      `json:"idpClient,omitempty" yaml:",omitempty"`
+	Tokens      []Ref     `json:"tokens,omitempty" yaml:",omitempty"`
 }
 
 // Token REST resource.
