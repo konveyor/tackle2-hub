@@ -55,7 +55,6 @@ func (r Migration) migrateIdpRefreshTokens(db *gorm.DB) (err error) {
 		}
 		for _, grant := range grants {
 			grant.IdpRefreshToken = identity.RefreshToken
-			grant.IdpIdentityID = &identity.ID
 			grant.IdpScopes = idpScopes
 			err = db.Save(grant).Error
 			if err != nil {
