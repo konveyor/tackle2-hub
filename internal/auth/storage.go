@@ -1159,7 +1159,9 @@ func (r *Storage) refreshIdentity(req op.RefreshTokenRequest, grant *Grant) (err
 		err = r.db.Save(grant).Error
 		if err != nil {
 			err = liberr.Wrap(err)
+			return
 		}
+		r.cache.GrantSaved(grant)
 	case IdentityKindOpenid:
 		login := &FedIdpLogin{
 			handler:  r.idpHandler,
@@ -1177,7 +1179,9 @@ func (r *Storage) refreshIdentity(req op.RefreshTokenRequest, grant *Grant) (err
 		err = r.db.Save(grant).Error
 		if err != nil {
 			err = liberr.Wrap(err)
+			return
 		}
+		r.cache.GrantSaved(grant)
 	}
 	return
 }
@@ -1360,6 +1364,7 @@ func (r *Storage) createGrant(
 		err = liberr.Wrap(err)
 		return
 	}
+	r.cache.GrantSaved(m)
 	return
 }
 

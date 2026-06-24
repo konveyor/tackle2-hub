@@ -157,6 +157,14 @@ func (r *Cache) TokenDeleted(id uint) {
 	})
 }
 
+// GrantSaved updates grant scopes in the cache.
+func (r *Cache) GrantSaved(m *Grant) {
+	_ = r.Transaction(func(tx *Tx) (_ error) {
+		tx.GrantSaved(m)
+		return
+	})
+}
+
 // GrantDeleted removes a grant and all associated tokens from the cache.
 func (r *Cache) GrantDeleted(id uint) {
 	_ = r.Transaction(func(tx *Tx) (_ error) {
@@ -370,6 +378,8 @@ type Data struct {
 	clientBySubject map[string]*IdpClient
 	tokenById       map[uint]*Token
 	tokenByDigest   map[string]*Token
+	grantById       map[uint]*Grant
+	grantScopes     map[string][]string
 }
 
 // reset creates new maps.
@@ -388,6 +398,8 @@ func (d *Data) reset() {
 	d.clientBySubject = make(map[string]*IdpClient)
 	d.tokenById = make(map[uint]*Token)
 	d.tokenByDigest = make(map[string]*Token)
+	d.grantById = make(map[uint]*Grant)
+	d.grantScopes = make(map[string][]string)
 }
 
 // clone returns cloned data.
@@ -411,6 +423,8 @@ func (d *Data) clone() *Data {
 		clientBySubject: cloneMap(d.clientBySubject),
 		tokenById:       cloneMap(d.tokenById),
 		tokenByDigest:   cloneMap(d.tokenByDigest),
+		grantById:       cloneMap(d.grantById),
+		grantScopes:     cloneMap(d.grantScopes),
 	}
 }
 
@@ -438,6 +452,10 @@ func (d *Data) refresh(db *gorm.DB) (err error) {
 		return
 	}
 	err = d.getTokens(db)
+	if err != nil {
+		return
+	}
+	err = d.getGrants(db)
 	if err != nil {
 		return
 	}
@@ -550,6 +568,21 @@ func (d *Data) getTokens(db *gorm.DB) (err error) {
 	return
 }
 
+// getGrants fetches grants from the DB and populates grantById.
+func (d *Data) getGrants(db *gorm.DB) (err error) {
+	list := []*Grant{}
+	db = db.Where("expiration > ?", time.Now())
+	err = db.Find(&list).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for _, m := range list {
+		d.grantById[m.ID] = m
+	}
+	return
+}
+
 // addTokenScopes determine token scopes and update the data.
 func (d *Data) addTokenScopes(m *Token) {
 	if m.Kind != KindAPIKey {
@@ -589,7 +622,10 @@ func (d *Data) addTokenScopes(m *Token) {
 			}
 			return
 		}
-		// Token already has Scopes field populated
+		scopes, found := d.grantScopes[m.Subject]
+		if found {
+			m.Scopes = scopes
+		}
 		return
 	}
 	// IdP client binding.
@@ -630,15 +666,43 @@ func (d *Data) addUserScopes(m *User) {
 	d.userScopes[m.ID] = scopes
 }
 
-// updateScopes
+// addGrantScopes determine grant scopes and add to the data.
+func (d *Data) addGrantScopes(m *Grant) {
+	if len(m.IdpScopes) > 0 {
+		d.grantScopes[m.Subject] = m.IdpScopes
+	}
+}
+
+// updateScopes update calculated scopes.
 func (d *Data) updateScopes() {
 	d.userScopes = make(map[uint][]string)
 	for _, m := range d.userById {
 		d.addUserScopes(m)
 	}
+	d.grantScopes = make(map[string][]string)
+	for _, m := range d.grantLastUpdated() {
+		d.addGrantScopes(m)
+	}
 	for _, m := range d.tokenById {
 		d.addTokenScopes(m)
 	}
+}
+
+// grantLastUpdated returns a list of the grants.
+// Each grant is the last updated for the subject.
+func (d *Data) grantLastUpdated() (grants []*Grant) {
+	byUpdated := make(map[string]*Grant)
+	mark := make(map[string]time.Time)
+	for _, m := range d.grantById {
+		if m.UpdateTime.After(mark[m.Subject]) {
+			mark[m.Subject] = m.UpdateTime
+			byUpdated[m.Subject] = m
+		}
+	}
+	for _, m := range byUpdated {
+		grants = append(grants, m)
+	}
+	return
 }
 
 // cloneMap returns a shallow clone.

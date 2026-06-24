@@ -16,6 +16,7 @@ type Model struct {
 	ID         uint      `gorm:"<-:create;primaryKey"`
 	CreateTime time.Time `gorm:"<-:create;autoCreateTime"`
 	CreateUser string    `gorm:"<-:create"`
+	UpdateTime time.Time `gorm:"autoUpdateTime"`
 	UpdateUser string
 }
 

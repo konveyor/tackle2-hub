@@ -1013,11 +1013,14 @@ func TestTaskRevokeMultipleTokens(t *testing.T) {
 
 	// Manually create second token for same task (shouldn't normally happen)
 	token2Secret := "second-task-token"
+	taskCache := &Task{ID: task.ID}
 	token2 := &model.Token{
-		Kind:   KindAPIKey,
-		AuthId: "second-auth-id",
-		Digest: secret.Hash(token2Secret),
-		TaskID: &task.ID,
+		Kind:       KindAPIKey,
+		Subject:    taskCache.Subject(),
+		AuthId:     "second-auth-id",
+		Digest:     secret.Hash(token2Secret),
+		Expiration: time.Now().Add(24 * time.Hour),
+		TaskID:     &task.ID,
 	}
 	err = db.Create(token2).Error
 	g.Expect(err).To(BeNil())
@@ -1855,10 +1858,24 @@ func TestIdpIdentityTokenBinding(t *testing.T) {
 	err = db.Create(identity).Error
 	g.Expect(err).To(BeNil())
 
+	// Create a grant for this identity with scopes (simulates federated login)
+	grant := &Grant{
+		Kind:       KindAuthCode,
+		ClientId:   "test-client",
+		AuthId:     "test-auth-id",
+		Subject:    identity.Subject,
+		Scopes:     "openid profile",
+		Issued:     time.Now(),
+		Expiration: time.Now().Add(24 * time.Hour),
+		IdpScopes:  []string{"openid", "profile", "email"},
+	}
+	err = db.Create(grant).Error
+	g.Expect(err).To(BeNil())
+
 	provider, err := NewBuiltin(db)
 	g.Expect(err).To(BeNil())
 
-	// Create token bound to IdP identity
+	// Create token bound to IdP identity (scopes come from grant)
 	token, err := provider.NewToken(identity.Subject, 24*time.Hour)
 	g.Expect(err).To(BeNil())
 	g.Expect(token.IdpIdentityID).NotTo(BeNil())
@@ -1871,7 +1888,7 @@ func TestIdpIdentityTokenBinding(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(jwToken).NotTo(BeNil())
 
-	// Verify claims
+	// Verify claims - scopes injected from grant
 	claims := jwToken.Claims.(jwt.MapClaims)
 	g.Expect(claims[ClaimSub]).To(Equal("idp-user-123"))
 	g.Expect(claims[ClaimScope]).To(Equal("openid profile email"))
@@ -2133,11 +2150,10 @@ func TestCacheFindSubject(t *testing.T) {
 	g.Expect(subject.IsUser()).To(BeFalse())
 	g.Expect(subject.IsIdentity()).To(BeTrue())
 	g.Expect(subject.Key).To(Equal("idp-subject-456"))
-	g.Expect(subject.Identity.Login).To(Equal("idpuser"))
+	g.Expect(subject.Identity.Login).To(Equal(""))
 	g.Expect(subject.Email).To(Equal("idp@example.com"))
-	g.Expect(subject.Scopes).To(ContainElement("openid"))
-	g.Expect(subject.Scopes).To(ContainElement("profile"))
-	g.Expect(subject.Scopes).To(ContainElement("email"))
+	// IdpIdentity no longer has scopes - they come from Grant or Token
+	g.Expect(subject.Scopes).To(BeEmpty())
 }
 
 // TestCacheFindSubjectNotFound tests NotFound error when subject doesn't exist.

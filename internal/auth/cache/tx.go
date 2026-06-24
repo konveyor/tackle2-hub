@@ -150,10 +150,19 @@ func (r *Tx) TokenDeleted(id uint) {
 		})
 }
 
+// GrantSaved updates grant in the cache.
+func (r *Tx) GrantSaved(m *Grant) {
+	r.changes = append(
+		r.changes, func(d *Data) {
+			d.grantById[m.ID] = m
+		})
+}
+
 // GrantDeleted removes a grant and all associated tokens from the cache.
 func (r *Tx) GrantDeleted(id uint) {
 	r.changes = append(
 		r.changes, func(d *Data) {
+			delete(d.grantById, id)
 			for _, m := range d.tokenById {
 				if m.GrantID != nil && *m.GrantID == id {
 					delete(d.tokenByDigest, m.Digest)
