@@ -85,6 +85,8 @@ func (h *LdapHandler) ensureIdentity(identity *Identity) (err error) {
 			"kind",
 			"issuer",
 			"login",
+			"name",
+			"email",
 			"scopes",
 			"updateUser",
 		}),
