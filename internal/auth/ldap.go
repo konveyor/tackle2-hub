@@ -27,7 +27,7 @@ type LdapHandler struct {
 // Authenticate a user.
 // Authenticated users (identities) are cached.
 // Authenticated with the DS when cached identity not found or expired.
-func (h *LdapHandler) Authenticate(login, password string, lifespan time.Duration) (subject *Subject, err error) {
+func (h *LdapHandler) Authenticate(login, password string) (subject *Subject, err error) {
 	if !h.enabled {
 		err = &NotFound{
 			Resource: "User",
@@ -39,7 +39,7 @@ func (h *LdapHandler) Authenticate(login, password string, lifespan time.Duratio
 	if err != nil {
 		return
 	}
-	identity := h.buildIdentity(ldapUser, password, lifespan)
+	identity := h.buildIdentity(ldapUser)
 	err = h.ensureIdentity(identity)
 	if err != nil {
 		return
@@ -50,7 +50,7 @@ func (h *LdapHandler) Authenticate(login, password string, lifespan time.Duratio
 }
 
 // buildIdentity builds an IdpIdentity from LDAP user data.
-func (h *LdapHandler) buildIdentity(ldapUser *LdapUser, password string, lifespan time.Duration) (identity *Identity) {
+func (h *LdapHandler) buildIdentity(ldapUser *LdapUser) (identity *Identity) {
 	var scopes []string
 	for _, roleName := range ldapUser.Roles {
 		role, err := h.cache.FindRoleByName(roleName)
@@ -65,11 +65,10 @@ func (h *LdapHandler) buildIdentity(ldapUser *LdapUser, password string, lifespa
 	sort.Strings(scopes)
 
 	identity = &Identity{
-		Kind:              IdentityKindLDAP,
-		Issuer:            h.ds.URL,
-		Subject:           ldapUser.Subject,
-		Login:             ldapUser.Login,
-		LastAuthenticated: time.Now(),
+		Kind:    IdentityKindLDAP,
+		Issuer:  h.ds.URL,
+		Subject: ldapUser.Subject,
+		Login:   ldapUser.Login,
 	}
 
 	return

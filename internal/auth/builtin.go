@@ -571,7 +571,7 @@ func (p *Builtin) authUser(req *Request) (jwToken *jwt.Token, err error) {
 		}
 		return
 	}
-	scopes, err := p.cache.FindUserScopes(user.ID)
+	scopes, err := p.cache.FindScopes(user.Subject)
 	if err != nil {
 		err = &NotAuthenticated{
 			Reason: "scopes not found",
@@ -592,8 +592,7 @@ func (p *Builtin) authUser(req *Request) (jwToken *jwt.Token, err error) {
 
 // authLdapUser authenticates an LDAP user.
 func (p *Builtin) authLdapUser(req *Request) (jwToken *jwt.Token, err error) {
-	lifespan := Settings.Auth.LdapAuthLifespan
-	subject, err := p.dsHandler.Authenticate(req.Login, req.Password, lifespan)
+	subject, err := p.dsHandler.Authenticate(req.Login, req.Password)
 	if err != nil {
 		return
 	}
@@ -604,7 +603,7 @@ func (p *Builtin) authLdapUser(req *Request) (jwToken *jwt.Token, err error) {
 	jwtClaims[ClaimScope] = strings.Join(subject.Scopes, " ")
 	jwtClaims[ClaimIss] = Issuer(req.CTX.Request)
 	jwtClaims[ClaimIat] = time.Now().Unix()
-	jwtClaims[ClaimExp] = time.Now().Add(lifespan).Unix()
+	jwtClaims[ClaimExp] = time.Now().Add(Settings.Auth.LdapAuthLifespan).Unix()
 	return
 }
 

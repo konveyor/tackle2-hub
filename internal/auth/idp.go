@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -351,10 +350,10 @@ func (f *FedIdpLogin) ensureIdentity() (err error) {
 		},
 		DoUpdates: clause.AssignmentColumns([]string{
 			"kind",
-			"lastAuthenticated",
 			"login",
 			"name",
 			"email",
+			"scopes",
 			"updateUser",
 		}),
 	})
@@ -370,13 +369,13 @@ func (f *FedIdpLogin) ensureIdentity() (err error) {
 // buildIdentity builds an IdpIdentity from userinfo and tokens.
 func (f *FedIdpLogin) buildIdentity() (identity *Identity) {
 	identity = &Identity{
-		Kind:              IdentityKindOpenid,
-		Issuer:            federated.Idp.Name,
-		Subject:           f.userInfo.Subject,
-		Login:             f.userInfo.PreferredUsername,
-		Email:             f.userInfo.Email,
-		Name:              f.userInfo.Name,
-		LastAuthenticated: time.Now(),
+		Kind:    IdentityKindOpenid,
+		Issuer:  federated.Idp.Name,
+		Subject: f.userInfo.Subject,
+		Login:   f.userInfo.PreferredUsername,
+		Email:   f.userInfo.Email,
+		Name:    f.userInfo.Name,
+		Scopes:  f.extractScopes(),
 	}
 
 	return
@@ -472,8 +471,8 @@ func (f *FedIdpLogin) asString(claim any) (s string) {
 	return
 }
 
-// RefreshIdentity refreshes an IdpIdentity using its refresh token.
-func (f *FedIdpLogin) RefreshIdentity(grant *Grant) (err error) {
+// refreshIdentity refreshes an IdpIdentity using its refresh token.
+func (f *FedIdpLogin) refreshIdentity(grant *Grant) (err error) {
 	rpClient, err := f.handler.RpClient()
 	if err != nil {
 		return
@@ -498,11 +497,6 @@ func (f *FedIdpLogin) RefreshIdentity(grant *Grant) (err error) {
 		return
 	}
 	grant.IdpRefreshToken = f.tokens.RefreshToken
-	scopesStr := f.extractScopes()
-	if scopesStr != "" {
-		grant.IdpScopes = strings.Fields(scopesStr)
-	}
-	f.identity = f.buildIdentity()
 	err = f.ensureIdentity()
 	return
 }

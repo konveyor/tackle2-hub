@@ -1852,24 +1852,9 @@ func TestIdpIdentityTokenBinding(t *testing.T) {
 		Subject: "idp-user-123",
 		Login:   "idpuser",
 		Email:   "idpuser@example.com",
+		Scopes:  "openid profile email",
 	}
-	err = secret.Encrypt(identity)
-	g.Expect(err).To(BeNil())
 	err = db.Create(identity).Error
-	g.Expect(err).To(BeNil())
-
-	// Create a grant for this identity with scopes (simulates federated login)
-	grant := &Grant{
-		Kind:       KindAuthCode,
-		ClientId:   "test-client",
-		AuthId:     "test-auth-id",
-		Subject:    identity.Subject,
-		Scopes:     "openid profile",
-		Issued:     time.Now(),
-		Expiration: time.Now().Add(24 * time.Hour),
-		IdpScopes:  []string{"openid", "profile", "email"},
-	}
-	err = db.Create(grant).Error
 	g.Expect(err).To(BeNil())
 
 	provider, err := NewBuiltin(db)
@@ -3392,7 +3377,7 @@ func TestCreateAccessToken_UpdatesExistingToken(t *testing.T) {
 	provider.cache.UserSaved(user)
 
 	subject := &Subject{}
-	scopes, err := provider.cache.FindUserScopes(user.ID)
+	scopes, err := provider.cache.FindScopes(user.Subject)
 	g.Expect(err).To(BeNil())
 	subject.WithUser(user, scopes)
 
@@ -3470,7 +3455,7 @@ func TestCreateAccessToken_CascadeDeleteOnGrantDeletion(t *testing.T) {
 	provider.cache.UserSaved(user)
 
 	subject := &Subject{}
-	scopes, err := provider.cache.FindUserScopes(user.ID)
+	scopes, err := provider.cache.FindScopes(user.Subject)
 	g.Expect(err).To(BeNil())
 	subject.WithUser(user, scopes)
 
@@ -3537,7 +3522,7 @@ func TestAuthRequest_CreatesGrantAndLinksToken(t *testing.T) {
 	provider.cache.UserSaved(user)
 
 	subject := &Subject{}
-	scopes, err := provider.cache.FindUserScopes(user.ID)
+	scopes, err := provider.cache.FindScopes(user.Subject)
 	g.Expect(err).To(BeNil())
 	subject.WithUser(user, scopes)
 
@@ -3671,7 +3656,7 @@ func TestCreateAccessAndRefreshTokens_FullFlow(t *testing.T) {
 	provider.cache.UserSaved(user)
 
 	subject := &Subject{}
-	scopes, err := provider.cache.FindUserScopes(user.ID)
+	scopes, err := provider.cache.FindScopes(user.Subject)
 	g.Expect(err).To(BeNil())
 	subject.WithUser(user, scopes)
 

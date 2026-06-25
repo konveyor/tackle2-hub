@@ -155,6 +155,9 @@ func (r *Tx) GrantSaved(m *Grant) {
 	r.changes = append(
 		r.changes, func(d *Data) {
 			d.grantById[m.ID] = m
+			if m.RefreshToken != "" {
+				d.grantByRefreshToken[m.RefreshToken] = m
+			}
 		})
 }
 
@@ -162,7 +165,12 @@ func (r *Tx) GrantSaved(m *Grant) {
 func (r *Tx) GrantDeleted(id uint) {
 	r.changes = append(
 		r.changes, func(d *Data) {
+			m, found := d.grantById[id]
+			if found && m.RefreshToken != "" {
+				delete(d.grantByRefreshToken, m.RefreshToken)
+			}
 			delete(d.grantById, id)
+			delete(d.grantByRefreshToken, m.RefreshToken)
 			for _, m := range d.tokenById {
 				if m.GrantID != nil && *m.GrantID == id {
 					delete(d.tokenByDigest, m.Digest)

@@ -11,8 +11,9 @@ import (
 type Resource struct {
 	ID         uint      `json:"id,omitempty" yaml:"id,omitempty"`
 	CreateUser string    `json:"createUser" yaml:"createUser,omitempty"`
-	UpdateUser string    `json:"updateUser" yaml:"updateUser,omitempty"`
 	CreateTime time.Time `json:"createTime" yaml:"createTime,omitempty"`
+	UpdateUser string    `json:"updateUser" yaml:"updateUser,omitempty"`
+	UpdateTime time.Time `json:"updateTime" yaml:"updateTime,omitempty"`
 }
 
 // Ref represents a FK.
@@ -143,18 +144,15 @@ type Extension struct {
 
 // IdpIdentity REST resource.
 type IdpIdentity struct {
-	Resource          `yaml:",inline"`
-	Kind              string    `json:"kind" binding:"required"`
-	Issuer            string    `json:"issuer" binding:"required"`
-	Subject           string    `json:"subject" binding:"required"`
-	Login             string    `json:"login"`
-	Name              string    `json:"name"`
-	Email             string    `json:"email"`
-	Expiration        time.Time `json:"expiration"`
-	LastAuthenticated time.Time `json:"lastAuthenticated"`
-	LastRefreshed     time.Time `json:"lastRefreshed"`
-	Scopes            string    `json:"scopes"`
-	Tokens            []Ref     `json:"tokens"`
+	Resource `yaml:",inline"`
+	Kind     string `json:"kind" binding:"required"`
+	Issuer   string `json:"issuer" binding:"required"`
+	Subject  string `json:"subject" binding:"required"`
+	Login    string `json:"login"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Scopes   string `json:"scopes"`
+	Tokens   []Ref  `json:"tokens"`
 }
 
 // IdpClient REST resource.

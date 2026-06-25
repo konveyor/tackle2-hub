@@ -919,12 +919,9 @@ func TestFindTokenByIdWithUser(t *testing.T) {
 		Model:   Model{ID: 2000},
 		Subject: "user-subject",
 		Login:   "testuser",
+		Roles:   []Role{*role},
 	}
 	err = db.Create(user).Error
-	g.Expect(err).To(BeNil())
-
-	// Associate user with role
-	err = db.Exec("INSERT INTO UserRole (UserID, RoleID) VALUES (?, ?)", user.ID, role.ID).Error
 	g.Expect(err).To(BeNil())
 
 	// Create user token in DB
@@ -933,6 +930,7 @@ func TestFindTokenByIdWithUser(t *testing.T) {
 		Token: model.Token{
 			Model:      Model{ID: 2001},
 			Kind:       KindAPIKey,
+			Subject:    user.Subject,
 			UserID:     &userID,
 			Digest:     secret.Hash("user-token-2001"),
 			Expiration: time.Now().Add(24 * time.Hour),
@@ -1199,224 +1197,6 @@ func TestCacheConcurrentMixedOperations(t *testing.T) {
 	g.Expect(len(d.userById)).To(BeNumerically(">", 0))
 }
 
-// TestGrantScopeCaching tests that grant scopes are cached and used for IdpIdentity tokens.
-func TestGrantScopeCaching(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	db, err := setupTestDB()
-	g.Expect(err).To(BeNil())
-
-	cache := New(db)
-	err = cache.Refresh()
-	g.Expect(err).To(BeNil())
-
-	// Create IdpIdentity
-	identity := &Identity{
-		Model:   Model{ID: 1000},
-		Issuer:  "https://idp.example.com",
-		Subject: "identity-subject-1000",
-		Login:   "identityuser",
-	}
-	err = db.Create(identity).Error
-	g.Expect(err).To(BeNil())
-	cache.IdentitySaved(identity)
-
-	// Create grant with IdpScopes
-	identityID := uint(1000)
-	grant := &Grant{
-		Model:         Model{ID: 1001, UpdateTime: time.Now()},
-		Kind:          KindAuthCode,
-		ClientId:      "test-client",
-		AuthId:        "auth-1001",
-		Subject:       "identity-subject-1000",
-		RefreshToken:  secret.Hash("refresh-1001"),
-		IdpIdentityID: &identityID,
-		IdpScopes:     []string{"openid", "profile", "email"},
-		Expiration:    time.Now().Add(24 * time.Hour),
-	}
-	err = db.Create(grant).Error
-	g.Expect(err).To(BeNil())
-	cache.GrantSaved(grant)
-
-	// Create IdpIdentity token (no scopes stored on token)
-	grantID := uint(1001)
-	token := &Token{
-		Token: model.Token{
-			Model:         Model{ID: 1002},
-			Kind:          KindAPIKey,
-			AuthId:        "auth-token-1002",
-			Subject:       "identity-subject-1000",
-			IdpIdentityID: &identityID,
-			GrantID:       &grantID,
-			Digest:        secret.Hash("identity-token-1002"),
-			Expiration:    time.Now().Add(24 * time.Hour),
-		},
-		Secret: "identity-token-1002",
-	}
-	err = db.Create(&token.Token).Error
-	g.Expect(err).To(BeNil())
-	cache.TokenSaved(token)
-
-	// Find token - should have scopes from grant
-	foundToken, err := cache.FindToken("identity-token-1002")
-	g.Expect(err).To(BeNil())
-	g.Expect(foundToken).NotTo(BeNil())
-	g.Expect(foundToken.Scopes).To(Equal([]string{"openid", "profile", "email"}))
-}
-
-// TestGrantScopeMostRecent tests that most recent grant's scopes are used.
-func TestGrantScopeMostRecent(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	db, err := setupTestDB()
-	g.Expect(err).To(BeNil())
-
-	cache := New(db)
-	err = cache.Refresh()
-	g.Expect(err).To(BeNil())
-
-	// Create IdpIdentity
-	identity := &Identity{
-		Model:   Model{ID: 2000},
-		Issuer:  "https://idp.example.com",
-		Subject: "identity-subject-2000",
-		Login:   "multiuser",
-	}
-	err = db.Create(identity).Error
-	g.Expect(err).To(BeNil())
-	cache.IdentitySaved(identity)
-
-	identityID := uint(2000)
-
-	// Create first grant (older)
-	grant1 := &Grant{
-		Model:         Model{ID: 2001, UpdateTime: time.Now().Add(-1 * time.Hour)},
-		Kind:          KindAuthCode,
-		ClientId:      "test-client",
-		AuthId:        "auth-2001",
-		Subject:       "identity-subject-2000",
-		RefreshToken:  secret.Hash("refresh-2001"),
-		IdpIdentityID: &identityID,
-		IdpScopes:     []string{"openid", "profile"},
-		Expiration:    time.Now().Add(24 * time.Hour),
-	}
-	err = db.Create(grant1).Error
-	g.Expect(err).To(BeNil())
-	cache.GrantSaved(grant1)
-
-	// Create second grant (newer) with different scopes
-	grant2 := &Grant{
-		Model:         Model{ID: 2002, UpdateTime: time.Now()},
-		Kind:          KindAuthCode,
-		ClientId:      "test-client",
-		AuthId:        "auth-2002",
-		Subject:       "identity-subject-2000",
-		RefreshToken:  secret.Hash("refresh-2002"),
-		IdpIdentityID: &identityID,
-		IdpScopes:     []string{"openid", "profile", "email", "custom"},
-		Expiration:    time.Now().Add(24 * time.Hour),
-	}
-	err = db.Create(grant2).Error
-	g.Expect(err).To(BeNil())
-	cache.GrantSaved(grant2)
-
-	// Create token for this identity
-	grantID := uint(2002)
-	token := &Token{
-		Token: model.Token{
-			Model:         Model{ID: 2003},
-			Kind:          KindAPIKey,
-			AuthId:        "auth-token-2003",
-			Subject:       "identity-subject-2000",
-			IdpIdentityID: &identityID,
-			GrantID:       &grantID,
-			Digest:        secret.Hash("multi-grant-token"),
-			Expiration:    time.Now().Add(24 * time.Hour),
-		},
-		Secret: "multi-grant-token",
-	}
-	err = db.Create(&token.Token).Error
-	g.Expect(err).To(BeNil())
-	cache.TokenSaved(token)
-
-	// Token should get scopes from most recent grant (grant2)
-	foundToken, err := cache.FindToken("multi-grant-token")
-	g.Expect(err).To(BeNil())
-	g.Expect(foundToken.Scopes).To(Equal([]string{"openid", "profile", "email", "custom"}))
-}
-
-// TestGrantDeletedRemovesScopes tests that deleting a grant removes its scopes.
-func TestGrantDeletedRemovesScopes(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	db, err := setupTestDB()
-	g.Expect(err).To(BeNil())
-
-	cache := New(db)
-	err = cache.Refresh()
-	g.Expect(err).To(BeNil())
-
-	// Create IdpIdentity
-	identity := &Identity{
-		Model:   Model{ID: 3000},
-		Issuer:  "https://idp.example.com",
-		Subject: "identity-subject-3000",
-		Login:   "deleteuser",
-	}
-	err = db.Create(identity).Error
-	g.Expect(err).To(BeNil())
-	cache.IdentitySaved(identity)
-
-	identityID := uint(3000)
-
-	// Create grant with scopes
-	grant := &Grant{
-		Model:         Model{ID: 3001, UpdateTime: time.Now()},
-		Kind:          KindAuthCode,
-		ClientId:      "test-client",
-		AuthId:        "auth-3001",
-		Subject:       "identity-subject-3000",
-		RefreshToken:  secret.Hash("refresh-3001"),
-		IdpIdentityID: &identityID,
-		IdpScopes:     []string{"openid", "profile"},
-		Expiration:    time.Now().Add(24 * time.Hour),
-	}
-	err = db.Create(grant).Error
-	g.Expect(err).To(BeNil())
-	cache.GrantSaved(grant)
-
-	// Create token
-	grantID := uint(3001)
-	token := &Token{
-		Token: model.Token{
-			Model:         Model{ID: 3002},
-			Kind:          KindAPIKey,
-			AuthId:        "auth-token-3002",
-			Subject:       "identity-subject-3000",
-			IdpIdentityID: &identityID,
-			GrantID:       &grantID,
-			Digest:        secret.Hash("delete-grant-token"),
-			Expiration:    time.Now().Add(24 * time.Hour),
-		},
-		Secret: "delete-grant-token",
-	}
-	err = db.Create(&token.Token).Error
-	g.Expect(err).To(BeNil())
-	cache.TokenSaved(token)
-
-	// Verify token has scopes
-	foundToken, err := cache.FindToken("delete-grant-token")
-	g.Expect(err).To(BeNil())
-	g.Expect(foundToken.Scopes).To(Equal([]string{"openid", "profile"}))
-
-	// Delete the grant
-	cache.GrantDeleted(3001)
-
-	// Token should be deleted (cascade)
-	_, err = cache.FindToken("delete-grant-token")
-	g.Expect(err).NotTo(BeNil())
-}
-
 // TestGrantDeletedCascadesToTokens tests that deleting a grant cascades to associated tokens.
 func TestGrantDeletedCascadesToTokens(t *testing.T) {
 	g := NewGomegaWithT(t)
@@ -1450,7 +1230,6 @@ func TestGrantDeletedCascadesToTokens(t *testing.T) {
 		Subject:       "identity-subject-4000",
 		RefreshToken:  secret.Hash("refresh-4001"),
 		IdpIdentityID: &identityID,
-		IdpScopes:     []string{"openid"},
 		Expiration:    time.Now().Add(24 * time.Hour),
 	}
 	err = db.Create(grant).Error
@@ -1510,51 +1289,100 @@ func TestGrantDeletedCascadesToTokens(t *testing.T) {
 	g.Expect(err).NotTo(BeNil())
 }
 
-// TestGrantScopesWithoutIdpScopes tests that grants without IdpScopes don't add to grantScopes map.
-func TestGrantScopesWithoutIdpScopes(t *testing.T) {
+// TestFindGrantByRefreshToken tests finding a grant by refresh token.
+func TestFindGrantByRefreshToken(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
 	cache := New(db)
-	err = cache.Refresh()
-	g.Expect(err).To(BeNil())
 
-	// Create user grant (no IdpScopes)
-	userID := uint(5000)
-	user := &User{
-		Model:   Model{ID: 5000},
-		Subject: "user-subject-5000",
-		Login:   "regularuser",
-	}
-	err = db.Create(user).Error
-	g.Expect(err).To(BeNil())
-	cache.UserSaved(user)
-
+	// Create a grant with refresh token
+	refreshToken := "test-refresh-token-12345"
+	refreshTokenHash := secret.Hash(refreshToken)
 	grant := &Grant{
-		Model:        Model{ID: 5001, UpdateTime: time.Now()},
-		Kind:         KindAuthCode,
+		Model:        Model{ID: 5001},
+		Kind:         "test-kind",
 		ClientId:     "test-client",
 		AuthId:       "auth-5001",
-		Subject:      "user-subject-5000",
-		RefreshToken: secret.Hash("refresh-5001"),
-		UserID:       &userID,
+		Subject:      "test-subject",
+		RefreshToken: refreshTokenHash,
 		Scopes:       "openid profile",
+		Issued:       time.Now(),
 		Expiration:   time.Now().Add(24 * time.Hour),
 	}
+
 	err = db.Create(grant).Error
 	g.Expect(err).To(BeNil())
-	cache.GrantSaved(grant)
 
-	// Check internal state - grantScopes should be empty for this subject
-	d := cache.data.Load()
-	_, found := d.grantScopes["user-subject-5000"]
-	g.Expect(found).To(BeFalse())
+	// Refresh cache to load the grant
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	// Test finding by refresh token (raw token, not hash)
+	found, err := cache.FindGrantByRefreshToken(refreshToken)
+	g.Expect(err).To(BeNil())
+	g.Expect(found).ToNot(BeNil())
+	g.Expect(found.ID).To(Equal(uint(5001)))
+	g.Expect(found.AuthId).To(Equal("auth-5001"))
+	g.Expect(found.RefreshToken).To(Equal(refreshTokenHash))
+
+	// Test finding with wrong token
+	_, err = cache.FindGrantByRefreshToken("wrong-token")
+	g.Expect(err).ToNot(BeNil())
+	g.Expect(errors.Is(err, &NotFound{})).To(BeTrue())
 }
 
-// TestGrantLastUpdated tests that grantLastUpdated returns most recent grant per subject.
-func TestGrantLastUpdated(t *testing.T) {
+// TestGrantByRefreshTokenWithEncryptedIdpToken tests that IdpRefreshToken is decrypted.
+func TestGrantByRefreshTokenWithEncryptedIdpToken(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+
+	// Create a grant with encrypted IdpRefreshToken
+	refreshToken := "test-refresh-token-67890"
+	refreshTokenHash := secret.Hash(refreshToken)
+	idpRefreshToken := "keycloak-refresh-token-secret"
+
+	grant := &Grant{
+		Model:           Model{ID: 5002},
+		Kind:            "test-kind",
+		ClientId:        "test-client",
+		AuthId:          "auth-5002",
+		Subject:         "test-subject",
+		RefreshToken:    refreshTokenHash,
+		IdpRefreshToken: idpRefreshToken, // Will be encrypted
+		Scopes:          "openid profile email",
+		Issued:          time.Now(),
+		Expiration:      time.Now().Add(24 * time.Hour),
+	}
+
+	// Encrypt before saving
+	_, err = secret.Encode(grant)
+	g.Expect(err).To(BeNil())
+
+	err = db.Create(grant).Error
+	g.Expect(err).To(BeNil())
+
+	// Refresh cache - should decrypt the grant
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	// Find by refresh token
+	found, err := cache.FindGrantByRefreshToken(refreshToken)
+	g.Expect(err).To(BeNil())
+	g.Expect(found).ToNot(BeNil())
+
+	// Verify IdpRefreshToken is decrypted
+	g.Expect(found.IdpRefreshToken).To(Equal(idpRefreshToken))
+}
+
+// TestGrantSavedUpdatesRefreshTokenMap tests that GrantSaved updates grantByRefreshToken.
+func TestGrantSavedUpdatesRefreshTokenMap(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	db, err := setupTestDB()
@@ -1564,59 +1392,73 @@ func TestGrantLastUpdated(t *testing.T) {
 	err = cache.Refresh()
 	g.Expect(err).To(BeNil())
 
-	identityID := uint(6000)
-	identity := &Identity{
-		Model:   Model{ID: 6000},
-		Subject: "shared-subject",
+	// Create a grant with refresh token
+	refreshToken := "test-refresh-token-abc123"
+	refreshTokenHash := secret.Hash(refreshToken)
+	grant := &Grant{
+		Model:        Model{ID: 5003},
+		Kind:         "test-kind",
+		ClientId:     "test-client",
+		AuthId:       "auth-5003",
+		Subject:      "test-subject",
+		RefreshToken: refreshTokenHash,
+		Scopes:       "openid",
+		Issued:       time.Now(),
+		Expiration:   time.Now().Add(24 * time.Hour),
 	}
-	err = db.Create(identity).Error
+
+	err = db.Create(grant).Error
 	g.Expect(err).To(BeNil())
 
-	// Create multiple grants for same subject with different times
-	now := time.Now()
-	grant1 := &Grant{
-		Model:         Model{ID: 6001, UpdateTime: now.Add(-2 * time.Hour)},
-		Kind:          KindAuthCode,
-		ClientId:      "test-client",
-		AuthId:        "auth-6001",
-		Subject:       "shared-subject",
-		RefreshToken:  secret.Hash("refresh-6001"),
-		IdpIdentityID: &identityID,
-		IdpScopes:     []string{"scope1"},
-		Expiration:    now.Add(24 * time.Hour),
-	}
-	grant2 := &Grant{
-		Model:         Model{ID: 6002, UpdateTime: now.Add(-1 * time.Hour)},
-		Kind:          KindAuthCode,
-		ClientId:      "test-client",
-		AuthId:        "auth-6002",
-		Subject:       "shared-subject",
-		RefreshToken:  secret.Hash("refresh-6002"),
-		IdpIdentityID: &identityID,
-		IdpScopes:     []string{"scope2"},
-		Expiration:    now.Add(24 * time.Hour),
-	}
-	grant3 := &Grant{
-		Model:         Model{ID: 6003, UpdateTime: now},
-		Kind:          KindAuthCode,
-		ClientId:      "test-client",
-		AuthId:        "auth-6003",
-		Subject:       "shared-subject",
-		RefreshToken:  secret.Hash("refresh-6003"),
-		IdpIdentityID: &identityID,
-		IdpScopes:     []string{"scope3"},
-		Expiration:    now.Add(24 * time.Hour),
+	// Notify cache
+	cache.GrantSaved(grant)
+
+	// Should be findable by refresh token
+	found, err := cache.FindGrantByRefreshToken(refreshToken)
+	g.Expect(err).To(BeNil())
+	g.Expect(found.ID).To(Equal(uint(5003)))
+}
+
+// TestGrantDeletedRemovesFromRefreshTokenMap tests that GrantDeleted removes from grantByRefreshToken.
+func TestGrantDeletedRemovesFromRefreshTokenMap(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+
+	// Create a grant with refresh token
+	refreshToken := "test-refresh-token-xyz789"
+	refreshTokenHash := secret.Hash(refreshToken)
+	grant := &Grant{
+		Model:        Model{ID: 5004},
+		Kind:         "test-kind",
+		ClientId:     "test-client",
+		AuthId:       "auth-5004",
+		Subject:      "test-subject",
+		RefreshToken: refreshTokenHash,
+		Scopes:       "openid",
+		Issued:       time.Now(),
+		Expiration:   time.Now().Add(24 * time.Hour),
 	}
 
-	for _, grant := range []*Grant{grant1, grant2, grant3} {
-		err = db.Create(grant).Error
-		g.Expect(err).To(BeNil())
-		cache.GrantSaved(grant)
-	}
+	err = db.Create(grant).Error
+	g.Expect(err).To(BeNil())
 
-	// Verify grantScopes has most recent grant's scopes
-	d := cache.data.Load()
-	scopes, found := d.grantScopes["shared-subject"]
-	g.Expect(found).To(BeTrue())
-	g.Expect(scopes).To(Equal([]string{"scope3"}))
+	// Refresh and verify it's there
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	found, err := cache.FindGrantByRefreshToken(refreshToken)
+	g.Expect(err).To(BeNil())
+	g.Expect(found.ID).To(Equal(uint(5004)))
+
+	// Delete the grant
+	cache.GrantDeleted(5004)
+
+	// Should not be findable anymore
+	_, err = cache.FindGrantByRefreshToken(refreshToken)
+	g.Expect(err).ToNot(BeNil())
+	g.Expect(errors.Is(err, &NotFound{})).To(BeTrue())
 }

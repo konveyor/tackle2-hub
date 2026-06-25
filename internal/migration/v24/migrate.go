@@ -1,8 +1,6 @@
 package v24
 
 import (
-	"strings"
-
 	liberr "github.com/jortel/go-utils/error"
 	v23 "github.com/konveyor/tackle2-hub/internal/migration/v23/model"
 	"github.com/konveyor/tackle2-hub/internal/migration/v24/model"
@@ -49,13 +47,8 @@ func (r Migration) migrateIdpRefreshTokens(db *gorm.DB) (err error) {
 			err = liberr.Wrap(err)
 			return
 		}
-		var idpScopes []string
-		if identity.Scopes != "" {
-			idpScopes = strings.Fields(identity.Scopes)
-		}
 		for _, grant := range grants {
 			grant.IdpRefreshToken = identity.RefreshToken
-			grant.IdpScopes = idpScopes
 			err = db.Save(grant).Error
 			if err != nil {
 				err = liberr.Wrap(err)
@@ -128,7 +121,12 @@ func (r Migration) dropIdpIdentityColumns(db *gorm.DB) (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
-	err = migrator.DropColumn(&model.IdpIdentity{}, "Scopes")
+	err = migrator.DropColumn(&model.IdpIdentity{}, "LastAuthenticated")
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = db.AutoMigrate(&model.IdpIdentity{})
 	if err != nil {
 		err = liberr.Wrap(err)
 		return

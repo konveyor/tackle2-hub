@@ -847,7 +847,7 @@ func (r *Login) authUser() (err error) {
 			return
 		}
 		var scopes []string
-		scopes, err = cache.FindUserScopes(user.ID)
+		scopes, err = cache.FindScopes(user.Subject)
 		if err != nil {
 			return
 		}
@@ -861,8 +861,7 @@ func (r *Login) authUser() (err error) {
 
 // authUser authenticates an LDAP user.
 func (r *Login) authLdapUser() (err error) {
-	lifespan := Settings.Auth.Token.Lifespan
-	r.subject, err = r.storage.dsHandler.Authenticate(r.login, r.password, lifespan)
+	r.subject, err = r.storage.dsHandler.Authenticate(r.login, r.password)
 	return
 }
 
@@ -1168,7 +1167,7 @@ func (r *Storage) refreshIdentity(req op.RefreshTokenRequest, grant *Grant) (err
 			handler:  r.idpHandler,
 			identity: s.Identity,
 		}
-		err = login.RefreshIdentity(grant)
+		err = login.refreshIdentity(grant)
 		if err != nil {
 			return
 		}
@@ -1193,10 +1192,7 @@ func (r *Storage) refreshLdapIdentity(identity *Identity, grant *Grant) (err err
 		return
 	}
 	password := grant.IdpRefreshToken
-	subject, err := r.dsHandler.Authenticate(
-		identity.Login,
-		password,
-		Settings.Auth.Token.Lifespan)
+	subject, err := r.dsHandler.Authenticate(identity.Login, password)
 	if err != nil {
 		return
 	}
@@ -1267,12 +1263,9 @@ func (r *Storage) deleteTokensBySubject(_ context.Context, subject string) (err 
 
 // grantByRefreshToken returns a grant by refresh token.
 func (r *Storage) grantByRefreshToken(_ context.Context, token string) (m *Grant, err error) {
-	m = &Grant{}
-	db := r.db.Where("expiration > ?", time.Now())
-	db = db.Where("refreshToken", secret.Hash(token))
-	err = db.First(m).Error
+	m, err = r.cache.FindGrantByRefreshToken(token)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, &NotFound{}) {
 			err = oidc.ErrInvalidGrant().WithDescription("grant not-found.")
 		} else {
 			err = liberr.Wrap(err)
@@ -1339,20 +1332,15 @@ func (r *Storage) createGrant(
 	m.Scopes = scopes
 	m.Issued = req.GetAuthTime()
 	m.Expiration = expiration
-
-	// Set FKs based on subject type
 	subject, err := r.findSubject(req.GetSubject())
 	if err == nil {
 		m.UserID = subject.UserId
 		m.IdpIdentityID = subject.IdentityId
 		m.IdpClientID = subject.ClientId
 	}
-
-	// For federated logins, set external IDP refresh token and scopes
 	if authReq, cast := req.(*AuthRequest); cast {
 		if authReq.idpRefreshToken != "" {
 			m.IdpRefreshToken = authReq.idpRefreshToken
-			m.IdpScopes = req.GetScopes()
 		}
 	}
 	_, err = secret.Encode(m)

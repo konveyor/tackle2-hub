@@ -3,6 +3,7 @@ package cache
 import (
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -173,6 +174,18 @@ func (r *Cache) GrantDeleted(id uint) {
 	})
 }
 
+// FindGrantByRefreshToken returns a grant by refresh token.
+func (r *Cache) FindGrantByRefreshToken(token string) (m *Grant, err error) {
+	defer r.ensureRefreshed()
+	d := r.data.Load()
+	digest := secret.Hash(token)
+	m, found := d.grantByRefreshToken[digest]
+	if !found {
+		err = &NotFound{}
+	}
+	return
+}
+
 // FindTokenById returns a PAT.
 func (r *Cache) FindTokenById(id uint) (m *Token, err error) {
 	defer r.ensureRefreshed()
@@ -214,7 +227,7 @@ func (r *Cache) FindSubject(subject string) (s *Subject, err error) {
 	if found {
 		s = &Subject{}
 		var scopes []string
-		scopes, err = r.FindUserScopes(user.ID)
+		scopes, err = r.FindScopes(user.Subject)
 		if err != nil {
 			return
 		}
@@ -303,15 +316,15 @@ func (r *Cache) FindUserByLogin(login string) (m *User, err error) {
 	return
 }
 
-// FindUserScopes returns the user scopes.
-func (r *Cache) FindUserScopes(id uint) (scopes []string, err error) {
+// FindScopes returns the subject scopes.
+func (r *Cache) FindScopes(subject string) (scopes []string, err error) {
 	defer r.ensureRefreshed()
 	d := r.data.Load()
-	scopes, found := d.userScopes[id]
+	scopes, found := d.scopesBySubject[subject]
 	if !found {
 		err = &NotFound{
-			Resource: "user",
-			Id:       strconv.Itoa(int(id)),
+			Resource: "subject",
+			Id:       subject,
 		}
 	}
 	return
@@ -364,22 +377,22 @@ type Data struct {
 	refreshOnce sync.Once
 	refreshed   time.Time
 	//
-	permById        map[uint]*Permission
-	roleById        map[uint]*Role
-	roleByName      map[string]*Role
-	userById        map[uint]*User
-	userBySubject   map[string]*User
-	userByLogin     map[string]*User
-	userScopes      map[uint][]string
-	identById       map[uint]*Identity
-	identBySubject  map[string]*Identity
-	identByLogin    map[string]*Identity
-	clientById      map[uint]*IdpClient
-	clientBySubject map[string]*IdpClient
-	tokenById       map[uint]*Token
-	tokenByDigest   map[string]*Token
-	grantById       map[uint]*Grant
-	grantScopes     map[string][]string
+	permById            map[uint]*Permission
+	roleById            map[uint]*Role
+	roleByName          map[string]*Role
+	userById            map[uint]*User
+	userBySubject       map[string]*User
+	userByLogin         map[string]*User
+	identById           map[uint]*Identity
+	identBySubject      map[string]*Identity
+	identByLogin        map[string]*Identity
+	clientById          map[uint]*IdpClient
+	clientBySubject     map[string]*IdpClient
+	tokenById           map[uint]*Token
+	tokenByDigest       map[string]*Token
+	grantById           map[uint]*Grant
+	grantByRefreshToken map[string]*Grant
+	scopesBySubject     map[string][]string
 }
 
 // reset creates new maps.
@@ -390,7 +403,7 @@ func (d *Data) reset() {
 	d.userById = make(map[uint]*User)
 	d.userBySubject = make(map[string]*User)
 	d.userByLogin = make(map[string]*User)
-	d.userScopes = make(map[uint][]string)
+	d.scopesBySubject = make(map[string][]string)
 	d.identById = make(map[uint]*Identity)
 	d.identBySubject = make(map[string]*Identity)
 	d.identByLogin = make(map[string]*Identity)
@@ -399,7 +412,7 @@ func (d *Data) reset() {
 	d.tokenById = make(map[uint]*Token)
 	d.tokenByDigest = make(map[string]*Token)
 	d.grantById = make(map[uint]*Grant)
-	d.grantScopes = make(map[string][]string)
+	d.grantByRefreshToken = make(map[string]*Grant)
 }
 
 // clone returns cloned data.
@@ -407,24 +420,24 @@ func (d *Data) reset() {
 // refreshOnce is new.
 func (d *Data) clone() *Data {
 	return &Data{
-		refreshOnce:     sync.Once{},
-		refreshed:       d.refreshed,
-		permById:        cloneMap(d.permById),
-		roleById:        cloneMap(d.roleById),
-		roleByName:      cloneMap(d.roleByName),
-		userById:        cloneMap(d.userById),
-		userBySubject:   cloneMap(d.userBySubject),
-		userByLogin:     cloneMap(d.userByLogin),
-		userScopes:      cloneMap(d.userScopes),
-		identById:       cloneMap(d.identById),
-		identBySubject:  cloneMap(d.identBySubject),
-		identByLogin:    cloneMap(d.identByLogin),
-		clientById:      cloneMap(d.clientById),
-		clientBySubject: cloneMap(d.clientBySubject),
-		tokenById:       cloneMap(d.tokenById),
-		tokenByDigest:   cloneMap(d.tokenByDigest),
-		grantById:       cloneMap(d.grantById),
-		grantScopes:     cloneMap(d.grantScopes),
+		refreshOnce:         sync.Once{},
+		refreshed:           d.refreshed,
+		permById:            cloneMap(d.permById),
+		roleById:            cloneMap(d.roleById),
+		roleByName:          cloneMap(d.roleByName),
+		userById:            cloneMap(d.userById),
+		userBySubject:       cloneMap(d.userBySubject),
+		userByLogin:         cloneMap(d.userByLogin),
+		scopesBySubject:     cloneMap(d.scopesBySubject),
+		identById:           cloneMap(d.identById),
+		identBySubject:      cloneMap(d.identBySubject),
+		identByLogin:        cloneMap(d.identByLogin),
+		clientById:          cloneMap(d.clientById),
+		clientBySubject:     cloneMap(d.clientBySubject),
+		tokenById:           cloneMap(d.tokenById),
+		tokenByDigest:       cloneMap(d.tokenByDigest),
+		grantById:           cloneMap(d.grantById),
+		grantByRefreshToken: cloneMap(d.grantByRefreshToken),
 	}
 }
 
@@ -568,7 +581,7 @@ func (d *Data) getTokens(db *gorm.DB) (err error) {
 	return
 }
 
-// getGrants fetches grants from the DB and populates grantById.
+// getGrants fetches grants from the DB and populates grantById and grantByRefreshToken.
 func (d *Data) getGrants(db *gorm.DB) (err error) {
 	list := []*Grant{}
 	db = db.Where("expiration > ?", time.Now())
@@ -578,7 +591,15 @@ func (d *Data) getGrants(db *gorm.DB) (err error) {
 		return
 	}
 	for _, m := range list {
+		err = secret.Decode(m)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
 		d.grantById[m.ID] = m
+		if m.RefreshToken != "" {
+			d.grantByRefreshToken[m.RefreshToken] = m
+		}
 	}
 	return
 }
@@ -596,7 +617,7 @@ func (d *Data) addTokenScopes(m *Token) {
 	}()
 	// user binding.
 	if m.UserID != nil {
-		scopes, found := d.userScopes[*m.UserID]
+		scopes, found := d.scopesBySubject[m.Subject]
 		if !found {
 			err = &NotFound{
 				Resource: "user.scopes",
@@ -622,7 +643,7 @@ func (d *Data) addTokenScopes(m *Token) {
 			}
 			return
 		}
-		scopes, found := d.grantScopes[m.Subject]
+		scopes, found := d.scopesBySubject[m.Subject]
 		if found {
 			m.Scopes = scopes
 		}
@@ -663,46 +684,21 @@ func (d *Data) addUserScopes(m *User) {
 	}
 	scopes = uniqueStrings(scopes)
 	sort.Strings(scopes)
-	d.userScopes[m.ID] = scopes
-}
-
-// addGrantScopes determine grant scopes and add to the data.
-func (d *Data) addGrantScopes(m *Grant) {
-	if len(m.IdpScopes) > 0 {
-		d.grantScopes[m.Subject] = m.IdpScopes
-	}
+	d.scopesBySubject[m.Subject] = scopes
 }
 
 // updateScopes update calculated scopes.
 func (d *Data) updateScopes() {
-	d.userScopes = make(map[uint][]string)
+	d.scopesBySubject = make(map[string][]string)
 	for _, m := range d.userById {
 		d.addUserScopes(m)
 	}
-	d.grantScopes = make(map[string][]string)
-	for _, m := range d.grantLastUpdated() {
-		d.addGrantScopes(m)
+	for _, m := range d.identById {
+		d.scopesBySubject[m.Subject] = strings.Fields(m.Scopes)
 	}
 	for _, m := range d.tokenById {
 		d.addTokenScopes(m)
 	}
-}
-
-// grantLastUpdated returns a list of the grants.
-// Each grant is the last updated for the subject.
-func (d *Data) grantLastUpdated() (grants []*Grant) {
-	byUpdated := make(map[string]*Grant)
-	mark := make(map[string]time.Time)
-	for _, m := range d.grantById {
-		if m.UpdateTime.After(mark[m.Subject]) {
-			mark[m.Subject] = m.UpdateTime
-			byUpdated[m.Subject] = m
-		}
-	}
-	for _, m := range byUpdated {
-		grants = append(grants, m)
-	}
-	return
 }
 
 // cloneMap returns a shallow clone.
