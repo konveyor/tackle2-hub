@@ -83,10 +83,8 @@ func (h *LdapHandler) ensureIdentity(identity *Identity) (err error) {
 		},
 		DoUpdates: clause.AssignmentColumns([]string{
 			"kind",
-			"lastAuthenticated",
+			"issuer",
 			"login",
-			"name",
-			"email",
 			"scopes",
 			"updateUser",
 		}),

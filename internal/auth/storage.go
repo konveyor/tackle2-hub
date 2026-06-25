@@ -1338,11 +1338,12 @@ func (r *Storage) createGrant(
 	m.Issued = req.GetAuthTime()
 	m.Expiration = expiration
 	subject, err := r.findSubject(req.GetSubject())
-	if err == nil {
-		m.UserID = subject.UserId
-		m.IdpIdentityID = subject.IdentityId
-		m.IdpClientID = subject.ClientId
+	if err != nil {
+		return
 	}
+	m.UserID = subject.UserId
+	m.IdpIdentityID = subject.IdentityId
+	m.IdpClientID = subject.ClientId
 	if authReq, cast := req.(*AuthRequest); cast {
 		if authReq.idpRefreshToken != "" {
 			m.IdpRefreshToken = authReq.idpRefreshToken
