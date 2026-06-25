@@ -69,6 +69,7 @@ func (h *LdapHandler) buildIdentity(ldapUser *LdapUser) (identity *Identity) {
 		Issuer:  h.ds.URL,
 		Subject: ldapUser.Subject,
 		Login:   ldapUser.Login,
+		Scopes:  strings.Join(scopes, " "),
 	}
 
 	return
@@ -86,6 +87,7 @@ func (h *LdapHandler) ensureIdentity(identity *Identity) (err error) {
 			"login",
 			"name",
 			"email",
+			"scopes",
 			"updateUser",
 		}),
 	})
