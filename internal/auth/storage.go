@@ -882,6 +882,7 @@ func (r *Login) updateAuthRequest() (err error) {
 	}
 
 	r.authReq.subject = r.subject.Key
+	r.authReq.idpRefreshToken = r.password
 	r.authReq.issued = time.Now()
 	r.authReq.done = true
 	return
