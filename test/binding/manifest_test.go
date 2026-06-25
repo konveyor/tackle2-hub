@@ -94,7 +94,7 @@ func TestManifest(t *testing.T) {
 	updated, err := client.Manifest.Decrypted().Get(manifest.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(updated).NotTo(BeNil())
-	eq, report = cmp.Eq(manifest, updated, "UpdateUser")
+	eq, report = cmp.Eq(manifest, updated)
 	g.Expect(eq).To(BeTrue(), report)
 
 	// GET: Retrieve with Decrypt and Inject - verify injected content

@@ -51,6 +51,8 @@ import (
 	"github.com/konveyor/tackle2-hub/test/cmp/sort"
 )
 
+var IgnoredPaths []string
+
 func New() (cmp *Cmp) {
 	cmp = &Cmp{
 		sortMap: make(sort.Map),
@@ -72,7 +74,8 @@ func Format(a any) (s string) {
 
 func Eq(expected, got any, ignoredPaths ...string) (eq bool, report string) {
 	cmp := New()
-	cmp = cmp.Ignore(ignoredPaths...)
+	ignored := append(IgnoredPaths, ignoredPaths...)
+	cmp = cmp.Ignore(ignored...)
 	eq, report = cmp.Eq(expected, got)
 	return
 }
