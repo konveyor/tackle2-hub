@@ -20,6 +20,7 @@ func (r *Grant) With(m *model.Grant) {
 	r.User = refPtr(m.UserID, m.User)
 	r.IdpIdentity = refPtr(m.IdpIdentityID, m.IdpIdentity)
 	r.IdpClient = refPtr(m.IdpClientID, m.IdpClient)
+	r.Tokens = []Ref{}
 	for i := range m.Tokens {
 		r.Tokens = append(r.Tokens, ref(m.Tokens[i].ID, &m.Tokens[i]))
 	}
