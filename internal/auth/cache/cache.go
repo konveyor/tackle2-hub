@@ -158,32 +158,12 @@ func (r *Cache) TokenDeleted(id uint) {
 	})
 }
 
-// GrantSaved updates grant scopes in the cache.
-func (r *Cache) GrantSaved(m *Grant) {
-	_ = r.Transaction(func(tx *Tx) (_ error) {
-		tx.GrantSaved(m)
-		return
-	})
-}
-
-// GrantDeleted removes a grant and all associated tokens from the cache.
+// GrantDeleted removes all tokens associated with a grant from the cache.
 func (r *Cache) GrantDeleted(id uint) {
 	_ = r.Transaction(func(tx *Tx) (_ error) {
 		tx.GrantDeleted(id)
 		return
 	})
-}
-
-// FindGrantByRefreshToken returns a grant by refresh token.
-func (r *Cache) FindGrantByRefreshToken(token string) (m *Grant, err error) {
-	defer r.ensureRefreshed()
-	d := r.data.Load()
-	digest := secret.Hash(token)
-	m, found := d.grantByRefreshToken[digest]
-	if !found {
-		err = &NotFound{}
-	}
-	return
 }
 
 // FindTokenById returns a PAT.
@@ -390,8 +370,6 @@ type Data struct {
 	clientBySubject     map[string]*IdpClient
 	tokenById           map[uint]*Token
 	tokenByDigest       map[string]*Token
-	grantById           map[uint]*Grant
-	grantByRefreshToken map[string]*Grant
 	scopesBySubject     map[string][]string
 }
 
@@ -411,8 +389,6 @@ func (d *Data) reset() {
 	d.clientBySubject = make(map[string]*IdpClient)
 	d.tokenById = make(map[uint]*Token)
 	d.tokenByDigest = make(map[string]*Token)
-	d.grantById = make(map[uint]*Grant)
-	d.grantByRefreshToken = make(map[string]*Grant)
 }
 
 // clone returns cloned data.
@@ -436,8 +412,6 @@ func (d *Data) clone() *Data {
 		clientBySubject:     cloneMap(d.clientBySubject),
 		tokenById:           cloneMap(d.tokenById),
 		tokenByDigest:       cloneMap(d.tokenByDigest),
-		grantById:           cloneMap(d.grantById),
-		grantByRefreshToken: cloneMap(d.grantByRefreshToken),
 	}
 }
 
@@ -465,10 +439,6 @@ func (d *Data) refresh(db *gorm.DB) (err error) {
 		return
 	}
 	err = d.getTokens(db)
-	if err != nil {
-		return
-	}
-	err = d.getGrants(db)
 	if err != nil {
 		return
 	}
@@ -577,29 +547,6 @@ func (d *Data) getTokens(db *gorm.DB) (err error) {
 	for _, m := range list {
 		d.tokenById[m.ID] = m
 		d.tokenByDigest[m.Digest] = m
-	}
-	return
-}
-
-// getGrants fetches grants from the DB and populates grantById and grantByRefreshToken.
-func (d *Data) getGrants(db *gorm.DB) (err error) {
-	list := []*Grant{}
-	db = db.Where("expiration > ?", time.Now())
-	err = db.Find(&list).Error
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	for _, m := range list {
-		err = secret.Decode(m)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-		d.grantById[m.ID] = m
-		if m.RefreshToken != "" {
-			d.grantByRefreshToken[m.RefreshToken] = m
-		}
 	}
 	return
 }

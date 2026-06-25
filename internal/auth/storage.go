@@ -1110,7 +1110,6 @@ func (r *Storage) createRefreshToken(ctx context.Context, req op.TokenRequest) (
 		err = liberr.Wrap(err)
 		return
 	}
-	r.cache.GrantSaved(grant)
 
 	authCode := r.authCodeById(authReq.GetID())
 	if authCode != "" {
@@ -1161,7 +1160,6 @@ func (r *Storage) refreshIdentity(req op.RefreshTokenRequest, grant *Grant) (err
 			err = liberr.Wrap(err)
 			return
 		}
-		r.cache.GrantSaved(grant)
 	case IdentityKindOpenid:
 		login := &FedIdpLogin{
 			handler:  r.idpHandler,
@@ -1181,7 +1179,6 @@ func (r *Storage) refreshIdentity(req op.RefreshTokenRequest, grant *Grant) (err
 			err = liberr.Wrap(err)
 			return
 		}
-		r.cache.GrantSaved(grant)
 	}
 	return
 }
@@ -1263,13 +1260,21 @@ func (r *Storage) deleteTokensBySubject(_ context.Context, subject string) (err 
 
 // grantByRefreshToken returns a grant by refresh token.
 func (r *Storage) grantByRefreshToken(_ context.Context, token string) (m *Grant, err error) {
-	m, err = r.cache.FindGrantByRefreshToken(token)
+	m = &Grant{}
+	db := r.db.Where("expiration > ?", time.Now())
+	db = db.Where("refreshToken", secret.Hash(token))
+	err = db.First(m).Error
 	if err != nil {
-		if errors.Is(err, &NotFound{}) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			err = oidc.ErrInvalidGrant().WithDescription("grant not-found.")
 		} else {
 			err = liberr.Wrap(err)
 		}
+		return
+	}
+	err = secret.Decode(m)
+	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	err = r.orphaned(m)
@@ -1353,7 +1358,6 @@ func (r *Storage) createGrant(
 		err = liberr.Wrap(err)
 		return
 	}
-	r.cache.GrantSaved(m)
 	return
 }
 
