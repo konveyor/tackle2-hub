@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-jose/go-jose/v4"
+	"github.com/go-ldap/ldap/v3"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	as "github.com/konveyor/tackle2-hub/internal/auth/settings"
@@ -3702,4 +3703,156 @@ func TestCreateAccessAndRefreshTokens_FullFlow(t *testing.T) {
 	g.Expect(token.AuthId).To(Equal(requestId))
 	g.Expect(token.GrantID).NotTo(BeNil())
 	g.Expect(*token.GrantID).To(Equal(grant.ID))
+}
+
+// TestUserFilter tests placeholder replacement in user filters.
+func TestUserFilter(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	ds := &LDAP{}
+
+	// Test ${uid} replacement
+	ds.UserFilter = "(uid=${uid})"
+	filter := ds.userFilter("jsmith")
+	g.Expect(filter).To(Equal("(uid=jsmith)"))
+
+	// Test ${login} replacement
+	ds.UserFilter = "(sAMAccountName=${login})"
+	filter = ds.userFilter("jsmith")
+	g.Expect(filter).To(Equal("(sAMAccountName=jsmith)"))
+
+	// Test both ${uid} and ${login} in same filter
+	ds.UserFilter = "(|(uid=${uid})(mail=${login}))"
+	filter = ds.userFilter("jsmith")
+	g.Expect(filter).To(Equal("(|(uid=jsmith)(mail=jsmith))"))
+
+	// Test LDAP escaping of special characters
+	ds.UserFilter = "(uid=${uid})"
+	filter = ds.userFilter("j*smith")
+	g.Expect(filter).To(Equal("(uid=j\\2asmith)"))
+
+	// Test LDAP escaping of parentheses
+	ds.UserFilter = "(uid=${login})"
+	filter = ds.userFilter("j(smith)")
+	g.Expect(filter).To(Equal("(uid=j\\28smith\\29)"))
+
+	// Test Active Directory default
+	ds.Kind = "AD"
+	ds.UserFilter = ""
+	filter = ds.userFilter("jsmith")
+	g.Expect(filter).To(Equal("(sAMAccountName=jsmith)"))
+
+	// Test ACTIVEDIRECTORY kind
+	ds.Kind = "ACTIVEDIRECTORY"
+	ds.UserFilter = ""
+	filter = ds.userFilter("jsmith")
+	g.Expect(filter).To(Equal("(sAMAccountName=jsmith)"))
+
+	// Test standard LDAP default
+	ds.Kind = "LDAP"
+	ds.UserFilter = ""
+	filter = ds.userFilter("jsmith")
+	g.Expect(filter).To(Equal("(uid=jsmith)"))
+
+	// Test unknown kind defaults to LDAP behavior
+	ds.Kind = "UNKNOWN"
+	ds.UserFilter = ""
+	filter = ds.userFilter("jsmith")
+	g.Expect(filter).To(Equal("(uid=jsmith)"))
+
+	// Test custom filter with multiple placeholders and escaping
+	ds.UserFilter = "(&(uid=${uid})(mail=${login}@example.com))"
+	filter = ds.userFilter("test.user")
+	g.Expect(filter).To(Equal("(&(uid=test.user)(mail=test.user@example.com))"))
+}
+
+// TestGroupFilter tests placeholder replacement in group filters.
+func TestGroupFilter(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	ds := &LDAP{}
+
+	// Create mock user entry
+	user := &ldap.Entry{
+		DN: "uid=jsmith,ou=people,dc=example,dc=com",
+		Attributes: []*ldap.EntryAttribute{
+			{Name: "cn", Values: []string{"John Smith"}},
+			{Name: "uid", Values: []string{"jsmith"}},
+		},
+	}
+
+	// Test ${dn} replacement
+	ds.GroupFilter = "(member=${dn})"
+	filter := ds.groupFilter(user)
+	g.Expect(filter).To(Equal("(member=uid=jsmith,ou=people,dc=example,dc=com)"))
+
+	// Test ${cn} replacement
+	ds.GroupFilter = "(owner=${cn})"
+	filter = ds.groupFilter(user)
+	g.Expect(filter).To(Equal("(owner=John Smith)"))
+
+	// Test ${uid} replacement
+	ds.GroupFilter = "(memberUid=${uid})"
+	filter = ds.groupFilter(user)
+	g.Expect(filter).To(Equal("(memberUid=jsmith)"))
+
+	// Test multiple placeholders
+	ds.GroupFilter = "(&(member=${dn})(owner=${cn}))"
+	filter = ds.groupFilter(user)
+	g.Expect(filter).To(Equal("(&(member=uid=jsmith,ou=people,dc=example,dc=com)(owner=John Smith))"))
+
+	// Test all three placeholders
+	ds.GroupFilter = "(&(member=${dn})(owner=${cn})(memberUid=${uid}))"
+	filter = ds.groupFilter(user)
+	g.Expect(filter).To(Equal("(&(member=uid=jsmith,ou=people,dc=example,dc=com)(owner=John Smith)(memberUid=jsmith))"))
+
+	// Test LDAP escaping in DN
+	userWithSpecialDN := &ldap.Entry{
+		DN: "uid=j*smith,ou=people,dc=example,dc=com",
+		Attributes: []*ldap.EntryAttribute{
+			{Name: "cn", Values: []string{"J*Smith"}},
+			{Name: "uid", Values: []string{"j*smith"}},
+		},
+	}
+	ds.GroupFilter = "(member=${dn})"
+	filter = ds.groupFilter(userWithSpecialDN)
+	g.Expect(filter).To(Equal("(member=uid=j\\2asmith,ou=people,dc=example,dc=com)"))
+
+	// Test LDAP escaping in CN
+	ds.GroupFilter = "(owner=${cn})"
+	filter = ds.groupFilter(userWithSpecialDN)
+	g.Expect(filter).To(Equal("(owner=J\\2aSmith)"))
+
+	// Test Active Directory default
+	ds.Kind = "AD"
+	ds.GroupFilter = ""
+	filter = ds.groupFilter(user)
+	g.Expect(filter).To(Equal("(&(objectClass=group)(member=uid=jsmith,ou=people,dc=example,dc=com))"))
+
+	// Test ACTIVEDIRECTORY kind
+	ds.Kind = "ACTIVEDIRECTORY"
+	ds.GroupFilter = ""
+	filter = ds.groupFilter(user)
+	g.Expect(filter).To(Equal("(&(objectClass=group)(member=uid=jsmith,ou=people,dc=example,dc=com))"))
+
+	// Test standard LDAP default
+	ds.Kind = "LDAP"
+	ds.GroupFilter = ""
+	filter = ds.groupFilter(user)
+	g.Expect(filter).To(Equal("(&(objectClass=*)(member=uid=jsmith,ou=people,dc=example,dc=com))"))
+
+	// Test unknown kind defaults to LDAP behavior
+	ds.Kind = "UNKNOWN"
+	ds.GroupFilter = ""
+	filter = ds.groupFilter(user)
+	g.Expect(filter).To(Equal("(&(objectClass=*)(member=uid=jsmith,ou=people,dc=example,dc=com))"))
+
+	// Test empty attribute values
+	userNoAttrs := &ldap.Entry{
+		DN:         "uid=noattrs,ou=people,dc=example,dc=com",
+		Attributes: []*ldap.EntryAttribute{},
+	}
+	ds.GroupFilter = "(&(member=${dn})(memberUid=${uid}))"
+	filter = ds.groupFilter(userNoAttrs)
+	g.Expect(filter).To(Equal("(&(member=uid=noattrs,ou=people,dc=example,dc=com)(memberUid=))"))
 }

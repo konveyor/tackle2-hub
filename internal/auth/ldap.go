@@ -193,7 +193,7 @@ func (r *LDAP) Authenticate(login, password string) (dsUser *LdapUser, err error
 		return
 	}
 	// Find (search) groups.
-	groups, err = r.findGroup(user.DN)
+	groups, err = r.findGroup(user)
 	if err != nil {
 		return
 	}
@@ -227,11 +227,11 @@ func (r *LDAP) findUser(login string) (entry *ldap.Entry, err error) {
 }
 
 // findGroup performs a search and returns the groups.
-func (r *LDAP) findGroup(userDN string) (groups []string, err error) {
+func (r *LDAP) findGroup(user *ldap.Entry) (groups []string, err error) {
 	baseDN := fmt.Sprintf("ou=groups,%s", r.BaseDN)
 	request := r.request(
 		baseDN,
-		r.groupFilter(userDN),
+		r.groupFilter(user),
 		"dn",
 		"cn",
 		"mail",
@@ -251,41 +251,55 @@ func (r *LDAP) findGroup(userDN string) (groups []string, err error) {
 }
 
 // userFilter returns the user search filter.
+// Supported (macros):
+// - ${uid} - user uid
+// - ${login} - user login (cn alias)
 func (r *LDAP) userFilter(login string) (filter string) {
 	filter = r.UserFilter
 	switch r.Kind {
 	case "ACTIVEDIRECTORY",
 		"AD":
 		if filter == "" {
-			filter = "(sAMAccountName=%s)"
+			filter = "(sAMAccountName=${login})"
 		}
 	default:
 		if filter == "" {
-			filter = "(uid=%s)"
+			filter = "(uid=${uid})"
 		}
 	}
 
-	filter = fmt.Sprintf(filter, ldap.EscapeFilter(login))
+	uid := ldap.EscapeFilter(login)
+	filter = strings.Replace(filter, "${login}", uid, -1)
+	filter = strings.Replace(filter, "${uid}", uid, -1)
 
 	return
 }
 
 // groupFilter returns the group search filter.
-func (r *LDAP) groupFilter(dn string) (filter string) {
+// Supported (macros):
+// - ${uid} - user uid (login alias)
+// - ${cn}  - user cn.
+// - ${dn}  - user dn.
+func (r *LDAP) groupFilter(user *ldap.Entry) (filter string) {
 	filter = r.GroupFilter
 	switch r.Kind {
 	case "ACTIVEDIRECTORY",
 		"AD":
 		if filter == "" {
-			filter = "(&(objectClass=group)(member=%s))"
+			filter = "(&(objectClass=group)(member=${dn}))"
 		}
 	default:
 		if filter == "" {
-			filter = "(&(objectClass=*)(member=%s))"
+			filter = "(&(objectClass=*)(member=${dn}))"
 		}
 	}
 
-	filter = fmt.Sprintf(filter, ldap.EscapeFilter(dn))
+	dn := ldap.EscapeFilter(user.DN)
+	uid := ldap.EscapeFilter(user.GetAttributeValue("uid"))
+	cn := ldap.EscapeFilter(user.GetAttributeValue("cn"))
+	filter = strings.Replace(filter, "${uid}", uid, -1)
+	filter = strings.Replace(filter, "${cn}", cn, -1)
+	filter = strings.Replace(filter, "${dn}", dn, -1)
 
 	return
 }
