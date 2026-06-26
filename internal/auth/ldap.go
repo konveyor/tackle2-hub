@@ -69,7 +69,7 @@ func (h *LdapHandler) buildIdentity(ldapUser *LdapUser) (identity *Identity) {
 		Issuer:  h.ds.URL,
 		Subject: ldapUser.Subject,
 		Login:   ldapUser.Login,
-		Scopes:  strings.Join(scopes, " "),
+		Scopes:  scopes,
 	}
 
 	return

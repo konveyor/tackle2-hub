@@ -400,7 +400,7 @@ func (r *Storage) TokenRequestByRefreshToken(
 		grantId:  grant.AuthId,
 		clientId: grant.ClientId,
 		subject:  grant.Subject,
-		scopes:   strings.Fields(grant.Scopes),
+		scopes:   grant.Scopes,
 		issued:   grant.Issued,
 	}
 	err = r.refreshIdentity(req, grant)
@@ -1326,7 +1326,6 @@ func (r *Storage) createGrant(
 	//
 	grantId = authId
 	expiration := time.Now().Add(Settings.Token.RefreshLifespan)
-	scopes := strings.Join(req.GetScopes(), " ")
 
 	m := &Grant{}
 	m.Kind = KindAuthCode
@@ -1335,7 +1334,7 @@ func (r *Storage) createGrant(
 	m.Subject = req.GetSubject()
 	m.AuthCode = authCode
 	m.RefreshToken = r.genId()
-	m.Scopes = scopes
+	m.Scopes = req.GetScopes()
 	m.Issued = req.GetAuthTime()
 	m.Expiration = expiration
 	subject, err := r.findSubject(req.GetSubject())

@@ -1287,4 +1287,3 @@ func TestGrantDeletedCascadesToTokens(t *testing.T) {
 	_, err = cache.FindToken("cascade-token-2")
 	g.Expect(err).NotTo(BeNil())
 }
-

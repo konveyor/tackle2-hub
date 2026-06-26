@@ -3679,7 +3679,7 @@ func TestGrant_With(t *testing.T) {
 		},
 		Subject:    "user-subject",
 		Kind:       "authorization_code",
-		Scopes:     "openid profile email",
+		Scopes:     []string{"openid profile email"},
 		Expiration: time.Now().Add(24 * time.Hour),
 		Tokens: []model.Token{
 			{Model: model.Model{ID: 10}, GrantID: &grantID},
@@ -3695,7 +3695,7 @@ func TestGrant_With(t *testing.T) {
 	g.Expect(r.UpdateUser).To(gomega.Equal("user2"))
 	g.Expect(r.Subject).To(gomega.Equal("user-subject"))
 	g.Expect(r.Kind).To(gomega.Equal("authorization_code"))
-	g.Expect(r.Scopes).To(gomega.Equal("openid profile email"))
+	g.Expect(r.Scopes).To(gomega.Equal([]string{"openid profile email"}))
 	g.Expect(r.Expiration).To(gomega.Equal(m.Expiration))
 	g.Expect(len(r.Tokens)).To(gomega.Equal(2))
 	g.Expect(r.Tokens[0].ID).To(gomega.Equal(uint(10)))
@@ -3715,7 +3715,7 @@ func TestGrant_With_DeviceFlow(t *testing.T) {
 		Kind:       "devCode",
 		AuthId:     "auth123",
 		Subject:    "device-user",
-		Scopes:     "openid profile",
+		Scopes:     []string{"openid profile"},
 		Issued:     time.Now(),
 		Expiration: time.Now().Add(15 * time.Minute),
 	}
@@ -3727,7 +3727,7 @@ func TestGrant_With_DeviceFlow(t *testing.T) {
 	g.Expect(r.Kind).To(gomega.Equal("devCode"))
 	g.Expect(r.AuthId).To(gomega.Equal("auth123"))
 	g.Expect(r.Subject).To(gomega.Equal("device-user"))
-	g.Expect(r.Scopes).To(gomega.Equal("openid profile"))
+	g.Expect(r.Scopes).To(gomega.Equal([]string{"openid profile"}))
 }
 
 // TestToken_With tests the Token.With() method.

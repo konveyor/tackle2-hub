@@ -145,14 +145,14 @@ type Extension struct {
 // IdpIdentity REST resource.
 type IdpIdentity struct {
 	Resource `yaml:",inline"`
-	Kind     string `json:"kind" binding:"required"`
-	Issuer   string `json:"issuer" binding:"required"`
-	Subject  string `json:"subject" binding:"required"`
-	Login    string `json:"login"`
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Scopes   string `json:"scopes"`
-	Tokens   []Ref  `json:"tokens"`
+	Kind     string   `json:"kind" binding:"required"`
+	Issuer   string   `json:"issuer" binding:"required"`
+	Subject  string   `json:"subject" binding:"required"`
+	Login    string   `json:"login"`
+	Name     string   `json:"name"`
+	Email    string   `json:"email"`
+	Scopes   []string `json:"scopes"`
+	Tokens   []Ref    `json:"tokens"`
 }
 
 // IdpClient REST resource.
@@ -199,7 +199,7 @@ type Grant struct {
 	Kind        string    `json:"kind"`
 	AuthId      string    `json:"authId"`
 	Subject     string    `json:"subject"`
-	Scopes      string    `json:"scopes"`
+	Scopes      []string  `json:"scopes"`
 	Issued      time.Time `json:"issued"`
 	Expiration  time.Time `json:"expiration"`
 	User        *Ref      `json:"user,omitempty" yaml:",omitempty"`

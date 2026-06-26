@@ -258,9 +258,9 @@ type IdpIdentity struct {
 	Login   string
 	Name    string
 	Email   string
-	Scopes  string
-	Tokens  []Token `gorm:"constraint:OnDelete:CASCADE"`
-	Grants  []Grant `gorm:"constraint:OnDelete:CASCADE"`
+	Scopes  []string `gorm:"type:json;serializer:json"`
+	Tokens  []Token  `gorm:"constraint:OnDelete:CASCADE"`
+	Grants  []Grant  `gorm:"constraint:OnDelete:CASCADE"`
 }
 
 type RsaKey struct {
@@ -277,9 +277,9 @@ type Grant struct {
 	RefreshToken    string `gorm:"uniqueIndex"` // digest
 	IdpRefreshToken string `secret:""`
 	AuthCode        string `gorm:"index"`
-	Scopes          string
 	Issued          time.Time
 	Expiration      time.Time
+	Scopes          []string     `gorm:"type:json;serializer:json"`
 	UserID          *uint        `gorm:"index"`
 	User            *User        `gorm:"constraint:OnDelete:CASCADE"`
 	IdpIdentityID   *uint        `gorm:"index"`

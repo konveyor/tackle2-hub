@@ -3,7 +3,6 @@ package cache
 import (
 	"sort"
 	"strconv"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -357,20 +356,20 @@ type Data struct {
 	refreshOnce sync.Once
 	refreshed   time.Time
 	//
-	permById            map[uint]*Permission
-	roleById            map[uint]*Role
-	roleByName          map[string]*Role
-	userById            map[uint]*User
-	userBySubject       map[string]*User
-	userByLogin         map[string]*User
-	identById           map[uint]*Identity
-	identBySubject      map[string]*Identity
-	identByLogin        map[string]*Identity
-	clientById          map[uint]*IdpClient
-	clientBySubject     map[string]*IdpClient
-	tokenById           map[uint]*Token
-	tokenByDigest       map[string]*Token
-	scopesBySubject     map[string][]string
+	permById        map[uint]*Permission
+	roleById        map[uint]*Role
+	roleByName      map[string]*Role
+	userById        map[uint]*User
+	userBySubject   map[string]*User
+	userByLogin     map[string]*User
+	identById       map[uint]*Identity
+	identBySubject  map[string]*Identity
+	identByLogin    map[string]*Identity
+	clientById      map[uint]*IdpClient
+	clientBySubject map[string]*IdpClient
+	tokenById       map[uint]*Token
+	tokenByDigest   map[string]*Token
+	scopesBySubject map[string][]string
 }
 
 // reset creates new maps.
@@ -396,22 +395,22 @@ func (d *Data) reset() {
 // refreshOnce is new.
 func (d *Data) clone() *Data {
 	return &Data{
-		refreshOnce:         sync.Once{},
-		refreshed:           d.refreshed,
-		permById:            cloneMap(d.permById),
-		roleById:            cloneMap(d.roleById),
-		roleByName:          cloneMap(d.roleByName),
-		userById:            cloneMap(d.userById),
-		userBySubject:       cloneMap(d.userBySubject),
-		userByLogin:         cloneMap(d.userByLogin),
-		scopesBySubject:     cloneMap(d.scopesBySubject),
-		identById:           cloneMap(d.identById),
-		identBySubject:      cloneMap(d.identBySubject),
-		identByLogin:        cloneMap(d.identByLogin),
-		clientById:          cloneMap(d.clientById),
-		clientBySubject:     cloneMap(d.clientBySubject),
-		tokenById:           cloneMap(d.tokenById),
-		tokenByDigest:       cloneMap(d.tokenByDigest),
+		refreshOnce:     sync.Once{},
+		refreshed:       d.refreshed,
+		permById:        cloneMap(d.permById),
+		roleById:        cloneMap(d.roleById),
+		roleByName:      cloneMap(d.roleByName),
+		userById:        cloneMap(d.userById),
+		userBySubject:   cloneMap(d.userBySubject),
+		userByLogin:     cloneMap(d.userByLogin),
+		scopesBySubject: cloneMap(d.scopesBySubject),
+		identById:       cloneMap(d.identById),
+		identBySubject:  cloneMap(d.identBySubject),
+		identByLogin:    cloneMap(d.identByLogin),
+		clientById:      cloneMap(d.clientById),
+		clientBySubject: cloneMap(d.clientBySubject),
+		tokenById:       cloneMap(d.tokenById),
+		tokenByDigest:   cloneMap(d.tokenByDigest),
 	}
 }
 
@@ -641,7 +640,7 @@ func (d *Data) updateScopes() {
 		d.addUserScopes(m)
 	}
 	for _, m := range d.identById {
-		d.scopesBySubject[m.Subject] = strings.Fields(m.Scopes)
+		d.scopesBySubject[m.Subject] = m.Scopes
 	}
 	for _, m := range d.tokenById {
 		d.addTokenScopes(m)

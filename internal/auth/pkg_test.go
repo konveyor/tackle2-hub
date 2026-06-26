@@ -1852,7 +1852,7 @@ func TestIdpIdentityTokenBinding(t *testing.T) {
 		Subject: "idp-user-123",
 		Login:   "idpuser",
 		Email:   "idpuser@example.com",
-		Scopes:  "openid profile email",
+		Scopes:  []string{"openid profile email"},
 	}
 	err = db.Create(identity).Error
 	g.Expect(err).To(BeNil())
@@ -3464,7 +3464,7 @@ func TestCreateAccessToken_CascadeDeleteOnGrantDeletion(t *testing.T) {
 		Kind:    KindAuthCode,
 		AuthId:  grantId,
 		Subject: subject.Key,
-		Scopes:  "openid profile",
+		Scopes:  []string{"openid profile"},
 		Issued:  time.Now(),
 	}
 	err = db.Create(grant).Error

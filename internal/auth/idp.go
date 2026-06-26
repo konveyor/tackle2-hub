@@ -382,12 +382,13 @@ func (f *FedIdpLogin) buildIdentity() (identity *Identity) {
 }
 
 // extractScopes extracts scopes from access token claims.
-func (f *FedIdpLogin) extractScopes() (scopes string) {
+func (f *FedIdpLogin) extractScopes() (scopes []string) {
 	if f.accessTokenClaims == nil {
 		return
 	}
 	if scopeClaim, found := f.accessTokenClaims[ClaimScope]; found {
-		scopes = f.asString(scopeClaim)
+		str := f.asString(scopeClaim)
+		scopes = strings.Fields(str)
 	}
 
 	return

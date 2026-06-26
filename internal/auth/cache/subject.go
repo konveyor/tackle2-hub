@@ -1,7 +1,5 @@
 package cache
 
-import "strings"
-
 // Subject represents a resolved subject (User, IdpIdentity, IdpClient).
 // The entity being authenticated.
 type Subject struct {
@@ -32,7 +30,7 @@ func (r *Subject) WithIdentity(idp *Identity) {
 	r.Identity = idp
 	r.Key = idp.Subject
 	r.Email = idp.Email
-	r.Scopes = strings.Fields(idp.Scopes)
+	r.Scopes = idp.Scopes
 }
 
 // WithClient populates Subject from an IdpClient model.
