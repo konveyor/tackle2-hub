@@ -35,3 +35,10 @@ func (h Token) Delete(id uint) (err error) {
 	err = h.client.Delete(Path(api.AuthTokenRoute).Inject(Params{api.ID: id}))
 	return
 }
+
+// Revoke a Token.
+func (h Token) Revoke(id uint) (err error) {
+	path := Path(api.AuthTokenRevokeRoute).Inject(Params{api.ID: id})
+	err = h.client.Post(path, nil)
+	return
+}

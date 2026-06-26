@@ -991,6 +991,7 @@ func (h AuthHandler) TokenCreate(ctx *gin.Context) {
 		return
 	}
 
+	r.ID = token.ID
 	r.Token = token.Secret
 
 	h.Respond(ctx, http.StatusCreated, r)

@@ -7,6 +7,7 @@ import (
 
 	as "github.com/konveyor/tackle2-hub/internal/auth/settings"
 	"github.com/konveyor/tackle2-hub/internal/model"
+	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/settings"
 )
 
@@ -15,9 +16,9 @@ var (
 )
 
 const (
-	KindAccessToken = "access"
 	KindAuthCode    = "authCode"
-	KindAPIKey      = "api-key"
+	KindAPIKey      = api.TokenKindAPIKey
+	KindAccessToken = api.TokenKindAccess
 )
 
 const (

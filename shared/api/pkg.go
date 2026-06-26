@@ -216,6 +216,12 @@ const (
 	IdpClientRoute       = IdpClientsRoute + "/:" + ID
 )
 
+// Token Kinds
+const (
+	TokenKindAccess = "access"
+	TokenKindAPIKey = "api-key"
+)
+
 // Routes - mounted under OIDC
 const (
 	OIDCRoutes       = "/oidc"
