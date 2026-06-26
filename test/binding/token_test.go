@@ -44,7 +44,7 @@ func TestToken(t *testing.T) {
 	g.Expect(errors.Is(err, &api.NotFound{})).To(BeTrue())
 }
 
-func TestTokenRevokePAT(t *testing.T) {
+func TestTokenRevoke(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	// CREATE: Create a PAT (API key) token to be revoked
@@ -74,46 +74,6 @@ func TestTokenRevokePAT(t *testing.T) {
 	g.Expect(errors.Is(err, &api.NotFound{})).To(BeTrue())
 }
 
-func TestTokenRevokeWithGrant(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	// GET: List tokens to find one with a grant
-	// Note: Tokens with grants are created via OIDC login, not PAT creation
-	tokens, err := client.Token.List()
-	g.Expect(err).To(BeNil())
-
-	// Find a token that has an associated grant
-	var tokenWithGrant *api.Token
-	for i := range tokens {
-		if tokens[i].Grant != nil && tokens[i].Grant.ID != 0 {
-			tokenWithGrant = &tokens[i]
-			break
-		}
-	}
-
-	if tokenWithGrant == nil {
-		t.Skip("No tokens with grants available - requires OIDC login")
-		return
-	}
-
-	// Store the grant ID for verification
-	grantID := tokenWithGrant.Grant.ID
-
-	// Verify the grant exists before revocation
-	grant, err := client.Grant.Get(grantID)
-	g.Expect(err).To(BeNil())
-	g.Expect(grant).NotTo(BeNil())
-	g.Expect(grant.ID).To(Equal(grantID))
-
-	// REVOKE: Revoke the token (should delete both token and grant)
-	err = client.Token.Revoke(tokenWithGrant.ID)
-	g.Expect(err).To(BeNil())
-
-	// Verify token was deleted
-	_, err = client.Token.Get(tokenWithGrant.ID)
-	g.Expect(errors.Is(err, &api.NotFound{})).To(BeTrue())
-
-	// Verify the associated grant was also deleted
-	_, err = client.Grant.Get(grantID)
-	g.Expect(errors.Is(err, &api.NotFound{})).To(BeTrue())
-}
+// Note: Revocation of grant-backed tokens (created via OIDC authorization flow)
+// is tested at the handler/auth layer where prerequisites can be seeded.
+// Binding tests focus on PAT revocation which can be tested deterministically.
