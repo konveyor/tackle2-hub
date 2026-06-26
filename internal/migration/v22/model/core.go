@@ -286,7 +286,7 @@ type Grant struct {
 	IdpIdentity     *IdpIdentity `gorm:"constraint:OnDelete:CASCADE"`
 	IdpClientID     *uint        `gorm:"index"`
 	IdpClient       *IdpClient   `gorm:"constraint:OnDelete:CASCADE"`
-	Tokens          []Token
+	Tokens          []Token      `gorm:"constraint:OnDelete:CASCADE"`
 }
 
 type Token struct {
