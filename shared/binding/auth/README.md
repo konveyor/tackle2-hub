@@ -205,6 +205,55 @@ if err != nil {
 client.Client.Use(oidc)
 ```
 
+## Token Management
+
+The binding provides methods for managing Personal Access Tokens (PATs):
+
+### Create a Token
+
+```go
+client := binding.New(hubURL)
+// Authenticate first
+pat := &api.PAT{
+    Name: "my-token",
+}
+err := client.Token.Create(pat)
+// pat.Token now contains the generated token string
+```
+
+### List Tokens
+
+```go
+tokens, err := client.Token.List()
+for _, token := range tokens {
+    fmt.Printf("Token ID: %d, Name: %s\n", token.ID, token.Name)
+}
+```
+
+### Get a Token by ID
+
+```go
+token, err := client.Token.Get(tokenID)
+```
+
+### Delete a Token
+
+```go
+err := client.Token.Delete(tokenID)
+```
+
+### Revoke a Token
+
+Revokes a token and its associated grant (if any). This is more thorough than Delete, as it also removes the underlying OAuth grant.
+
+```go
+err := client.Token.Revoke(tokenID)
+```
+
+**Revoke vs Delete:**
+- **Revoke**: Removes token and associated grant (recommended for cleanup)
+- **Delete**: Removes only the token record
+
 ## Adding Custom Auth Methods
 
 Implement the `AuthMethod` interface:
