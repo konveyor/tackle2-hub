@@ -27,6 +27,7 @@ type LdapHandler struct {
 // Authenticate a user.
 // Authenticated users (identities) are cached.
 // Authenticated with the DS when cached identity not found or expired.
+// The LDAP is cloned for each concurrent request.
 func (h *LdapHandler) Authenticate(login, password string) (subject *Subject, err error) {
 	if !h.enabled {
 		err = &NotFound{
@@ -35,7 +36,8 @@ func (h *LdapHandler) Authenticate(login, password string) (subject *Subject, er
 		}
 		return
 	}
-	ldapUser, err := h.ds.Authenticate(login, password)
+	ds := h.ds // cloned.
+	ldapUser, err := ds.Authenticate(login, password)
 	if err != nil {
 		return
 	}
