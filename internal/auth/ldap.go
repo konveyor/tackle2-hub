@@ -218,6 +218,7 @@ func (r *LDAP) findUser(login string) (entry *ldap.Entry, err error) {
 	if len(result.Entries) == 0 || len(result.Entries) > 1 {
 		err = &NotFound{
 			Resource: "user",
+			Filter:   request.Filter,
 			Id:       login,
 		}
 		return
@@ -246,6 +247,12 @@ func (r *LDAP) findGroup(user *ldap.Entry) (groups []string, err error) {
 		if v != "" {
 			groups = append(groups, v)
 		}
+	}
+	if len(groups) == 0 {
+		Log.Info(
+			"LDAP: no groups found using filter.",
+			"filter",
+			request.Filter)
 	}
 	return
 }
@@ -377,6 +384,7 @@ func (r *RoleMapper) Use(ruleSet []settings.MappingRule) {
 	}
 }
 
+// roles maps LDAP groups to hub roles using the configured mapping rules.
 func (m *RoleMapper) roles(groups []string) (roles []string) {
 	for _, rule := range m.RuleSet {
 		if rule.Empty() {
@@ -390,6 +398,13 @@ func (m *RoleMapper) roles(groups []string) (roles []string) {
 	}
 	roles = uniqueStrings(roles)
 	sort.Strings(roles)
+
+	if len(roles) == 0 {
+		Log.Info(
+			"LDAP: WARNING: No roles matched.",
+			"groups",
+			groups)
+	}
 	return
 }
 

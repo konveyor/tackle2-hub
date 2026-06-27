@@ -190,6 +190,13 @@ func (p *Builtin) NewToken(subject string, lifespan time.Duration) (m Token, err
 	if s.IsClient() {
 		m.IdpClientID = s.ClientId
 	}
+
+	if len(m.Scopes) == 0 {
+		Log.Info(
+			"WARNING: issued (PAT) token has no scopes.",
+			"login", s.Login(),
+			"id", m.AuthId)
+	}
 	return
 }
 

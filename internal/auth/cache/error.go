@@ -8,12 +8,17 @@ import (
 // NotFound reports not found.
 type NotFound struct {
 	Resource string
+	Filter   string
 	Id       string
 }
 
 // Error returns the error message.
-func (r *NotFound) Error() string {
-	return fmt.Sprintf("%s (%s) not-found", r.Resource, r.Id)
+func (r *NotFound) Error() (s string) {
+	s = fmt.Sprintf("%s (%s) not-found", r.Resource, r.Id)
+	if r.Filter != "" {
+		s += ", filter: " + r.Filter
+	}
+	return
 }
 
 // Is returns true if the error is a NotFound.

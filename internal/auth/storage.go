@@ -344,6 +344,13 @@ func (r *Storage) CreateAccessToken(
 		err = liberr.Wrap(err)
 		return
 	}
+
+	if len(s.Scopes) == 0 {
+		Log.Info(
+			"WARNING: issued (access) token has no scopes.",
+			"login", s.Login(),
+			"id", m.AuthId)
+	}
 	return
 }
 
