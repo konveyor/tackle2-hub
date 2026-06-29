@@ -456,7 +456,8 @@ func (h Handler) notify(ctx *gin.Context) (err error) {
 
 Methods should be ordered and grouped by: exported methods first followed by non-exported methods.
 Within each group, methods should be ordered and grouped with most prominent first.  Exported and non-exported
-methods should not be mixed in the same group.
+methods should not be mixed in the same group.  Methods for a struct must be grouped together with the struct
+definition.  Type definitions must not be interlaced within method groups.
 
 ### Naming Conventions
 
