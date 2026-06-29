@@ -185,16 +185,7 @@ func (p *Builtin) NewToken(subject string, lifespan time.Duration) (m Token, err
 		return
 	}
 	p.cache.TokenSaved(&m)
-	m2, err := p.cache.FindTokenById(m.ID)
-	if err != nil {
-		return
-	}
-	if len(m2.Scopes) == 0 {
-		Log.Info(
-			"WARNING: issued (PAT) token has no scopes.",
-			"login", s.Login(),
-			"id", m.AuthId)
-	}
+	p.warnTokenEmptyScopes(s.Login(), m.ID)
 	return
 }
 
@@ -647,6 +638,25 @@ func (p *Builtin) jti(jwToken *jwt.Token) (id string) {
 	pLen := min(12, max(1, len(id)/4))
 	id = id[:pLen] + "..."
 	return
+}
+
+// warnTokenEmptyScopes logs tokens created with no scopes.
+func (p *Builtin) warnTokenEmptyScopes(login string, tokenId uint) {
+	token, err := p.cache.FindTokenById(tokenId)
+	if err != nil {
+		Log.Error(
+			err,
+			"Token not cached.",
+			"id", tokenId)
+		return
+	}
+	if len(token.Scopes) == 0 {
+		Log.Info(
+			"WARNING: issued (PAT) token has no scopes.",
+			"login", login,
+			"authId", token.AuthId,
+			"id", tokenId)
+	}
 }
 
 // JWK is a JSON Web Key.

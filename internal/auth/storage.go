@@ -349,7 +349,8 @@ func (r *Storage) CreateAccessToken(
 		Log.Info(
 			"WARNING: issued (access) token has no scopes.",
 			"login", s.Login(),
-			"id", m.AuthId)
+			"authId", m.AuthId,
+			"id", m.ID)
 	}
 	return
 }

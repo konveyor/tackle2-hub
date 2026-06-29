@@ -210,13 +210,6 @@
       verbs:
         - get
         - delete
-    - name: files
-      verbs:
-        - delete
-        - get
-        - post
-        - put
-        - patch
     - name: buckets
       verbs:
         - delete
