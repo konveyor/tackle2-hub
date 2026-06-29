@@ -36,8 +36,9 @@ func idPtr(ref *Ref) (id *uint) {
 func baseWith(r *api.Resource, m *model.Model) {
 	r.ID = m.ID
 	r.CreateUser = m.CreateUser
-	r.UpdateUser = m.UpdateUser
 	r.CreateTime = m.CreateTime
+	r.UpdateUser = m.UpdateUser
+	r.UpdateTime = m.UpdateTime
 }
 
 func ref(id uint, m any) (r Ref) {

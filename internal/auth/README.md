@@ -1442,12 +1442,18 @@ User-created API keys for automation:
 | **Lifetime** | Configurable (default 24 hours, max set by admin) |
 | **Scopes** | Inherits creating user's permissions |
 | **Management** | CRUD via `/auth/token` endpoints |
+| **Revocation** | `/auth/token/{id}/revoke` endpoint removes token and associated grant |
 
 **Use cases:**
 - CLI scripting
 - CI/CD pipelines
 - Integration testing
 - Automation tools
+
+**Revocation:**
+- Tokens can be revoked via the `/auth/token/{id}/revoke` endpoint
+- Revocation removes both the token record and any associated OAuth grant
+- More thorough cleanup than simple deletion
 
 ### Task API Keys
 

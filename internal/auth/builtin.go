@@ -190,6 +190,13 @@ func (p *Builtin) NewToken(subject string, lifespan time.Duration) (m Token, err
 	if s.IsClient() {
 		m.IdpClientID = s.ClientId
 	}
+
+	if len(m.Scopes) == 0 {
+		Log.Info(
+			"WARNING: issued (PAT) token has no scopes.",
+			"login", s.Login(),
+			"id", m.AuthId)
+	}
 	return
 }
 
@@ -261,12 +268,33 @@ func (p *Builtin) Authenticate(req *Request) (jwToken *jwt.Token, err error) {
 	return
 }
 
-// Revoke revokes a token by ID.
+// Revoke revokes a token and its associated grant.
 func (p *Builtin) Revoke(tokenId uint) (err error) {
 	p.cache.TokenDeleted(tokenId)
-	m := &Token{}
-	m.ID = tokenId
-	err = p.db.Delete(m).Error
+	err = p.db.Transaction(func(tx *gorm.DB) (err error) {
+		m := &Token{}
+		err = tx.First(m, tokenId).Error
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		if m.GrantID != nil {
+			p.cache.GrantDeleted(*m.GrantID)
+			grant := &Grant{}
+			result := tx.Delete(grant, *m.GrantID)
+			if result.Error != nil {
+				err = liberr.Wrap(result.Error)
+				return
+			}
+		}
+		result := tx.Delete(m)
+		if result.Error != nil {
+			err = liberr.Wrap(result.Error)
+			return
+		}
+
+		return
+	})
 	return
 }
 
@@ -550,7 +578,7 @@ func (p *Builtin) authUser(req *Request) (jwToken *jwt.Token, err error) {
 		}
 		return
 	}
-	scopes, err := p.cache.FindUserScopes(user.ID)
+	scopes, err := p.cache.FindScopes(user.Subject)
 	if err != nil {
 		err = &NotAuthenticated{
 			Reason: "scopes not found",
@@ -571,8 +599,7 @@ func (p *Builtin) authUser(req *Request) (jwToken *jwt.Token, err error) {
 
 // authLdapUser authenticates an LDAP user.
 func (p *Builtin) authLdapUser(req *Request) (jwToken *jwt.Token, err error) {
-	lifespan := Settings.Auth.LdapAuthLifespan
-	subject, err := p.dsHandler.Authenticate(req.Login, req.Password, lifespan)
+	subject, err := p.dsHandler.Authenticate(req.Login, req.Password)
 	if err != nil {
 		return
 	}
@@ -583,7 +610,7 @@ func (p *Builtin) authLdapUser(req *Request) (jwToken *jwt.Token, err error) {
 	jwtClaims[ClaimScope] = strings.Join(subject.Scopes, " ")
 	jwtClaims[ClaimIss] = Issuer(req.CTX.Request)
 	jwtClaims[ClaimIat] = time.Now().Unix()
-	jwtClaims[ClaimExp] = time.Now().Add(lifespan).Unix()
+	jwtClaims[ClaimExp] = time.Now().Add(Settings.Auth.LdapAuthLifespan).Unix()
 	return
 }
 

@@ -919,12 +919,9 @@ func TestFindTokenByIdWithUser(t *testing.T) {
 		Model:   Model{ID: 2000},
 		Subject: "user-subject",
 		Login:   "testuser",
+		Roles:   []Role{*role},
 	}
 	err = db.Create(user).Error
-	g.Expect(err).To(BeNil())
-
-	// Associate user with role
-	err = db.Exec("INSERT INTO UserRole (UserID, RoleID) VALUES (?, ?)", user.ID, role.ID).Error
 	g.Expect(err).To(BeNil())
 
 	// Create user token in DB
@@ -933,6 +930,7 @@ func TestFindTokenByIdWithUser(t *testing.T) {
 		Token: model.Token{
 			Model:      Model{ID: 2001},
 			Kind:       KindAPIKey,
+			Subject:    user.Subject,
 			UserID:     &userID,
 			Digest:     secret.Hash("user-token-2001"),
 			Expiration: time.Now().Add(24 * time.Hour),
@@ -1010,7 +1008,6 @@ func TestFindTokenWithIdentity(t *testing.T) {
 		Issuer:  "https://idp.example.com",
 		Subject: "identity-subject-4000",
 		Login:   "identityuser",
-		Scopes:  "applications:get applications:post",
 	}
 	err = db.Create(identity).Error
 	g.Expect(err).To(BeNil())
@@ -1024,18 +1021,19 @@ func TestFindTokenWithIdentity(t *testing.T) {
 			IdpIdentityID: &identityID,
 			Digest:        secret.Hash("identity-token-4001"),
 			Expiration:    time.Now().Add(24 * time.Hour),
+			Scopes:        []string{"applications:get", "applications:post"},
 		},
 		Secret: "identity-token-4001",
 	}
 	err = db.Create(&identityToken.Token).Error
 	g.Expect(err).To(BeNil())
 
-	// Refresh cache to load token with scopes assigned
+	// Refresh cache to load token with scopes
 	cache := New(db)
 	err = cache.Refresh()
 	g.Expect(err).To(BeNil())
 
-	// Find token - should have identity scopes
+	// Find token - should have scopes
 	foundToken, err := cache.FindToken("identity-token-4001")
 	g.Expect(err).To(BeNil())
 	g.Expect(foundToken).NotTo(BeNil())
@@ -1197,4 +1195,95 @@ func TestCacheConcurrentMixedOperations(t *testing.T) {
 	d := cache.data.Load()
 	// Should have some users (not all, some deleted/not found)
 	g.Expect(len(d.userById)).To(BeNumerically(">", 0))
+}
+
+// TestGrantDeletedCascadesToTokens tests that deleting a grant cascades to associated tokens.
+func TestGrantDeletedCascadesToTokens(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	// Create IdpIdentity
+	identity := &Identity{
+		Model:   Model{ID: 4000},
+		Issuer:  "https://idp.example.com",
+		Subject: "identity-subject-4000",
+		Login:   "cascadeuser",
+	}
+	err = db.Create(identity).Error
+	g.Expect(err).To(BeNil())
+	cache.IdentitySaved(identity)
+
+	identityID := uint(4000)
+
+	// Create grant
+	grant := &Grant{
+		Model:         Model{ID: 4001, UpdateTime: time.Now()},
+		Kind:          KindAuthCode,
+		ClientId:      "test-client",
+		AuthId:        "auth-4001",
+		Subject:       "identity-subject-4000",
+		RefreshToken:  secret.Hash("refresh-4001"),
+		IdpIdentityID: &identityID,
+		Expiration:    time.Now().Add(24 * time.Hour),
+	}
+	err = db.Create(grant).Error
+	g.Expect(err).To(BeNil())
+
+	// Create multiple tokens for this grant
+	grantID := uint(4001)
+	token1 := &Token{
+		Token: model.Token{
+			Model:         Model{ID: 4002},
+			Kind:          KindAPIKey,
+			AuthId:        "auth-token-4002",
+			Subject:       "identity-subject-4000",
+			IdpIdentityID: &identityID,
+			GrantID:       &grantID,
+			Digest:        secret.Hash("cascade-token-1"),
+			Expiration:    time.Now().Add(24 * time.Hour),
+		},
+		Secret: "cascade-token-1",
+	}
+	token2 := &Token{
+		Token: model.Token{
+			Model:         Model{ID: 4003},
+			Kind:          KindAPIKey,
+			AuthId:        "auth-token-4003",
+			Subject:       "identity-subject-4000",
+			IdpIdentityID: &identityID,
+			GrantID:       &grantID,
+			Digest:        secret.Hash("cascade-token-2"),
+			Expiration:    time.Now().Add(24 * time.Hour),
+		},
+		Secret: "cascade-token-2",
+	}
+
+	err = db.Create(&token1.Token).Error
+	g.Expect(err).To(BeNil())
+	cache.TokenSaved(token1)
+
+	err = db.Create(&token2.Token).Error
+	g.Expect(err).To(BeNil())
+	cache.TokenSaved(token2)
+
+	// Verify both tokens exist
+	_, err = cache.FindToken("cascade-token-1")
+	g.Expect(err).To(BeNil())
+	_, err = cache.FindToken("cascade-token-2")
+	g.Expect(err).To(BeNil())
+
+	// Delete grant - should cascade delete both tokens
+	cache.GrantDeleted(4001)
+
+	// Both tokens should be deleted
+	_, err = cache.FindToken("cascade-token-1")
+	g.Expect(err).NotTo(BeNil())
+	_, err = cache.FindToken("cascade-token-2")
+	g.Expect(err).NotTo(BeNil())
 }

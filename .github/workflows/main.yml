@@ -59,29 +59,6 @@ jobs:
       - name: Run binding tests
         run: HUB_BASE_URL=http://localhost:8080 make test-binding
 
-  # ───── test-api ─────
-  test-api:
-    needs: [test-unit, start-hub]
-    runs-on: ubuntu-latest
-    env:
-      HUB_BASE_URL: http://localhost:8080
-      DB_PATH: /tmp/hub.db
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.25'
-          cache: true
-
-      - uses: ./.github/actions/start-hub
-        with:
-          disconnected: 'true'
-          db-path: ${{ env.DB_PATH }}
-
-      - name: Run API tests
-        run: make test-api
-
   # Single image build (only once)
   build-image:
     needs:

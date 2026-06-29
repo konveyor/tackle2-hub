@@ -3338,64 +3338,6 @@ func TestFactKey_Semantics(t *testing.T) {
 	g.Expect(onlySource.Name()).To(gomega.Equal(""))
 }
 
-// TestIdpIdentity_With tests the IdpIdentity.With() method
-func TestIdpIdentity_With(t *testing.T) {
-	g := gomega.NewGomegaWithT(t)
-
-	expiration := time.Now().Add(24 * time.Hour)
-	lastAuth := time.Now().Add(-1 * time.Hour)
-	lastRefresh := time.Now().Add(-30 * time.Minute)
-
-	m := &model.IdpIdentity{
-		Model: model.Model{
-			ID:         1,
-			CreateUser: "user1",
-		},
-		Issuer:            "google",
-		Subject:           "user@example.com",
-		Expiration:        expiration,
-		LastAuthenticated: lastAuth,
-		LastRefreshed:     lastRefresh,
-	}
-
-	r := &IdpIdentity{}
-	r.With(m)
-
-	g.Expect(r.ID).To(gomega.Equal(uint(1)))
-	g.Expect(r.Issuer).To(gomega.Equal("google"))
-	g.Expect(r.Subject).To(gomega.Equal("user@example.com"))
-	g.Expect(r.Expiration).To(gomega.Equal(expiration))
-	g.Expect(r.LastAuthenticated).To(gomega.Equal(lastAuth))
-	g.Expect(r.LastRefreshed).To(gomega.Equal(lastRefresh))
-}
-
-// TestIdpIdentity_Model tests the IdpIdentity.Model() method
-func TestIdpIdentity_Model(t *testing.T) {
-	g := gomega.NewGomegaWithT(t)
-
-	expiration := time.Now().Add(24 * time.Hour)
-	lastAuth := time.Now().Add(-1 * time.Hour)
-	lastRefresh := time.Now().Add(-30 * time.Minute)
-
-	r := &IdpIdentity{
-		Resource:          Resource{ID: 1},
-		Issuer:            "google",
-		Subject:           "user@example.com",
-		Expiration:        expiration,
-		LastAuthenticated: lastAuth,
-		LastRefreshed:     lastRefresh,
-	}
-
-	m := r.Model()
-
-	g.Expect(m.ID).To(gomega.Equal(uint(1)))
-	g.Expect(m.Issuer).To(gomega.Equal("google"))
-	g.Expect(m.Subject).To(gomega.Equal("user@example.com"))
-	g.Expect(m.Expiration).To(gomega.Equal(expiration))
-	g.Expect(m.LastAuthenticated).To(gomega.Equal(lastAuth))
-	g.Expect(m.LastRefreshed).To(gomega.Equal(lastRefresh))
-}
-
 // TestIdpIdentity_With_Tokens tests IdpIdentity.With() with tokens
 func TestIdpIdentity_With_Tokens(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
@@ -3727,6 +3669,7 @@ func TestPermission_Model(t *testing.T) {
 func TestGrant_With(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
+	grantID := uint(1)
 	m := &model.Grant{
 		Model: model.Model{
 			ID:         1,
@@ -3736,8 +3679,12 @@ func TestGrant_With(t *testing.T) {
 		},
 		Subject:    "user-subject",
 		Kind:       "authorization_code",
-		Scopes:     "openid profile email",
+		Scopes:     []string{"openid profile email"},
 		Expiration: time.Now().Add(24 * time.Hour),
+		Tokens: []model.Token{
+			{Model: model.Model{ID: 10}, GrantID: &grantID},
+			{Model: model.Model{ID: 11}, GrantID: &grantID},
+		},
 	}
 
 	r := &Grant{}
@@ -3748,8 +3695,11 @@ func TestGrant_With(t *testing.T) {
 	g.Expect(r.UpdateUser).To(gomega.Equal("user2"))
 	g.Expect(r.Subject).To(gomega.Equal("user-subject"))
 	g.Expect(r.Kind).To(gomega.Equal("authorization_code"))
-	g.Expect(r.Scopes).To(gomega.Equal("openid profile email"))
+	g.Expect(r.Scopes).To(gomega.Equal([]string{"openid profile email"}))
 	g.Expect(r.Expiration).To(gomega.Equal(m.Expiration))
+	g.Expect(len(r.Tokens)).To(gomega.Equal(2))
+	g.Expect(r.Tokens[0].ID).To(gomega.Equal(uint(10)))
+	g.Expect(r.Tokens[1].ID).To(gomega.Equal(uint(11)))
 }
 
 // TestGrant_With_DeviceFlow tests Grant.With() with device flow fields.
@@ -3765,7 +3715,7 @@ func TestGrant_With_DeviceFlow(t *testing.T) {
 		Kind:       "devCode",
 		AuthId:     "auth123",
 		Subject:    "device-user",
-		Scopes:     "openid profile",
+		Scopes:     []string{"openid profile"},
 		Issued:     time.Now(),
 		Expiration: time.Now().Add(15 * time.Minute),
 	}
@@ -3777,7 +3727,7 @@ func TestGrant_With_DeviceFlow(t *testing.T) {
 	g.Expect(r.Kind).To(gomega.Equal("devCode"))
 	g.Expect(r.AuthId).To(gomega.Equal("auth123"))
 	g.Expect(r.Subject).To(gomega.Equal("device-user"))
-	g.Expect(r.Scopes).To(gomega.Equal("openid profile"))
+	g.Expect(r.Scopes).To(gomega.Equal([]string{"openid profile"}))
 }
 
 // TestToken_With tests the Token.With() method.

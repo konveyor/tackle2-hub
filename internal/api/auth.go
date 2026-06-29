@@ -82,6 +82,7 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(api.AuthTokensRoute, h.TokenList)
 	routeGroup.GET(api.AuthTokensRoute+"/", h.TokenList)
 	routeGroup.GET(api.AuthTokenRoute, h.TokenGet)
+	routeGroup.POST(api.AuthTokenRevokeRoute, h.TokenRevoke)
 	routeGroup.DELETE(api.AuthTokenRoute, h.TokenDelete)
 	// self route
 	routeGroup = e.Group("/")
@@ -949,6 +950,8 @@ func (h AuthHandler) GrantDelete(ctx *gin.Context) {
 		return
 	}
 
+	auth.IdP.Cache().GrantDeleted(id)
+
 	h.Status(ctx, http.StatusNoContent)
 }
 
@@ -988,6 +991,7 @@ func (h AuthHandler) TokenCreate(ctx *gin.Context) {
 		return
 	}
 
+	r.ID = token.ID
 	r.Token = token.Secret
 
 	h.Respond(ctx, http.StatusCreated, r)
@@ -1086,6 +1090,39 @@ func (h AuthHandler) TokenDelete(ctx *gin.Context) {
 	}
 
 	auth.IdP.Cache().TokenDeleted(id)
+
+	h.Status(ctx, http.StatusNoContent)
+}
+
+// TokenRevoke godoc
+// @summary Revoke a token.
+// @description Revoke a token and its associated grant.
+// @tags tokens
+// @success 204
+// @router /auth/tokens/{id}/revoke [post]
+// @param id path int true "Token ID"
+func (h AuthHandler) TokenRevoke(ctx *gin.Context) {
+	id := h.pk(ctx)
+	m := &model.Token{}
+	err := h.DB(ctx).First(m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	if !h.Admin(ctx) {
+		if m.Subject != h.CurrentSubject(ctx) {
+			err = &Forbidden{
+				Reason: "Must be admin or token owner",
+			}
+			_ = ctx.Error(err)
+			return
+		}
+	}
+	err = auth.IdP.Revoke(id)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 
 	h.Status(ctx, http.StatusNoContent)
 }

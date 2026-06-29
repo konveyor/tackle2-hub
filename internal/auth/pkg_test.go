@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-jose/go-jose/v4"
+	"github.com/go-ldap/ldap/v3"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	as "github.com/konveyor/tackle2-hub/internal/auth/settings"
@@ -103,8 +104,7 @@ func TestUserGrant(t *testing.T) {
 	// Test that expired keys are rejected
 	expiredSecret := "expired-secret-key"
 	expiredKey := &model.Token{
-		UserID:     &user.ID,
-		Expiration: time.Now().Add(-1 * time.Hour), // Expired 1 hour ago
+		UserID: &user.ID,
 	}
 	err = db.Create(expiredKey).Error
 	g.Expect(err).To(BeNil())
@@ -1014,8 +1014,10 @@ func TestTaskRevokeMultipleTokens(t *testing.T) {
 
 	// Manually create second token for same task (shouldn't normally happen)
 	token2Secret := "second-task-token"
+	taskCache := &Task{ID: task.ID}
 	token2 := &model.Token{
 		Kind:       KindAPIKey,
+		Subject:    taskCache.Subject(),
 		AuthId:     "second-auth-id",
 		Digest:     secret.Hash(token2Secret),
 		Expiration: time.Now().Add(24 * time.Hour),
@@ -1281,13 +1283,10 @@ func TestCascadeDeleteIdpIdentity(t *testing.T) {
 
 	// Create IdP identity
 	identity := &Identity{
-		Issuer:       "https://cascade.idp.com",
-		Subject:      "cascade-idp-subject",
-		RefreshToken: "refresh-token",
-		Expiration:   time.Now().Add(24 * time.Hour),
-		Scopes:       "openid profile",
-		Login:        "cascadeidentity",
-		Email:        "cascadeidentity@example.com",
+		Issuer:  "https://cascade.idp.com",
+		Subject: "cascade-idp-subject",
+		Login:   "cascadeidentity",
+		Email:   "cascadeidentity@example.com",
 	}
 	err = secret.Encrypt(identity)
 	g.Expect(err).To(BeNil())
@@ -1850,23 +1849,19 @@ func TestIdpIdentityTokenBinding(t *testing.T) {
 
 	// Create IdP identity
 	identity := &Identity{
-		Issuer:       "https://idp.example.com",
-		Subject:      "idp-user-123",
-		RefreshToken: "refresh-token",
-		Expiration:   time.Now().Add(24 * time.Hour),
-		Scopes:       "openid profile email",
-		Login:        "idpuser",
-		Email:        "idpuser@example.com",
+		Issuer:  "https://idp.example.com",
+		Subject: "idp-user-123",
+		Login:   "idpuser",
+		Email:   "idpuser@example.com",
+		Scopes:  []string{"openid profile email"},
 	}
-	err = secret.Encrypt(identity)
-	g.Expect(err).To(BeNil())
 	err = db.Create(identity).Error
 	g.Expect(err).To(BeNil())
 
 	provider, err := NewBuiltin(db)
 	g.Expect(err).To(BeNil())
 
-	// Create token bound to IdP identity
+	// Create token bound to IdP identity (scopes come from grant)
 	token, err := provider.NewToken(identity.Subject, 24*time.Hour)
 	g.Expect(err).To(BeNil())
 	g.Expect(token.IdpIdentityID).NotTo(BeNil())
@@ -1879,7 +1874,7 @@ func TestIdpIdentityTokenBinding(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(jwToken).NotTo(BeNil())
 
-	// Verify claims
+	// Verify claims - scopes injected from grant
 	claims := jwToken.Claims.(jwt.MapClaims)
 	g.Expect(claims[ClaimSub]).To(Equal("idp-user-123"))
 	g.Expect(claims[ClaimScope]).To(Equal("openid profile email"))
@@ -2029,7 +2024,6 @@ func TestTokenBindingEdgeCases(t *testing.T) {
 		UserID:        nil,
 		TaskID:        nil,
 		IdpIdentityID: nil,
-		Expiration:    time.Now().Add(24 * time.Hour),
 	}
 	err = db.Create(unboundToken).Error
 	g.Expect(err).To(BeNil())
@@ -2112,13 +2106,9 @@ func TestCacheFindSubject(t *testing.T) {
 
 	// Create test IdP identity
 	identity := &Identity{
-		Issuer:       "https://idp.example.com",
-		Subject:      "idp-subject-456",
-		RefreshToken: "refresh-token",
-		Expiration:   time.Now().Add(24 * time.Hour),
-		Scopes:       "openid profile email",
-		Login:        "idpuser",
-		Email:        "idp@example.com",
+		Issuer:  "https://idp.example.com",
+		Subject: "idp-subject-456",
+		Email:   "idp@example.com",
 	}
 	err = secret.Encrypt(identity)
 	g.Expect(err).To(BeNil())
@@ -2146,11 +2136,10 @@ func TestCacheFindSubject(t *testing.T) {
 	g.Expect(subject.IsUser()).To(BeFalse())
 	g.Expect(subject.IsIdentity()).To(BeTrue())
 	g.Expect(subject.Key).To(Equal("idp-subject-456"))
-	g.Expect(subject.Identity.Login).To(Equal("idpuser"))
+	g.Expect(subject.Identity.Login).To(Equal(""))
 	g.Expect(subject.Email).To(Equal("idp@example.com"))
-	g.Expect(subject.Scopes).To(ContainElement("openid"))
-	g.Expect(subject.Scopes).To(ContainElement("profile"))
-	g.Expect(subject.Scopes).To(ContainElement("email"))
+	// IdpIdentity no longer has scopes - they come from Grant or Token
+	g.Expect(subject.Scopes).To(BeEmpty())
 }
 
 // TestCacheFindSubjectNotFound tests NotFound error when subject doesn't exist.
@@ -2235,9 +2224,7 @@ func TestStorageFindSubject(t *testing.T) {
 		Subject: "storage-identity-subject",
 		Login:   "storageidentity",
 		Email:   "storageidentity@example.com",
-		Scopes:  "openid",
 	}
-	err = secret.Encrypt(identity)
 	g.Expect(err).To(BeNil())
 	err = db.Create(identity).Error
 	g.Expect(err).To(BeNil())
@@ -3391,20 +3378,11 @@ func TestCreateAccessToken_UpdatesExistingToken(t *testing.T) {
 	provider.cache.UserSaved(user)
 
 	subject := &Subject{}
-	scopes, err := provider.cache.FindUserScopes(user.ID)
+	scopes, err := provider.cache.FindScopes(user.Subject)
 	g.Expect(err).To(BeNil())
 	subject.WithUser(user, scopes)
 
 	grantId := provider.storage.genId()
-	grant := &Grant{
-		Kind:       KindAuthCode,
-		AuthId:     grantId,
-		Subject:    subject.Key,
-		Scopes:     "openid profile",
-		Issued:     time.Now(),
-		Expiration: time.Now().Add(48 * time.Hour),
-	}
-	err = db.Create(grant).Error
 	g.Expect(err).To(BeNil())
 
 	refreshReq := &RefreshRequest{
@@ -3425,7 +3403,6 @@ func TestCreateAccessToken_UpdatesExistingToken(t *testing.T) {
 	g.Expect(tokens1).To(HaveLen(1))
 
 	firstToken := tokens1[0]
-	firstExpiration := firstToken.Expiration
 	firstScopes := firstToken.Scopes
 
 	time.Sleep(100 * time.Millisecond)
@@ -3441,7 +3418,6 @@ func TestCreateAccessToken_UpdatesExistingToken(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(tokens2).To(HaveLen(1))
 
-	g.Expect(tokens2[0].Expiration).To(BeTemporally(">", firstExpiration))
 	g.Expect(expiration2).To(BeTemporally(">", expiration1))
 
 	g.Expect(tokens2[0].Scopes).To(Equal([]string{"openid", "profile", "email"}))
@@ -3480,21 +3456,19 @@ func TestCreateAccessToken_CascadeDeleteOnGrantDeletion(t *testing.T) {
 	provider.cache.UserSaved(user)
 
 	subject := &Subject{}
-	scopes, err := provider.cache.FindUserScopes(user.ID)
+	scopes, err := provider.cache.FindScopes(user.Subject)
 	g.Expect(err).To(BeNil())
 	subject.WithUser(user, scopes)
 
 	grantId := provider.storage.genId()
 	grant := &Grant{
-		Kind:       KindAuthCode,
-		AuthId:     grantId,
-		Subject:    subject.Key,
-		Scopes:     "openid profile",
-		Issued:     time.Now(),
-		Expiration: time.Now().Add(48 * time.Hour),
+		Kind:    KindAuthCode,
+		AuthId:  grantId,
+		Subject: subject.Key,
+		Scopes:  []string{"openid profile"},
+		Issued:  time.Now(),
 	}
 	err = db.Create(grant).Error
-	g.Expect(err).To(BeNil())
 
 	refreshReq := &RefreshRequest{
 		grantId:  grantId,
@@ -3549,7 +3523,7 @@ func TestAuthRequest_CreatesGrantAndLinksToken(t *testing.T) {
 	provider.cache.UserSaved(user)
 
 	subject := &Subject{}
-	scopes, err := provider.cache.FindUserScopes(user.ID)
+	scopes, err := provider.cache.FindScopes(user.Subject)
 	g.Expect(err).To(BeNil())
 	subject.WithUser(user, scopes)
 
@@ -3683,7 +3657,7 @@ func TestCreateAccessAndRefreshTokens_FullFlow(t *testing.T) {
 	provider.cache.UserSaved(user)
 
 	subject := &Subject{}
-	scopes, err := provider.cache.FindUserScopes(user.ID)
+	scopes, err := provider.cache.FindScopes(user.Subject)
 	g.Expect(err).To(BeNil())
 	subject.WithUser(user, scopes)
 
@@ -3729,4 +3703,156 @@ func TestCreateAccessAndRefreshTokens_FullFlow(t *testing.T) {
 	g.Expect(token.AuthId).To(Equal(requestId))
 	g.Expect(token.GrantID).NotTo(BeNil())
 	g.Expect(*token.GrantID).To(Equal(grant.ID))
+}
+
+// TestUserFilter tests placeholder replacement in user filters.
+func TestUserFilter(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	ds := &LDAP{}
+
+	// Test ${uid} replacement
+	ds.UserFilter = "(uid=${uid})"
+	filter := ds.userFilter("jsmith")
+	g.Expect(filter).To(Equal("(uid=jsmith)"))
+
+	// Test ${login} replacement
+	ds.UserFilter = "(sAMAccountName=${login})"
+	filter = ds.userFilter("jsmith")
+	g.Expect(filter).To(Equal("(sAMAccountName=jsmith)"))
+
+	// Test both ${uid} and ${login} in same filter
+	ds.UserFilter = "(|(uid=${uid})(mail=${login}))"
+	filter = ds.userFilter("jsmith")
+	g.Expect(filter).To(Equal("(|(uid=jsmith)(mail=jsmith))"))
+
+	// Test LDAP escaping of special characters
+	ds.UserFilter = "(uid=${uid})"
+	filter = ds.userFilter("j*smith")
+	g.Expect(filter).To(Equal("(uid=j\\2asmith)"))
+
+	// Test LDAP escaping of parentheses
+	ds.UserFilter = "(uid=${login})"
+	filter = ds.userFilter("j(smith)")
+	g.Expect(filter).To(Equal("(uid=j\\28smith\\29)"))
+
+	// Test Active Directory default
+	ds.Kind = "AD"
+	ds.UserFilter = ""
+	filter = ds.userFilter("jsmith")
+	g.Expect(filter).To(Equal("(sAMAccountName=jsmith)"))
+
+	// Test ACTIVEDIRECTORY kind
+	ds.Kind = "ACTIVEDIRECTORY"
+	ds.UserFilter = ""
+	filter = ds.userFilter("jsmith")
+	g.Expect(filter).To(Equal("(sAMAccountName=jsmith)"))
+
+	// Test standard LDAP default
+	ds.Kind = "LDAP"
+	ds.UserFilter = ""
+	filter = ds.userFilter("jsmith")
+	g.Expect(filter).To(Equal("(uid=jsmith)"))
+
+	// Test unknown kind defaults to LDAP behavior
+	ds.Kind = "UNKNOWN"
+	ds.UserFilter = ""
+	filter = ds.userFilter("jsmith")
+	g.Expect(filter).To(Equal("(uid=jsmith)"))
+
+	// Test custom filter with multiple placeholders and escaping
+	ds.UserFilter = "(&(uid=${uid})(mail=${login}@example.com))"
+	filter = ds.userFilter("test.user")
+	g.Expect(filter).To(Equal("(&(uid=test.user)(mail=test.user@example.com))"))
+}
+
+// TestGroupFilter tests placeholder replacement in group filters.
+func TestGroupFilter(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	ds := &LDAP{}
+
+	// Create mock user entry
+	user := &ldap.Entry{
+		DN: "uid=jsmith,ou=people,dc=example,dc=com",
+		Attributes: []*ldap.EntryAttribute{
+			{Name: "cn", Values: []string{"John Smith"}},
+			{Name: "uid", Values: []string{"jsmith"}},
+		},
+	}
+
+	// Test ${dn} replacement
+	ds.GroupFilter = "(member=${dn})"
+	filter := ds.groupFilter(user)
+	g.Expect(filter).To(Equal("(member=uid=jsmith,ou=people,dc=example,dc=com)"))
+
+	// Test ${cn} replacement
+	ds.GroupFilter = "(owner=${cn})"
+	filter = ds.groupFilter(user)
+	g.Expect(filter).To(Equal("(owner=John Smith)"))
+
+	// Test ${uid} replacement
+	ds.GroupFilter = "(memberUid=${uid})"
+	filter = ds.groupFilter(user)
+	g.Expect(filter).To(Equal("(memberUid=jsmith)"))
+
+	// Test multiple placeholders
+	ds.GroupFilter = "(&(member=${dn})(owner=${cn}))"
+	filter = ds.groupFilter(user)
+	g.Expect(filter).To(Equal("(&(member=uid=jsmith,ou=people,dc=example,dc=com)(owner=John Smith))"))
+
+	// Test all three placeholders
+	ds.GroupFilter = "(&(member=${dn})(owner=${cn})(memberUid=${uid}))"
+	filter = ds.groupFilter(user)
+	g.Expect(filter).To(Equal("(&(member=uid=jsmith,ou=people,dc=example,dc=com)(owner=John Smith)(memberUid=jsmith))"))
+
+	// Test LDAP escaping in DN
+	userWithSpecialDN := &ldap.Entry{
+		DN: "uid=j*smith,ou=people,dc=example,dc=com",
+		Attributes: []*ldap.EntryAttribute{
+			{Name: "cn", Values: []string{"J*Smith"}},
+			{Name: "uid", Values: []string{"j*smith"}},
+		},
+	}
+	ds.GroupFilter = "(member=${dn})"
+	filter = ds.groupFilter(userWithSpecialDN)
+	g.Expect(filter).To(Equal("(member=uid=j\\2asmith,ou=people,dc=example,dc=com)"))
+
+	// Test LDAP escaping in CN
+	ds.GroupFilter = "(owner=${cn})"
+	filter = ds.groupFilter(userWithSpecialDN)
+	g.Expect(filter).To(Equal("(owner=J\\2aSmith)"))
+
+	// Test Active Directory default
+	ds.Kind = "AD"
+	ds.GroupFilter = ""
+	filter = ds.groupFilter(user)
+	g.Expect(filter).To(Equal("(&(objectClass=group)(member=uid=jsmith,ou=people,dc=example,dc=com))"))
+
+	// Test ACTIVEDIRECTORY kind
+	ds.Kind = "ACTIVEDIRECTORY"
+	ds.GroupFilter = ""
+	filter = ds.groupFilter(user)
+	g.Expect(filter).To(Equal("(&(objectClass=group)(member=uid=jsmith,ou=people,dc=example,dc=com))"))
+
+	// Test standard LDAP default
+	ds.Kind = "LDAP"
+	ds.GroupFilter = ""
+	filter = ds.groupFilter(user)
+	g.Expect(filter).To(Equal("(&(objectClass=*)(member=uid=jsmith,ou=people,dc=example,dc=com))"))
+
+	// Test unknown kind defaults to LDAP behavior
+	ds.Kind = "UNKNOWN"
+	ds.GroupFilter = ""
+	filter = ds.groupFilter(user)
+	g.Expect(filter).To(Equal("(&(objectClass=*)(member=uid=jsmith,ou=people,dc=example,dc=com))"))
+
+	// Test empty attribute values
+	userNoAttrs := &ldap.Entry{
+		DN:         "uid=noattrs,ou=people,dc=example,dc=com",
+		Attributes: []*ldap.EntryAttribute{},
+	}
+	ds.GroupFilter = "(&(member=${dn})(memberUid=${uid}))"
+	filter = ds.groupFilter(userNoAttrs)
+	g.Expect(filter).To(Equal("(&(member=uid=noattrs,ou=people,dc=example,dc=com)(memberUid=))"))
 }

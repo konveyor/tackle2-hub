@@ -27,7 +27,8 @@ type LdapHandler struct {
 // Authenticate a user.
 // Authenticated users (identities) are cached.
 // Authenticated with the DS when cached identity not found or expired.
-func (h *LdapHandler) Authenticate(login, password string, lifespan time.Duration) (subject *Subject, err error) {
+// The LDAP is cloned for each concurrent request.
+func (h *LdapHandler) Authenticate(login, password string) (subject *Subject, err error) {
 	if !h.enabled {
 		err = &NotFound{
 			Resource: "User",
@@ -35,19 +36,12 @@ func (h *LdapHandler) Authenticate(login, password string, lifespan time.Duratio
 		}
 		return
 	}
-	identity, err := h.cache.FindIdentityByLogin(login)
-	if err == nil &&
-		identity.Kind == IdentityKindLDAP &&
-		identity.Expiration.After(time.Now()) {
-		subject = &Subject{}
-		subject.WithIdentity(identity)
-		return
-	}
-	ldapUser, err := h.ds.Authenticate(login, password)
+	ds := h.ds // cloned.
+	ldapUser, err := ds.Authenticate(login, password)
 	if err != nil {
 		return
 	}
-	identity = h.buildIdentity(ldapUser, password, lifespan)
+	identity := h.buildIdentity(ldapUser)
 	err = h.ensureIdentity(identity)
 	if err != nil {
 		return
@@ -58,7 +52,7 @@ func (h *LdapHandler) Authenticate(login, password string, lifespan time.Duratio
 }
 
 // buildIdentity builds an IdpIdentity from LDAP user data.
-func (h *LdapHandler) buildIdentity(ldapUser *LdapUser, password string, lifespan time.Duration) (identity *Identity) {
+func (h *LdapHandler) buildIdentity(ldapUser *LdapUser) (identity *Identity) {
 	var scopes []string
 	for _, roleName := range ldapUser.Roles {
 		role, err := h.cache.FindRoleByName(roleName)
@@ -73,15 +67,11 @@ func (h *LdapHandler) buildIdentity(ldapUser *LdapUser, password string, lifespa
 	sort.Strings(scopes)
 
 	identity = &Identity{
-		Kind:              IdentityKindLDAP,
-		Issuer:            h.ds.URL,
-		Subject:           ldapUser.Subject,
-		Login:             ldapUser.Login,
-		RefreshToken:      password,
-		Expiration:        time.Now().Add(lifespan),
-		LastAuthenticated: time.Now(),
-		LastRefreshed:     time.Now(),
-		Scopes:            strings.Join(scopes, " "),
+		Kind:    IdentityKindLDAP,
+		Issuer:  h.ds.URL,
+		Subject: ldapUser.Subject,
+		Login:   ldapUser.Login,
+		Scopes:  scopes,
 	}
 
 	return
@@ -95,21 +85,14 @@ func (h *LdapHandler) ensureIdentity(identity *Identity) (err error) {
 		},
 		DoUpdates: clause.AssignmentColumns([]string{
 			"kind",
-			"refreshToken",
-			"expiration",
-			"lastAuthenticated",
-			"lastRefreshed",
-			"scopes",
+			"issuer",
 			"login",
 			"name",
 			"email",
+			"scopes",
 			"updateUser",
 		}),
 	})
-	err = secret.Encrypt(identity)
-	if err != nil {
-		return
-	}
 	err = db.Create(identity).Error
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -212,7 +195,7 @@ func (r *LDAP) Authenticate(login, password string) (dsUser *LdapUser, err error
 		return
 	}
 	// Find (search) groups.
-	groups, err = r.findGroup(user.DN)
+	groups, err = r.findGroup(user)
 	if err != nil {
 		return
 	}
@@ -237,6 +220,7 @@ func (r *LDAP) findUser(login string) (entry *ldap.Entry, err error) {
 	if len(result.Entries) == 0 || len(result.Entries) > 1 {
 		err = &NotFound{
 			Resource: "user",
+			Filter:   request.Filter,
 			Id:       login,
 		}
 		return
@@ -246,11 +230,11 @@ func (r *LDAP) findUser(login string) (entry *ldap.Entry, err error) {
 }
 
 // findGroup performs a search and returns the groups.
-func (r *LDAP) findGroup(userDN string) (groups []string, err error) {
+func (r *LDAP) findGroup(user *ldap.Entry) (groups []string, err error) {
 	baseDN := fmt.Sprintf("ou=groups,%s", r.BaseDN)
 	request := r.request(
 		baseDN,
-		r.groupFilter(userDN),
+		r.groupFilter(user),
 		"dn",
 		"cn",
 		"mail",
@@ -266,45 +250,65 @@ func (r *LDAP) findGroup(userDN string) (groups []string, err error) {
 			groups = append(groups, v)
 		}
 	}
+	if len(groups) == 0 {
+		Log.Info(
+			"LDAP: no groups found using filter.",
+			"filter",
+			request.Filter)
+	}
 	return
 }
 
 // userFilter returns the user search filter.
+// Supported (macros):
+// - ${uid} - user uid
+// - ${login} - user login (cn alias)
 func (r *LDAP) userFilter(login string) (filter string) {
 	filter = r.UserFilter
 	switch r.Kind {
 	case "ACTIVEDIRECTORY",
 		"AD":
 		if filter == "" {
-			filter = "(sAMAccountName=%s)"
+			filter = "(sAMAccountName=${login})"
 		}
 	default:
 		if filter == "" {
-			filter = "(uid=%s)"
+			filter = "(uid=${uid})"
 		}
 	}
 
-	filter = fmt.Sprintf(filter, ldap.EscapeFilter(login))
+	uid := ldap.EscapeFilter(login)
+	filter = strings.Replace(filter, "${login}", uid, -1)
+	filter = strings.Replace(filter, "${uid}", uid, -1)
 
 	return
 }
 
 // groupFilter returns the group search filter.
-func (r *LDAP) groupFilter(dn string) (filter string) {
+// Supported (macros):
+// - ${uid} - user uid (login alias)
+// - ${cn}  - user cn.
+// - ${dn}  - user dn.
+func (r *LDAP) groupFilter(user *ldap.Entry) (filter string) {
 	filter = r.GroupFilter
 	switch r.Kind {
 	case "ACTIVEDIRECTORY",
 		"AD":
 		if filter == "" {
-			filter = "(&(objectClass=group)(member=%s))"
+			filter = "(&(objectClass=group)(member=${dn}))"
 		}
 	default:
 		if filter == "" {
-			filter = "(&(objectClass=*)(member=%s))"
+			filter = "(&(objectClass=*)(member=${dn}))"
 		}
 	}
 
-	filter = fmt.Sprintf(filter, ldap.EscapeFilter(dn))
+	dn := ldap.EscapeFilter(user.DN)
+	uid := ldap.EscapeFilter(user.GetAttributeValue("uid"))
+	cn := ldap.EscapeFilter(user.GetAttributeValue("cn"))
+	filter = strings.Replace(filter, "${uid}", uid, -1)
+	filter = strings.Replace(filter, "${cn}", cn, -1)
+	filter = strings.Replace(filter, "${dn}", dn, -1)
 
 	return
 }
@@ -382,6 +386,7 @@ func (r *RoleMapper) Use(ruleSet []settings.MappingRule) {
 	}
 }
 
+// roles maps LDAP groups to hub roles using the configured mapping rules.
 func (m *RoleMapper) roles(groups []string) (roles []string) {
 	for _, rule := range m.RuleSet {
 		if rule.Empty() {
@@ -395,6 +400,13 @@ func (m *RoleMapper) roles(groups []string) (roles []string) {
 	}
 	roles = uniqueStrings(roles)
 	sort.Strings(roles)
+
+	if len(roles) == 0 {
+		Log.Info(
+			"LDAP: WARNING: No roles matched.",
+			"groups",
+			groups)
+	}
 	return
 }
 

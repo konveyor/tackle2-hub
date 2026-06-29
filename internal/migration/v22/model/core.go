@@ -16,6 +16,7 @@ type Model struct {
 	ID         uint      `gorm:"<-:create;primaryKey"`
 	CreateTime time.Time `gorm:"<-:create;autoCreateTime"`
 	CreateUser string    `gorm:"<-:create"`
+	UpdateTime time.Time `gorm:"autoUpdateTime"`
 	UpdateUser string
 }
 
@@ -233,6 +234,10 @@ type Permission struct {
 	Scope string `gorm:"uniqueIndex;not null"`
 }
 
+//
+// IdP
+//
+
 type IdpClient struct {
 	Model
 	Subject         string   `gorm:"<-:create;index;not null"`
@@ -245,24 +250,17 @@ type IdpClient struct {
 	Tokens          []Token  `gorm:"constraint:OnDelete:CASCADE"`
 }
 
-//
-// IDP State
-//
-
 type IdpIdentity struct {
 	Model
-	Kind              string    `gorm:"index;not null"`
-	Issuer            string    `gorm:"not null"`
-	Subject           string    `gorm:"uniqueIndex;not null"`
-	RefreshToken      string    `gorm:"not null" secret:""`
-	Expiration        time.Time `gorm:"index"`
-	LastAuthenticated time.Time
-	LastRefreshed     time.Time
-	Scopes            string
-	Login             string
-	Name              string
-	Email             string
-	Tokens            []Token `gorm:"constraint:OnDelete:CASCADE"`
+	Kind    string `gorm:"<-:create;index;not null"`
+	Issuer  string `gorm:"<-:create;not null"`
+	Subject string `gorm:"<-:create;uniqueIndex;not null"`
+	Login   string
+	Name    string
+	Email   string
+	Scopes  []string `gorm:"type:json;serializer:json"`
+	Tokens  []Token  `gorm:"constraint:OnDelete:CASCADE"`
+	Grants  []Grant  `gorm:"constraint:OnDelete:CASCADE"`
 }
 
 type RsaKey struct {
@@ -272,27 +270,34 @@ type RsaKey struct {
 
 type Grant struct {
 	Model
-	Kind         string `gorm:"not null"`
-	ClientId     string `gorm:"index;not null"`
-	AuthId       string `gorm:"uniqueIndex;not null"`
-	Subject      string `gorm:"index"`
-	RefreshToken string `gorm:"uniqueIndex"` // digest
-	AuthCode     string `gorm:"index"`
-	Scopes       string
-	Issued       time.Time
-	Expiration   time.Time
+	Kind            string `gorm:"<-:create;not null"`
+	ClientId        string `gorm:"<-:create;index;not null"`
+	AuthId          string `gorm:"<-:create;uniqueIndex;not null"`
+	Subject         string `gorm:"<-:create;index"`
+	RefreshToken    string `gorm:"uniqueIndex"` // digest
+	IdpRefreshToken string `secret:""`
+	AuthCode        string `gorm:"index"`
+	Issued          time.Time
+	Expiration      time.Time
+	Scopes          []string     `gorm:"type:json;serializer:json"`
+	UserID          *uint        `gorm:"index"`
+	User            *User        `gorm:"constraint:OnDelete:CASCADE"`
+	IdpIdentityID   *uint        `gorm:"index"`
+	IdpIdentity     *IdpIdentity `gorm:"constraint:OnDelete:CASCADE"`
+	IdpClientID     *uint        `gorm:"index"`
+	IdpClient       *IdpClient   `gorm:"constraint:OnDelete:CASCADE"`
+	Tokens          []Token      `gorm:"constraint:OnDelete:CASCADE"`
 }
 
 type Token struct {
 	Model
-	Kind          string    `gorm:"not null"`
-	AuthId        string    `gorm:"uniqueIndex;not null"`
-	Subject       string    `gorm:"index"`
-	Digest        string    `gorm:"index"`
-	Scopes        string    `gorm:"not null"`
-	Issued        time.Time `gorm:"not null"`
-	Expiration    time.Time
-	Revoked       time.Time
+	Kind          string       `gorm:"<-:create;not null"`
+	AuthId        string       `gorm:"<-:create;uniqueIndex;not null"`
+	Subject       string       `gorm:"<-:create;index"`
+	Digest        string       `gorm:"<-:create;index"`
+	Issued        time.Time    `gorm:"<-:create;not null"`
+	Scopes        []string     `gorm:"type:json;serializer:json"`
+	Expiration    time.Time    `gorm:"index"`
 	GrantID       *uint        `gorm:"index"`
 	Grant         *Grant       `gorm:"constraint:OnDelete:CASCADE"`
 	UserID        *uint        `gorm:"index"`

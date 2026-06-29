@@ -9,12 +9,10 @@ import (
 	"net/url"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	liberr "github.com/jortel/go-utils/error"
-	"github.com/konveyor/tackle2-hub/internal/secret"
 	"github.com/zitadel/oidc/v3/pkg/client/rp"
 	"github.com/zitadel/oidc/v3/pkg/oidc"
 	"github.com/zitadel/oidc/v3/pkg/op"
@@ -352,21 +350,13 @@ func (f *FedIdpLogin) ensureIdentity() (err error) {
 		},
 		DoUpdates: clause.AssignmentColumns([]string{
 			"kind",
-			"refreshToken",
-			"expiration",
-			"lastAuthenticated",
-			"lastRefreshed",
-			"scopes",
 			"login",
 			"name",
 			"email",
+			"scopes",
 			"updateUser",
 		}),
 	})
-	err = secret.Encrypt(f.identity)
-	if err != nil {
-		return
-	}
 	err = db.Create(f.identity).Error
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -378,35 +368,27 @@ func (f *FedIdpLogin) ensureIdentity() (err error) {
 
 // buildIdentity builds an IdpIdentity from userinfo and tokens.
 func (f *FedIdpLogin) buildIdentity() (identity *Identity) {
-	scopes := f.extractScopes()
-	expiration := time.Now().Add(Settings.Auth.Token.RefreshLifespan)
-	if f.tokens.Expiry.After(time.Now()) {
-		expiration = f.tokens.Expiry
-	}
-
 	identity = &Identity{
-		Kind:              IdentityKindOpenid,
-		Issuer:            federated.Idp.Name,
-		Subject:           f.userInfo.Subject,
-		Login:             f.userInfo.PreferredUsername,
-		Email:             f.userInfo.Email,
-		RefreshToken:      f.tokens.RefreshToken,
-		Expiration:        expiration,
-		LastAuthenticated: time.Now(),
-		LastRefreshed:     time.Now(),
-		Scopes:            scopes,
+		Kind:    IdentityKindOpenid,
+		Issuer:  federated.Idp.Name,
+		Subject: f.userInfo.Subject,
+		Login:   f.userInfo.PreferredUsername,
+		Email:   f.userInfo.Email,
+		Name:    f.userInfo.Name,
+		Scopes:  f.extractScopes(),
 	}
 
 	return
 }
 
 // extractScopes extracts scopes from access token claims.
-func (f *FedIdpLogin) extractScopes() (scopes string) {
+func (f *FedIdpLogin) extractScopes() (scopes []string) {
 	if f.accessTokenClaims == nil {
 		return
 	}
 	if scopeClaim, found := f.accessTokenClaims[ClaimScope]; found {
-		scopes = f.asString(scopeClaim)
+		str := f.asString(scopeClaim)
+		scopes = strings.Fields(str)
 	}
 
 	return
@@ -436,6 +418,8 @@ func (f *FedIdpLogin) issueTokens() (err error) {
 	// Update the auth request with the authenticated user
 	if ar, cast := authReq.(*AuthRequest); cast {
 		ar.subject = subject
+		ar.idpRefreshToken = f.tokens.RefreshToken
+		ar.idpIdentityId = f.identity.ID
 	}
 
 	redirectURI = authReq.GetRedirectURI()
@@ -488,8 +472,8 @@ func (f *FedIdpLogin) asString(claim any) (s string) {
 	return
 }
 
-// RefreshIdentity refreshes an IdpIdentity using its refresh token.
-func (f *FedIdpLogin) RefreshIdentity() (err error) {
+// refreshIdentity refreshes an IdpIdentity using its refresh token.
+func (f *FedIdpLogin) refreshIdentity(grant *Grant) (err error) {
 	rpClient, err := f.handler.RpClient()
 	if err != nil {
 		return
@@ -497,7 +481,7 @@ func (f *FedIdpLogin) RefreshIdentity() (err error) {
 	f.tokens, err = rp.RefreshTokens[*oidc.IDTokenClaims](
 		context.Background(),
 		rpClient,
-		f.identity.RefreshToken,
+		grant.IdpRefreshToken,
 		"",
 		"",
 	)
@@ -513,7 +497,7 @@ func (f *FedIdpLogin) RefreshIdentity() (err error) {
 	if err != nil {
 		return
 	}
-	f.identity = f.buildIdentity()
+	grant.IdpRefreshToken = f.tokens.RefreshToken
 	err = f.ensureIdentity()
 	return
 }

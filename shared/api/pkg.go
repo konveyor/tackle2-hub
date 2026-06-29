@@ -201,18 +201,25 @@ const (
 
 // Routes - Auth
 const (
-	AuthRoute           = "/auth"
-	AuthSelfGetRoute    = AuthRoute + "/self"
-	AuthGrantsRoute     = AuthRoute + "/grants"
-	AuthGrantRoute      = AuthGrantsRoute + "/:" + ID
-	AuthTokensRoute     = AuthRoute + "/tokens"
-	AuthTokenRoute      = AuthTokensRoute + "/:" + ID
-	AuthDevAuthRoute    = AuthRoute + "/device"
-	AuthDevAuthCallback = AuthDevAuthRoute + "/callback"
-	IdpIdentitiesRoute  = AuthRoute + "/identities"
-	IdpIdentityRoute    = IdpIdentitiesRoute + "/:" + ID
-	IdpClientsRoute     = AuthRoute + "/clients"
-	IdpClientRoute      = IdpClientsRoute + "/:" + ID
+	AuthRoute            = "/auth"
+	AuthSelfGetRoute     = AuthRoute + "/self"
+	AuthGrantsRoute      = AuthRoute + "/grants"
+	AuthGrantRoute       = AuthGrantsRoute + "/:" + ID
+	AuthTokensRoute      = AuthRoute + "/tokens"
+	AuthTokenRoute       = AuthTokensRoute + "/:" + ID
+	AuthTokenRevokeRoute = AuthTokenRoute + "/revoke"
+	AuthDevAuthRoute     = AuthRoute + "/device"
+	AuthDevAuthCallback  = AuthDevAuthRoute + "/callback"
+	IdpIdentitiesRoute   = AuthRoute + "/identities"
+	IdpIdentityRoute     = IdpIdentitiesRoute + "/:" + ID
+	IdpClientsRoute      = AuthRoute + "/clients"
+	IdpClientRoute       = IdpClientsRoute + "/:" + ID
+)
+
+// Token Kinds
+const (
+	TokenKindAccess = "access"
+	TokenKindAPIKey = "api-key"
 )
 
 // Routes - mounted under OIDC

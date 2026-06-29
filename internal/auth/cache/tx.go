@@ -150,7 +150,7 @@ func (r *Tx) TokenDeleted(id uint) {
 		})
 }
 
-// GrantDeleted removes a grant and all associated tokens from the cache.
+// GrantDeleted removes all tokens associated with a grant from the cache.
 func (r *Tx) GrantDeleted(id uint) {
 	r.changes = append(
 		r.changes, func(d *Data) {
