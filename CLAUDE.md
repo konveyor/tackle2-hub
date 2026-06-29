@@ -642,7 +642,7 @@ func (h *BaseHandler) pk(ctx *gin.Context) (id uint) {
 
 #### Docstring Requirements
 
-- **Public functions/methods**: Must always have docstrings except when implementing well-known interfaces such as error.
+- **Public functions/methods**: Must always have docstrings except when implementing well-known interfaces.
 - **Private functions/methods**: Should have docstrings for non-trivial logic
 - **Godoc format**: Start with the function/method name, then describe what it does
   - Example: `// ProcessTask processes the given task and returns the result.`
