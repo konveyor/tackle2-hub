@@ -138,7 +138,7 @@ test-db:
 
 # Run Hub REST API tests.
 test-api:
-	# DEPRECATED
+	# Deprecated
 
 test-binding:
 	for pkg in $$(go list ./test/binding/...); do \
