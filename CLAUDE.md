@@ -452,6 +452,12 @@ func (h Handler) notify(ctx *gin.Context) (err error) {
 
 ## Function and Method Standards
 
+### Grouping
+
+Methods should be ordered and grouped by: exported methods first followed by non-exported methods.
+Within each group, methods should be ordered and grouped with most prominent first.  Exported and non-exported
+methods should not be mixed in the same group.
+
 ### Naming Conventions
 
 ### File Names
@@ -475,7 +481,7 @@ misc.go            // Indicates poor organization
 
 ### Variable Names
 
-Use clear, descriptive variable names:
+Use clear, descriptive but concise variable names:
 
 ```go
 // Good
@@ -636,7 +642,7 @@ func (h *BaseHandler) pk(ctx *gin.Context) (id uint) {
 
 #### Docstring Requirements
 
-- **Public functions/methods**: Must always have docstrings
+- **Public functions/methods**: Must always have docstrings except when implementing well-known interfaces such as error.
 - **Private functions/methods**: Should have docstrings for non-trivial logic
 - **Godoc format**: Start with the function/method name, then describe what it does
   - Example: `// ProcessTask processes the given task and returns the result.`
