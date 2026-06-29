@@ -2,6 +2,9 @@
 name: Start Hub Server
 
 inputs:
+  auth-required:
+    description: "Authentication required."
+    default: 'false'
   disconnected:
     description: 'Set DISCONNECTED=1'
     default: 'true'
@@ -29,6 +32,7 @@ runs:
     - name: Start Hub in background
       shell: bash
       env:
+        AUTH_REQUIRED: ${{ inputs.auth-required }}
         DISCONNECTED: ${{ inputs.disconnected }}
         DB_PATH: ${{ inputs.db-path }}
       run: |

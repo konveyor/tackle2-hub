@@ -165,17 +165,6 @@ func (p *Builtin) Login(
 
 // NewToken creates a new personal access token.
 func (p *Builtin) NewToken(subject string, lifespan time.Duration) (m Token, err error) {
-	defer func() {
-		if err == nil {
-			err = p.db.Save(&m).Error
-			if err != nil {
-				err = liberr.Wrap(err)
-			}
-			if err == nil {
-				p.cache.TokenSaved(&m)
-			}
-		}
-	}()
 	m = p.newToken(subject, lifespan)
 	s, err := p.cache.FindSubject(subject)
 	if err != nil {
@@ -190,8 +179,17 @@ func (p *Builtin) NewToken(subject string, lifespan time.Duration) (m Token, err
 	if s.IsClient() {
 		m.IdpClientID = s.ClientId
 	}
-
-	if len(m.Scopes) == 0 {
+	err = p.db.Save(&m).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	p.cache.TokenSaved(&m)
+	m2, err := p.cache.FindTokenById(m.ID)
+	if err != nil {
+		return
+	}
+	if len(m2.Scopes) == 0 {
 		Log.Info(
 			"WARNING: issued (PAT) token has no scopes.",
 			"login", s.Login(),
