@@ -3636,8 +3636,10 @@ func TestPermission_With(t *testing.T) {
 			ID:         1,
 			CreateUser: "admin",
 		},
-		Name:  "read",
-		Scope: "applications",
+		Name:     "read",
+		Resource: "applications",
+		Verb:     "GET",
+		Scope:    "applications:read",
 	}
 
 	r := &Permission{}
@@ -3645,7 +3647,9 @@ func TestPermission_With(t *testing.T) {
 
 	g.Expect(r.ID).To(gomega.Equal(uint(1)))
 	g.Expect(r.Name).To(gomega.Equal("read"))
-	g.Expect(r.Scope).To(gomega.Equal("applications"))
+	g.Expect(r.Noun).To(gomega.Equal("applications"))
+	g.Expect(r.Verb).To(gomega.Equal("GET"))
+	g.Expect(r.Scope).To(gomega.Equal("applications:read"))
 }
 
 // TestPermission_Model tests the Permission.Model() method
@@ -3653,16 +3657,20 @@ func TestPermission_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Permission{
-		Resource: Resource{ID: 1},
-		Name:     "read",
-		Scope:    "applications",
+		Resource:  Resource{ID: 1},
+		Name:      "read",
+		Noun: "applications",
+		Verb:      "GET",
+		Scope:     "applications:read",
 	}
 
 	m := r.Model()
 
 	g.Expect(m.ID).To(gomega.Equal(uint(1)))
 	g.Expect(m.Name).To(gomega.Equal("read"))
-	g.Expect(m.Scope).To(gomega.Equal("applications"))
+	g.Expect(m.Resource).To(gomega.Equal("applications"))
+	g.Expect(m.Verb).To(gomega.Equal("GET"))
+	g.Expect(m.Scope).To(gomega.Equal("applications:read"))
 }
 
 // TestGrant_With tests the Grant.With() method.

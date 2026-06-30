@@ -295,6 +295,34 @@ func (r *Cache) FindUserByLogin(login string) (m *User, err error) {
 	return
 }
 
+// FindClientById returns a client by id.
+func (r *Cache) FindClientById(id uint) (m *IdpClient, err error) {
+	defer r.ensureRefreshed()
+	d := r.data.Load()
+	m, found := d.clientById[id]
+	if !found {
+		err = &NotFound{
+			Resource: "client",
+			Id:       strconv.FormatUint(uint64(id), 10),
+		}
+	}
+	return
+}
+
+// FindClientBySubject returns a client by subject.
+func (r *Cache) FindClientBySubject(subject string) (m *IdpClient, err error) {
+	defer r.ensureRefreshed()
+	d := r.data.Load()
+	m, found := d.clientBySubject[subject]
+	if !found {
+		err = &NotFound{
+			Resource: "client",
+			Id:       subject,
+		}
+	}
+	return
+}
+
 // FindScopes returns the subject scopes.
 func (r *Cache) FindScopes(subject string) (scopes []string, err error) {
 	defer r.ensureRefreshed()

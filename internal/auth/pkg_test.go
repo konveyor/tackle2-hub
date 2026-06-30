@@ -3581,12 +3581,23 @@ func TestClientRequest_NoGrantCreated(t *testing.T) {
 	provider, err := NewBuiltin(db)
 	g.Expect(err).To(BeNil())
 
+	// Create IdP client in database and cache
+	client := &IdpClient{
+		Subject:         uuid.New().String(),
+		ClientId:        "test-client-id",
+		ApplicationType: "web",
+		Grants:          []string{"client_credentials"},
+		Scopes:          []string{"openid"},
+	}
+	err = db.Create(client).Error
+	g.Expect(err).To(BeNil())
+	provider.cache.ClientSaved(client)
+
 	// Create two client requests with different authIds
-	// Use empty subject to skip scope injection (client creds don't need it)
 	clientReq1 := &ClientRequest{
 		authId:   provider.storage.genId(),
 		clientId: "test-client-id",
-		subject:  "",
+		subject:  client.Subject,
 		scopes:   []string{"openid"},
 		issued:   time.Now(),
 	}
@@ -3594,7 +3605,7 @@ func TestClientRequest_NoGrantCreated(t *testing.T) {
 	clientReq2 := &ClientRequest{
 		authId:   provider.storage.genId(),
 		clientId: "test-client-id",
-		subject:  "",
+		subject:  client.Subject,
 		scopes:   []string{"openid"},
 		issued:   time.Now(),
 	}
@@ -4079,20 +4090,20 @@ func TestAdminWildcardScopes(t *testing.T) {
 
 	// Create admin permission with wildcard
 	adminPerm := &model.Permission{
-		Name:  "admin-wildcard",
-		Noun:  "admin",
-		Verb:  "*",
-		Scope: "admin:*",
+		Name:     "admin-wildcard",
+		Resource: "admin",
+		Verb:     "*",
+		Scope:    "admin:*",
 	}
 	err = db.Create(adminPerm).Error
 	g.Expect(err).To(BeNil())
 
 	// Create global wildcard permission
 	globalPerm := &model.Permission{
-		Name:  "global-wildcard",
-		Noun:  "*",
-		Verb:  "*",
-		Scope: "*:*",
+		Name:     "global-wildcard",
+		Resource: "*",
+		Verb:     "*",
+		Scope:    "*:*",
 	}
 	err = db.Create(globalPerm).Error
 	g.Expect(err).To(BeNil())
@@ -4221,18 +4232,18 @@ func TestPermissionGenerationWithNounVerb(t *testing.T) {
 	// Verify each permission has Noun and Verb populated
 	for _, perm := range perms {
 		g.Expect(perm.Name).NotTo(BeEmpty())
-		g.Expect(perm.Noun).NotTo(BeEmpty())
+		g.Expect(perm.Resource).NotTo(BeEmpty())
 		g.Expect(perm.Verb).NotTo(BeEmpty())
 		g.Expect(perm.Scope).NotTo(BeEmpty())
 
 		// Verify Scope format matches Noun:Verb
 		scope := Scope{}
 		scope.With(perm.Scope)
-		g.Expect(scope.Resource).To(Equal(perm.Noun))
+		g.Expect(scope.Resource).To(Equal(perm.Resource))
 		g.Expect(scope.Method).To(Equal(perm.Verb))
 
 		// Verify Name format is verb-noun
-		expectedName := perm.Verb + "-" + perm.Noun
+		expectedName := perm.Verb + "-" + perm.Resource
 		g.Expect(perm.Name).To(Equal(expectedName))
 	}
 
@@ -4240,7 +4251,7 @@ func TestPermissionGenerationWithNounVerb(t *testing.T) {
 	for _, resource := range resources {
 		foundVerbs := make(map[string]bool)
 		for _, perm := range perms {
-			if perm.Noun == resource {
+			if perm.Resource == resource {
 				foundVerbs[perm.Verb] = true
 			}
 		}

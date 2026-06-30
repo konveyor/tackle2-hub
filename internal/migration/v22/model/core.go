@@ -230,10 +230,10 @@ type Role struct {
 
 type Permission struct {
 	Model
-	Name  string `gorm:"not null"`
-	Noun  string `gorm:"not null"`
-	Verb  string `gorm:"not null"`
-	Scope string `gorm:"uniqueIndex;not null"`
+	Name     string `gorm:"not null"`
+	Resource string `gorm:"not null"`
+	Verb     string `gorm:"not null"`
+	Scope    string `gorm:"uniqueIndex;not null"`
 }
 
 //

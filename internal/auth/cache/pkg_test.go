@@ -1287,3 +1287,239 @@ func TestGrantDeletedCascadesToTokens(t *testing.T) {
 	_, err = cache.FindToken("cascade-token-2")
 	g.Expect(err).NotTo(BeNil())
 }
+
+// TestFindClientById tests finding clients by ID.
+func TestFindClientById(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	// Create test client
+	client := &IdpClient{
+		Model:           Model{ID: 100},
+		Subject:         "test-client-subject",
+		ClientId:        "test-client-id",
+		ApplicationType: "web",
+		Grants:          []string{"client_credentials"},
+		Scopes:          []string{"openid", "profile"},
+	}
+	cache.ClientSaved(client)
+
+	// Test finding client by ID - should succeed
+	found, err := cache.FindClientById(100)
+	g.Expect(err).To(BeNil())
+	g.Expect(found).NotTo(BeNil())
+	g.Expect(found.ID).To(Equal(uint(100)))
+	g.Expect(found.Subject).To(Equal("test-client-subject"))
+	g.Expect(found.ClientId).To(Equal("test-client-id"))
+	g.Expect(found.ApplicationType).To(Equal("web"))
+	g.Expect(found.Grants).To(Equal([]string{"client_credentials"}))
+	g.Expect(found.Scopes).To(Equal([]string{"openid", "profile"}))
+
+	// Test finding non-existent client by ID - should fail
+	_, err = cache.FindClientById(999)
+	g.Expect(err).NotTo(BeNil())
+	var notFound *NotFound
+	g.Expect(errors.As(err, &notFound)).To(BeTrue())
+	g.Expect(notFound.Resource).To(Equal("client"))
+	g.Expect(notFound.Id).To(Equal("999"))
+}
+
+// TestFindClientBySubject tests finding clients by subject.
+func TestFindClientBySubject(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	// Create test client
+	client := &IdpClient{
+		Model:           Model{ID: 200},
+		Subject:         "client-subject-200",
+		ClientId:        "client-id-200",
+		ApplicationType: "native",
+		Grants:          []string{"authorization_code"},
+		Scopes:          []string{"openid", "email"},
+	}
+	cache.ClientSaved(client)
+
+	// Test finding client by subject - should succeed
+	found, err := cache.FindClientBySubject("client-subject-200")
+	g.Expect(err).To(BeNil())
+	g.Expect(found).NotTo(BeNil())
+	g.Expect(found.ID).To(Equal(uint(200)))
+	g.Expect(found.Subject).To(Equal("client-subject-200"))
+	g.Expect(found.ClientId).To(Equal("client-id-200"))
+	g.Expect(found.ApplicationType).To(Equal("native"))
+	g.Expect(found.Grants).To(Equal([]string{"authorization_code"}))
+	g.Expect(found.Scopes).To(Equal([]string{"openid", "email"}))
+
+	// Test finding non-existent client by subject - should fail
+	_, err = cache.FindClientBySubject("non-existent-subject")
+	g.Expect(err).NotTo(BeNil())
+	var notFound *NotFound
+	g.Expect(errors.As(err, &notFound)).To(BeTrue())
+	g.Expect(notFound.Resource).To(Equal("client"))
+	g.Expect(notFound.Id).To(Equal("non-existent-subject"))
+}
+
+// TestFindClientMultipleClients tests finding clients when multiple exist.
+func TestFindClientMultipleClients(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	// Create multiple test clients
+	client1 := &IdpClient{
+		Model:           Model{ID: 301},
+		Subject:         "client-subject-301",
+		ClientId:        "client-id-301",
+		ApplicationType: "web",
+		Grants:          []string{"client_credentials"},
+		Scopes:          []string{"openid"},
+	}
+	client2 := &IdpClient{
+		Model:           Model{ID: 302},
+		Subject:         "client-subject-302",
+		ClientId:        "client-id-302",
+		ApplicationType: "native",
+		Grants:          []string{"authorization_code"},
+		Scopes:          []string{"openid", "profile"},
+	}
+	client3 := &IdpClient{
+		Model:           Model{ID: 303},
+		Subject:         "client-subject-303",
+		ClientId:        "client-id-303",
+		ApplicationType: "web",
+		Grants:          []string{"client_credentials", "refresh_token"},
+		Scopes:          []string{"openid", "profile", "email"},
+	}
+
+	cache.ClientSaved(client1)
+	cache.ClientSaved(client2)
+	cache.ClientSaved(client3)
+
+	// Find each client by ID
+	found1, err := cache.FindClientById(301)
+	g.Expect(err).To(BeNil())
+	g.Expect(found1.Subject).To(Equal("client-subject-301"))
+
+	found2, err := cache.FindClientById(302)
+	g.Expect(err).To(BeNil())
+	g.Expect(found2.Subject).To(Equal("client-subject-302"))
+
+	found3, err := cache.FindClientById(303)
+	g.Expect(err).To(BeNil())
+	g.Expect(found3.Subject).To(Equal("client-subject-303"))
+
+	// Find each client by subject
+	found1, err = cache.FindClientBySubject("client-subject-301")
+	g.Expect(err).To(BeNil())
+	g.Expect(found1.ID).To(Equal(uint(301)))
+
+	found2, err = cache.FindClientBySubject("client-subject-302")
+	g.Expect(err).To(BeNil())
+	g.Expect(found2.ID).To(Equal(uint(302)))
+
+	found3, err = cache.FindClientBySubject("client-subject-303")
+	g.Expect(err).To(BeNil())
+	g.Expect(found3.ID).To(Equal(uint(303)))
+}
+
+// TestClientDeleted tests that deleting a client removes it from cache.
+func TestClientDeleted(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	// Create and save client
+	client := &IdpClient{
+		Model:           Model{ID: 400},
+		Subject:         "client-subject-400",
+		ClientId:        "client-id-400",
+		ApplicationType: "web",
+		Grants:          []string{"client_credentials"},
+		Scopes:          []string{"openid"},
+	}
+	cache.ClientSaved(client)
+
+	// Verify client exists
+	found, err := cache.FindClientById(400)
+	g.Expect(err).To(BeNil())
+	g.Expect(found.ID).To(Equal(uint(400)))
+
+	found, err = cache.FindClientBySubject("client-subject-400")
+	g.Expect(err).To(BeNil())
+	g.Expect(found.ID).To(Equal(uint(400)))
+
+	// Delete client
+	cache.ClientDeleted(400)
+
+	// Verify client is removed from both indexes
+	_, err = cache.FindClientById(400)
+	g.Expect(err).NotTo(BeNil())
+
+	_, err = cache.FindClientBySubject("client-subject-400")
+	g.Expect(err).NotTo(BeNil())
+}
+
+// TestClientSavedUpdate tests that saving an existing client updates the cache.
+func TestClientSavedUpdate(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	// Create and save initial client
+	client := &IdpClient{
+		Model:           Model{ID: 500},
+		Subject:         "client-subject-500",
+		ClientId:        "client-id-500",
+		ApplicationType: "web",
+		Grants:          []string{"client_credentials"},
+		Scopes:          []string{"openid"},
+	}
+	cache.ClientSaved(client)
+
+	// Verify initial state
+	found, err := cache.FindClientById(500)
+	g.Expect(err).To(BeNil())
+	g.Expect(found.Scopes).To(Equal([]string{"openid"}))
+
+	// Update and save client with new scopes
+	client.Scopes = []string{"openid", "profile", "email"}
+	cache.ClientSaved(client)
+
+	// Verify updated state
+	found, err = cache.FindClientById(500)
+	g.Expect(err).To(BeNil())
+	g.Expect(found.Scopes).To(Equal([]string{"openid", "profile", "email"}))
+
+	// Verify can still find by subject
+	found, err = cache.FindClientBySubject("client-subject-500")
+	g.Expect(err).To(BeNil())
+	g.Expect(found.Scopes).To(Equal([]string{"openid", "profile", "email"}))
+}
