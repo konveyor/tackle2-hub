@@ -53,3 +53,11 @@ runs:
         echo "❌ Hub failed to start within 120 seconds"
         cat /tmp/hub.log
         exit 1
+
+    - name: Upload hub log
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: hub-log
+        path: /tmp/hub.log
+        if-no-files-found: warn
