@@ -134,10 +134,12 @@ func (d *Domain) generatePermissions(resources []string) (perms []Permission) {
 	for _, resource := range resources {
 		for _, verb := range verbs {
 			name := verb + "-" + resource
-			scope := resource + ":" + verb
+			scope := Scope{Resource: resource, Method: verb}
 			perms = append(perms, Permission{
 				Name:  name,
-				Scope: scope,
+				Noun:  resource,
+				Verb:  verb,
+				Scope: scope.String(),
 			})
 		}
 	}

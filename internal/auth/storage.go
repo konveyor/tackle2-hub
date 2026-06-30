@@ -285,9 +285,9 @@ func (r *Storage) CreateAccessToken(
 	subject := req.GetSubject()
 	s, err := r.findSubject(subject)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			err = nil
-		}
+		err = oidc.ErrInvalidGrant().
+			WithDescription("%s", err.Error())
+		return
 	}
 	var authId string
 	var grantId string
