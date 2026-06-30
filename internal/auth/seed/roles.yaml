@@ -78,13 +78,6 @@
         - get
         - post
         - put
-    - name: files
-      verbs:
-        - delete
-        - get
-        - post
-        - patch
-        - put
     - name: generators
       verbs:
         - delete
@@ -179,9 +172,9 @@
       verbs:
         - delete
         - get
-        - patch
         - post
         - put
+        - patch
     - name: tasks.report
       verbs:
         - delete
@@ -210,6 +203,13 @@
       verbs:
         - get
         - delete
+    - name: files
+      verbs:
+        - delete
+        - get
+        - post
+        - patch
+        - put
     - name: buckets
       verbs:
         - delete
