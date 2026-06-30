@@ -1083,7 +1083,7 @@ func (r *Storage) injectScopes(req op.TokenRequest) (err error) {
 	if s == nil {
 		return
 	}
-	scopes := append(req.GetScopes(), s.Scopes...)
+	scopes := append(req.GetScopes(), ExpandScopes(s.Scopes...)...)
 	scopes = uniqueStrings(scopes)
 	sort.Strings(scopes)
 	switch r := req.(type) {
@@ -1733,6 +1733,14 @@ func (c *Client) requestedURI() (u string) {
 	return
 }
 
+// GrantRequest defines the interface needed for creating grants.
+type GrantRequest interface {
+	GetClientID() string
+	GetSubject() string
+	GetScopes() []string
+	GetAuthTime() time.Time
+}
+
 // AuthRequest implements op.AuthRequest.
 type AuthRequest struct {
 	*oidc.AuthRequest
@@ -2008,12 +2016,4 @@ func (k *Key) Key() (key any) {
 func (k *Key) ID() (s string) {
 	s = k.jwk.KeyID
 	return
-}
-
-// GrantRequest defines the interface needed for creating grants.
-type GrantRequest interface {
-	GetClientID() string
-	GetSubject() string
-	GetScopes() []string
-	GetAuthTime() time.Time
 }

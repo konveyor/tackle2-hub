@@ -190,6 +190,8 @@ type Role struct {
 type Permission struct {
 	Resource `yaml:",inline"`
 	Name     string `json:"name" binding:"required"`
+	Noun     string `json:"resource" binding:"required"`
+	Verb     string `json:"verb" binding:"required"`
 	Scope    string `json:"scope" binding:"required"`
 }
 

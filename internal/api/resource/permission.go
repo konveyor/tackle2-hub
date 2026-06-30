@@ -12,6 +12,8 @@ type Permission api.Permission
 func (r *Permission) With(m *model.Permission) {
 	baseWith(&r.Resource, &m.Model)
 	r.Name = m.Name
+	r.Noun = m.Noun
+	r.Verb = m.Verb
 	r.Scope = m.Scope
 }
 
@@ -20,6 +22,8 @@ func (r *Permission) Model() (m *model.Permission) {
 	m = &model.Permission{
 		Name:  r.Name,
 		Scope: r.Scope,
+		Noun:  r.Noun,
+		Verb:  r.Verb,
 	}
 	m.ID = r.ID
 	return

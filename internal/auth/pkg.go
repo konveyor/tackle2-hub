@@ -2,7 +2,6 @@ package auth
 
 import (
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -104,47 +103,6 @@ const (
 	ClaimIat   = "iat"   // Issued At
 	ClaimId    = "jti"   // Token id.
 )
-
-// Scope provides scope behavior.
-type Scope struct {
-	Resource string
-	Method   string
-}
-
-// With parses a scope and populate fields.
-// Format: <resource>:<method>
-func (r *Scope) With(s string) {
-	part := strings.Split(s, ":")
-	n := len(part)
-	if n > 0 {
-		r.Resource = part[0]
-	}
-	if n > 1 {
-		r.Method = part[1]
-	}
-	return
-}
-
-// Match returns whether the scope is a match.
-func (r *Scope) Match(resource string, method string) (b bool) {
-	b = (r.Resource == "*" ||
-		r.Eq(r.Resource, resource)) &&
-		(r.Method == "*" ||
-			r.Eq(r.Method, method))
-	return
-}
-
-// Eq returns true when strings matched.
-func (r *Scope) Eq(a, b string) (eq bool) {
-	eq = strings.EqualFold(a, b)
-	return
-}
-
-// String representations of the scope.
-func (r *Scope) String() (s string) {
-	s = strings.Join([]string{r.Resource, r.Method}, ":")
-	return
-}
 
 // cache aliases
 
