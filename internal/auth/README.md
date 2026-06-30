@@ -2145,22 +2145,30 @@ The RBAC system automatically maintains permissions, roles, and users at runtime
 
 ### Permission Generation
 
-For each registered scope, 5 permissions are generated:
+For each registered scope, 6 permissions are generated:
 
 **Input:** Scope `"applications"`
 
-**Output:** 5 permissions
-- `applications:delete`
-- `applications:get`
-- `applications:patch`
-- `applications:post`
-- `applications:put`
+**Output:** 6 permissions
+- `decrypt-applications` → `applications:decrypt`
+- `delete-applications` → `applications:delete`
+- `get-applications` → `applications:get`
+- `patch-applications` → `applications:patch`
+- `post-applications` → `applications:post`
+- `put-applications` → `applications:put`
+
+**Permission structure:**
+- `Name`: Human-readable name (`verb-resource`, e.g., `get-applications`)
+- `Noun`: Resource name (e.g., `applications`)
+- `Verb`: HTTP method (e.g., `get`)
+- `Scope`: Combined scope string (e.g., `applications:get`)
 
 **HTTP verb mapping:**
 - `get` → Read
 - `post` → Create
 - `put` / `patch` → Update
 - `delete` → Delete
+- `decrypt` → Decrypt encrypted resources
 
 ### Role Definition Format
 
@@ -2176,10 +2184,39 @@ Roles defined in `internal/auth/seed/roles.yaml`:
       verbs: [delete, get, post, put, patch]
 ```
 
+**Wildcard Support:**
+
+Roles can use wildcards for resources and verbs to grant broad permissions:
+
+```yaml
+- id: 1
+  role: admin
+  resources:
+    # Grant all permissions on all resources
+    - name: '*'
+      verbs: ['*']
+    # Grant all permissions on admin resource
+    - name: admin
+      verbs: ['*']
+```
+
+**Wildcard patterns:**
+- `*:*` → All verbs on all resources (superuser)
+- `applications:*` → All verbs on applications resource
+- `*:get` → Get verb on all resources (read-only across all resources)
+
+**Wildcard expansion:**
+1. During role seeding, wildcards are expanded to concrete permissions
+2. `*` in resource → expands to all registered resources
+3. `*` in verb → expands to all HTTP verbs (`decrypt`, `delete`, `get`, `patch`, `post`, `put`)
+4. Example: `*:get` expands to `applications:get`, `tasks:get`, `tags:get`, etc.
+
 **Resolution:**
-1. For each resource + verb → lookup permission scope
-2. Example: `applications` + `get` → find permission `applications:get`
-3. Associate all resolved permissions with role
+1. For each resource + verb → expand wildcards
+2. For each expanded scope → lookup permission
+3. Example: `applications` + `get` → find permission `applications:get`
+4. Example: `*` + `*` → find all permissions for all resources
+5. Associate all resolved permissions with role
 
 ### User Definition Format
 
@@ -2243,9 +2280,15 @@ This section documents the permissions granted to each predefined role.
 - `put` / `patch` → Update
 - `delete` → Delete
 
-### 🛡 Role: tackle-admin
+### 🛡 Role: admin
 
-Full administrative access to nearly all resources.
+Full administrative access to **all resources and all operations** via wildcard scopes (`*:*`).
+
+**Wildcard permissions:**
+- Resource: `*` (all resources)
+- Verbs: `*` (all operations)
+
+This grants the admin role every permission in the system, including:
 
 | Resource | Create | Read | Update | Delete |
 |----------|--------|------|--------|--------|
