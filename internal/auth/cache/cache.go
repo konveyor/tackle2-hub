@@ -309,6 +309,20 @@ func (r *Cache) FindClientById(id uint) (m *IdpClient, err error) {
 	return
 }
 
+// FindClientByStrId returns a client (string) by id.
+func (r *Cache) FindClientByStrId(id string) (m *IdpClient, err error) {
+	defer r.ensureRefreshed()
+	d := r.data.Load()
+	m, found := d.clientByStringId[id]
+	if !found {
+		err = &NotFound{
+			Resource: "client",
+			Id:       id,
+		}
+	}
+	return
+}
+
 // FindClientBySubject returns a client by subject.
 func (r *Cache) FindClientBySubject(subject string) (m *IdpClient, err error) {
 	defer r.ensureRefreshed()
@@ -384,20 +398,21 @@ type Data struct {
 	refreshOnce sync.Once
 	refreshed   time.Time
 	//
-	permById        map[uint]*Permission
-	roleById        map[uint]*Role
-	roleByName      map[string]*Role
-	userById        map[uint]*User
-	userBySubject   map[string]*User
-	userByLogin     map[string]*User
-	identById       map[uint]*Identity
-	identBySubject  map[string]*Identity
-	identByLogin    map[string]*Identity
-	clientById      map[uint]*IdpClient
-	clientBySubject map[string]*IdpClient
-	tokenById       map[uint]*Token
-	tokenByDigest   map[string]*Token
-	scopesBySubject map[string][]string
+	permById         map[uint]*Permission
+	roleById         map[uint]*Role
+	roleByName       map[string]*Role
+	userById         map[uint]*User
+	userBySubject    map[string]*User
+	userByLogin      map[string]*User
+	identById        map[uint]*Identity
+	identBySubject   map[string]*Identity
+	identByLogin     map[string]*Identity
+	clientById       map[uint]*IdpClient
+	clientByStringId map[string]*IdpClient
+	clientBySubject  map[string]*IdpClient
+	tokenById        map[uint]*Token
+	tokenByDigest    map[string]*Token
+	scopesBySubject  map[string][]string
 }
 
 // reset creates new maps.
@@ -413,6 +428,7 @@ func (d *Data) reset() {
 	d.identBySubject = make(map[string]*Identity)
 	d.identByLogin = make(map[string]*Identity)
 	d.clientById = make(map[uint]*IdpClient)
+	d.clientByStringId = make(map[string]*IdpClient)
 	d.clientBySubject = make(map[string]*IdpClient)
 	d.tokenById = make(map[uint]*Token)
 	d.tokenByDigest = make(map[string]*Token)
@@ -423,22 +439,23 @@ func (d *Data) reset() {
 // refreshOnce is new.
 func (d *Data) clone() *Data {
 	return &Data{
-		refreshOnce:     sync.Once{},
-		refreshed:       d.refreshed,
-		permById:        cloneMap(d.permById),
-		roleById:        cloneMap(d.roleById),
-		roleByName:      cloneMap(d.roleByName),
-		userById:        cloneMap(d.userById),
-		userBySubject:   cloneMap(d.userBySubject),
-		userByLogin:     cloneMap(d.userByLogin),
-		scopesBySubject: cloneMap(d.scopesBySubject),
-		identById:       cloneMap(d.identById),
-		identBySubject:  cloneMap(d.identBySubject),
-		identByLogin:    cloneMap(d.identByLogin),
-		clientById:      cloneMap(d.clientById),
-		clientBySubject: cloneMap(d.clientBySubject),
-		tokenById:       cloneMap(d.tokenById),
-		tokenByDigest:   cloneMap(d.tokenByDigest),
+		refreshOnce:      sync.Once{},
+		refreshed:        d.refreshed,
+		permById:         cloneMap(d.permById),
+		roleById:         cloneMap(d.roleById),
+		roleByName:       cloneMap(d.roleByName),
+		userById:         cloneMap(d.userById),
+		userBySubject:    cloneMap(d.userBySubject),
+		userByLogin:      cloneMap(d.userByLogin),
+		scopesBySubject:  cloneMap(d.scopesBySubject),
+		identById:        cloneMap(d.identById),
+		identBySubject:   cloneMap(d.identBySubject),
+		identByLogin:     cloneMap(d.identByLogin),
+		clientById:       cloneMap(d.clientById),
+		clientByStringId: cloneMap(d.clientByStringId),
+		clientBySubject:  cloneMap(d.clientBySubject),
+		tokenById:        cloneMap(d.tokenById),
+		tokenByDigest:    cloneMap(d.tokenByDigest),
 	}
 }
 
@@ -555,6 +572,7 @@ func (d *Data) getClients(db *gorm.DB) (err error) {
 	}
 	for _, m := range list {
 		d.clientById[m.ID] = m
+		d.clientByStringId[m.ClientId] = m
 		d.clientBySubject[m.Subject] = m
 	}
 	return

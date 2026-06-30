@@ -150,7 +150,7 @@ test-auth:
 	done
 
 # Run Hub test suite.
-test-all: test-unit test-binding test-auth
+test-all: test test-binding test-auth
 
 migration:
 	hack/next-migration.sh

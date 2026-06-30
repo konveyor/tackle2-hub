@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -65,8 +64,7 @@ func (r *Storage) GetClientByClientID(ctx context.Context, clientId string) (opC
 		}
 		return
 	}
-	id, _ := strconv.ParseUint(clientId, 10, 64)
-	m, err := r.cache.FindClientById(uint(id))
+	m, err := r.cache.FindClientByStrId(clientId)
 	if err != nil {
 		if errors.Is(err, &NotFound{}) {
 			err = oidc.ErrInvalidClient().

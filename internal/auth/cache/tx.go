@@ -107,6 +107,7 @@ func (r *Tx) ClientSaved(m *IdpClient) {
 	r.changes = append(
 		r.changes, func(d *Data) {
 			d.clientById[m.ID] = m
+			d.clientByStringId[m.ClientId] = m
 			d.clientBySubject[m.Subject] = m
 		})
 }
@@ -118,6 +119,7 @@ func (r *Tx) ClientDeleted(id uint) {
 			m, found := d.clientById[id]
 			if found {
 				delete(d.clientBySubject, m.Subject)
+				delete(d.clientByStringId, m.ClientId)
 				delete(d.clientById, id)
 			}
 			for _, token := range d.tokenById {
