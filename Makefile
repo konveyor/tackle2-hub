@@ -127,7 +127,7 @@ endif
 	$(INSTALL_TACKLE_SH);
 
 # Run test targets always (not producing test dirs there).
-.PHONY: test test-api test-integration migration
+.PHONY: test test-api test-integration migration test-binding test-auth test-all
 
 # Run unit tests (all tests outside /test directory).
 test:
