@@ -1327,8 +1327,12 @@ func Required(resource string) func(*gin.Context) {
 				return
 			}
 		}
+		wanted := auth.Scope{
+			Resource: resource,
+			Method:   ctx.Request.Method,
+		}
 		_ = ctx.Error(&Forbidden{
-			Reason: "Required scope not granted",
+			Reason: "Required scope not granted: " + wanted.String(),
 		})
 		ctx.Abort()
 	}

@@ -64,11 +64,11 @@ func (r *Storage) GetClientByClientID(ctx context.Context, clientId string) (opC
 		}
 		return
 	}
-	m := &IdpClient{}
-	err = r.db.First(m, "ClientId", clientId).Error
+	m, err := r.cache.FindClientByStrId(clientId)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			err = oidc.ErrInvalidClient().WithDescription("client not-found.")
+		if errors.Is(err, &NotFound{}) {
+			err = oidc.ErrInvalidClient().
+				WithDescription("%s", err.Error())
 		} else {
 			err = liberr.Wrap(err)
 		}
@@ -285,9 +285,9 @@ func (r *Storage) CreateAccessToken(
 	subject := req.GetSubject()
 	s, err := r.findSubject(subject)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			err = nil
-		}
+		err = oidc.ErrInvalidGrant().
+			WithDescription("%s", err.Error())
+		return
 	}
 	var authId string
 	var grantId string
@@ -349,7 +349,8 @@ func (r *Storage) CreateAccessToken(
 		Log.Info(
 			"WARNING: issued (access) token has no scopes.",
 			"login", s.Login(),
-			"id", m.AuthId)
+			"authId", m.AuthId,
+			"id", m.ID)
 	}
 	return
 }
@@ -1082,7 +1083,7 @@ func (r *Storage) injectScopes(req op.TokenRequest) (err error) {
 	if s == nil {
 		return
 	}
-	scopes := append(req.GetScopes(), s.Scopes...)
+	scopes := append(req.GetScopes(), ExpandScopes(s.Scopes...)...)
 	scopes = uniqueStrings(scopes)
 	sort.Strings(scopes)
 	switch r := req.(type) {
@@ -1732,6 +1733,14 @@ func (c *Client) requestedURI() (u string) {
 	return
 }
 
+// GrantRequest defines the interface needed for creating grants.
+type GrantRequest interface {
+	GetClientID() string
+	GetSubject() string
+	GetScopes() []string
+	GetAuthTime() time.Time
+}
+
 // AuthRequest implements op.AuthRequest.
 type AuthRequest struct {
 	*oidc.AuthRequest
@@ -2007,12 +2016,4 @@ func (k *Key) Key() (key any) {
 func (k *Key) ID() (s string) {
 	s = k.jwk.KeyID
 	return
-}
-
-// GrantRequest defines the interface needed for creating grants.
-type GrantRequest interface {
-	GetClientID() string
-	GetSubject() string
-	GetScopes() []string
-	GetAuthTime() time.Time
 }

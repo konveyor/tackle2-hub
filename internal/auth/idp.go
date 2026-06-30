@@ -389,6 +389,7 @@ func (f *FedIdpLogin) extractScopes() (scopes []string) {
 	if scopeClaim, found := f.accessTokenClaims[ClaimScope]; found {
 		str := f.asString(scopeClaim)
 		scopes = strings.Fields(str)
+		scopes = ExpandScopes(scopes...)
 	}
 
 	return

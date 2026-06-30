@@ -3581,12 +3581,23 @@ func TestClientRequest_NoGrantCreated(t *testing.T) {
 	provider, err := NewBuiltin(db)
 	g.Expect(err).To(BeNil())
 
+	// Create IdP client in database and cache
+	client := &IdpClient{
+		Subject:         uuid.New().String(),
+		ClientId:        "test-client-id",
+		ApplicationType: "web",
+		Grants:          []string{"client_credentials"},
+		Scopes:          []string{"openid"},
+	}
+	err = db.Create(client).Error
+	g.Expect(err).To(BeNil())
+	provider.cache.ClientSaved(client)
+
 	// Create two client requests with different authIds
-	// Use empty subject to skip scope injection (client creds don't need it)
 	clientReq1 := &ClientRequest{
 		authId:   provider.storage.genId(),
 		clientId: "test-client-id",
-		subject:  "",
+		subject:  client.Subject,
 		scopes:   []string{"openid"},
 		issued:   time.Now(),
 	}
@@ -3594,7 +3605,7 @@ func TestClientRequest_NoGrantCreated(t *testing.T) {
 	clientReq2 := &ClientRequest{
 		authId:   provider.storage.genId(),
 		clientId: "test-client-id",
-		subject:  "",
+		subject:  client.Subject,
 		scopes:   []string{"openid"},
 		issued:   time.Now(),
 	}
@@ -3855,4 +3866,400 @@ func TestGroupFilter(t *testing.T) {
 	ds.GroupFilter = "(&(member=${dn})(memberUid=${uid}))"
 	filter = ds.groupFilter(userNoAttrs)
 	g.Expect(filter).To(Equal("(&(member=uid=noattrs,ou=people,dc=example,dc=com)(memberUid=))"))
+}
+
+// TestScopeExpand tests Scope.Expand() with wildcard patterns.
+func TestScopeExpand(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Register some test resources
+	RegisterResource("applications")
+	RegisterResource("tags")
+	RegisterResource("identities")
+
+	// Test 1: Wildcard resource and method (*:*)
+	scope := Scope{Resource: "*", Method: "*"}
+	expanded := scope.Expand()
+	g.Expect(len(expanded)).To(BeNumerically(">", 0))
+
+	// Verify all verbs are present for at least one resource
+	foundGet := false
+	foundPost := false
+	foundDelete := false
+	foundDecrypt := false
+	for _, s := range expanded {
+		if s.Method == "get" {
+			foundGet = true
+		}
+		if s.Method == "post" {
+			foundPost = true
+		}
+		if s.Method == "delete" {
+			foundDelete = true
+		}
+		if s.Method == "decrypt" {
+			foundDecrypt = true
+		}
+	}
+	g.Expect(foundGet).To(BeTrue())
+	g.Expect(foundPost).To(BeTrue())
+	g.Expect(foundDelete).To(BeTrue())
+	g.Expect(foundDecrypt).To(BeTrue())
+
+	// Test 2: Wildcard method (applications:*)
+	scope = Scope{Resource: "applications", Method: "*"}
+	expanded = scope.Expand()
+	g.Expect(expanded).To(HaveLen(6)) // 6 verbs
+
+	// All should be for applications
+	for _, s := range expanded {
+		g.Expect(s.Resource).To(Equal("applications"))
+	}
+
+	// Verify all verbs present
+	methods := make(map[string]bool)
+	for _, s := range expanded {
+		methods[s.Method] = true
+	}
+	g.Expect(methods).To(HaveKey("decrypt"))
+	g.Expect(methods).To(HaveKey("delete"))
+	g.Expect(methods).To(HaveKey("get"))
+	g.Expect(methods).To(HaveKey("patch"))
+	g.Expect(methods).To(HaveKey("post"))
+	g.Expect(methods).To(HaveKey("put"))
+
+	// Test 3: Wildcard resource (*:get)
+	scope = Scope{Resource: "*", Method: "get"}
+	expanded = scope.Expand()
+	g.Expect(len(expanded)).To(BeNumerically(">", 0))
+
+	// All should have method "get"
+	for _, s := range expanded {
+		g.Expect(s.Method).To(Equal("get"))
+	}
+
+	// Should have multiple resources
+	resources := make(map[string]bool)
+	for _, s := range expanded {
+		resources[s.Resource] = true
+	}
+	g.Expect(len(resources)).To(BeNumerically(">", 1))
+
+	// Test 4: Exact scope (no wildcards) - applications:get
+	scope = Scope{Resource: "applications", Method: "get"}
+	expanded = scope.Expand()
+	g.Expect(expanded).To(HaveLen(1))
+	g.Expect(expanded[0].Resource).To(Equal("applications"))
+	g.Expect(expanded[0].Method).To(Equal("get"))
+
+	// Test 5: Another exact scope - tags:delete
+	scope = Scope{Resource: "tags", Method: "delete"}
+	expanded = scope.Expand()
+	g.Expect(expanded).To(HaveLen(1))
+	g.Expect(expanded[0].Resource).To(Equal("tags"))
+	g.Expect(expanded[0].Method).To(Equal("delete"))
+}
+
+// TestExpandScopes tests the ExpandScopes helper function.
+func TestExpandScopes(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Register test resources
+	RegisterResource("applications")
+	RegisterResource("tags")
+
+	// Test 1: Expand single wildcard scope
+	scopes := ExpandScopes("applications:*")
+	g.Expect(scopes).To(HaveLen(6)) // 6 verbs
+	g.Expect(scopes).To(ContainElement("applications:decrypt"))
+	g.Expect(scopes).To(ContainElement("applications:delete"))
+	g.Expect(scopes).To(ContainElement("applications:get"))
+	g.Expect(scopes).To(ContainElement("applications:patch"))
+	g.Expect(scopes).To(ContainElement("applications:post"))
+	g.Expect(scopes).To(ContainElement("applications:put"))
+
+	// Test 2: Expand multiple scopes with wildcards
+	scopes = ExpandScopes("applications:*", "tags:get")
+	g.Expect(len(scopes)).To(Equal(7)) // 6 from applications:* + 1 from tags:get
+	g.Expect(scopes).To(ContainElement("applications:get"))
+	g.Expect(scopes).To(ContainElement("tags:get"))
+
+	// Test 3: Expand *:* (all resources, all methods)
+	scopes = ExpandScopes("*:*")
+	g.Expect(len(scopes)).To(BeNumerically(">", 10)) // Many resources × 6 verbs
+
+	// Test 4: Mix of wildcard and exact scopes
+	scopes = ExpandScopes("applications:get", "tags:*", "identities:post")
+	g.Expect(scopes).To(ContainElement("applications:get"))
+	g.Expect(scopes).To(ContainElement("identities:post"))
+	g.Expect(scopes).To(ContainElement("tags:delete"))
+	g.Expect(scopes).To(ContainElement("tags:get"))
+
+	// Test 5: Empty input
+	scopes = ExpandScopes()
+	g.Expect(scopes).To(BeEmpty())
+
+	// Test 6: Exact scopes (no expansion)
+	scopes = ExpandScopes("applications:get", "tags:post")
+	g.Expect(scopes).To(HaveLen(2))
+	g.Expect(scopes).To(ContainElement("applications:get"))
+	g.Expect(scopes).To(ContainElement("tags:post"))
+}
+
+// TestWildcardScopeMatching tests that Match() handles wildcards correctly.
+func TestWildcardScopeMatching(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Test 1: *:* matches everything
+	scope := Scope{Resource: "*", Method: "*"}
+	g.Expect(scope.Match("applications", "GET")).To(BeTrue())
+	g.Expect(scope.Match("tags", "POST")).To(BeTrue())
+	g.Expect(scope.Match("anything", "DELETE")).To(BeTrue())
+	g.Expect(scope.Match("admin", "decrypt")).To(BeTrue())
+
+	// Test 2: resource:* matches any method for that resource
+	scope = Scope{Resource: "applications", Method: "*"}
+	g.Expect(scope.Match("applications", "GET")).To(BeTrue())
+	g.Expect(scope.Match("applications", "POST")).To(BeTrue())
+	g.Expect(scope.Match("applications", "DELETE")).To(BeTrue())
+	g.Expect(scope.Match("applications", "decrypt")).To(BeTrue())
+	g.Expect(scope.Match("tags", "GET")).To(BeFalse())
+	g.Expect(scope.Match("identities", "POST")).To(BeFalse())
+
+	// Test 3: *:method matches that method for any resource
+	scope = Scope{Resource: "*", Method: "GET"}
+	g.Expect(scope.Match("applications", "GET")).To(BeTrue())
+	g.Expect(scope.Match("tags", "GET")).To(BeTrue())
+	g.Expect(scope.Match("anything", "GET")).To(BeTrue())
+	g.Expect(scope.Match("applications", "POST")).To(BeFalse())
+	g.Expect(scope.Match("tags", "DELETE")).To(BeFalse())
+
+	// Test 4: Exact match (no wildcards)
+	scope = Scope{Resource: "applications", Method: "GET"}
+	g.Expect(scope.Match("applications", "GET")).To(BeTrue())
+	g.Expect(scope.Match("applications", "POST")).To(BeFalse())
+	g.Expect(scope.Match("tags", "GET")).To(BeFalse())
+	g.Expect(scope.Match("tags", "POST")).To(BeFalse())
+
+	// Test 5: Case insensitive matching
+	scope = Scope{Resource: "Applications", Method: "get"}
+	g.Expect(scope.Match("applications", "GET")).To(BeTrue())
+	g.Expect(scope.Match("APPLICATIONS", "get")).To(BeTrue())
+
+	scope = Scope{Resource: "*", Method: "Get"}
+	g.Expect(scope.Match("tags", "GET")).To(BeTrue())
+	g.Expect(scope.Match("Tags", "get")).To(BeTrue())
+
+	// Test 6: Special verb "decrypt"
+	scope = Scope{Resource: "admin", Method: "*"}
+	g.Expect(scope.Match("admin", "decrypt")).To(BeTrue())
+
+	scope = Scope{Resource: "*", Method: "decrypt"}
+	g.Expect(scope.Match("applications", "decrypt")).To(BeTrue())
+	g.Expect(scope.Match("admin", "decrypt")).To(BeTrue())
+}
+
+// TestScopeString tests Scope.String() method.
+func TestScopeString(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	scope := Scope{Resource: "applications", Method: "get"}
+	g.Expect(scope.String()).To(Equal("applications:get"))
+
+	scope = Scope{Resource: "*", Method: "*"}
+	g.Expect(scope.String()).To(Equal("*:*"))
+
+	scope = Scope{Resource: "tags", Method: "*"}
+	g.Expect(scope.String()).To(Equal("tags:*"))
+
+	scope = Scope{Resource: "*", Method: "delete"}
+	g.Expect(scope.String()).To(Equal("*:delete"))
+}
+
+// TestAdminWildcardScopes tests that admin role gets all scopes via wildcards.
+func TestAdminWildcardScopes(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Register resources
+	RegisterResource("applications")
+	RegisterResource("tags")
+	RegisterResource("admin")
+
+	// Create admin permission with wildcard
+	adminPerm := &model.Permission{
+		Name:     "admin-wildcard",
+		Resource: "admin",
+		Verb:     "*",
+		Scope:    "admin:*",
+	}
+	err = db.Create(adminPerm).Error
+	g.Expect(err).To(BeNil())
+
+	// Create global wildcard permission
+	globalPerm := &model.Permission{
+		Name:     "global-wildcard",
+		Resource: "*",
+		Verb:     "*",
+		Scope:    "*:*",
+	}
+	err = db.Create(globalPerm).Error
+	g.Expect(err).To(BeNil())
+
+	// Create admin role with both wildcard permissions
+	adminRole := &model.Role{Name: "admin"}
+	err = db.Create(adminRole).Error
+	g.Expect(err).To(BeNil())
+
+	err = db.Model(adminRole).Association("Permissions").Append(adminPerm, globalPerm)
+	g.Expect(err).To(BeNil())
+
+	// Create admin user
+	adminUser := &model.User{
+		Subject:  "admin-wildcard-user",
+		Login:    "adminwildcard",
+		Password: secret.HashPassword("password"),
+		Email:    "adminwildcard@example.com",
+	}
+	err = db.Create(adminUser).Error
+	g.Expect(err).To(BeNil())
+
+	err = db.Model(adminUser).Association("Roles").Append(adminRole)
+	g.Expect(err).To(BeNil())
+
+	// Create provider
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Create token
+	token, err := provider.NewToken(adminUser.Subject, 24*time.Hour)
+	g.Expect(err).To(BeNil())
+
+	// Authenticate
+	request := newTestRequest()
+	request.With("Bearer " + token.Secret)
+	jwToken, err := provider.Authenticate(request)
+	g.Expect(err).To(BeNil())
+
+	// Get scopes from token (stored in wildcard form)
+	scopes := provider.Scopes(jwToken)
+	scopeStrings := make([]string, len(scopes))
+	for i, s := range scopes {
+		scopeStrings[i] = s.String()
+	}
+
+	// Verify token contains wildcard scopes (not expanded)
+	g.Expect(scopeStrings).To(ContainElement("admin:*"))
+	g.Expect(scopeStrings).To(ContainElement("*:*"))
+
+	// Verify wildcard scopes match specific operations
+	// admin:* should match admin with any method
+	for _, scope := range scopes {
+		if scope.Resource == "admin" && scope.Method == "*" {
+			g.Expect(scope.Match("admin", "decrypt")).To(BeTrue())
+			g.Expect(scope.Match("admin", "get")).To(BeTrue())
+			g.Expect(scope.Match("admin", "post")).To(BeTrue())
+			g.Expect(scope.Match("admin", "delete")).To(BeTrue())
+			g.Expect(scope.Match("applications", "get")).To(BeFalse())
+		}
+	}
+
+	// *:* should match any resource with any method
+	for _, scope := range scopes {
+		if scope.Resource == "*" && scope.Method == "*" {
+			g.Expect(scope.Match("applications", "get")).To(BeTrue())
+			g.Expect(scope.Match("applications", "decrypt")).To(BeTrue())
+			g.Expect(scope.Match("tags", "delete")).To(BeTrue())
+			g.Expect(scope.Match("admin", "decrypt")).To(BeTrue())
+			g.Expect(scope.Match("anything", "anymethod")).To(BeTrue())
+		}
+	}
+}
+
+// TestExternalIdpWildcardExpansion tests wildcard expansion from external IdP tokens.
+func TestExternalIdpWildcardExpansion(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Register resources
+	RegisterResource("applications")
+	RegisterResource("tags")
+
+	// Simulate external IdP scopes with wildcards
+	idpScopes := []string{
+		"applications:*",
+		"tags:get",
+		"*:delete",
+	}
+
+	// Expand using ExpandScopes (same function used in FedIdpLogin.extractScopes)
+	expanded := ExpandScopes(idpScopes...)
+
+	// Verify applications:* expanded to all verbs
+	g.Expect(expanded).To(ContainElement("applications:decrypt"))
+	g.Expect(expanded).To(ContainElement("applications:delete"))
+	g.Expect(expanded).To(ContainElement("applications:get"))
+	g.Expect(expanded).To(ContainElement("applications:patch"))
+	g.Expect(expanded).To(ContainElement("applications:post"))
+	g.Expect(expanded).To(ContainElement("applications:put"))
+
+	// Verify tags:get remains unchanged
+	g.Expect(expanded).To(ContainElement("tags:get"))
+
+	// Verify *:delete expanded to all resources
+	g.Expect(expanded).To(ContainElement("applications:delete"))
+	g.Expect(expanded).To(ContainElement("tags:delete"))
+}
+
+// TestPermissionGenerationWithNounVerb tests that generatePermissions populates Noun and Verb.
+func TestPermissionGenerationWithNounVerb(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Create domain
+	domain := NewDomain(db)
+
+	// Generate permissions for test resources
+	resources := []string{"applications", "tags"}
+	perms := domain.generatePermissions(resources)
+
+	// Verify permissions created
+	g.Expect(len(perms)).To(Equal(12)) // 2 resources × 6 verbs
+
+	// Verify each permission has Noun and Verb populated
+	for _, perm := range perms {
+		g.Expect(perm.Name).NotTo(BeEmpty())
+		g.Expect(perm.Resource).NotTo(BeEmpty())
+		g.Expect(perm.Verb).NotTo(BeEmpty())
+		g.Expect(perm.Scope).NotTo(BeEmpty())
+
+		// Verify Scope format matches Noun:Verb
+		scope := Scope{}
+		scope.With(perm.Scope)
+		g.Expect(scope.Resource).To(Equal(perm.Resource))
+		g.Expect(scope.Method).To(Equal(perm.Verb))
+
+		// Verify Name format is verb-noun
+		expectedName := perm.Verb + "-" + perm.Resource
+		g.Expect(perm.Name).To(Equal(expectedName))
+	}
+
+	// Verify all verbs present for each resource
+	for _, resource := range resources {
+		foundVerbs := make(map[string]bool)
+		for _, perm := range perms {
+			if perm.Resource == resource {
+				foundVerbs[perm.Verb] = true
+			}
+		}
+		g.Expect(foundVerbs).To(HaveKey("decrypt"))
+		g.Expect(foundVerbs).To(HaveKey("delete"))
+		g.Expect(foundVerbs).To(HaveKey("get"))
+		g.Expect(foundVerbs).To(HaveKey("patch"))
+		g.Expect(foundVerbs).To(HaveKey("post"))
+		g.Expect(foundVerbs).To(HaveKey("put"))
+	}
 }

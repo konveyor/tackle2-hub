@@ -6,17 +6,19 @@ import (
 
 	"github.com/konveyor/tackle2-hub/shared/binding"
 	"github.com/konveyor/tackle2-hub/shared/binding/auth"
+	client2 "github.com/konveyor/tackle2-hub/shared/binding/client"
 	"github.com/konveyor/tackle2-hub/shared/settings"
 )
 
 const (
-	User     = "USER"
-	Password = "PASSWORD"
+	User     = "BINDING_USER"
+	Password = "BINDING_PASSWORD"
 )
 
 var (
-	Settings = &settings.Settings
-	client   *binding.RichClient
+	Settings   = &settings.Settings
+	client     *binding.RichClient
+	authMethod client2.AuthMethod
 )
 
 func init() {
@@ -27,8 +29,12 @@ func init() {
 	}
 	user := os.Getenv(User)
 	password := os.Getenv(Password)
-	if user == "" || password == "" {
-		return
+	if user == "" {
+		user = "admin"
 	}
-	client.Client.Use(auth.NewBasic(user, password))
+	if password == "" {
+		password = "admin"
+	}
+	authMethod = auth.NewBasic(user, password)
+	client.Client.Use(authMethod)
 }

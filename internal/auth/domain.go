@@ -131,21 +131,15 @@ func (d *Domain) buildPermissionMap(db *gorm.DB) (err error) {
 // generatePermissions generates all permissions for the given resources.
 // Each resource gets 5 permissions (one per HTTP verb).
 func (d *Domain) generatePermissions(resources []string) (perms []Permission) {
-	verbs := []string{
-		"decrypt",
-		"delete",
-		"get",
-		"patch",
-		"post",
-		"put",
-	}
 	for _, resource := range resources {
 		for _, verb := range verbs {
 			name := verb + "-" + resource
-			scope := resource + ":" + verb
+			scope := Scope{Resource: resource, Method: verb}
 			perms = append(perms, Permission{
-				Name:  name,
-				Scope: scope,
+				Name:     name,
+				Resource: resource,
+				Verb:     verb,
+				Scope:    scope.String(),
 			})
 		}
 	}
@@ -314,20 +308,22 @@ func (d *Domain) rolePatch(existing map[string]Role, wanted []seed.Role) (patch 
 // buildRolePermissions builds permission list from a role definition.
 func (d *Domain) buildRolePermissions(role seed.Role) (perms []Permission, err error) {
 	permMap := make(map[uint]bool)
-	for _, resource := range role.Resources {
-		for _, verb := range resource.Verbs {
-			scope := resource.Name + ":" + verb
-			permID, found := d.permByScope[scope]
-			if !found {
-				Log.Info(
-					"Role has unknown scope.",
-					"name",
-					role.Name,
-					"scope",
-					scope)
-				continue
+	for _, r := range role.Resources {
+		for _, m := range r.Verbs {
+			scope := Scope{Resource: r.Name, Method: m}
+			for _, s := range scope.Expand() {
+				permID, found := d.permByScope[s.String()]
+				if !found {
+					Log.Info(
+						"Role has unknown scope.",
+						"name",
+						role.Name,
+						"scope",
+						s)
+					continue
+				}
+				permMap[permID] = true
 			}
-			permMap[permID] = true
 		}
 	}
 	for permID := range permMap {

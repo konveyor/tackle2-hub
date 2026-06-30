@@ -127,7 +127,7 @@ endif
 	$(INSTALL_TACKLE_SH);
 
 # Run test targets always (not producing test dirs there).
-.PHONY: test test-api test-integration migration
+.PHONY: test test-api test-integration migration test-binding test-auth test-all
 
 # Run unit tests (all tests outside /test directory).
 test:
@@ -138,16 +138,19 @@ test-db:
 
 # Run Hub REST API tests.
 test-api:
-	for pkg in $$(go list ./test/api/...); do \
-	  HUB_BASE_URL="$(HUB_BASE_URL)" go test -count=1 -v -failfast "$$pkg" || exit 1; \
-	done
+	# Deprecated
+
 test-binding:
 	for pkg in $$(go list ./test/binding/...); do \
-	  HUB_BASE_URL="$(HUB_BASE_URL)" USER="admin" PASSWORD="admin" go test -count=1 -v -failfast "$$pkg" || exit 1; \
+	  HUB_BASE_URL="$(HUB_BASE_URL)" go test -count=1 -v -failfast "$$pkg" || exit 1; \
+	done
+test-auth:
+	for pkg in $$(go list ./test/auth/...); do \
+	  HUB_BASE_URL="$(HUB_BASE_URL)" go test -count=1 -v -failfast "$$pkg" || exit 1; \
 	done
 
 # Run Hub test suite.
-test-all: test-unit test-api
+test-all: test test-binding test-auth
 
 migration:
 	hack/next-migration.sh

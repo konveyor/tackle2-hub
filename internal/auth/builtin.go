@@ -165,17 +165,6 @@ func (p *Builtin) Login(
 
 // NewToken creates a new personal access token.
 func (p *Builtin) NewToken(subject string, lifespan time.Duration) (m Token, err error) {
-	defer func() {
-		if err == nil {
-			err = p.db.Save(&m).Error
-			if err != nil {
-				err = liberr.Wrap(err)
-			}
-			if err == nil {
-				p.cache.TokenSaved(&m)
-			}
-		}
-	}()
 	m = p.newToken(subject, lifespan)
 	s, err := p.cache.FindSubject(subject)
 	if err != nil {
@@ -190,13 +179,13 @@ func (p *Builtin) NewToken(subject string, lifespan time.Duration) (m Token, err
 	if s.IsClient() {
 		m.IdpClientID = s.ClientId
 	}
-
-	if len(m.Scopes) == 0 {
-		Log.Info(
-			"WARNING: issued (PAT) token has no scopes.",
-			"login", s.Login(),
-			"id", m.AuthId)
+	err = p.db.Save(&m).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
 	}
+	p.cache.TokenSaved(&m)
+	p.warnTokenEmptyScopes(s.Login(), m.ID)
 	return
 }
 
@@ -649,6 +638,25 @@ func (p *Builtin) jti(jwToken *jwt.Token) (id string) {
 	pLen := min(12, max(1, len(id)/4))
 	id = id[:pLen] + "..."
 	return
+}
+
+// warnTokenEmptyScopes logs tokens created with no scopes.
+func (p *Builtin) warnTokenEmptyScopes(login string, tokenId uint) {
+	token, err := p.cache.FindTokenById(tokenId)
+	if err != nil {
+		Log.Error(
+			err,
+			"Token not cached.",
+			"id", tokenId)
+		return
+	}
+	if len(token.Scopes) == 0 {
+		Log.Info(
+			"WARNING: issued (PAT) token has no scopes.",
+			"login", login,
+			"authId", token.AuthId,
+			"id", tokenId)
+	}
 }
 
 // JWK is a JSON Web Key.
