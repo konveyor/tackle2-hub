@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tackle Hub</title>
+  <!--
+    The hub replaces the contents of this script tag before serving the page.
+    It injects a JSON object matching the LoginConfig interface so the React
+    app knows which page to render and what dynamic values to use (form
+    actions, error messages, federated IdP config).
+
+    The placeholder value is intentionally incomplete JSON so that a failure
+    to inject is immediately visible rather than silently falling back.
+  -->
+  <script id="login-config">
+    window.__LOGIN_CONFIG__ = null;
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+</body>
+</html>

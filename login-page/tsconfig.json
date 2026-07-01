@@ -1,0 +1,31 @@
+{
+  "$schema": "https://schemastore.org/tsconfig.json",
+  "include": ["src/**/*", "rspack.config.ts"],
+  "compilerOptions": {
+    "outDir": "./dist",
+    "types": ["node", "react", "react-dom", "./bundler-modules.d.ts"],
+
+    "module": "es2022",
+    "moduleResolution": "bundler",
+    "target": "es2023",
+    "lib": ["es2023", "DOM", "DOM.Iterable"],
+
+    "strict": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "allowJs": true,
+    "checkJs": false,
+
+    "jsx": "react-jsx",
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noEmit": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "preserveWatchOutput": true
+  }
+}

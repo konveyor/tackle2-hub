@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -11,6 +12,7 @@ import (
 	"github.com/konveyor/tackle2-hub/internal/api/resource"
 	"github.com/konveyor/tackle2-hub/internal/auth"
 	"github.com/konveyor/tackle2-hub/internal/auth/cache"
+	"github.com/konveyor/tackle2-hub/internal/loginpage"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
 	"github.com/konveyor/tackle2-hub/shared/api"
@@ -1185,6 +1187,8 @@ func (h AuthHandler) OIDC() func(*gin.Context) {
 	dagHandler := auth.IdP.DagHandler()
 	oidcAuth := dagHandler.OIDCAuth()
 
+	assetHandler := loginpage.AssetHandler()
+
 	return func(ctx *gin.Context) {
 		auth.IdP.Ready(ctx.Request)
 
@@ -1220,6 +1224,11 @@ func (h AuthHandler) OIDC() func(*gin.Context) {
 		case api.DeviceCbRoute:
 			oidcAuth.Callback(ctx)
 		default:
+			// Serve login page static assets (JS, CSS, fonts) at /oidc/assets/*.
+			if strings.HasPrefix(path, api.AssetsRoute+"/") {
+				assetHandler.ServeHTTP(ctx.Writer, ctx.Request)
+				return
+			}
 			strippedHandler.ServeHTTP(ctx.Writer, ctx.Request)
 		}
 	}
