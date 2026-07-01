@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"sync"
 
@@ -18,6 +19,10 @@ import (
 	"github.com/zitadel/oidc/v3/pkg/op"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+)
+
+var (
+	roleScopeRegex = regexp.MustCompile(`\$\{role:([^}]+)\}`)
 )
 
 //
@@ -389,9 +394,35 @@ func (f *FedIdpLogin) extractScopes() (scopes []string) {
 	if scopeClaim, found := f.accessTokenClaims[ClaimScope]; found {
 		str := f.asString(scopeClaim)
 		scopes = strings.Fields(str)
+		scopes = f.expandScopes(scopes)
 		scopes = ExpandScopes(scopes...)
 	}
+	return
+}
 
+// expandScopes expands role references in the scope list.
+// Role references use ${role:name} syntax and are replaced with the role's
+// permission scopes. Reduces the burden of scope management in IdPs.
+func (f *FedIdpLogin) expandScopes(in []string) (expanded []string) {
+	cache := f.handler.cache
+	for _, scope := range in {
+		match := roleScopeRegex.FindStringSubmatch(scope)
+		if len(match) < 2 {
+			expanded = append(expanded, scope)
+			continue
+		}
+		name := match[1]
+		role, err := cache.FindRoleByName(name)
+		if err != nil {
+			Log.Info(err.Error(),
+				"pattern",
+				scope)
+			continue
+		}
+		for _, p := range role.Permissions {
+			expanded = append(expanded, p.Scope)
+		}
+	}
 	return
 }
 
