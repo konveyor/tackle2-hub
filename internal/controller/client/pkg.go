@@ -97,10 +97,9 @@ func (r Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (r
 	if err != nil {
 		return
 	}
-	r.history[idpClient.Name] = 1
+	// Ready condition.
 	idpClient.Status.Conditions = nil
 	idpClient.Status.ObservedGeneration = idpClient.Generation
-	// Ready condition.
 	idpClient.Status.Conditions = append(
 		idpClient.Status.Conditions,
 		r.ready(idpClient))
@@ -109,6 +108,8 @@ func (r Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (r
 	if err != nil {
 		return
 	}
+
+	r.history[idpClient.Name] = 1
 
 	return
 }

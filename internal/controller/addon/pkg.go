@@ -92,15 +92,14 @@ func (r Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (r
 	if found && addon.Reconciled() {
 		return
 	}
-	r.history[addon.Name] = 1
-	addon.Status.Conditions = nil
-	addon.Status.ObservedGeneration = addon.Generation
 	// Changed
 	migrated, err := r.addonChanged(addon)
 	if migrated || err != nil {
 		return
 	}
 	// Ready condition.
+	addon.Status.Conditions = nil
+	addon.Status.ObservedGeneration = addon.Generation
 	addon.Status.Conditions = append(
 		addon.Status.Conditions,
 		r.ready(addon))
@@ -109,6 +108,8 @@ func (r Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (r
 	if err != nil {
 		return
 	}
+
+	r.history[addon.Name] = 1
 
 	return
 }
