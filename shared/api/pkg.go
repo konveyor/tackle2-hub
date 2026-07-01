@@ -232,6 +232,7 @@ const (
 	DeviceLoginRoute = "/device/login"
 	DeviceCbRoute    = "/device/callback"
 	AuthorizeCbRoute = "/authorize/callback"
+	AssetsRoute      = "/assets" // Login page static assets (JS, CSS, fonts). Must match login-page/rspack.config.ts publicPath.
 )
 
 // Routes - Imports

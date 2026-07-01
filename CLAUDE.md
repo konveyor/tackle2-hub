@@ -7,6 +7,7 @@ to maintain consistency and code quality across the codebase.
 
 - [Project Organization](#project-organization)
 - [Package Organization](#package-organization)
+- [Login Page Frontend](#login-page-frontend)
 - [Object-Oriented Design](#object-oriented-design)
 - [Function Design](#function-design)
 - [Function and Method Standards](#function-and-method-standards)
@@ -264,6 +265,134 @@ shared/
 ├── settings/      # Configuration types
 └── ...
 ```
+
+---
+
+## Login Page Frontend
+
+The `login-page/` directory at the repository root contains a standalone React +
+PatternFly 6 project that provides the OIDC login and device authorization pages
+served by the hub.
+
+### Directory Structure
+
+```
+login-page/
+  package.json          # npm project (ESM, @tackle-hub/login-page)
+  tsconfig.json         # TypeScript config targeting ES2020 / bundler resolution
+  rspack.config.ts      # Rspack 2 build config with branding + asset serving
+  branding/             # Default branding (swappable at container build time)
+    strings.json        # Branding strings: app title, page titles, image paths
+    logo.svg            # Default brand logo
+  src/
+    index.tsx           # Entry point; reads window.__LOGIN_CONFIG__ and routes to a page
+    types.ts            # LoginConfig interface (runtime config injected by hub)
+    branding.ts         # Typed access to build-time branding via __BRANDING_STRINGS__
+    LoginPage.tsx       # PF6 login form (username/password + optional federated IdP)
+    DeviceVerifyPage.tsx # PF6 device code entry form
+    DeviceSuccessPage.tsx # PF6 device authorization success page
+  dist/  →  internal/loginpage/dist/   # Build output (see below)
+```
+
+> The rspack `output.path` is set to `../internal/loginpage/dist/`, so the
+> frontend build writes directly into the Go embed package.  There is no
+> separate copy step.
+
+### Building the Frontend
+
+```bash
+cd login-page
+npm install
+npm run build          # outputs to internal/loginpage/dist/
+```
+
+The Go binary embeds `internal/loginpage/dist/` at compile time via the
+`//go:embed dist` directive in `internal/loginpage/embed.go`.  After running
+`npm run build` a `go build` picks up the new assets automatically.
+
+### Custom Branding
+
+Branding strings are baked into the bundle at build time by rspack's `DefinePlugin`.
+The `BRANDING` environment variable selects which directory to read `strings.json`
+and image assets from; it defaults to `./branding`.
+
+```bash
+# Override branding at image build time
+cd login-page
+BRANDING=./my-brand npm run build
+```
+
+**`branding/strings.json` shape:**
+
+```json
+{
+  "application": { "title": "...", "name": "...", "description": "..." },
+  "loginPage":   { "title": "...", "subtitle": "..." },
+  "devicePage":  { "title": "...", "subtitle": "...", "successTitle": "...", "successMessage": "..." },
+  "images":      { "brand": "branding/logo.svg", "background": "" }
+}
+```
+
+Image assets (SVGs, PNGs) in the branding directory are copied to `dist/branding/`
+by `CopyRspackPlugin`.  Reference them from `strings.json` using the path
+`branding/<filename>` (relative to the served root).
+
+**Dockerfile example:**
+
+```dockerfile
+COPY my-custom-branding/ /opt/app/login-page/my-custom-branding/
+RUN cd /opt/app/login-page && BRANDING=./my-custom-branding npm run build
+```
+
+### Runtime Configuration Injection
+
+The hub serves `dist/index.html` and replaces the placeholder
+`window.__LOGIN_CONFIG__=null` with a JSON object before writing the response.
+This carries per-request dynamic values; it does **not** carry branding.
+
+**`LoginConfig` shape** (TypeScript → `internal/loginpage.Config` in Go):
+
+```typescript
+interface LoginConfig {
+  page: "login" | "device-verify" | "device-success";
+  formAction?: string;       // POST URL for login form
+  errorMessage?: string;     // Shown on authentication failure
+  federatedIdp?: {
+    name: string;
+    loginUrl: string;        // Redirect URL for external IdP button
+  };
+  deviceFormAction?: string; // POST URL for device code form
+}
+```
+
+The Go API is `loginpage.ServeHTML(w http.ResponseWriter, cfg loginpage.Config)`.
+
+### Static Assets
+
+The compiled JS/CSS/font assets are served under `/oidc/assets/` by the hub's
+OIDC handler (`internal/api/auth.go`).  The rspack `publicPath` is set to
+`/oidc/assets/` in production builds so that all asset references in `index.html`
+use that prefix.
+
+### Adding a New Page Type
+
+1. Add a new value to `LoginConfig.page` in `src/types.ts`.
+2. Create `src/NewPage.tsx` using PatternFly 6 components.
+3. Add a `case` for the new page type in `src/index.tsx`.
+4. Add the corresponding `page` value to `internal/loginpage.Config` and call
+   `loginpage.ServeHTML` with a config from the appropriate Go handler.
+5. Re-run `npm run build`.
+
+### Key Technology Choices
+
+| Concern | Choice |
+|---|---|
+| UI framework | React 18 + PatternFly 6 (`@patternfly/react-core`) |
+| Bundler | Rspack 2 with `builtin:swc-loader` |
+| Branding injection | `DefinePlugin` (`__BRANDING_STRINGS__`) |
+| Asset copy | `CopyRspackPlugin` |
+| HTML template | `HtmlRspackPlugin` |
+| Go embedding | `go:embed` in `internal/loginpage/embed.go` |
 
 ---
 

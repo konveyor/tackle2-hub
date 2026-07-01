@@ -1,0 +1,23 @@
+{
+  "application": {
+    "title": "Tackle",
+    "name": "Tackle Hub",
+    "description": "Sign in to continue"
+  },
+  "loginPage": {
+    "title": "Log in to your account",
+    "subtitle": "Enter your credentials"
+  },
+  "devicePage": {
+    "title": "Device Authorization",
+    "subtitle": "Enter the code displayed on your device",
+    "successTitle": "Authorization Complete",
+    "successMessage": "You have successfully authorized the device. You may close this window."
+  },
+  "styles": {
+    "brandImage": "branding/logo.svg",
+    "backgroundImage": "",
+    "favicon": "",
+    "themeCss": ""
+  }
+}
