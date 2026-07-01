@@ -32,10 +32,10 @@ type IdpClient = crd.IdpClient
 // Add the controller.
 func Add(mgr manager.Manager, db *gorm.DB) (err error) {
 	reconciler := &Reconciler{
-		history: make(map[string]byte),
-		Client:  mgr.GetClient(),
-		Log:     Log,
-		DB:      db,
+		seen:   make(map[string]bool),
+		Client: mgr.GetClient(),
+		Log:    Log,
+		DB:     db,
 	}
 	cnt, err := controller.New(
 		Name,
@@ -59,14 +59,14 @@ func Add(mgr manager.Manager, db *gorm.DB) (err error) {
 }
 
 // Reconciler reconciles idpClient CRs.
-// The history is used to ensure resources are reconciled
+// The seen (map) is used to ensure resources are reconciled
 // at least once at startup.
 type Reconciler struct {
 	record.EventRecorder
 	k8s.Client
-	DB      *gorm.DB
-	Log     logr.Logger
-	history map[string]byte
+	DB   *gorm.DB
+	Log  logr.Logger
+	seen map[string]bool
 }
 
 // Reconcile a Addon CR.
@@ -88,7 +88,7 @@ func (r Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (r
 		}
 		return
 	}
-	_, found := r.history[idpClient.Name]
+	_, found := r.seen[idpClient.Name]
 	if found && idpClient.Reconciled() {
 		return
 	}
@@ -98,18 +98,19 @@ func (r Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (r
 		return
 	}
 	// Ready condition.
+	ready := r.ready(idpClient)
 	idpClient.Status.Conditions = nil
 	idpClient.Status.ObservedGeneration = idpClient.Generation
 	idpClient.Status.Conditions = append(
 		idpClient.Status.Conditions,
-		r.ready(idpClient))
+		ready)
 	// Apply changes.
 	err = r.Status().Update(context.TODO(), idpClient)
 	if err != nil {
 		return
 	}
 
-	r.history[idpClient.Name] = 1
+	r.seen[idpClient.Name] = true
 
 	return
 }
@@ -140,7 +141,7 @@ func (r *Reconciler) ready(idpClient *IdpClient) (ready v1.Condition) {
 // changed an idpClient has been created/updated.
 // When detected, the hub is restarted.
 func (r *Reconciler) changed(p *IdpClient) (err error) {
-	if r.history[p.Name] == 0 {
+	if !r.seen[p.Name] {
 		return
 	}
 	Log.Info(
@@ -165,5 +166,7 @@ func (r *Reconciler) deleted(name string) (err error) {
 // hubRestart restarts the hub.
 func (r *Reconciler) hubRestart() {
 	Log.Info("**** RESTARTING HUB *****")
-	_ = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
+	_ = syscall.Kill(
+		syscall.Getpid(),
+		syscall.SIGTERM)
 }
