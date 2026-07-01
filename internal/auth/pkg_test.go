@@ -4274,33 +4274,33 @@ func TestFedIdpRoleScopeExpansion(t *testing.T) {
 		accessTokenClaims: make(map[string]any),
 	}
 
-	// Test 1: Expand ${role:admin} to admin role's permissions
-	login.accessTokenClaims[ClaimScope] = "${role:admin} applications:delete"
+	// Test 1: Expand +role.admin to admin role's permissions
+	login.accessTokenClaims[ClaimScope] = "+role.admin applications:delete"
 	scopes := login.extractScopes()
 	g.Expect(scopes).To(ContainElement("applications:get"))
 	g.Expect(scopes).To(ContainElement("applications:post"))
 	g.Expect(scopes).To(ContainElement("applications:delete"))
-	g.Expect(scopes).NotTo(ContainElement("${role:admin}"))
+	g.Expect(scopes).NotTo(ContainElement("+role.admin"))
 
 	// Test 2: Mix of role reference and regular scopes
-	login.accessTokenClaims[ClaimScope] = "${role:viewer} applications:put"
+	login.accessTokenClaims[ClaimScope] = "+role.viewer applications:put"
 	scopes = login.extractScopes()
 	g.Expect(scopes).To(ContainElement("tags:get"))
 	g.Expect(scopes).To(ContainElement("applications:put"))
-	g.Expect(scopes).NotTo(ContainElement("${role:viewer}"))
+	g.Expect(scopes).NotTo(ContainElement("+role.viewer"))
 
 	// Test 3: Multiple role references
-	login.accessTokenClaims[ClaimScope] = "${role:admin} ${role:viewer}"
+	login.accessTokenClaims[ClaimScope] = "+role.admin +role.viewer"
 	scopes = login.extractScopes()
 	g.Expect(scopes).To(ContainElement("applications:get"))
 	g.Expect(scopes).To(ContainElement("applications:post"))
 	g.Expect(scopes).To(ContainElement("tags:get"))
 
 	// Test 4: Unknown role - should be logged and dropped
-	login.accessTokenClaims[ClaimScope] = "${role:unknown} tags:post"
+	login.accessTokenClaims[ClaimScope] = "+role.unknown tags:post"
 	scopes = login.extractScopes()
 	g.Expect(scopes).To(ContainElement("tags:post"))
-	g.Expect(scopes).NotTo(ContainElement("${role:unknown}"))
+	g.Expect(scopes).NotTo(ContainElement("+role.unknown"))
 	g.Expect(len(scopes)).To(Equal(1))
 
 	// Test 5: No role references - regular scopes unchanged
@@ -4322,7 +4322,7 @@ func TestFedIdpRoleScopeExpansion(t *testing.T) {
 	err = provider.cache.Refresh()
 	g.Expect(err).To(BeNil())
 
-	login.accessTokenClaims[ClaimScope] = "${role:empty} tags:delete"
+	login.accessTokenClaims[ClaimScope] = "+role.empty tags:delete"
 	scopes = login.extractScopes()
 	g.Expect(scopes).To(ContainElement("tags:delete"))
 	g.Expect(len(scopes)).To(Equal(1))

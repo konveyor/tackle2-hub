@@ -22,7 +22,7 @@ import (
 )
 
 var (
-	roleScopeRegex = regexp.MustCompile(`\$\{role:([^}]+)\}`)
+	roleScopeRegex = regexp.MustCompile(`^\+role\.([^.\s]+)$`)
 )
 
 //
@@ -401,7 +401,7 @@ func (f *FedIdpLogin) extractScopes() (scopes []string) {
 }
 
 // expandScopes expands role references in the scope list.
-// Role references use ${role:name} syntax and are replaced with the role's
+// Role references use +role.name syntax and are replaced with the role's
 // permission scopes. Reduces the burden of scope management in IdPs.
 func (f *FedIdpLogin) expandScopes(in []string) (expanded []string) {
 	cache := f.handler.cache
