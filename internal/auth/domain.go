@@ -26,10 +26,11 @@ const (
 	LastId = 1000
 )
 
-var Tenant *Domain
+// Domain is the default tenant.
+var Domain *Tenant
 
 func init() {
-	Tenant = NewDomain(nil)
+	Domain = NewTenant(nil)
 	var err error
 	seedDir, err = fs.Sub(seedFS, "seed")
 	if err != nil {
@@ -37,9 +38,9 @@ func init() {
 	}
 }
 
-// NewDomain returns a new RBAC domain manager.
-func NewDomain(db *gorm.DB) *Domain {
-	return &Domain{
+// NewTenant returns a new RBAC domain manager.
+func NewTenant(db *gorm.DB) *Tenant {
+	return &Tenant{
 		DB:          db,
 		roleByName:  make(map[string]uint),
 		scopeByName: make(map[string]Scope),
@@ -49,8 +50,8 @@ func NewDomain(db *gorm.DB) *Domain {
 	}
 }
 
-// Domain the RBAC domain.
-type Domain struct {
+// Tenant the RBAC domain.
+type Tenant struct {
 	DB          *gorm.DB
 	resources   map[string]bool
 	roleByName  map[string]uint
@@ -58,14 +59,14 @@ type Domain struct {
 }
 
 // Register registers a scope resource.
-func (d *Domain) Register(resource string) {
+func (d *Tenant) Register(resource string) {
 	if resource != "" {
 		d.resources[resource] = true
 	}
 }
 
 // Resources returns a list of registered resources.
-func (d *Domain) Resources() (resources []string) {
+func (d *Tenant) Resources() (resources []string) {
 	for resource := range d.resources {
 		resources = append(resources, resource)
 	}
@@ -74,7 +75,7 @@ func (d *Domain) Resources() (resources []string) {
 }
 
 // Scopes returns the list of known scopes.
-func (d *Domain) Scopes() (scopes []string) {
+func (d *Tenant) Scopes() (scopes []string) {
 	for s := range d.scopeByName {
 		scopes = append(scopes, s)
 	}
@@ -83,13 +84,13 @@ func (d *Domain) Scopes() (scopes []string) {
 }
 
 // HasScope returns true when the domain has the scope.
-func (d *Domain) HasScope(scope string) (found bool) {
+func (d *Tenant) HasScope(scope string) (found bool) {
 	_, found = d.scopeByName[scope]
 	return
 }
 
 // Seed seeds roles, clients, and users.
-func (d *Domain) Seed() (err error) {
+func (d *Tenant) Seed() (err error) {
 	database.PK.Begin(d.DB, Role{}, LastId)
 	database.PK.Begin(d.DB, IdpClient{}, LastId)
 	database.PK.Begin(d.DB, User{}, LastId)
@@ -127,7 +128,7 @@ func (d *Domain) Seed() (err error) {
 }
 
 // buildScopes builds the map of scopes.
-func (d *Domain) buildScopes() {
+func (d *Tenant) buildScopes() {
 	for resource := range d.resources {
 		for _, verb := range verbs {
 			scope := Scope{
@@ -141,7 +142,7 @@ func (d *Domain) buildScopes() {
 }
 
 // buildRoleMap reads all roles and builds name->ID map.
-func (d *Domain) buildRoleMap(db *gorm.DB) (err error) {
+func (d *Tenant) buildRoleMap(db *gorm.DB) (err error) {
 	var list []Role
 	err = db.Find(&list).Error
 	if err != nil {
@@ -156,7 +157,7 @@ func (d *Domain) buildRoleMap(db *gorm.DB) (err error) {
 }
 
 // buildRoleScopes builds scope strings from a role definition.
-func (d *Domain) buildRoleScopes(role seed.Role) (scopes []string) {
+func (d *Tenant) buildRoleScopes(role seed.Role) (scopes []string) {
 	scopeSet := make(map[string]bool)
 	for _, r := range role.Resources {
 		for _, m := range r.Verbs {
@@ -184,7 +185,7 @@ func (d *Domain) buildRoleScopes(role seed.Role) (scopes []string) {
 }
 
 // buildUserRoles builds role list from a user definition.
-func (d *Domain) buildUserRoles(user seed.User) (roles []Role, err error) {
+func (d *Tenant) buildUserRoles(user seed.User) (roles []Role, err error) {
 	roleMap := make(map[uint]bool)
 	for _, roleName := range user.Roles {
 		roleID, found := d.roleByName[roleName]
@@ -203,7 +204,7 @@ func (d *Domain) buildUserRoles(user seed.User) (roles []Role, err error) {
 }
 
 // clientPatch computes the client reconciliation patch from CRD clients.
-func (d *Domain) clientPatch(existing map[string]IdpClient, wanted []as.IdpClient) (patch *IdpClientPatch) {
+func (d *Tenant) clientPatch(existing map[string]IdpClient, wanted []as.IdpClient) (patch *IdpClientPatch) {
 	patch = &IdpClientPatch{
 		db: d.DB,
 	}
@@ -238,7 +239,7 @@ func (d *Domain) clientPatch(existing map[string]IdpClient, wanted []as.IdpClien
 }
 
 // fetchClients fetches existing clients from database.
-func (d *Domain) fetchClients(db *gorm.DB) (clients map[string]IdpClient, err error) {
+func (d *Tenant) fetchClients(db *gorm.DB) (clients map[string]IdpClient, err error) {
 	var list []IdpClient
 	err = db.Find(&list).Error
 	if err != nil {
@@ -253,7 +254,7 @@ func (d *Domain) fetchClients(db *gorm.DB) (clients map[string]IdpClient, err er
 }
 
 // fetchRoles fetches existing roles from database.
-func (d *Domain) fetchRoles(db *gorm.DB) (roles map[string]Role, err error) {
+func (d *Tenant) fetchRoles(db *gorm.DB) (roles map[string]Role, err error) {
 	var list []Role
 	err = db.Find(&list).Error
 	if err != nil {
@@ -268,7 +269,7 @@ func (d *Domain) fetchRoles(db *gorm.DB) (roles map[string]Role, err error) {
 }
 
 // fetchUsers fetches existing users from database.
-func (d *Domain) fetchUsers(db *gorm.DB) (users map[string]User, err error) {
+func (d *Tenant) fetchUsers(db *gorm.DB) (users map[string]User, err error) {
 	var list []User
 	err = db.Find(&list).Error
 	if err != nil {
@@ -285,7 +286,7 @@ func (d *Domain) fetchUsers(db *gorm.DB) (users map[string]User, err error) {
 // pruneScopes removes unknown scopes from user-created roles.
 // Runs during seeding after scope generation to ensure custom roles
 // don't reference obsolete or unregistered scopes.
-func (d *Domain) pruneScopes(tx *gorm.DB) (err error) {
+func (d *Tenant) pruneScopes(tx *gorm.DB) (err error) {
 	roles := []Role{}
 	err = tx.Find(&roles, "id > ?", LastId).Error
 	if err != nil {
@@ -320,7 +321,7 @@ func (d *Domain) pruneScopes(tx *gorm.DB) (err error) {
 }
 
 // readRoles reads role definitions from roles.yaml.
-func (d *Domain) readRoles() (roles []seed.Role, err error) {
+func (d *Tenant) readRoles() (roles []seed.Role, err error) {
 	b, err := fs.ReadFile(seedDir, "roles.yaml")
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -334,7 +335,7 @@ func (d *Domain) readRoles() (roles []seed.Role, err error) {
 }
 
 // readUsers reads user definitions from users.yaml.
-func (d *Domain) readUsers() (users []seed.User, err error) {
+func (d *Tenant) readUsers() (users []seed.User, err error) {
 	b, err := fs.ReadFile(seedDir, "users.yaml")
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -348,7 +349,7 @@ func (d *Domain) readUsers() (users []seed.User, err error) {
 }
 
 // rolePatch computes the role reconciliation patch.
-func (d *Domain) rolePatch(existing map[string]Role, wanted []seed.Role) (patch *RolePatch) {
+func (d *Tenant) rolePatch(existing map[string]Role, wanted []seed.Role) (patch *RolePatch) {
 	patch = &RolePatch{
 		db: d.DB,
 	}
@@ -383,7 +384,7 @@ func (d *Domain) rolePatch(existing map[string]Role, wanted []seed.Role) (patch 
 // seedClients seeds OIDC clients from CRDs.
 // Preserves existing client IDs, deletes orphaned seeded clients (ID < LastId),
 // and creates new clients with IDs from CRD spec.
-func (d *Domain) seedClients(db *gorm.DB) (err error) {
+func (d *Tenant) seedClients(db *gorm.DB) (err error) {
 	existing, err := d.fetchClients(db)
 	if err != nil {
 		return
@@ -400,7 +401,7 @@ func (d *Domain) seedClients(db *gorm.DB) (err error) {
 // Must be called after buildScopes to ensure scopes map is populated.
 // Preserves existing role IDs, deletes orphaned seeded roles (ID < MaxId),
 // and creates new roles with static IDs from YAML.
-func (d *Domain) seedRoles(db *gorm.DB) (err error) {
+func (d *Tenant) seedRoles(db *gorm.DB) (err error) {
 	roles, err := d.readRoles()
 	if err != nil {
 		return
@@ -421,7 +422,7 @@ func (d *Domain) seedRoles(db *gorm.DB) (err error) {
 // Must be called after seedRoles to ensure role map is populated.
 // Preserves existing user IDs, deletes orphaned seeded users (ID < MaxId),
 // and creates new users with static IDs from YAML.
-func (d *Domain) seedUsers(db *gorm.DB) (err error) {
+func (d *Tenant) seedUsers(db *gorm.DB) (err error) {
 	users, err := d.readUsers()
 	if err != nil {
 		return
@@ -439,7 +440,7 @@ func (d *Domain) seedUsers(db *gorm.DB) (err error) {
 }
 
 // userPatch computes the user reconciliation patch.
-func (d *Domain) userPatch(existing map[string]User, wanted []seed.User) (patch *UserPatch) {
+func (d *Tenant) userPatch(existing map[string]User, wanted []seed.User) (patch *UserPatch) {
 	patch = &UserPatch{
 		db: d.DB,
 	}

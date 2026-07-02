@@ -717,7 +717,7 @@ func (h AuthHandler) RoleCreate(ctx *gin.Context) {
 		return
 	}
 	for _, scope := range r.Scopes {
-		if !auth.Tenant.HasScope(scope) {
+		if !auth.Domain.HasScope(scope) {
 			_ = ctx.Error(
 				&BadRequestError{
 					Reason: "unknown scope: " + scope,
@@ -769,7 +769,7 @@ func (h AuthHandler) RoleUpdate(ctx *gin.Context) {
 		return
 	}
 	for _, scope := range r.Scopes {
-		if !auth.Tenant.HasScope(scope) {
+		if !auth.Domain.HasScope(scope) {
 			_ = ctx.Error(
 				&BadRequestError{
 					Reason: "unknown scope: " + scope,
@@ -845,7 +845,7 @@ func (h AuthHandler) RoleDelete(ctx *gin.Context) {
 // @router /auth/scopes [get]
 func (h AuthHandler) ScopeList(ctx *gin.Context) {
 	resources := []resource.Scope{}
-	for _, scope := range auth.Tenant.Scopes() {
+	for _, scope := range auth.Domain.Scopes() {
 		r := Scope{}
 		r.With(scope)
 		resources = append(
@@ -1289,7 +1289,7 @@ func Authenticate() func(ctx *gin.Context) {
 // Required authenticates the user and enforces that
 // the user has been granted the required scope.
 func Required(resource string) func(*gin.Context) {
-	auth.Tenant.Register(resource)
+	auth.Domain.Register(resource)
 	return func(ctx *gin.Context) {
 		Authenticate()(ctx)
 		if ctx.IsAborted() {

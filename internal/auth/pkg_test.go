@@ -2512,7 +2512,7 @@ func TestSeedClientsFromCRD(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Seed clients
-	domain := NewDomain(db)
+	domain := NewTenant(db)
 	err = domain.seedClients(db)
 	g.Expect(err).To(BeNil())
 
@@ -2580,7 +2580,7 @@ func TestSeedClientsUpdate(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Seed clients
-	domain := NewDomain(db)
+	domain := NewTenant(db)
 	err = domain.seedClients(db)
 	g.Expect(err).To(BeNil())
 
@@ -2636,7 +2636,7 @@ func TestSeedClientsDeleteOrphaned(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Seed clients
-	domain := NewDomain(db)
+	domain := NewTenant(db)
 	err = domain.seedClients(db)
 	g.Expect(err).To(BeNil())
 
@@ -2675,7 +2675,7 @@ func TestSeedClientsIDPreservation(t *testing.T) {
 	err = federated.Load("konveyor-tackle")
 	g.Expect(err).To(BeNil())
 
-	domain := NewDomain(db)
+	domain := NewTenant(db)
 
 	// First seed
 	err = domain.seedClients(db)
@@ -3839,9 +3839,9 @@ func TestScopeExpand(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	// Register test resources in Tenant
-	Tenant.Register("applications")
-	Tenant.Register("tags")
-	Tenant.Register("identities")
+	Domain.Register("applications")
+	Domain.Register("tags")
+	Domain.Register("identities")
 
 	// Test 1: Wildcard resource and method (*:*)
 	scope := Scope{Resource: "*", Method: "*"}
@@ -3931,8 +3931,8 @@ func TestExpandScopes(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	// Register test resources in Tenant
-	Tenant.Register("applications")
-	Tenant.Register("tags")
+	Domain.Register("applications")
+	Domain.Register("tags")
 
 	// Test 1: Expand single wildcard scope
 	scopes := ExpandScopes("applications:*")
@@ -4128,8 +4128,8 @@ func TestExternalIdpWildcardExpansion(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	// Register test resources in Tenant
-	Tenant.Register("applications")
-	Tenant.Register("tags")
+	Domain.Register("applications")
+	Domain.Register("tags")
 
 	// Simulate external IdP scopes with wildcards
 	idpScopes := []string{
@@ -4255,7 +4255,7 @@ func TestScopeGenerationWithNounVerb(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create domain and register resources
-	domain := NewDomain(db)
+	domain := NewTenant(db)
 	domain.Register("applications")
 	domain.Register("tags")
 
