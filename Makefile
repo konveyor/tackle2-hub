@@ -142,7 +142,7 @@ test-api:
 
 test-binding:
 	for pkg in $$(go list ./test/binding/...); do \
-	  HUB_BASE_URL="$(HUB_BASE_URL)" go test -count=1 -v -failfast "$$pkg" || exit 1; \
+	  HUB_BASE_URL="$(HUB_BASE_URL)" go test -count=1 -v -failfast -parallel=1 "$$pkg" || exit 1; \
 	done
 test-auth:
 	for pkg in $$(go list ./test/auth/...); do \

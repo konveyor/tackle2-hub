@@ -4212,6 +4212,122 @@ func TestExternalIdpWildcardExpansion(t *testing.T) {
 	g.Expect(expanded).To(ContainElement("tags:delete"))
 }
 
+// TestFedIdpRoleScopeExpansion tests role reference expansion in federated IdP scopes.
+func TestFedIdpRoleScopeExpansion(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Create permissions
+	appGetPerm := &model.Permission{
+		Name:     "applications-get",
+		Resource: "applications",
+		Verb:     "get",
+		Scope:    "applications:get",
+	}
+	err = db.Create(appGetPerm).Error
+	g.Expect(err).To(BeNil())
+
+	appPostPerm := &model.Permission{
+		Name:     "applications-post",
+		Resource: "applications",
+		Verb:     "post",
+		Scope:    "applications:post",
+	}
+	err = db.Create(appPostPerm).Error
+	g.Expect(err).To(BeNil())
+
+	tagsGetPerm := &model.Permission{
+		Name:     "tags-get",
+		Resource: "tags",
+		Verb:     "get",
+		Scope:    "tags:get",
+	}
+	err = db.Create(tagsGetPerm).Error
+	g.Expect(err).To(BeNil())
+
+	// Create roles with permissions
+	adminRole := &model.Role{Name: "admin"}
+	err = db.Create(adminRole).Error
+	g.Expect(err).To(BeNil())
+	err = db.Model(adminRole).Association("Permissions").Append(appGetPerm, appPostPerm)
+	g.Expect(err).To(BeNil())
+
+	viewerRole := &model.Role{Name: "viewer"}
+	err = db.Create(viewerRole).Error
+	g.Expect(err).To(BeNil())
+	err = db.Model(viewerRole).Association("Permissions").Append(tagsGetPerm)
+	g.Expect(err).To(BeNil())
+
+	// Create provider and cache
+	provider, err := NewBuiltin(db)
+	g.Expect(err).To(BeNil())
+
+	// Create FedIdpHandler and FedIdpLogin
+	handler := &FedIdpHandler{
+		cache: provider.cache,
+	}
+
+	login := &FedIdpLogin{
+		handler:           handler,
+		accessTokenClaims: make(map[string]any),
+	}
+
+	// Test 1: Expand +role.admin to admin role's permissions
+	login.accessTokenClaims[ClaimScope] = "+role.admin applications:delete"
+	scopes := login.extractScopes()
+	g.Expect(scopes).To(ContainElement("applications:get"))
+	g.Expect(scopes).To(ContainElement("applications:post"))
+	g.Expect(scopes).To(ContainElement("applications:delete"))
+	g.Expect(scopes).NotTo(ContainElement("+role.admin"))
+
+	// Test 2: Mix of role reference and regular scopes
+	login.accessTokenClaims[ClaimScope] = "+role.viewer applications:put"
+	scopes = login.extractScopes()
+	g.Expect(scopes).To(ContainElement("tags:get"))
+	g.Expect(scopes).To(ContainElement("applications:put"))
+	g.Expect(scopes).NotTo(ContainElement("+role.viewer"))
+
+	// Test 3: Multiple role references
+	login.accessTokenClaims[ClaimScope] = "+role.admin +role.viewer"
+	scopes = login.extractScopes()
+	g.Expect(scopes).To(ContainElement("applications:get"))
+	g.Expect(scopes).To(ContainElement("applications:post"))
+	g.Expect(scopes).To(ContainElement("tags:get"))
+
+	// Test 4: Unknown role - should be logged and dropped
+	login.accessTokenClaims[ClaimScope] = "+role.unknown tags:post"
+	scopes = login.extractScopes()
+	g.Expect(scopes).To(ContainElement("tags:post"))
+	g.Expect(scopes).NotTo(ContainElement("+role.unknown"))
+	g.Expect(len(scopes)).To(Equal(1))
+
+	// Test 5: No role references - regular scopes unchanged
+	login.accessTokenClaims[ClaimScope] = "applications:get tags:post"
+	scopes = login.extractScopes()
+	g.Expect(scopes).To(ContainElement("applications:get"))
+	g.Expect(scopes).To(ContainElement("tags:post"))
+	g.Expect(len(scopes)).To(Equal(2))
+
+	// Test 6: Empty scopes
+	login.accessTokenClaims[ClaimScope] = ""
+	scopes = login.extractScopes()
+	g.Expect(scopes).To(BeEmpty())
+
+	// Test 7: Role with no permissions
+	emptyRole := &model.Role{Name: "empty"}
+	err = db.Create(emptyRole).Error
+	g.Expect(err).To(BeNil())
+	err = provider.cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	login.accessTokenClaims[ClaimScope] = "+role.empty tags:delete"
+	scopes = login.extractScopes()
+	g.Expect(scopes).To(ContainElement("tags:delete"))
+	g.Expect(len(scopes)).To(Equal(1))
+}
+
 // TestPermissionGenerationWithNounVerb tests that generatePermissions populates Noun and Verb.
 func TestPermissionGenerationWithNounVerb(t *testing.T) {
 	g := NewGomegaWithT(t)
