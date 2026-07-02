@@ -123,6 +123,7 @@ func main() {
 		return
 	}
 	// Auth
+	auth.Tenant = auth.NewDomain(db)
 	auth.IdP, err = auth.New(db)
 	if err != nil {
 		return
@@ -192,11 +193,8 @@ func main() {
 	}
 	//
 	// Auth domain.
-	domain := auth.NewDomain(db)
-	err = domain.Seed()
-	if err == nil {
-		auth.Tenant = domain
-	} else {
+	err = auth.Tenant.Seed()
+	if err != nil {
 		return
 	}
 	err = auth.IdP.Cache().Refresh()
