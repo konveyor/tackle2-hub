@@ -716,6 +716,15 @@ func (h AuthHandler) RoleCreate(ctx *gin.Context) {
 		})
 		return
 	}
+	for _, scope := range r.Scopes {
+		if !auth.Tenant.HasScope(scope) {
+			_ = ctx.Error(
+				&BadRequestError{
+					Reason: "unknown scope: " + scope,
+				})
+			return
+		}
+	}
 	m := r.Model()
 	m.CreateUser = h.CurrentUser(ctx)
 	err = h.DB(ctx).Omit(clause.Associations).Create(m).Error
@@ -731,7 +740,7 @@ func (h AuthHandler) RoleCreate(ctx *gin.Context) {
 	}
 	r.With(m)
 
-	auth.IdP.Cache().RoleSaved((*auth.Role)(m))
+	auth.IdP.Cache().RoleSaved(m)
 
 	h.Respond(ctx, http.StatusCreated, r)
 }
@@ -759,6 +768,15 @@ func (h AuthHandler) RoleUpdate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	for _, scope := range r.Scopes {
+		if !auth.Tenant.HasScope(scope) {
+			_ = ctx.Error(
+				&BadRequestError{
+					Reason: "unknown scope: " + scope,
+				})
+			return
+		}
+	}
 	m := r.Model()
 	m.ID = id
 	m.UpdateUser = h.CurrentUser(ctx)
@@ -777,7 +795,7 @@ func (h AuthHandler) RoleUpdate(ctx *gin.Context) {
 	}
 	r.With(m)
 
-	auth.IdP.Cache().RoleSaved((*auth.Role)(m))
+	auth.IdP.Cache().RoleSaved(m)
 
 	h.Status(ctx, http.StatusNoContent)
 }

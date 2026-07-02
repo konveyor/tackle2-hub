@@ -73,11 +73,18 @@ func (d *Domain) Resources() (resources []string) {
 	return
 }
 
+// Scopes returns the list of known scopes.
 func (d *Domain) Scopes() (scopes []string) {
 	for s := range d.scopeByName {
 		scopes = append(scopes, s)
 	}
 	sort.Strings(scopes)
+	return
+}
+
+// HasScope returns true when the domain has the scope.
+func (d *Domain) HasScope(scope string) (found bool) {
+	_, found = d.scopeByName[scope]
 	return
 }
 
@@ -98,6 +105,10 @@ func (d *Domain) Seed() (err error) {
 			if err != nil {
 				return
 			}
+			err = d.pruneScopes(tx)
+			if err != nil {
+				return
+			}
 			err = d.buildRoleMap(tx)
 			if err != nil {
 				return
@@ -111,6 +122,43 @@ func (d *Domain) Seed() (err error) {
 		})
 	if err != nil {
 		err = liberr.Wrap(err)
+	}
+	return
+}
+
+// pruneScopes removes unknown scopes from user-created roles.
+// Runs during seeding after scope generation to ensure custom roles
+// don't reference obsolete or unregistered scopes.
+func (d *Domain) pruneScopes(tx *gorm.DB) (err error) {
+	roles := []Role{}
+	err = tx.Find(&roles, "id > ?", LastId).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for _, role := range roles {
+		kept := []string{}
+		pruned := false
+		for _, scope := range role.Scopes {
+			if !d.HasScope(scope) {
+				pruned = true
+				Log.Info("Unknown scope pruned",
+					"role",
+					role.Name,
+					"scope",
+					scope)
+			} else {
+				kept = append(kept, scope)
+			}
+		}
+		if pruned {
+			role.Scopes = kept
+			err = tx.Save(&role).Error
+			if err != nil {
+				err = liberr.Wrap(err)
+				return
+			}
+		}
 	}
 	return
 }
@@ -220,7 +268,7 @@ func (d *Domain) buildRoleScopes(role seed.Role) (scopes []string) {
 			scope := Scope{Resource: r.Name, Method: m}
 			for _, s := range scope.ExpandWith(d.Resources()) {
 				scopeStr := s.String()
-				if _, found := d.scopeByName[scopeStr]; !found {
+				if !d.HasScope(scopeStr) {
 					Log.Info(
 						"Role has unknown scope.",
 						"name",

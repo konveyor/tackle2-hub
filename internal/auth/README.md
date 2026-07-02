@@ -289,7 +289,7 @@ A Subject contains the following information:
 |-----------|-------------|
 | **Key** | Subject identifier (UUID for User/IdpClient, hash/external subject for IdpIdentity) |
 | **Email** | User's email address (empty for IdpClient) |
-| **Scopes** | Permission scopes (injected into JWT tokens) |
+| **Scopes** | Permission scope strings (JSON array, injected into JWT tokens) |
 | **Source Reference** | Points to either User, IdpIdentity, or IdpClient record (UserId/IdentityId/ClientId) |
 
 ### Subject Derivation
@@ -359,7 +359,7 @@ The IdpIdentity table stores external authentication mappings for **both** LDAP 
 | **Email** | String | Email address | From LDAP mail attribute | From IdP email claim |
 | **RefreshToken** | String (encrypted) | Refresh credentials | User password | OAuth refresh token |
 | **Expiration** | Timestamp | When identity expires | Based on config | From token expiry |
-| **Scopes** | String | Permission scopes | Mapped from LDAP groups | Extracted from access token |
+| **Scopes** | JSON Array | Permission scope strings | Mapped from LDAP groups | Extracted from access token |
 
 **Why unified model?**
 - Single subject resolution path
@@ -460,7 +460,7 @@ IdpIdentities are automatically refreshed when tokens are refreshed:
 2. Lookup User in database by login
 3. Verify password hash
 4. Subject.Key = User.Subject (UUID)
-5. Subject.Scopes = User.Roles → Permissions.Scope
+5. Subject.Scopes = aggregate all scopes from User.Roles (each role's Scopes JSON array)
 6. Subject.source = User reference
 ```
 
@@ -469,10 +469,10 @@ IdpIdentities are automatically refreshed when tokens are refreshed:
 1. User authenticates with username/password
 2. LDAP server validates credentials, returns DN
 3. Fetch group memberships from LDAP
-4. Map groups to roles → resolve to scopes
+4. Map groups to roles → resolve role scopes (JSON array)
 5. Create/update IdpIdentity (Kind=ldap, Subject=hash(login))
 6. Subject.Key = hash(login)
-7. Subject.Scopes = from IdpIdentity.Scopes
+7. Subject.Scopes = from IdpIdentity.Scopes (JSON array)
 8. Subject.source = IdpIdentity reference
 ```
 
@@ -483,7 +483,7 @@ IdpIdentities are automatically refreshed when tokens are refreshed:
 3. Extract subject, email, scopes from tokens
 4. Create/update IdpIdentity (Kind=openid, Subject=IdP subject)
 5. Subject.Key = IdP subject claim
-6. Subject.Scopes = from IdpIdentity.Scopes
+6. Subject.Scopes = from IdpIdentity.Scopes (JSON array)
 7. Subject.source = IdpIdentity reference
 ```
 
@@ -2135,33 +2135,32 @@ Error: redirect_uri does not match any registered URIs
 
 ### Overview
 
-The RBAC system automatically maintains permissions, roles, and users at runtime by:
+The RBAC system automatically maintains scopes, roles, and users at runtime by:
 
-1. **Discovering permissions** from registered API route scopes
-2. **Loading roles** from `roles.yaml` with permission references
+1. **Generating scopes** from registered API route resources
+2. **Loading roles** from `roles.yaml` with scope references
 3. **Loading users** from `users.yaml` with role references
 
 **Trigger:** `Domain.Seed()` called after route registration completes
 
-### Permission Generation
+### Scope Generation
 
-For each registered scope, 6 permissions are generated:
+For each registered resource, 6 scope strings are generated:
 
-**Input:** Scope `"applications"`
+**Input:** Resource `"applications"`
 
-**Output:** 6 permissions
-- `decrypt-applications` → `applications:decrypt`
-- `delete-applications` → `applications:delete`
-- `get-applications` → `applications:get`
-- `patch-applications` → `applications:patch`
-- `post-applications` → `applications:post`
-- `put-applications` → `applications:put`
+**Output:** 6 scopes
+- `applications:decrypt`
+- `applications:delete`
+- `applications:get`
+- `applications:patch`
+- `applications:post`
+- `applications:put`
 
-**Permission structure:**
-- `Name`: Human-readable name (`verb-resource`, e.g., `get-applications`)
-- `Noun`: Resource name (e.g., `applications`)
-- `Verb`: HTTP method (e.g., `get`)
-- `Scope`: Combined scope string (e.g., `applications:get`)
+**Scope structure:**
+- `Resource`: Resource name (e.g., `applications`)
+- `Method`: HTTP method (e.g., `get`)
+- `String()`: Combined scope string (e.g., `applications:get`)
 
 **HTTP verb mapping:**
 - `get` → Read
@@ -2169,6 +2168,24 @@ For each registered scope, 6 permissions are generated:
 - `put` / `patch` → Update
 - `delete` → Delete
 - `decrypt` → Decrypt encrypted resources
+
+### Resource Registration
+
+API handlers register their resources with the global `auth.Tenant` Domain:
+
+```go
+func init() {
+    auth.Tenant.Register("applications")
+    auth.Tenant.Register("tasks")
+    // ...
+}
+```
+
+**Tenant Domain:**
+- `auth.Tenant` is a global Domain instance initialized at startup
+- `Register(resource)` adds resources to the in-memory resource registry
+- `Resources()` returns registered resources as `[]string`
+- `Scopes()` returns all generated scope strings (computed, not stored in database)
 
 ### Role Definition Format
 
@@ -2206,17 +2223,17 @@ Roles can use wildcards for resources and verbs to grant broad permissions:
 - `*:get` → Get verb on all resources (read-only across all resources)
 
 **Wildcard expansion:**
-1. During role seeding, wildcards are expanded to concrete permissions
-2. `*` in resource → expands to all registered resources
+1. During role seeding, wildcards are expanded to concrete scope strings
+2. `*` in resource → expands to all registered resources (from `auth.Tenant.Resources()`)
 3. `*` in verb → expands to all HTTP verbs (`decrypt`, `delete`, `get`, `patch`, `post`, `put`)
 4. Example: `*:get` expands to `applications:get`, `tasks:get`, `tags:get`, etc.
 
 **Resolution:**
 1. For each resource + verb → expand wildcards
-2. For each expanded scope → lookup permission
-3. Example: `applications` + `get` → find permission `applications:get`
-4. Example: `*` + `*` → find all permissions for all resources
-5. Associate all resolved permissions with role
+2. For each expanded scope → validate against generated scopes
+3. Example: `applications` + `get` → `applications:get` (validated against `auth.Tenant.Scopes()`)
+4. Example: `*` + `*` → all scopes for all resources
+5. Scopes stored as JSON array in role's `Scopes` field
 
 ### User Definition Format
 
@@ -2253,10 +2270,10 @@ Two-tier ID system ensures safety:
 
 ### Reconciliation Logic
 
-For each resource type (permissions, roles, users):
+For each resource type (roles, users):
 
 1. **Read** existing from database
-2. **Read** desired from source (generated or YAML)
+2. **Read** desired from source (YAML)
 3. **Diff** to find what to delete/update/create
 4. **Delete** orphaned seeded resources (ID < 1000, not in desired)
 5. **Update** existing seeded resources (ID < 1000, in both)
@@ -2267,6 +2284,27 @@ For each resource type (permissions, roles, users):
 - All changes in single database transaction
 - Rollback on any error
 - Atomic updates ensure consistency
+
+### Scope Model
+
+**No database persistence:**
+- Scopes are computed in-memory from registered resources
+- `auth.Tenant.Scopes()` returns all generated scope strings
+- Role scopes stored as JSON array (`Scopes []string`) on Role model
+- No separate Scope/Permission table
+
+**API endpoint:**
+- `/auth/scopes` returns computed scopes for UI dropdowns
+- Read-only - scopes cannot be created/updated via API
+- Scopes are automatically available when resources are registered
+
+**Scope validation and pruning:**
+- `Domain.HasScope(scope)` validates scope strings against registered scopes
+- `Domain.pruneScopes()` removes unknown scopes from user-created roles (ID ≥ 1000)
+- Runs during seeding after scope generation
+- Logs removed scopes for visibility
+- Ensures user-created roles don't reference obsolete/unregistered scopes
+- Example: If a resource is removed, its scopes are pruned from custom roles
 
 ---
 
