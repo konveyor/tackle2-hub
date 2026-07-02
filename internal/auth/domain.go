@@ -126,6 +126,162 @@ func (d *Domain) Seed() (err error) {
 	return
 }
 
+// buildScopes builds the map of scopes.
+func (d *Domain) buildScopes() {
+	for resource := range d.resources {
+		for _, verb := range verbs {
+			scope := Scope{
+				Resource: resource,
+				Method:   verb,
+			}
+			d.scopeByName[scope.String()] = scope
+		}
+	}
+	return
+}
+
+// buildRoleMap reads all roles and builds name->ID map.
+func (d *Domain) buildRoleMap(db *gorm.DB) (err error) {
+	var list []Role
+	err = db.Find(&list).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	d.roleByName = make(map[string]uint)
+	for _, role := range list {
+		d.roleByName[role.Name] = role.ID
+	}
+	return
+}
+
+// buildRoleScopes builds scope strings from a role definition.
+func (d *Domain) buildRoleScopes(role seed.Role) (scopes []string) {
+	scopeSet := make(map[string]bool)
+	for _, r := range role.Resources {
+		for _, m := range r.Verbs {
+			scope := Scope{Resource: r.Name, Method: m}
+			for _, s := range scope.ExpandWith(d.Resources()) {
+				scopeStr := s.String()
+				if !d.HasScope(scopeStr) {
+					Log.Info(
+						"Role has unknown scope.",
+						"name",
+						role.Name,
+						"scope",
+						scopeStr)
+					continue
+				}
+				scopeSet[scopeStr] = true
+			}
+		}
+	}
+	for scopeStr := range scopeSet {
+		scopes = append(scopes, scopeStr)
+	}
+	sort.Strings(scopes)
+	return
+}
+
+// buildUserRoles builds role list from a user definition.
+func (d *Domain) buildUserRoles(user seed.User) (roles []Role, err error) {
+	roleMap := make(map[uint]bool)
+	for _, roleName := range user.Roles {
+		roleID, found := d.roleByName[roleName]
+		if !found {
+			Log.Info("Role not-found: " + roleName)
+			continue
+		}
+		roleMap[roleID] = true
+	}
+	for roleID := range roleMap {
+		roles = append(roles, Role{
+			Model: Model{ID: roleID},
+		})
+	}
+	return
+}
+
+// clientPatch computes the client reconciliation patch from CRD clients.
+func (d *Domain) clientPatch(existing map[string]IdpClient, wanted []as.IdpClient) (patch *IdpClientPatch) {
+	patch = &IdpClientPatch{
+		db: d.DB,
+	}
+	wantedMap := make(map[string]as.IdpClient)
+	for _, client := range wanted {
+		wantedMap[client.ClientId] = client
+	}
+	for clientId, client := range existing {
+		if client.ID < LastId {
+			if _, found := wantedMap[clientId]; !found {
+				patch.toDelete = append(patch.toDelete, client.ID)
+			}
+		}
+	}
+	for _, settingsClient := range wanted {
+		if existingClient, found := existing[settingsClient.ClientId]; found {
+			patch.toUpdate = append(patch.toUpdate, clientWithSettings{
+				client:   existingClient,
+				settings: settingsClient,
+			})
+		} else {
+			newClient := IdpClient{}
+			newClient.With(&settingsClient)
+			newClient.Subject = uuid.New().String()
+			patch.toCreate = append(patch.toCreate, clientWithSettings{
+				client:   newClient,
+				settings: settingsClient,
+			})
+		}
+	}
+	return
+}
+
+// fetchClients fetches existing clients from database.
+func (d *Domain) fetchClients(db *gorm.DB) (clients map[string]IdpClient, err error) {
+	var list []IdpClient
+	err = db.Find(&list).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	clients = make(map[string]IdpClient)
+	for _, c := range list {
+		clients[c.ClientId] = c
+	}
+	return
+}
+
+// fetchRoles fetches existing roles from database.
+func (d *Domain) fetchRoles(db *gorm.DB) (roles map[string]Role, err error) {
+	var list []Role
+	err = db.Find(&list).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	roles = make(map[string]Role)
+	for _, r := range list {
+		roles[r.Name] = r
+	}
+	return
+}
+
+// fetchUsers fetches existing users from database.
+func (d *Domain) fetchUsers(db *gorm.DB) (users map[string]User, err error) {
+	var list []User
+	err = db.Find(&list).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	users = make(map[string]User)
+	for _, u := range list {
+		users[u.Login] = u
+	}
+	return
+}
+
 // pruneScopes removes unknown scopes from user-created roles.
 // Runs during seeding after scope generation to ensure custom roles
 // don't reference obsolete or unregistered scopes.
@@ -163,41 +319,6 @@ func (d *Domain) pruneScopes(tx *gorm.DB) (err error) {
 	return
 }
 
-// buildScopes builds the map of scopes.
-func (d *Domain) buildScopes() {
-	for resource := range d.resources {
-		for _, verb := range verbs {
-			scope := Scope{
-				Resource: resource,
-				Method:   verb,
-			}
-			d.scopeByName[scope.String()] = scope
-		}
-	}
-	return
-}
-
-// seedRoles seeds roles from roles.yaml.
-// Must be called after buildScopes to ensure scopes map is populated.
-// Preserves existing role IDs, deletes orphaned seeded roles (ID < MaxId),
-// and creates new roles with static IDs from YAML.
-func (d *Domain) seedRoles(db *gorm.DB) (err error) {
-	roles, err := d.readRoles()
-	if err != nil {
-		return
-	}
-	existing, err := d.fetchRoles(db)
-	if err != nil {
-		return
-	}
-	patch := d.rolePatch(existing, roles)
-	err = patch.Apply(db)
-	if err != nil {
-		err = liberr.Wrap(err)
-	}
-	return
-}
-
 // readRoles reads role definitions from roles.yaml.
 func (d *Domain) readRoles() (roles []seed.Role, err error) {
 	b, err := fs.ReadFile(seedDir, "roles.yaml")
@@ -212,17 +333,16 @@ func (d *Domain) readRoles() (roles []seed.Role, err error) {
 	return
 }
 
-// fetchRoles fetches existing roles from database.
-func (d *Domain) fetchRoles(db *gorm.DB) (roles map[string]Role, err error) {
-	var list []Role
-	err = db.Find(&list).Error
+// readUsers reads user definitions from users.yaml.
+func (d *Domain) readUsers() (users []seed.User, err error) {
+	b, err := fs.ReadFile(seedDir, "users.yaml")
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-	roles = make(map[string]Role)
-	for _, r := range list {
-		roles[r.Name] = r
+	err = yaml.Unmarshal(b, &users)
+	if err != nil {
+		err = liberr.Wrap(err)
 	}
 	return
 }
@@ -260,45 +380,39 @@ func (d *Domain) rolePatch(existing map[string]Role, wanted []seed.Role) (patch 
 	return
 }
 
-// buildRoleScopes builds scope strings from a role definition.
-func (d *Domain) buildRoleScopes(role seed.Role) (scopes []string) {
-	scopeSet := make(map[string]bool)
-	for _, r := range role.Resources {
-		for _, m := range r.Verbs {
-			scope := Scope{Resource: r.Name, Method: m}
-			for _, s := range scope.ExpandWith(d.Resources()) {
-				scopeStr := s.String()
-				if !d.HasScope(scopeStr) {
-					Log.Info(
-						"Role has unknown scope.",
-						"name",
-						role.Name,
-						"scope",
-						scopeStr)
-					continue
-				}
-				scopeSet[scopeStr] = true
-			}
-		}
+// seedClients seeds OIDC clients from CRDs.
+// Preserves existing client IDs, deletes orphaned seeded clients (ID < LastId),
+// and creates new clients with IDs from CRD spec.
+func (d *Domain) seedClients(db *gorm.DB) (err error) {
+	existing, err := d.fetchClients(db)
+	if err != nil {
+		return
 	}
-	for scopeStr := range scopeSet {
-		scopes = append(scopes, scopeStr)
+	patch := d.clientPatch(existing, federated.Clients)
+	err = patch.Apply(db)
+	if err != nil {
+		err = liberr.Wrap(err)
 	}
-	sort.Strings(scopes)
 	return
 }
 
-// buildRoleMap reads all roles and builds name->ID map.
-func (d *Domain) buildRoleMap(db *gorm.DB) (err error) {
-	var list []Role
-	err = db.Find(&list).Error
+// seedRoles seeds roles from roles.yaml.
+// Must be called after buildScopes to ensure scopes map is populated.
+// Preserves existing role IDs, deletes orphaned seeded roles (ID < MaxId),
+// and creates new roles with static IDs from YAML.
+func (d *Domain) seedRoles(db *gorm.DB) (err error) {
+	roles, err := d.readRoles()
 	if err != nil {
-		err = liberr.Wrap(err)
 		return
 	}
-	d.roleByName = make(map[string]uint)
-	for _, role := range list {
-		d.roleByName[role.Name] = role.ID
+	existing, err := d.fetchRoles(db)
+	if err != nil {
+		return
+	}
+	patch := d.rolePatch(existing, roles)
+	err = patch.Apply(db)
+	if err != nil {
+		err = liberr.Wrap(err)
 	}
 	return
 }
@@ -320,35 +434,6 @@ func (d *Domain) seedUsers(db *gorm.DB) (err error) {
 	err = patch.Apply(db)
 	if err != nil {
 		err = liberr.Wrap(err)
-	}
-	return
-}
-
-// readUsers reads user definitions from users.yaml.
-func (d *Domain) readUsers() (users []seed.User, err error) {
-	b, err := fs.ReadFile(seedDir, "users.yaml")
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	err = yaml.Unmarshal(b, &users)
-	if err != nil {
-		err = liberr.Wrap(err)
-	}
-	return
-}
-
-// fetchUsers fetches existing users from database.
-func (d *Domain) fetchUsers(db *gorm.DB) (users map[string]User, err error) {
-	var list []User
-	err = db.Find(&list).Error
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	users = make(map[string]User)
-	for _, u := range list {
-		users[u.Login] = u
 	}
 	return
 }
@@ -395,24 +480,9 @@ func (d *Domain) userPatch(existing map[string]User, wanted []seed.User) (patch 
 	return
 }
 
-// buildUserRoles builds role list from a user definition.
-func (d *Domain) buildUserRoles(user seed.User) (roles []Role, err error) {
-	roleMap := make(map[uint]bool)
-	for _, roleName := range user.Roles {
-		roleID, found := d.roleByName[roleName]
-		if !found {
-			Log.Info("Role not-found: " + roleName)
-			continue
-		}
-		roleMap[roleID] = true
-	}
-	for roleID := range roleMap {
-		roles = append(roles, Role{
-			Model: Model{ID: roleID},
-		})
-	}
-	return
-}
+//
+// Patches
+//
 
 // UserPatch represents changes to reconcile users.
 type UserPatch struct {
@@ -422,6 +492,7 @@ type UserPatch struct {
 	toCreate []userWithRoles
 }
 
+// userWithRoles pairs database user with roles data.
 type userWithRoles struct {
 	user  User
 	roles []Role
@@ -499,72 +570,6 @@ func (p *RolePatch) Apply(db *gorm.DB) (err error) {
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
-		}
-	}
-	return
-}
-
-// seedClients seeds OIDC clients from CRDs.
-// Preserves existing client IDs, deletes orphaned seeded clients (ID < LastId),
-// and creates new clients with IDs from CRD spec.
-func (d *Domain) seedClients(db *gorm.DB) (err error) {
-	existing, err := d.fetchClients(db)
-	if err != nil {
-		return
-	}
-	patch := d.clientPatch(existing, federated.Clients)
-	err = patch.Apply(db)
-	if err != nil {
-		err = liberr.Wrap(err)
-	}
-	return
-}
-
-// fetchClients fetches existing clients from database.
-func (d *Domain) fetchClients(db *gorm.DB) (clients map[string]IdpClient, err error) {
-	var list []IdpClient
-	err = db.Find(&list).Error
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	clients = make(map[string]IdpClient)
-	for _, c := range list {
-		clients[c.ClientId] = c
-	}
-	return
-}
-
-// clientPatch computes the client reconciliation patch from CRD clients.
-func (d *Domain) clientPatch(existing map[string]IdpClient, wanted []as.IdpClient) (patch *IdpClientPatch) {
-	patch = &IdpClientPatch{
-		db: d.DB,
-	}
-	wantedMap := make(map[string]as.IdpClient)
-	for _, client := range wanted {
-		wantedMap[client.ClientId] = client
-	}
-	for clientId, client := range existing {
-		if client.ID < LastId {
-			if _, found := wantedMap[clientId]; !found {
-				patch.toDelete = append(patch.toDelete, client.ID)
-			}
-		}
-	}
-	for _, settingsClient := range wanted {
-		if existingClient, found := existing[settingsClient.ClientId]; found {
-			patch.toUpdate = append(patch.toUpdate, clientWithSettings{
-				client:   existingClient,
-				settings: settingsClient,
-			})
-		} else {
-			newClient := IdpClient{}
-			newClient.With(&settingsClient)
-			newClient.Subject = uuid.New().String()
-			patch.toCreate = append(patch.toCreate, clientWithSettings{
-				client:   newClient,
-				settings: settingsClient,
-			})
 		}
 	}
 	return
