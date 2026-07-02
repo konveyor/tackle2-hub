@@ -235,7 +235,7 @@
     - name: roles
       verbs:
         - get
-    - name: permissions
+    - name: scopes
       verbs:
         - get
     - name: tokens
@@ -387,7 +387,7 @@
     - name: roles
       verbs:
         - get
-    - name: permissions
+    - name: scopes
       verbs:
         - get
     - name: tokens

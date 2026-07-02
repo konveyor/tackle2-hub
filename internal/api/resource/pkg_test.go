@@ -3565,10 +3565,10 @@ func TestRole_With(t *testing.T) {
 			CreateUser: "admin",
 		},
 		Name: "administrator",
-		Permissions: []model.Permission{
-			{Model: model.Model{ID: 20}, Name: "read", Scope: "applications"},
-			{Model: model.Model{ID: 21}, Name: "write", Scope: "applications"},
-			{Model: model.Model{ID: 22}, Name: "delete", Scope: "applications"},
+		Scopes: []string{
+			"applications:read",
+			"applications:write",
+			"applications:delete",
 		},
 	}
 
@@ -3577,13 +3577,10 @@ func TestRole_With(t *testing.T) {
 
 	g.Expect(r.ID).To(gomega.Equal(uint(1)))
 	g.Expect(r.Name).To(gomega.Equal("administrator"))
-	g.Expect(len(r.Permissions)).To(gomega.Equal(3))
-	g.Expect(r.Permissions[0].ID).To(gomega.Equal(uint(20)))
-	g.Expect(r.Permissions[0].Name).To(gomega.Equal("read"))
-	g.Expect(r.Permissions[1].ID).To(gomega.Equal(uint(21)))
-	g.Expect(r.Permissions[1].Name).To(gomega.Equal("write"))
-	g.Expect(r.Permissions[2].ID).To(gomega.Equal(uint(22)))
-	g.Expect(r.Permissions[2].Name).To(gomega.Equal("delete"))
+	g.Expect(len(r.Scopes)).To(gomega.Equal(3))
+	g.Expect(r.Scopes[0]).To(gomega.Equal("applications:read"))
+	g.Expect(r.Scopes[1]).To(gomega.Equal("applications:write"))
+	g.Expect(r.Scopes[2]).To(gomega.Equal("applications:delete"))
 }
 
 // TestRole_Model tests the Role.Model() method
@@ -3593,10 +3590,10 @@ func TestRole_Model(t *testing.T) {
 	r := &Role{
 		Resource: Resource{ID: 1},
 		Name:     "administrator",
-		Permissions: []Ref{
-			{ID: 20, Name: "read"},
-			{ID: 21, Name: "write"},
-			{ID: 22, Name: "delete"},
+		Scopes: []string{
+			"applications:read",
+			"applications:write",
+			"applications:delete",
 		},
 	}
 
@@ -3604,34 +3601,34 @@ func TestRole_Model(t *testing.T) {
 
 	g.Expect(m.ID).To(gomega.Equal(uint(1)))
 	g.Expect(m.Name).To(gomega.Equal("administrator"))
-	g.Expect(len(m.Permissions)).To(gomega.Equal(3))
-	g.Expect(m.Permissions[0].ID).To(gomega.Equal(uint(20)))
-	g.Expect(m.Permissions[1].ID).To(gomega.Equal(uint(21)))
-	g.Expect(m.Permissions[2].ID).To(gomega.Equal(uint(22)))
+	g.Expect(len(m.Scopes)).To(gomega.Equal(3))
+	g.Expect(m.Scopes[0]).To(gomega.Equal("applications:read"))
+	g.Expect(m.Scopes[1]).To(gomega.Equal("applications:write"))
+	g.Expect(m.Scopes[2]).To(gomega.Equal("applications:delete"))
 }
 
-// TestRole_Model_EmptyPermissions tests Role.Model() with empty permissions
-func TestRole_Model_EmptyPermissions(t *testing.T) {
+// TestRole_Model_EmptyScopes tests Role.Model() with empty scopes
+func TestRole_Model_EmptyScopes(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Role{
-		Resource:    Resource{ID: 1},
-		Name:        "readonly",
-		Permissions: []Ref{},
+		Resource: Resource{ID: 1},
+		Name:     "readonly",
+		Scopes:   []string{},
 	}
 
 	m := r.Model()
 
 	g.Expect(m.ID).To(gomega.Equal(uint(1)))
 	g.Expect(m.Name).To(gomega.Equal("readonly"))
-	g.Expect(len(m.Permissions)).To(gomega.Equal(0))
+	g.Expect(len(m.Scopes)).To(gomega.Equal(0))
 }
 
-// TestPermission_With tests the Permission.With() method
-func TestPermission_With(t *testing.T) {
+// TestScope_With tests the Scope.With() method
+func TestScope_With(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	m := &model.Permission{
+	m := &model.Scope{
 		Model: model.Model{
 			ID:         1,
 			CreateUser: "admin",
@@ -3642,7 +3639,7 @@ func TestPermission_With(t *testing.T) {
 		Scope:    "applications:read",
 	}
 
-	r := &Permission{}
+	r := &Scope{}
 	r.With(m)
 
 	g.Expect(r.ID).To(gomega.Equal(uint(1)))
@@ -3652,11 +3649,11 @@ func TestPermission_With(t *testing.T) {
 	g.Expect(r.Scope).To(gomega.Equal("applications:read"))
 }
 
-// TestPermission_Model tests the Permission.Model() method
-func TestPermission_Model(t *testing.T) {
+// TestScope_Model tests the Scope.Model() method
+func TestScope_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	r := &Permission{
+	r := &Scope{
 		Resource: Resource{ID: 1},
 		Name:     "read",
 		Noun:     "applications",

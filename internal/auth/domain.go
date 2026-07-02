@@ -22,17 +22,14 @@ var (
 	seedDir fs.FS
 )
 
-var (
-	registeredResources = map[string]bool{
-		ADMIN: true,
-	}
-)
-
 const (
 	LastId = 1000
 )
 
+var Tenant *Domain
+
 func init() {
+	Tenant = NewDomain(nil)
 	var err error
 	seedDir, err = fs.Sub(seedFS, "seed")
 	if err != nil {
@@ -40,46 +37,63 @@ func init() {
 	}
 }
 
-// RegisterResource registers an api resource for permission (scope) generation.
-func RegisterResource(resource string) {
-	if resource != "" {
-		registeredResources[resource] = true
-	}
-}
-
 // NewDomain returns a new RBAC domain manager.
 func NewDomain(db *gorm.DB) *Domain {
 	return &Domain{
 		DB:          db,
-		permByScope: make(map[string]uint),
 		roleByName:  make(map[string]uint),
+		scopeByName: make(map[string]Scope),
+		resources: map[string]bool{
+			ADMIN: true,
+		},
 	}
 }
 
 // Domain the RBAC domain.
 type Domain struct {
 	DB          *gorm.DB
-	permByScope map[string]uint
+	resources   map[string]bool
 	roleByName  map[string]uint
+	scopeByName map[string]Scope
+}
+
+// Register registers a scope resource.
+func (d *Domain) Register(resource string) {
+	if resource != "" {
+		d.resources[resource] = true
+	}
+}
+
+// Resources returns a list of registered resources.
+func (d *Domain) Resources() (resources []string) {
+	for resource := range d.resources {
+		resources = append(resources, resource)
+	}
+	sort.Strings(resources)
+	return
+}
+
+func (d *Domain) Scopes() (scopes []string) {
+	for s := range d.scopeByName {
+		scopes = append(scopes, s)
+	}
+	sort.Strings(scopes)
+	return
 }
 
 // Seed seeds permissions, roles, clients, and users.
 func (d *Domain) Seed() (err error) {
-	database.PK.Begin(d.DB, Permission{}, LastId)
 	database.PK.Begin(d.DB, Role{}, LastId)
 	database.PK.Begin(d.DB, IdpClient{}, LastId)
 	database.PK.Begin(d.DB, User{}, LastId)
 	var resources []string
-	for r := range registeredResources {
+	for r := range d.resources {
 		resources = append(resources, r)
 	}
 	sort.Strings(resources)
 	err = d.DB.Transaction(
 		func(tx *gorm.DB) (err error) {
-			err = d.seedPermissions(tx, resources)
-			if err != nil {
-				return
-			}
+			d.buildScopes()
 			err = d.seedRoles(tx)
 			if err != nil {
 				return
@@ -101,116 +115,15 @@ func (d *Domain) Seed() (err error) {
 	return
 }
 
-// seedPermissions seeds permissions based on discovered route scopes.
-// Preserves existing permission IDs, deletes orphaned permissions,
-// and adds new permissions with sequential IDs.
-// Builds an in-memory map of scope to permission ID for role seeding.
-func (d *Domain) seedPermissions(db *gorm.DB, resources []string) (err error) {
-	perms := d.generatePermissions(resources)
-	err = d.reconcilePermissions(db, perms)
-	if err != nil {
-		return
-	}
-	err = d.buildPermissionMap(db)
-	return
-}
-
-// buildPermissionMap reads all permissions and builds scope->ID map.
-func (d *Domain) buildPermissionMap(db *gorm.DB) (err error) {
-	permDefs, err := d.fetchPermissions(db)
-	if err != nil {
-		return
-	}
-	d.permByScope = make(map[string]uint)
-	for scope, perm := range permDefs {
-		d.permByScope[scope] = perm.ID
-	}
-	return
-}
-
-// generatePermissions generates all permissions for the given resources.
-// Each resource gets 5 permissions (one per HTTP verb).
-func (d *Domain) generatePermissions(resources []string) (perms []Permission) {
-	for _, resource := range resources {
+func (d *Domain) buildScopes() {
+	for resource := range d.resources {
 		for _, verb := range verbs {
-			name := verb + "-" + resource
-			scope := Scope{Resource: resource, Method: verb}
-			perms = append(perms, Permission{
-				Name:     name,
+			scope := Scope{
 				Resource: resource,
-				Verb:     verb,
-				Scope:    scope.String(),
-			})
+				Method:   verb,
+			}
+			d.scopeByName[scope.String()] = scope
 		}
-	}
-	sort.Slice(
-		perms,
-		func(i, j int) bool {
-			return perms[i].Scope < perms[j].Scope
-		})
-	return
-}
-
-// reconcilePermissions reconcile permissions in the database with the wanted set.
-// Preserves existing permission IDs, deletes orphaned permissions,
-// and assigns sequential IDs to new permissions.
-func (d *Domain) reconcilePermissions(db *gorm.DB, wanted []Permission) (err error) {
-	existing, err := d.fetchPermissions(db)
-	if err != nil {
-		return
-	}
-	nextID := d.maxID(existing) + 1
-	patch := d.permissionPatch(existing, wanted, nextID)
-	err = patch.Apply(db)
-	return
-}
-
-// fetchPermissions fetches all existing permissions from the database.
-func (d *Domain) fetchPermissions(db *gorm.DB) (perms map[string]Permission, err error) {
-	var list []Permission
-	err = db.Find(&list).Error
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	perms = make(map[string]Permission)
-	for _, p := range list {
-		perms[p.Scope] = p
-	}
-	return
-}
-
-// maxID returns the maximum ID from a set of permissions.
-func (d *Domain) maxID(perms map[string]Permission) (max uint) {
-	for _, p := range perms {
-		if p.ID > max {
-			max = p.ID
-		}
-	}
-	return
-}
-
-// permissionPatch computes the permission reconciliation patch.
-func (d *Domain) permissionPatch(existing map[string]Permission, wanted []Permission, nextID uint) (patch *PermissionPatch) {
-	patch = &PermissionPatch{
-		db: d.DB,
-	}
-	wantedSet := make(map[string]Permission)
-	for _, perm := range wanted {
-		wantedSet[perm.Scope] = perm
-	}
-	for scope := range existing {
-		if _, found := wantedSet[scope]; !found {
-			patch.toDelete = append(patch.toDelete, scope)
-		}
-	}
-	for _, perm := range wanted {
-		if _, found := existing[perm.Scope]; found {
-			continue
-		}
-		perm.ID = nextID
-		nextID++
-		patch.toCreate = append(patch.toCreate, perm)
 	}
 	return
 }
@@ -282,55 +195,47 @@ func (d *Domain) rolePatch(existing map[string]Role, wanted []seed.Role) (patch 
 		}
 	}
 	for _, role := range wanted {
-		perms, err := d.buildRolePermissions(role)
-		if err != nil {
-			continue
-		}
+		scopes := d.buildRoleScopes(role)
 		if existingRole, found := existing[role.Name]; found {
-			patch.toUpdate = append(patch.toUpdate, roleWithPermissions{
-				role:        existingRole,
-				permissions: perms,
-			})
+			existingRole.Scopes = scopes
+			patch.toUpdate = append(patch.toUpdate, existingRole)
 		} else {
 			newRole := Role{
-				Name: role.Name,
+				Name:   role.Name,
+				Scopes: scopes,
 			}
 			newRole.ID = role.ID
-			patch.toCreate = append(patch.toCreate, roleWithPermissions{
-				role:        newRole,
-				permissions: perms,
-			})
+			patch.toCreate = append(patch.toCreate, newRole)
 		}
 	}
 	return
 }
 
-// buildRolePermissions builds permission list from a role definition.
-func (d *Domain) buildRolePermissions(role seed.Role) (perms []Permission, err error) {
-	permMap := make(map[uint]bool)
+// buildRoleScopes builds scope strings from a role definition.
+func (d *Domain) buildRoleScopes(role seed.Role) (scopes []string) {
+	scopeSet := make(map[string]bool)
 	for _, r := range role.Resources {
 		for _, m := range r.Verbs {
 			scope := Scope{Resource: r.Name, Method: m}
-			for _, s := range scope.Expand() {
-				permID, found := d.permByScope[s.String()]
-				if !found {
+			for _, s := range scope.ExpandWith(d.Resources()) {
+				scopeStr := s.String()
+				if _, found := d.scopeByName[scopeStr]; !found {
 					Log.Info(
 						"Role has unknown scope.",
 						"name",
 						role.Name,
 						"scope",
-						s)
+						scopeStr)
 					continue
 				}
-				permMap[permID] = true
+				scopeSet[scopeStr] = true
 			}
 		}
 	}
-	for permID := range permMap {
-		perms = append(perms, Permission{
-			Model: Model{ID: permID},
-		})
+	for scopeStr := range scopeSet {
+		scopes = append(scopes, scopeStr)
 	}
+	sort.Strings(scopes)
 	return
 }
 
@@ -518,13 +423,8 @@ func (p *UserPatch) Apply(db *gorm.DB) (err error) {
 type RolePatch struct {
 	db       *gorm.DB
 	toDelete []uint
-	toUpdate []roleWithPermissions
-	toCreate []roleWithPermissions
-}
-
-type roleWithPermissions struct {
-	role        Role
-	permissions []Permission
+	toUpdate []Role
+	toCreate []Role
 }
 
 // Apply applies the role patch to the database.
@@ -537,55 +437,16 @@ func (p *RolePatch) Apply(db *gorm.DB) (err error) {
 		}
 	}
 	for i := range p.toUpdate {
-		item := &p.toUpdate[i]
-		perms := make([]model.Permission, len(item.permissions))
-		for j := range item.permissions {
-			perms[j] = item.permissions[j]
-		}
-		err = db.Model(&item.role).Association("Permissions").Replace(perms)
+		role := &p.toUpdate[i]
+		err = db.Save(role).Error
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
 		}
 	}
 	for i := range p.toCreate {
-		item := &p.toCreate[i]
-		err = db.Create(&item.role).Error
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-		perms := make([]model.Permission, len(item.permissions))
-		for j := range item.permissions {
-			perms[j] = item.permissions[j]
-		}
-		err = db.Model(&item.role).Association("Permissions").Replace(perms)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-	}
-	return
-}
-
-// PermissionPatch represents changes to reconcile permissions.
-type PermissionPatch struct {
-	db       *gorm.DB
-	toDelete []string
-	toCreate []Permission
-}
-
-// Apply applies the permission patch to the database.
-func (p *PermissionPatch) Apply(db *gorm.DB) (err error) {
-	if len(p.toDelete) > 0 {
-		err = db.Delete(&Permission{}, "scope IN ?", p.toDelete).Error
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-	}
-	for _, perm := range p.toCreate {
-		err = db.Create(&perm).Error
+		role := &p.toCreate[i]
+		err = db.Create(role).Error
 		if err != nil {
 			err = liberr.Wrap(err)
 			return

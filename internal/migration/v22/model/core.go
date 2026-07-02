@@ -224,16 +224,8 @@ type User struct {
 
 type Role struct {
 	Model
-	Name        string       `gorm:"index;not null"`
-	Permissions []Permission `gorm:"many2many:RolePermission;constraint:OnDelete:CASCADE"`
-}
-
-type Permission struct {
-	Model
-	Name     string `gorm:"not null"`
-	Resource string `gorm:"not null"`
-	Verb     string `gorm:"not null"`
-	Scope    string `gorm:"uniqueIndex;not null"`
+	Name   string   `gorm:"index;not null"`
+	Scopes []string `gorm:"type:json;serializer:json"`
 }
 
 //

@@ -62,12 +62,11 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(api.RoleRoute, h.RoleGet)
 	routeGroup.PUT(api.RoleRoute, h.RoleUpdate)
 	routeGroup.DELETE(api.RoleRoute, h.RoleDelete)
-	// Permission routes
+	// Scopes routes
 	routeGroup = e.Group("/")
-	routeGroup.Use(Required("permissions"))
-	routeGroup.GET(api.PermissionsRoute, h.PermissionList)
-	routeGroup.GET(api.PermissionsRoute+"/", h.PermissionList)
-	routeGroup.GET(api.PermissionRoute, h.PermissionGet)
+	routeGroup.Use(Required("scopes"))
+	routeGroup.GET(api.AuthScopesRoute, h.ScopeList)
+	routeGroup.GET(api.AuthScopesRoute+"/", h.ScopeList)
 	// Grant routes
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("grants"))
@@ -724,11 +723,6 @@ func (h AuthHandler) RoleCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	err = h.DB(ctx).Model(m).Association("Permissions").Replace(m.Permissions)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
 	db := h.preLoad(h.DB(ctx), clause.Associations)
 	err = db.First(m).Error
 	if err != nil {
@@ -771,11 +765,6 @@ func (h AuthHandler) RoleUpdate(ctx *gin.Context) {
 	db := h.DB(ctx).Model(m)
 	db = db.Omit(clause.Associations)
 	err = db.Save(m).Error
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	err = h.DB(ctx).Model(m).Association("Permissions").Replace(m.Permissions)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -826,52 +815,24 @@ func (h AuthHandler) RoleDelete(ctx *gin.Context) {
 }
 
 //
-// Permission handlers
+// Scope handlers
 //
 
-// PermissionGet godoc
-// @summary Get a permission by ID.
-// @description Get a permission by ID.
+// ScopeList godoc
+// @summary List all scopes.
+// @description List all scopes.
 // @tags permissions
 // @produce json
-// @success 200 {object} api.Permission
-// @router /permissions/{id} [get]
-// @param id path int true "Permission ID"
-func (h AuthHandler) PermissionGet(ctx *gin.Context) {
-	id := h.pk(ctx)
-	m := &model.Permission{}
-	db := h.preLoad(h.DB(ctx), clause.Associations)
-	err := db.First(m, id).Error
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-
-	r := Permission{}
-	r.With(m)
-	h.Respond(ctx, http.StatusOK, r)
-}
-
-// PermissionList godoc
-// @summary List all permissions.
-// @description List all permissions.
-// @tags permissions
-// @produce json
-// @success 200 {object} []api.Permission
+// @success 200 {object} []api.Scope
 // @router /permissions [get]
-func (h AuthHandler) PermissionList(ctx *gin.Context) {
-	var list []model.Permission
-	db := h.preLoad(h.DB(ctx), clause.Associations)
-	err := db.Find(&list).Error
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	resources := []Permission{}
-	for i := range list {
-		r := Permission{}
-		r.With(&list[i])
-		resources = append(resources, r)
+func (h AuthHandler) ScopeList(ctx *gin.Context) {
+	resources := []resource.Scope{}
+	for _, scope := range auth.Tenant.Scopes() {
+		r := Scope{}
+		r.With(scope)
+		resources = append(
+			resources,
+			r)
 	}
 
 	h.Respond(ctx, http.StatusOK, resources)
@@ -1264,7 +1225,7 @@ type IdpIdentity = resource.IdpIdentity
 type IdpClient = resource.IdpClient
 type User = resource.User
 type Role = resource.Role
-type Permission = resource.Permission
+type Scope = resource.Scope
 type Grant = resource.Grant
 type Token = resource.Token
 type PAT api.PAT
@@ -1310,7 +1271,7 @@ func Authenticate() func(ctx *gin.Context) {
 // Required authenticates the user and enforces that
 // the user has been granted the required scope.
 func Required(resource string) func(*gin.Context) {
-	auth.RegisterResource(resource)
+	auth.Tenant.Register(resource)
 	return func(ctx *gin.Context) {
 		Authenticate()(ctx)
 		if ctx.IsAborted() {

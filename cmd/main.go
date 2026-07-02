@@ -194,7 +194,9 @@ func main() {
 	// Auth domain.
 	domain := auth.NewDomain(db)
 	err = domain.Seed()
-	if err != nil {
+	if err == nil {
+		auth.Tenant = domain
+	} else {
 		return
 	}
 	err = auth.IdP.Cache().Refresh()

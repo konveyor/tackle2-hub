@@ -116,7 +116,6 @@ type Token = cache.Token
 type Identity = cache.Identity
 type Subject = cache.Subject
 type Task = cache.Task
-type Permission = cache.Permission
 type Grant = cache.Grant
 
 // asTime returns a time.Time for unix time.
