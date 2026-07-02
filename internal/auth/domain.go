@@ -81,7 +81,7 @@ func (d *Domain) Scopes() (scopes []string) {
 	return
 }
 
-// Seed seeds permissions, roles, clients, and users.
+// Seed seeds roles, clients, and users.
 func (d *Domain) Seed() (err error) {
 	database.PK.Begin(d.DB, Role{}, LastId)
 	database.PK.Begin(d.DB, IdpClient{}, LastId)
@@ -115,6 +115,7 @@ func (d *Domain) Seed() (err error) {
 	return
 }
 
+// buildScopes builds the map of scopes.
 func (d *Domain) buildScopes() {
 	for resource := range d.resources {
 		for _, verb := range verbs {
@@ -128,8 +129,8 @@ func (d *Domain) buildScopes() {
 	return
 }
 
-// seedRoles seeds roles and their permission associations from roles.yaml.
-// Must be called after seedPermissions to ensure permission map is populated.
+// seedRoles seeds roles from roles.yaml.
+// Must be called after buildScopes to ensure scopes map is populated.
 // Preserves existing role IDs, deletes orphaned seeded roles (ID < MaxId),
 // and creates new roles with static IDs from YAML.
 func (d *Domain) seedRoles(db *gorm.DB) (err error) {

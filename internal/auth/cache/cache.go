@@ -557,7 +557,7 @@ func (d *Data) getClients(db *gorm.DB) (err error) {
 	return
 }
 
-// getTokens fetches permissions from the DB and populates.
+// getTokens fetches tokens from the DB and populates.
 func (d *Data) getTokens(db *gorm.DB) (err error) {
 	list := []*Token{}
 	db = db.Preload(clause.Associations)

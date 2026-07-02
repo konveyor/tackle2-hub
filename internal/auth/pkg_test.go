@@ -1327,7 +1327,7 @@ func TestBuiltinRevoke(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	// Create test user with permissions
+	// Create test user with scopes
 	user := &model.User{
 		Subject:  "builtin-delete-user",
 		Login:    "builtindeleteuser",
@@ -1907,7 +1907,7 @@ func TestScopeCalculation(t *testing.T) {
 	scopes := claims[ClaimScope].(string)
 	g.Expect(scopes).To(BeEmpty())
 
-	// Test 2: Role with no permissions
+	// Test 2: Role with no scopes
 	roleNoPerm := &model.Role{
 		Name: "EmptyRole",
 	}
@@ -1942,7 +1942,7 @@ func TestScopeCalculation(t *testing.T) {
 	scopes = claims[ClaimScope].(string)
 	g.Expect(scopes).To(BeEmpty())
 
-	// Test 3: Multiple roles with overlapping permissions (deduplication)
+	// Test 3: Multiple roles with overlapping scopes (deduplication)
 	role1 := &model.Role{
 		Name:   "Reader",
 		Scopes: []string{"apps:GET"},
@@ -2052,7 +2052,7 @@ func TestCacheFindSubject(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	// Create test user with roles and permissions
+	// Create test user with roles and scopes
 	role := &model.Role{
 		Name:   "AppReader",
 		Scopes: []string{"applications:GET"},
