@@ -87,6 +87,22 @@ type LdapProvider struct {
 	Status LdapProviderStatus `json:"status,omitempty"`
 }
 
+// Reconciled returns true when the resource has been reconciled.
+func (r *LdapProvider) Reconciled() (b bool) {
+	return r.Generation == r.Status.ObservedGeneration
+}
+
+// Ready returns true when resource has the ready condition.
+func (r *LdapProvider) Ready() (ready bool) {
+	for _, cnd := range r.Status.Conditions {
+		if cnd.Type == Ready.Type && cnd.Status == meta.ConditionTrue {
+			ready = true
+			break
+		}
+	}
+	return
+}
+
 // LdapProviderList is a list of LdapProvider.
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type LdapProviderList struct {

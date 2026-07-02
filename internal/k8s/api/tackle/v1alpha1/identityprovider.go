@@ -108,6 +108,22 @@ type IdentityProvider struct {
 	Status IdentityProviderStatus `json:"status,omitempty"`
 }
 
+// Reconciled returns true when the resource has been reconciled.
+func (r *IdentityProvider) Reconciled() (b bool) {
+	return r.Generation == r.Status.ObservedGeneration
+}
+
+// Ready returns true when resource has the ready condition.
+func (r *IdentityProvider) Ready() (ready bool) {
+	for _, cnd := range r.Status.Conditions {
+		if cnd.Type == Ready.Type && cnd.Status == meta.ConditionTrue {
+			ready = true
+			break
+		}
+	}
+	return
+}
+
 // IdentityProviderList is a list of IdentityProvider.
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type IdentityProviderList struct {

@@ -1,4 +1,4 @@
-package controller
+package addon
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 	"github.com/go-logr/logr"
 	logr2 "github.com/jortel/go-utils/logr"
 	crd "github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
-	"github.com/konveyor/tackle2-hub/shared/settings"
 	"gorm.io/gorm"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,19 +24,17 @@ const (
 	Name = "addon"
 )
 
-// Package logger.
-var log = logr2.WithName(Name)
+type Addon = crd.Addon
 
-// Settings defines applcation settings.
-var Settings = &settings.Settings
+var Log = logr2.WithName(Name)
 
 // Add the controller.
-func Add(mgr manager.Manager, db *gorm.DB) error {
+func Add(mgr manager.Manager, db *gorm.DB) (err error) {
 	reconciler := &Reconciler{
-		history: make(map[string]byte),
-		Client:  mgr.GetClient(),
-		Log:     log,
-		DB:      db,
+		seen:   make(map[string]bool),
+		Client: mgr.GetClient(),
+		Log:    Log,
+		DB:     db,
 	}
 	cnt, err := controller.New(
 		Name,
@@ -46,30 +43,29 @@ func Add(mgr manager.Manager, db *gorm.DB) error {
 			Reconciler: reconciler,
 		})
 	if err != nil {
-		log.Error(err, "")
-		return err
+		Log.Error(err, "")
+		return
 	}
-	// Primary CR.
 	err = cnt.Watch(
-		&source.Kind{Type: &crd.Addon{}},
+		&source.Kind{Type: &Addon{}},
 		&handler.EnqueueRequestForObject{})
 	if err != nil {
-		log.Error(err, "")
-		return err
+		Log.Error(err, "")
+		return
 	}
 
-	return nil
+	return
 }
 
 // Reconciler reconciles addon CRs.
-// The history is used to ensure resources are reconciled
-// at least once at startup.
+// The seen (map) is used to ensure resources are
+// reconciled at least once at startup.
 type Reconciler struct {
 	record.EventRecorder
 	k8s.Client
-	DB      *gorm.DB
-	Log     logr.Logger
-	history map[string]byte
+	DB   *gorm.DB
+	Log  logr.Logger
+	seen map[string]bool
 }
 
 // Reconcile a Addon CR.
@@ -82,7 +78,7 @@ func (r Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (r
 		request)
 
 	// Fetch the CR.
-	addon := &crd.Addon{}
+	addon := &Addon{}
 	err = r.Get(context.TODO(), request.NamespacedName, addon)
 	if err != nil {
 		if k8serr.IsNotFound(err) {
@@ -92,33 +88,35 @@ func (r Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (r
 		}
 		return
 	}
-	_, found := r.history[addon.Name]
+	_, found := r.seen[addon.Name]
 	if found && addon.Reconciled() {
 		return
 	}
-	r.history[addon.Name] = 1
-	addon.Status.Conditions = nil
-	addon.Status.ObservedGeneration = addon.Generation
 	// Changed
 	migrated, err := r.addonChanged(addon)
 	if migrated || err != nil {
 		return
 	}
 	// Ready condition.
+	ready := r.ready(addon)
+	addon.Status.Conditions = nil
+	addon.Status.ObservedGeneration = addon.Generation
 	addon.Status.Conditions = append(
 		addon.Status.Conditions,
-		r.ready(addon))
+		ready)
 	// Apply changes.
 	err = r.Status().Update(context.TODO(), addon)
 	if err != nil {
 		return
 	}
 
+	r.seen[addon.Name] = true
+
 	return
 }
 
 // ready returns the ready condition.
-func (r *Reconciler) ready(addon *crd.Addon) (ready v1.Condition) {
+func (r *Reconciler) ready(addon *Addon) (ready v1.Condition) {
 	ready = crd.Ready
 	ready.LastTransitionTime = v1.Now()
 	ready.ObservedGeneration = addon.Status.ObservedGeneration
@@ -141,7 +139,7 @@ func (r *Reconciler) ready(addon *crd.Addon) (ready v1.Condition) {
 }
 
 // addonChanged an addon has been created/updated.
-func (r *Reconciler) addonChanged(addon *crd.Addon) (migrated bool, err error) {
+func (r *Reconciler) addonChanged(addon *Addon) (migrated bool, err error) {
 	migrated = addon.Migrate()
 	if migrated {
 		err = r.Update(context.TODO(), addon)

@@ -72,6 +72,22 @@ type IdpClient struct {
 	Status IdpClientStatus `json:"status,omitempty"`
 }
 
+// Reconciled returns true when the resource has been reconciled.
+func (r *IdpClient) Reconciled() (b bool) {
+	return r.Generation == r.Status.ObservedGeneration
+}
+
+// Ready returns true when resource has the ready condition.
+func (r *IdpClient) Ready() (ready bool) {
+	for _, cnd := range r.Status.Conditions {
+		if cnd.Type == Ready.Type && cnd.Status == meta.ConditionTrue {
+			ready = true
+			break
+		}
+	}
+	return
+}
+
 // IdpClientList contains a list of IdpClient.
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type IdpClientList struct {

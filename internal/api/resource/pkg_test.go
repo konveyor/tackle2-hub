@@ -3657,11 +3657,11 @@ func TestPermission_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &Permission{
-		Resource:  Resource{ID: 1},
-		Name:      "read",
-		Noun: "applications",
-		Verb:      "GET",
-		Scope:     "applications:read",
+		Resource: Resource{ID: 1},
+		Name:     "read",
+		Noun:     "applications",
+		Verb:     "GET",
+		Scope:    "applications:read",
 	}
 
 	m := r.Model()
