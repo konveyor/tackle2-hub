@@ -3624,52 +3624,6 @@ func TestRole_Model_EmptyScopes(t *testing.T) {
 	g.Expect(len(m.Scopes)).To(gomega.Equal(0))
 }
 
-// TestScope_With tests the Scope.With() method
-func TestScope_With(t *testing.T) {
-	g := gomega.NewGomegaWithT(t)
-
-	m := &model.Scope{
-		Model: model.Model{
-			ID:         1,
-			CreateUser: "admin",
-		},
-		Name:     "read",
-		Resource: "applications",
-		Verb:     "GET",
-		Scope:    "applications:read",
-	}
-
-	r := &Scope{}
-	r.With(m)
-
-	g.Expect(r.ID).To(gomega.Equal(uint(1)))
-	g.Expect(r.Name).To(gomega.Equal("read"))
-	g.Expect(r.Noun).To(gomega.Equal("applications"))
-	g.Expect(r.Verb).To(gomega.Equal("GET"))
-	g.Expect(r.Scope).To(gomega.Equal("applications:read"))
-}
-
-// TestScope_Model tests the Scope.Model() method
-func TestScope_Model(t *testing.T) {
-	g := gomega.NewGomegaWithT(t)
-
-	r := &Scope{
-		Resource: Resource{ID: 1},
-		Name:     "read",
-		Noun:     "applications",
-		Verb:     "GET",
-		Scope:    "applications:read",
-	}
-
-	m := r.Model()
-
-	g.Expect(m.ID).To(gomega.Equal(uint(1)))
-	g.Expect(m.Name).To(gomega.Equal("read"))
-	g.Expect(m.Resource).To(gomega.Equal("applications"))
-	g.Expect(m.Verb).To(gomega.Equal("GET"))
-	g.Expect(m.Scope).To(gomega.Equal("applications:read"))
-}
-
 // TestGrant_With tests the Grant.With() method.
 func TestGrant_With(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)

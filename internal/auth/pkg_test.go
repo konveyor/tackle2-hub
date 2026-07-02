@@ -4164,45 +4164,19 @@ func TestFedIdpRoleScopeExpansion(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	// Create scopes
-	appGetScope := &model.Scope{
-		Name:     "applications-get",
-		Resource: "applications",
-		Verb:     "get",
-		Scope:    "applications:get",
+	// Create roles with scopes (scopes are just strings in the Role model)
+	adminRole := &model.Role{
+		Name:   "admin",
+		Scopes: []string{"applications:get", "applications:post"},
 	}
-	err = db.Create(appGetScope).Error
-	g.Expect(err).To(BeNil())
-
-	appPostScope := &model.Scope{
-		Name:     "applications-post",
-		Resource: "applications",
-		Verb:     "post",
-		Scope:    "applications:post",
-	}
-	err = db.Create(appPostScope).Error
-	g.Expect(err).To(BeNil())
-
-	tagsGetScope := &model.Scope{
-		Name:     "tags-get",
-		Resource: "tags",
-		Verb:     "get",
-		Scope:    "tags:get",
-	}
-	err = db.Create(tagsGetScope).Error
-	g.Expect(err).To(BeNil())
-
-	// Create roles with scopes
-	adminRole := &model.Role{Name: "admin"}
 	err = db.Create(adminRole).Error
 	g.Expect(err).To(BeNil())
-	err = db.Model(adminRole).Association("Scopes").Append(appGetScope, appPostScope)
-	g.Expect(err).To(BeNil())
 
-	viewerRole := &model.Role{Name: "viewer"}
+	viewerRole := &model.Role{
+		Name:   "viewer",
+		Scopes: []string{"tags:get"},
+	}
 	err = db.Create(viewerRole).Error
-	g.Expect(err).To(BeNil())
-	err = db.Model(viewerRole).Association("Scopes").Append(tagsGetScope)
 	g.Expect(err).To(BeNil())
 
 	// Create provider and cache
