@@ -842,7 +842,7 @@ func (h AuthHandler) RoleDelete(ctx *gin.Context) {
 // @tags permissions
 // @produce json
 // @success 200 {object} []api.Scope
-// @router /permissions [get]
+// @router /auth/scopes [get]
 func (h AuthHandler) ScopeList(ctx *gin.Context) {
 	resources := []resource.Scope{}
 	for _, scope := range auth.Tenant.Scopes() {
