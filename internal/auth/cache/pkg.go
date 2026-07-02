@@ -35,9 +35,6 @@ type User = model.User
 // Role alias.
 type Role = model.Role
 
-// Permission alias.
-type Permission = model.Permission
-
 // Task (lightweight) model.
 type Task struct {
 	ID uint

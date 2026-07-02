@@ -61,7 +61,6 @@ func All() []any {
 		ProfileGenerator{},
 		IdpClient{},
 		IdpIdentity{},
-		Permission{},
 		Role{},
 		User{},
 		Token{},

@@ -69,7 +69,7 @@ type RichClient struct {
 	Tracker          Tracker
 	User             User
 	Role             Role
-	Permission       Permission
+	Scope            Scope
 }
 
 // Use sets the client.
@@ -124,5 +124,5 @@ func (r *RichClient) build(client RestClient) {
 	r.Tracker = Tracker{client: client}
 	r.User = User{client: client}
 	r.Role = Role{client: client}
-	r.Permission = Permission{client: client}
+	r.Scope = Scope{client: client}
 }

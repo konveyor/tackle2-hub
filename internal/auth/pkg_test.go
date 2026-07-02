@@ -1327,7 +1327,7 @@ func TestBuiltinRevoke(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	// Create test user with permissions
+	// Create test user with scopes
 	user := &model.User{
 		Subject:  "builtin-delete-user",
 		Login:    "builtindeleteuser",
@@ -1337,18 +1337,11 @@ func TestBuiltinRevoke(t *testing.T) {
 	err = db.Create(user).Error
 	g.Expect(err).To(BeNil())
 
-	perm := &model.Permission{
-		Name:  "Admin",
-		Scope: "*:*",
+	role := &model.Role{
+		Name:   "Admin",
+		Scopes: []string{"*:*"},
 	}
-	err = db.Create(perm).Error
-	g.Expect(err).To(BeNil())
-
-	role := &model.Role{Name: "Admin"}
 	err = db.Create(role).Error
-	g.Expect(err).To(BeNil())
-
-	err = db.Model(role).Association("Permissions").Append(perm)
 	g.Expect(err).To(BeNil())
 
 	err = db.Model(user).Association("Roles").Append(role)
@@ -1914,7 +1907,7 @@ func TestScopeCalculation(t *testing.T) {
 	scopes := claims[ClaimScope].(string)
 	g.Expect(scopes).To(BeEmpty())
 
-	// Test 2: Role with no permissions
+	// Test 2: Role with no scopes
 	roleNoPerm := &model.Role{
 		Name: "EmptyRole",
 	}
@@ -1949,30 +1942,18 @@ func TestScopeCalculation(t *testing.T) {
 	scopes = claims[ClaimScope].(string)
 	g.Expect(scopes).To(BeEmpty())
 
-	// Test 3: Multiple roles with overlapping permissions (deduplication)
-	perm1 := &model.Permission{
-		Name:  "Read",
-		Scope: "apps:GET",
+	// Test 3: Multiple roles with overlapping scopes (deduplication)
+	role1 := &model.Role{
+		Name:   "Reader",
+		Scopes: []string{"apps:GET"},
 	}
-	perm2 := &model.Permission{
-		Name:  "Write",
-		Scope: "apps:POST",
+	role2 := &model.Role{
+		Name:   "Writer",
+		Scopes: []string{"apps:GET", "apps:POST"}, // apps:GET overlaps with role1
 	}
-	err = db.Create(perm1).Error
-	g.Expect(err).To(BeNil())
-	err = db.Create(perm2).Error
-	g.Expect(err).To(BeNil())
-
-	role1 := &model.Role{Name: "Reader"}
-	role2 := &model.Role{Name: "Writer"}
 	err = db.Create(role1).Error
 	g.Expect(err).To(BeNil())
 	err = db.Create(role2).Error
-	g.Expect(err).To(BeNil())
-
-	err = db.Model(role1).Association("Permissions").Append(perm1)
-	g.Expect(err).To(BeNil())
-	err = db.Model(role2).Association("Permissions").Append(perm1, perm2) // perm1 overlaps
 	g.Expect(err).To(BeNil())
 
 	userMultiRole := &model.User{
@@ -2071,21 +2052,12 @@ func TestCacheFindSubject(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	// Create test user with roles and permissions
-	perm := &model.Permission{
-		Name:  "Read Apps",
-		Scope: "applications:GET",
-	}
-	err = db.Create(perm).Error
-	g.Expect(err).To(BeNil())
-
+	// Create test user with roles and scopes
 	role := &model.Role{
-		Name: "AppReader",
+		Name:   "AppReader",
+		Scopes: []string{"applications:GET"},
 	}
 	err = db.Create(role).Error
-	g.Expect(err).To(BeNil())
-
-	err = db.Model(role).Association("Permissions").Append(perm)
 	g.Expect(err).To(BeNil())
 
 	user := &model.User{
@@ -2540,7 +2512,7 @@ func TestSeedClientsFromCRD(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Seed clients
-	domain := NewDomain(db)
+	domain := NewTenant(db)
 	err = domain.seedClients(db)
 	g.Expect(err).To(BeNil())
 
@@ -2608,7 +2580,7 @@ func TestSeedClientsUpdate(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Seed clients
-	domain := NewDomain(db)
+	domain := NewTenant(db)
 	err = domain.seedClients(db)
 	g.Expect(err).To(BeNil())
 
@@ -2664,7 +2636,7 @@ func TestSeedClientsDeleteOrphaned(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Seed clients
-	domain := NewDomain(db)
+	domain := NewTenant(db)
 	err = domain.seedClients(db)
 	g.Expect(err).To(BeNil())
 
@@ -2703,7 +2675,7 @@ func TestSeedClientsIDPreservation(t *testing.T) {
 	err = federated.Load("konveyor-tackle")
 	g.Expect(err).To(BeNil())
 
-	domain := NewDomain(db)
+	domain := NewTenant(db)
 
 	// First seed
 	err = domain.seedClients(db)
@@ -3168,7 +3140,6 @@ func setupTestDB() (db *gorm.DB, err error) {
 		&model.Task{},
 		&model.Bucket{},
 		&Role{},
-		&Permission{},
 		&Token{},
 		&Grant{},
 		&RsaKey{},
@@ -3363,7 +3334,6 @@ func TestCreateAccessToken_UpdatesExistingToken(t *testing.T) {
 		&Task{},
 		&model.Bucket{},
 		&Role{},
-		&Permission{},
 		&Token{},
 		&Grant{},
 		&RsaKey{},
@@ -3441,7 +3411,6 @@ func TestCreateAccessToken_CascadeDeleteOnGrantDeletion(t *testing.T) {
 		&Task{},
 		&model.Bucket{},
 		&Role{},
-		&Permission{},
 		&Token{},
 		&Grant{},
 		&RsaKey{},
@@ -3508,7 +3477,6 @@ func TestAuthRequest_CreatesGrantAndLinksToken(t *testing.T) {
 		&Task{},
 		&model.Bucket{},
 		&Role{},
-		&Permission{},
 		&Token{},
 		&Grant{},
 		&RsaKey{},
@@ -3572,7 +3540,6 @@ func TestClientRequest_NoGrantCreated(t *testing.T) {
 		&Task{},
 		&model.Bucket{},
 		&Role{},
-		&Permission{},
 		&Token{},
 		&Grant{},
 		&RsaKey{},
@@ -3653,7 +3620,6 @@ func TestCreateAccessAndRefreshTokens_FullFlow(t *testing.T) {
 		&Task{},
 		&model.Bucket{},
 		&Role{},
-		&Permission{},
 		&Token{},
 		&Grant{},
 		&RsaKey{},
@@ -3872,10 +3838,10 @@ func TestGroupFilter(t *testing.T) {
 func TestScopeExpand(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	// Register some test resources
-	RegisterResource("applications")
-	RegisterResource("tags")
-	RegisterResource("identities")
+	// Register test resources in Tenant
+	Domain.Register("applications")
+	Domain.Register("tags")
+	Domain.Register("identities")
 
 	// Test 1: Wildcard resource and method (*:*)
 	scope := Scope{Resource: "*", Method: "*"}
@@ -3964,9 +3930,9 @@ func TestScopeExpand(t *testing.T) {
 func TestExpandScopes(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	// Register test resources
-	RegisterResource("applications")
-	RegisterResource("tags")
+	// Register test resources in Tenant
+	Domain.Register("applications")
+	Domain.Register("tags")
 
 	// Test 1: Expand single wildcard scope
 	scopes := ExpandScopes("applications:*")
@@ -4084,36 +4050,15 @@ func TestAdminWildcardScopes(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Register resources
-	RegisterResource("applications")
-	RegisterResource("tags")
-	RegisterResource("admin")
+	// Resources are now handled by Expand() internally for tests
+	// Resources are now handled by Expand() internally for tests
 
-	// Create admin permission with wildcard
-	adminPerm := &model.Permission{
-		Name:     "admin-wildcard",
-		Resource: "admin",
-		Verb:     "*",
-		Scope:    "admin:*",
+	// Create admin role with wildcard scopes
+	adminRole := &model.Role{
+		Name:   "admin",
+		Scopes: []string{"admin:*", "*:*"},
 	}
-	err = db.Create(adminPerm).Error
-	g.Expect(err).To(BeNil())
-
-	// Create global wildcard permission
-	globalPerm := &model.Permission{
-		Name:     "global-wildcard",
-		Resource: "*",
-		Verb:     "*",
-		Scope:    "*:*",
-	}
-	err = db.Create(globalPerm).Error
-	g.Expect(err).To(BeNil())
-
-	// Create admin role with both wildcard permissions
-	adminRole := &model.Role{Name: "admin"}
 	err = db.Create(adminRole).Error
-	g.Expect(err).To(BeNil())
-
-	err = db.Model(adminRole).Association("Permissions").Append(adminPerm, globalPerm)
 	g.Expect(err).To(BeNil())
 
 	// Create admin user
@@ -4182,9 +4127,9 @@ func TestAdminWildcardScopes(t *testing.T) {
 func TestExternalIdpWildcardExpansion(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	// Register resources
-	RegisterResource("applications")
-	RegisterResource("tags")
+	// Register test resources in Tenant
+	Domain.Register("applications")
+	Domain.Register("tags")
 
 	// Simulate external IdP scopes with wildcards
 	idpScopes := []string{
@@ -4219,45 +4164,19 @@ func TestFedIdpRoleScopeExpansion(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	// Create permissions
-	appGetPerm := &model.Permission{
-		Name:     "applications-get",
-		Resource: "applications",
-		Verb:     "get",
-		Scope:    "applications:get",
+	// Create roles with scopes (scopes are just strings in the Role model)
+	adminRole := &model.Role{
+		Name:   "admin",
+		Scopes: []string{"applications:get", "applications:post"},
 	}
-	err = db.Create(appGetPerm).Error
-	g.Expect(err).To(BeNil())
-
-	appPostPerm := &model.Permission{
-		Name:     "applications-post",
-		Resource: "applications",
-		Verb:     "post",
-		Scope:    "applications:post",
-	}
-	err = db.Create(appPostPerm).Error
-	g.Expect(err).To(BeNil())
-
-	tagsGetPerm := &model.Permission{
-		Name:     "tags-get",
-		Resource: "tags",
-		Verb:     "get",
-		Scope:    "tags:get",
-	}
-	err = db.Create(tagsGetPerm).Error
-	g.Expect(err).To(BeNil())
-
-	// Create roles with permissions
-	adminRole := &model.Role{Name: "admin"}
 	err = db.Create(adminRole).Error
 	g.Expect(err).To(BeNil())
-	err = db.Model(adminRole).Association("Permissions").Append(appGetPerm, appPostPerm)
-	g.Expect(err).To(BeNil())
 
-	viewerRole := &model.Role{Name: "viewer"}
+	viewerRole := &model.Role{
+		Name:   "viewer",
+		Scopes: []string{"tags:get"},
+	}
 	err = db.Create(viewerRole).Error
-	g.Expect(err).To(BeNil())
-	err = db.Model(viewerRole).Association("Permissions").Append(tagsGetPerm)
 	g.Expect(err).To(BeNil())
 
 	// Create provider and cache
@@ -4274,7 +4193,7 @@ func TestFedIdpRoleScopeExpansion(t *testing.T) {
 		accessTokenClaims: make(map[string]any),
 	}
 
-	// Test 1: Expand +role.admin to admin role's permissions
+	// Test 1: Expand +role.admin to admin role's scopes
 	login.accessTokenClaims[ClaimScope] = "+role.admin applications:delete"
 	scopes := login.extractScopes()
 	g.Expect(scopes).To(ContainElement("applications:get"))
@@ -4315,7 +4234,7 @@ func TestFedIdpRoleScopeExpansion(t *testing.T) {
 	scopes = login.extractScopes()
 	g.Expect(scopes).To(BeEmpty())
 
-	// Test 7: Role with no permissions
+	// Test 7: Role with no scopes
 	emptyRole := &model.Role{Name: "empty"}
 	err = db.Create(emptyRole).Error
 	g.Expect(err).To(BeNil())
@@ -4328,47 +4247,49 @@ func TestFedIdpRoleScopeExpansion(t *testing.T) {
 	g.Expect(len(scopes)).To(Equal(1))
 }
 
-// TestPermissionGenerationWithNounVerb tests that generatePermissions populates Noun and Verb.
-func TestPermissionGenerationWithNounVerb(t *testing.T) {
+// TestScopeGenerationWithNounVerb tests that generateScopes populates Noun and Verb.
+func TestScopeGenerationWithNounVerb(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	// Create domain
-	domain := NewDomain(db)
+	// Create domain and register resources
+	domain := NewTenant(db)
+	domain.Register("applications")
+	domain.Register("tags")
 
-	// Generate permissions for test resources
-	resources := []string{"applications", "tags"}
-	perms := domain.generatePermissions(resources)
+	// Build scopes
+	domain.buildScopes()
 
-	// Verify permissions created
-	g.Expect(len(perms)).To(Equal(12)) // 2 resources × 6 verbs
+	// Verify scopes created (3 resources × 6 verbs: admin is registered by default)
+	scopes := domain.Scopes()
+	g.Expect(len(scopes)).To(Equal(18))
 
-	// Verify each permission has Noun and Verb populated
-	for _, perm := range perms {
-		g.Expect(perm.Name).NotTo(BeEmpty())
-		g.Expect(perm.Resource).NotTo(BeEmpty())
-		g.Expect(perm.Verb).NotTo(BeEmpty())
-		g.Expect(perm.Scope).NotTo(BeEmpty())
+	// Verify each scope can be parsed
+	for _, scopeStr := range scopes {
+		g.Expect(scopeStr).NotTo(BeEmpty())
 
-		// Verify Scope format matches Noun:Verb
+		// Verify Scope format is resource:verb
 		scope := Scope{}
-		scope.With(perm.Scope)
-		g.Expect(scope.Resource).To(Equal(perm.Resource))
-		g.Expect(scope.Method).To(Equal(perm.Verb))
+		scope.With(scopeStr)
+		g.Expect(scope.Resource).NotTo(BeEmpty())
+		g.Expect(scope.Method).NotTo(BeEmpty())
 
-		// Verify Name format is verb-noun
-		expectedName := perm.Verb + "-" + perm.Resource
-		g.Expect(perm.Name).To(Equal(expectedName))
+		// Verify it's in the registered resources
+		validResource := scope.Resource == "applications" || scope.Resource == "tags" || scope.Resource == "admin"
+		g.Expect(validResource).To(BeTrue())
 	}
 
 	// Verify all verbs present for each resource
+	resources := []string{"applications", "tags"}
 	for _, resource := range resources {
 		foundVerbs := make(map[string]bool)
-		for _, perm := range perms {
-			if perm.Resource == resource {
-				foundVerbs[perm.Verb] = true
+		for _, scopeStr := range scopes {
+			scope := Scope{}
+			scope.With(scopeStr)
+			if scope.Resource == resource {
+				foundVerbs[scope.Method] = true
 			}
 		}
 		g.Expect(foundVerbs).To(HaveKey("decrypt"))

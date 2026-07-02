@@ -12,24 +12,15 @@ type Role api.Role
 func (r *Role) With(m *model.Role) {
 	baseWith(&r.Resource, &m.Model)
 	r.Name = m.Name
-	r.Permissions = []Ref{}
-	for _, perm := range m.Permissions {
-		r.Permissions = append(r.Permissions, Ref{ID: perm.ID, Name: perm.Name})
-	}
+	r.Scopes = m.Scopes
 }
 
 // Model converts REST resource to model.
 func (r *Role) Model() (m *model.Role) {
 	m = &model.Role{
-		Name: r.Name,
+		Name:   r.Name,
+		Scopes: r.Scopes,
 	}
 	m.ID = r.ID
-	for _, ref := range r.Permissions {
-		m.Permissions = append(
-			m.Permissions,
-			model.Permission{
-				Model: model.Model{ID: ref.ID},
-			})
-	}
 	return
 }

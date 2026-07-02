@@ -26,7 +26,6 @@ func setupTestDB() (db *gorm.DB, err error) {
 		&User{},
 		&model.Task{},
 		&Role{},
-		&Permission{},
 		&Token{},
 		&Grant{},
 		&Identity{},
@@ -895,23 +894,13 @@ func TestFindTokenByIdWithUser(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	// Create permission
-	perm := &Permission{
-		Model: Model{ID: 1},
-		Scope: "applications:get",
-	}
-	err = db.Create(perm).Error
-	g.Expect(err).To(BeNil())
-
-	// Create role with permission
+	// Create role with scopes
 	role := &Role{
-		Model: Model{ID: 1},
-		Name:  "Developer",
+		Model:  Model{ID: 1},
+		Name:   "Developer",
+		Scopes: []string{"applications:get"},
 	}
 	err = db.Create(role).Error
-	g.Expect(err).To(BeNil())
-
-	err = db.Model(role).Association("Permissions").Append(perm)
 	g.Expect(err).To(BeNil())
 
 	// Create user

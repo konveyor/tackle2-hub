@@ -13,16 +13,17 @@ func TestUser(t *testing.T) {
 
 	password := "rosebud"
 
-	permissions, err := client.Permission.List()
-	g.Expect(len(permissions)).Should(BeNumerically(">=", 2))
+	// Get available scopes from the hub
+	scopes, err := client.Scope.List()
 	g.Expect(err).To(BeNil())
+	g.Expect(len(scopes)).Should(BeNumerically(">=", 2))
 
 	// Create roles for the user to reference
 	role1 := &api.Role{
 		Name: "admin",
-		Permissions: []api.Ref{
-			{ID: permissions[0].ID},
-			{ID: permissions[1].ID},
+		Scopes: []string{
+			scopes[0].Name,
+			scopes[1].Name,
 		},
 	}
 	err = client.Role.Create(role1)
@@ -33,8 +34,8 @@ func TestUser(t *testing.T) {
 
 	role2 := &api.Role{
 		Name: "viewer",
-		Permissions: []api.Ref{
-			{ID: permissions[0].ID},
+		Scopes: []string{
+			scopes[0].Name,
 		},
 	}
 	err = client.Role.Create(role2)
