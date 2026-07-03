@@ -605,7 +605,7 @@ func (r *Storage) GetPrivateClaimsFromScopes(
 
 	// Add scopes to JWT claims
 	// The scopes parameter already contains both standard OAuth scopes (openid, offline_access)
-	// and our injected permission scopes from injectScopes()
+	// and our injected scopes from injectScopes()
 	if len(scopes) > 0 {
 		claims[ClaimScope] = strings.Join(scopes, " ")
 	}
@@ -1065,7 +1065,7 @@ func (r *Login) renderPage() (err error) {
 	return
 }
 
-// injectScopes adds user/identity permissions as scopes to the token request.
+// injectScopes adds user/identity scopes to the token request.
 func (r *Storage) injectScopes(req op.TokenRequest) (err error) {
 	subject := req.GetSubject()
 	if subject == "" {

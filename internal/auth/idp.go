@@ -419,9 +419,7 @@ func (f *FedIdpLogin) expandScopes(in []string) (expanded []string) {
 				scope)
 			continue
 		}
-		for _, p := range role.Permissions {
-			expanded = append(expanded, p.Scope)
-		}
+		expanded = append(expanded, role.Scopes...)
 	}
 	return
 }

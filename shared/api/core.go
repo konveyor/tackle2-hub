@@ -181,18 +181,16 @@ type User struct {
 
 // Role REST resource.
 type Role struct {
-	Resource    `yaml:",inline"`
-	Name        string `json:"name" binding:"required"`
-	Permissions []Ref  `json:"permissions"`
+	Resource `yaml:",inline"`
+	Name     string   `json:"name" binding:"required"`
+	Scopes   []string `json:"scopes"`
 }
 
-// Permission REST resource.
-type Permission struct {
-	Resource `yaml:",inline"`
+// Scope REST resource.
+type Scope struct {
 	Name     string `json:"name" binding:"required"`
-	Noun     string `json:"resource" binding:"required"`
+	Resource string `json:"resource" binding:"required"`
 	Verb     string `json:"verb" binding:"required"`
-	Scope    string `json:"scope" binding:"required"`
 }
 
 // Grant REST resource.

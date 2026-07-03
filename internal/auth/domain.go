@@ -22,17 +22,15 @@ var (
 	seedDir fs.FS
 )
 
-var (
-	registeredResources = map[string]bool{
-		ADMIN: true,
-	}
-)
-
 const (
 	LastId = 1000
 )
 
+// Domain is the default tenant.
+var Domain *Tenant
+
 func init() {
+	Domain = NewTenant(nil)
 	var err error
 	seedDir, err = fs.Sub(seedFS, "seed")
 	if err != nil {
@@ -40,47 +38,75 @@ func init() {
 	}
 }
 
-// RegisterResource registers an api resource for permission (scope) generation.
-func RegisterResource(resource string) {
-	if resource != "" {
-		registeredResources[resource] = true
-	}
-}
-
-// NewDomain returns a new RBAC domain manager.
-func NewDomain(db *gorm.DB) *Domain {
-	return &Domain{
+// NewTenant returns a new RBAC domain manager.
+func NewTenant(db *gorm.DB) *Tenant {
+	return &Tenant{
 		DB:          db,
-		permByScope: make(map[string]uint),
 		roleByName:  make(map[string]uint),
+		scopeByName: make(map[string]Scope),
+		resources: map[string]bool{
+			ADMIN: true,
+		},
 	}
 }
 
-// Domain the RBAC domain.
-type Domain struct {
+// Tenant the RBAC domain.
+type Tenant struct {
 	DB          *gorm.DB
-	permByScope map[string]uint
+	resources   map[string]bool
 	roleByName  map[string]uint
+	scopeByName map[string]Scope
 }
 
-// Seed seeds permissions, roles, clients, and users.
-func (d *Domain) Seed() (err error) {
-	database.PK.Begin(d.DB, Permission{}, LastId)
+// Register registers a scope resource.
+func (d *Tenant) Register(resource string) {
+	if resource != "" {
+		d.resources[resource] = true
+	}
+}
+
+// Resources returns a list of registered resources.
+func (d *Tenant) Resources() (resources []string) {
+	for resource := range d.resources {
+		resources = append(resources, resource)
+	}
+	sort.Strings(resources)
+	return
+}
+
+// Scopes returns the list of known scopes.
+func (d *Tenant) Scopes() (scopes []string) {
+	for s := range d.scopeByName {
+		scopes = append(scopes, s)
+	}
+	sort.Strings(scopes)
+	return
+}
+
+// HasScope returns true when the domain has the scope.
+func (d *Tenant) HasScope(scope string) (found bool) {
+	_, found = d.scopeByName[scope]
+	return
+}
+
+// Seed seeds roles, clients, and users.
+func (d *Tenant) Seed() (err error) {
 	database.PK.Begin(d.DB, Role{}, LastId)
 	database.PK.Begin(d.DB, IdpClient{}, LastId)
 	database.PK.Begin(d.DB, User{}, LastId)
 	var resources []string
-	for r := range registeredResources {
+	for r := range d.resources {
 		resources = append(resources, r)
 	}
 	sort.Strings(resources)
 	err = d.DB.Transaction(
 		func(tx *gorm.DB) (err error) {
-			err = d.seedPermissions(tx, resources)
+			d.buildScopes()
+			err = d.seedRoles(tx)
 			if err != nil {
 				return
 			}
-			err = d.seedRoles(tx)
+			err = d.pruneScopes(tx)
 			if err != nil {
 				return
 			}
@@ -101,125 +127,281 @@ func (d *Domain) Seed() (err error) {
 	return
 }
 
-// seedPermissions seeds permissions based on discovered route scopes.
-// Preserves existing permission IDs, deletes orphaned permissions,
-// and adds new permissions with sequential IDs.
-// Builds an in-memory map of scope to permission ID for role seeding.
-func (d *Domain) seedPermissions(db *gorm.DB, resources []string) (err error) {
-	perms := d.generatePermissions(resources)
-	err = d.reconcilePermissions(db, perms)
-	if err != nil {
-		return
-	}
-	err = d.buildPermissionMap(db)
-	return
-}
-
-// buildPermissionMap reads all permissions and builds scope->ID map.
-func (d *Domain) buildPermissionMap(db *gorm.DB) (err error) {
-	permDefs, err := d.fetchPermissions(db)
-	if err != nil {
-		return
-	}
-	d.permByScope = make(map[string]uint)
-	for scope, perm := range permDefs {
-		d.permByScope[scope] = perm.ID
-	}
-	return
-}
-
-// generatePermissions generates all permissions for the given resources.
-// Each resource gets 5 permissions (one per HTTP verb).
-func (d *Domain) generatePermissions(resources []string) (perms []Permission) {
-	for _, resource := range resources {
+// buildScopes builds the map of scopes.
+func (d *Tenant) buildScopes() {
+	for resource := range d.resources {
 		for _, verb := range verbs {
-			name := verb + "-" + resource
-			scope := Scope{Resource: resource, Method: verb}
-			perms = append(perms, Permission{
-				Name:     name,
+			scope := Scope{
 				Resource: resource,
-				Verb:     verb,
-				Scope:    scope.String(),
-			})
+				Method:   verb,
+			}
+			d.scopeByName[scope.String()] = scope
 		}
 	}
-	sort.Slice(
-		perms,
-		func(i, j int) bool {
-			return perms[i].Scope < perms[j].Scope
-		})
 	return
 }
 
-// reconcilePermissions reconcile permissions in the database with the wanted set.
-// Preserves existing permission IDs, deletes orphaned permissions,
-// and assigns sequential IDs to new permissions.
-func (d *Domain) reconcilePermissions(db *gorm.DB, wanted []Permission) (err error) {
-	existing, err := d.fetchPermissions(db)
-	if err != nil {
-		return
-	}
-	nextID := d.maxID(existing) + 1
-	patch := d.permissionPatch(existing, wanted, nextID)
-	err = patch.Apply(db)
-	return
-}
-
-// fetchPermissions fetches all existing permissions from the database.
-func (d *Domain) fetchPermissions(db *gorm.DB) (perms map[string]Permission, err error) {
-	var list []Permission
+// buildRoleMap reads all roles and builds name->ID map.
+func (d *Tenant) buildRoleMap(db *gorm.DB) (err error) {
+	var list []Role
 	err = db.Find(&list).Error
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-	perms = make(map[string]Permission)
-	for _, p := range list {
-		perms[p.Scope] = p
+	d.roleByName = make(map[string]uint)
+	for _, role := range list {
+		d.roleByName[role.Name] = role.ID
 	}
 	return
 }
 
-// maxID returns the maximum ID from a set of permissions.
-func (d *Domain) maxID(perms map[string]Permission) (max uint) {
-	for _, p := range perms {
-		if p.ID > max {
-			max = p.ID
+// buildRoleScopes builds scope strings from a role definition.
+func (d *Tenant) buildRoleScopes(role seed.Role) (scopes []string) {
+	scopeSet := make(map[string]bool)
+	for _, r := range role.Resources {
+		for _, m := range r.Verbs {
+			scope := Scope{Resource: r.Name, Method: m}
+			for _, s := range scope.ExpandWith(d.Resources()) {
+				scopeStr := s.String()
+				if !d.HasScope(scopeStr) {
+					Log.Info(
+						"Role has unknown scope.",
+						"name",
+						role.Name,
+						"scope",
+						scopeStr)
+					continue
+				}
+				scopeSet[scopeStr] = true
+			}
 		}
 	}
+	for scopeStr := range scopeSet {
+		scopes = append(scopes, scopeStr)
+	}
+	sort.Strings(scopes)
 	return
 }
 
-// permissionPatch computes the permission reconciliation patch.
-func (d *Domain) permissionPatch(existing map[string]Permission, wanted []Permission, nextID uint) (patch *PermissionPatch) {
-	patch = &PermissionPatch{
-		db: d.DB,
-	}
-	wantedSet := make(map[string]Permission)
-	for _, perm := range wanted {
-		wantedSet[perm.Scope] = perm
-	}
-	for scope := range existing {
-		if _, found := wantedSet[scope]; !found {
-			patch.toDelete = append(patch.toDelete, scope)
-		}
-	}
-	for _, perm := range wanted {
-		if _, found := existing[perm.Scope]; found {
+// buildUserRoles builds role list from a user definition.
+func (d *Tenant) buildUserRoles(user seed.User) (roles []Role, err error) {
+	roleMap := make(map[uint]bool)
+	for _, roleName := range user.Roles {
+		roleID, found := d.roleByName[roleName]
+		if !found {
+			Log.Info("Role not-found: " + roleName)
 			continue
 		}
-		perm.ID = nextID
-		nextID++
-		patch.toCreate = append(patch.toCreate, perm)
+		roleMap[roleID] = true
+	}
+	for roleID := range roleMap {
+		roles = append(roles, Role{
+			Model: Model{ID: roleID},
+		})
 	}
 	return
 }
 
-// seedRoles seeds roles and their permission associations from roles.yaml.
-// Must be called after seedPermissions to ensure permission map is populated.
+// clientPatch computes the client reconciliation patch from CRD clients.
+func (d *Tenant) clientPatch(existing map[string]IdpClient, wanted []as.IdpClient) (patch *IdpClientPatch) {
+	patch = &IdpClientPatch{
+		db: d.DB,
+	}
+	wantedMap := make(map[string]as.IdpClient)
+	for _, client := range wanted {
+		wantedMap[client.ClientId] = client
+	}
+	for clientId, client := range existing {
+		if client.ID < LastId {
+			if _, found := wantedMap[clientId]; !found {
+				patch.toDelete = append(patch.toDelete, client.ID)
+			}
+		}
+	}
+	for _, settingsClient := range wanted {
+		if existingClient, found := existing[settingsClient.ClientId]; found {
+			patch.toUpdate = append(patch.toUpdate, clientWithSettings{
+				client:   existingClient,
+				settings: settingsClient,
+			})
+		} else {
+			newClient := IdpClient{}
+			newClient.With(&settingsClient)
+			newClient.Subject = uuid.New().String()
+			patch.toCreate = append(patch.toCreate, clientWithSettings{
+				client:   newClient,
+				settings: settingsClient,
+			})
+		}
+	}
+	return
+}
+
+// fetchClients fetches existing clients from database.
+func (d *Tenant) fetchClients(db *gorm.DB) (clients map[string]IdpClient, err error) {
+	var list []IdpClient
+	err = db.Find(&list).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	clients = make(map[string]IdpClient)
+	for _, c := range list {
+		clients[c.ClientId] = c
+	}
+	return
+}
+
+// fetchRoles fetches existing roles from database.
+func (d *Tenant) fetchRoles(db *gorm.DB) (roles map[string]Role, err error) {
+	var list []Role
+	err = db.Find(&list).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	roles = make(map[string]Role)
+	for _, r := range list {
+		roles[r.Name] = r
+	}
+	return
+}
+
+// fetchUsers fetches existing users from database.
+func (d *Tenant) fetchUsers(db *gorm.DB) (users map[string]User, err error) {
+	var list []User
+	err = db.Find(&list).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	users = make(map[string]User)
+	for _, u := range list {
+		users[u.Login] = u
+	}
+	return
+}
+
+// pruneScopes removes unknown scopes from user-created roles.
+// Runs during seeding after scope generation to ensure custom roles
+// don't reference obsolete or unregistered scopes.
+func (d *Tenant) pruneScopes(tx *gorm.DB) (err error) {
+	roles := []Role{}
+	err = tx.Find(&roles, "id > ?", LastId).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for _, role := range roles {
+		kept := []string{}
+		pruned := false
+		for _, scope := range role.Scopes {
+			if !d.HasScope(scope) {
+				pruned = true
+				Log.Info("Unknown scope pruned",
+					"role",
+					role.Name,
+					"scope",
+					scope)
+			} else {
+				kept = append(kept, scope)
+			}
+		}
+		if pruned {
+			role.Scopes = kept
+			err = tx.Save(&role).Error
+			if err != nil {
+				err = liberr.Wrap(err)
+				return
+			}
+		}
+	}
+	return
+}
+
+// readRoles reads role definitions from roles.yaml.
+func (d *Tenant) readRoles() (roles []seed.Role, err error) {
+	b, err := fs.ReadFile(seedDir, "roles.yaml")
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = yaml.Unmarshal(b, &roles)
+	if err != nil {
+		err = liberr.Wrap(err)
+	}
+	return
+}
+
+// readUsers reads user definitions from users.yaml.
+func (d *Tenant) readUsers() (users []seed.User, err error) {
+	b, err := fs.ReadFile(seedDir, "users.yaml")
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = yaml.Unmarshal(b, &users)
+	if err != nil {
+		err = liberr.Wrap(err)
+	}
+	return
+}
+
+// rolePatch computes the role reconciliation patch.
+func (d *Tenant) rolePatch(existing map[string]Role, wanted []seed.Role) (patch *RolePatch) {
+	patch = &RolePatch{
+		db: d.DB,
+	}
+	wantedMap := make(map[string]seed.Role)
+	for _, role := range wanted {
+		wantedMap[role.Name] = role
+	}
+	for name, role := range existing {
+		if role.ID < LastId {
+			if _, found := wantedMap[name]; !found {
+				patch.toDelete = append(patch.toDelete, role.ID)
+			}
+		}
+	}
+	for _, role := range wanted {
+		scopes := d.buildRoleScopes(role)
+		if existingRole, found := existing[role.Name]; found {
+			existingRole.Scopes = scopes
+			patch.toUpdate = append(patch.toUpdate, existingRole)
+		} else {
+			newRole := Role{
+				Name:   role.Name,
+				Scopes: scopes,
+			}
+			newRole.ID = role.ID
+			patch.toCreate = append(patch.toCreate, newRole)
+		}
+	}
+	return
+}
+
+// seedClients seeds OIDC clients from CRDs.
+// Preserves existing client IDs, deletes orphaned seeded clients (ID < LastId),
+// and creates new clients with IDs from CRD spec.
+func (d *Tenant) seedClients(db *gorm.DB) (err error) {
+	existing, err := d.fetchClients(db)
+	if err != nil {
+		return
+	}
+	patch := d.clientPatch(existing, federated.Clients)
+	err = patch.Apply(db)
+	if err != nil {
+		err = liberr.Wrap(err)
+	}
+	return
+}
+
+// seedRoles seeds roles from roles.yaml.
+// Must be called after buildScopes to ensure scopes map is populated.
 // Preserves existing role IDs, deletes orphaned seeded roles (ID < MaxId),
 // and creates new roles with static IDs from YAML.
-func (d *Domain) seedRoles(db *gorm.DB) (err error) {
+func (d *Tenant) seedRoles(db *gorm.DB) (err error) {
 	roles, err := d.readRoles()
 	if err != nil {
 		return
@@ -236,124 +418,11 @@ func (d *Domain) seedRoles(db *gorm.DB) (err error) {
 	return
 }
 
-// readRoles reads role definitions from roles.yaml.
-func (d *Domain) readRoles() (roles []seed.Role, err error) {
-	b, err := fs.ReadFile(seedDir, "roles.yaml")
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	err = yaml.Unmarshal(b, &roles)
-	if err != nil {
-		err = liberr.Wrap(err)
-	}
-	return
-}
-
-// fetchRoles fetches existing roles from database.
-func (d *Domain) fetchRoles(db *gorm.DB) (roles map[string]Role, err error) {
-	var list []Role
-	err = db.Find(&list).Error
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	roles = make(map[string]Role)
-	for _, r := range list {
-		roles[r.Name] = r
-	}
-	return
-}
-
-// rolePatch computes the role reconciliation patch.
-func (d *Domain) rolePatch(existing map[string]Role, wanted []seed.Role) (patch *RolePatch) {
-	patch = &RolePatch{
-		db: d.DB,
-	}
-	wantedMap := make(map[string]seed.Role)
-	for _, role := range wanted {
-		wantedMap[role.Name] = role
-	}
-	for name, role := range existing {
-		if role.ID < LastId {
-			if _, found := wantedMap[name]; !found {
-				patch.toDelete = append(patch.toDelete, role.ID)
-			}
-		}
-	}
-	for _, role := range wanted {
-		perms, err := d.buildRolePermissions(role)
-		if err != nil {
-			continue
-		}
-		if existingRole, found := existing[role.Name]; found {
-			patch.toUpdate = append(patch.toUpdate, roleWithPermissions{
-				role:        existingRole,
-				permissions: perms,
-			})
-		} else {
-			newRole := Role{
-				Name: role.Name,
-			}
-			newRole.ID = role.ID
-			patch.toCreate = append(patch.toCreate, roleWithPermissions{
-				role:        newRole,
-				permissions: perms,
-			})
-		}
-	}
-	return
-}
-
-// buildRolePermissions builds permission list from a role definition.
-func (d *Domain) buildRolePermissions(role seed.Role) (perms []Permission, err error) {
-	permMap := make(map[uint]bool)
-	for _, r := range role.Resources {
-		for _, m := range r.Verbs {
-			scope := Scope{Resource: r.Name, Method: m}
-			for _, s := range scope.Expand() {
-				permID, found := d.permByScope[s.String()]
-				if !found {
-					Log.Info(
-						"Role has unknown scope.",
-						"name",
-						role.Name,
-						"scope",
-						s)
-					continue
-				}
-				permMap[permID] = true
-			}
-		}
-	}
-	for permID := range permMap {
-		perms = append(perms, Permission{
-			Model: Model{ID: permID},
-		})
-	}
-	return
-}
-
-// buildRoleMap reads all roles and builds name->ID map.
-func (d *Domain) buildRoleMap(db *gorm.DB) (err error) {
-	var list []Role
-	err = db.Find(&list).Error
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	d.roleByName = make(map[string]uint)
-	for _, role := range list {
-		d.roleByName[role.Name] = role.ID
-	}
-	return
-}
-
 // seedUsers seeds users and their role associations from users.yaml.
 // Must be called after seedRoles to ensure role map is populated.
 // Preserves existing user IDs, deletes orphaned seeded users (ID < MaxId),
 // and creates new users with static IDs from YAML.
-func (d *Domain) seedUsers(db *gorm.DB) (err error) {
+func (d *Tenant) seedUsers(db *gorm.DB) (err error) {
 	users, err := d.readUsers()
 	if err != nil {
 		return
@@ -370,37 +439,8 @@ func (d *Domain) seedUsers(db *gorm.DB) (err error) {
 	return
 }
 
-// readUsers reads user definitions from users.yaml.
-func (d *Domain) readUsers() (users []seed.User, err error) {
-	b, err := fs.ReadFile(seedDir, "users.yaml")
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	err = yaml.Unmarshal(b, &users)
-	if err != nil {
-		err = liberr.Wrap(err)
-	}
-	return
-}
-
-// fetchUsers fetches existing users from database.
-func (d *Domain) fetchUsers(db *gorm.DB) (users map[string]User, err error) {
-	var list []User
-	err = db.Find(&list).Error
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	users = make(map[string]User)
-	for _, u := range list {
-		users[u.Login] = u
-	}
-	return
-}
-
 // userPatch computes the user reconciliation patch.
-func (d *Domain) userPatch(existing map[string]User, wanted []seed.User) (patch *UserPatch) {
+func (d *Tenant) userPatch(existing map[string]User, wanted []seed.User) (patch *UserPatch) {
 	patch = &UserPatch{
 		db: d.DB,
 	}
@@ -441,24 +481,9 @@ func (d *Domain) userPatch(existing map[string]User, wanted []seed.User) (patch 
 	return
 }
 
-// buildUserRoles builds role list from a user definition.
-func (d *Domain) buildUserRoles(user seed.User) (roles []Role, err error) {
-	roleMap := make(map[uint]bool)
-	for _, roleName := range user.Roles {
-		roleID, found := d.roleByName[roleName]
-		if !found {
-			Log.Info("Role not-found: " + roleName)
-			continue
-		}
-		roleMap[roleID] = true
-	}
-	for roleID := range roleMap {
-		roles = append(roles, Role{
-			Model: Model{ID: roleID},
-		})
-	}
-	return
-}
+//
+// Patches
+//
 
 // UserPatch represents changes to reconcile users.
 type UserPatch struct {
@@ -468,6 +493,7 @@ type UserPatch struct {
 	toCreate []userWithRoles
 }
 
+// userWithRoles pairs database user with roles data.
 type userWithRoles struct {
 	user  User
 	roles []Role
@@ -518,13 +544,8 @@ func (p *UserPatch) Apply(db *gorm.DB) (err error) {
 type RolePatch struct {
 	db       *gorm.DB
 	toDelete []uint
-	toUpdate []roleWithPermissions
-	toCreate []roleWithPermissions
-}
-
-type roleWithPermissions struct {
-	role        Role
-	permissions []Permission
+	toUpdate []Role
+	toCreate []Role
 }
 
 // Apply applies the role patch to the database.
@@ -537,124 +558,19 @@ func (p *RolePatch) Apply(db *gorm.DB) (err error) {
 		}
 	}
 	for i := range p.toUpdate {
-		item := &p.toUpdate[i]
-		perms := make([]model.Permission, len(item.permissions))
-		for j := range item.permissions {
-			perms[j] = item.permissions[j]
-		}
-		err = db.Model(&item.role).Association("Permissions").Replace(perms)
+		role := &p.toUpdate[i]
+		err = db.Save(role).Error
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
 		}
 	}
 	for i := range p.toCreate {
-		item := &p.toCreate[i]
-		err = db.Create(&item.role).Error
+		role := &p.toCreate[i]
+		err = db.Create(role).Error
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
-		}
-		perms := make([]model.Permission, len(item.permissions))
-		for j := range item.permissions {
-			perms[j] = item.permissions[j]
-		}
-		err = db.Model(&item.role).Association("Permissions").Replace(perms)
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-	}
-	return
-}
-
-// PermissionPatch represents changes to reconcile permissions.
-type PermissionPatch struct {
-	db       *gorm.DB
-	toDelete []string
-	toCreate []Permission
-}
-
-// Apply applies the permission patch to the database.
-func (p *PermissionPatch) Apply(db *gorm.DB) (err error) {
-	if len(p.toDelete) > 0 {
-		err = db.Delete(&Permission{}, "scope IN ?", p.toDelete).Error
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-	}
-	for _, perm := range p.toCreate {
-		err = db.Create(&perm).Error
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-	}
-	return
-}
-
-// seedClients seeds OIDC clients from CRDs.
-// Preserves existing client IDs, deletes orphaned seeded clients (ID < LastId),
-// and creates new clients with IDs from CRD spec.
-func (d *Domain) seedClients(db *gorm.DB) (err error) {
-	existing, err := d.fetchClients(db)
-	if err != nil {
-		return
-	}
-	patch := d.clientPatch(existing, federated.Clients)
-	err = patch.Apply(db)
-	if err != nil {
-		err = liberr.Wrap(err)
-	}
-	return
-}
-
-// fetchClients fetches existing clients from database.
-func (d *Domain) fetchClients(db *gorm.DB) (clients map[string]IdpClient, err error) {
-	var list []IdpClient
-	err = db.Find(&list).Error
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	clients = make(map[string]IdpClient)
-	for _, c := range list {
-		clients[c.ClientId] = c
-	}
-	return
-}
-
-// clientPatch computes the client reconciliation patch from CRD clients.
-func (d *Domain) clientPatch(existing map[string]IdpClient, wanted []as.IdpClient) (patch *IdpClientPatch) {
-	patch = &IdpClientPatch{
-		db: d.DB,
-	}
-	wantedMap := make(map[string]as.IdpClient)
-	for _, client := range wanted {
-		wantedMap[client.ClientId] = client
-	}
-	for clientId, client := range existing {
-		if client.ID < LastId {
-			if _, found := wantedMap[clientId]; !found {
-				patch.toDelete = append(patch.toDelete, client.ID)
-			}
-		}
-	}
-	for _, settingsClient := range wanted {
-		if existingClient, found := existing[settingsClient.ClientId]; found {
-			patch.toUpdate = append(patch.toUpdate, clientWithSettings{
-				client:   existingClient,
-				settings: settingsClient,
-			})
-		} else {
-			newClient := IdpClient{}
-			newClient.With(&settingsClient)
-			newClient.Subject = uuid.New().String()
-			patch.toCreate = append(patch.toCreate, clientWithSettings{
-				client:   newClient,
-				settings: settingsClient,
-			})
 		}
 	}
 	return

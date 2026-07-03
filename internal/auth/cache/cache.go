@@ -398,7 +398,6 @@ type Data struct {
 	refreshOnce sync.Once
 	refreshed   time.Time
 	//
-	permById         map[uint]*Permission
 	roleById         map[uint]*Role
 	roleByName       map[string]*Role
 	userById         map[uint]*User
@@ -417,7 +416,6 @@ type Data struct {
 
 // reset creates new maps.
 func (d *Data) reset() {
-	d.permById = make(map[uint]*Permission)
 	d.roleById = make(map[uint]*Role)
 	d.roleByName = make(map[string]*Role)
 	d.userById = make(map[uint]*User)
@@ -441,7 +439,6 @@ func (d *Data) clone() *Data {
 	return &Data{
 		refreshOnce:      sync.Once{},
 		refreshed:        d.refreshed,
-		permById:         cloneMap(d.permById),
 		roleById:         cloneMap(d.roleById),
 		roleByName:       cloneMap(d.roleByName),
 		userById:         cloneMap(d.userById),
@@ -462,10 +459,6 @@ func (d *Data) clone() *Data {
 // refresh cached content.
 func (d *Data) refresh(db *gorm.DB) (err error) {
 	d.reset()
-	err = d.getPerms(db)
-	if err != nil {
-		return
-	}
 	err = d.getRoles(db)
 	if err != nil {
 		return
@@ -491,20 +484,6 @@ func (d *Data) refresh(db *gorm.DB) (err error) {
 
 	d.refreshed = time.Now()
 
-	return
-}
-
-// getPerms fetches permissions from the DB and populates.
-func (d *Data) getPerms(db *gorm.DB) (err error) {
-	list := make([]*Permission, 0)
-	err = db.Find(&list).Error
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	for _, m := range list {
-		d.permById[m.ID] = m
-	}
 	return
 }
 
@@ -578,7 +557,7 @@ func (d *Data) getClients(db *gorm.DB) (err error) {
 	return
 }
 
-// getTokens fetches permissions from the DB and populates.
+// getTokens fetches tokens from the DB and populates.
 func (d *Data) getTokens(db *gorm.DB) (err error) {
 	list := []*Token{}
 	db = db.Preload(clause.Associations)
@@ -670,9 +649,7 @@ func (d *Data) addUserScopes(m *User) {
 			Log.Info(err.Error())
 			continue
 		}
-		for _, p := range r.Permissions {
-			scopes = append(scopes, p.Scope)
-		}
+		scopes = append(scopes, r.Scopes...)
 	}
 	scopes = uniqueStrings(scopes)
 	sort.Strings(scopes)

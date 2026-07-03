@@ -42,12 +42,15 @@ func (r *Scope) Match(resource string, method string) (b bool) {
 
 // Expand returns scopes with expanded wildcards.
 func (r *Scope) Expand() (expanded []Scope) {
+	return r.ExpandWith(Domain.Resources())
+}
+
+// ExpandWith returns scopes with expanded wildcards using provided resources.
+func (r *Scope) ExpandWith(resources []string) (expanded []Scope) {
 	var nouns []string
 	var methods []string
 	if r.Resource == "*" {
-		for n := range registeredResources {
-			nouns = append(nouns, n)
-		}
+		nouns = resources[:]
 	} else {
 		nouns = []string{r.Resource}
 	}

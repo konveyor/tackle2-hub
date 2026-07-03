@@ -1488,7 +1488,6 @@ func setupDB() (db *gorm.DB, err error) {
 		&model.Rule{},
 		&model.Target{},
 		&model.AnalysisProfile{},
-		&model.Permission{},
 		&model.Role{},
 		&model.User{},
 		&model.Token{},

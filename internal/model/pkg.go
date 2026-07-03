@@ -56,7 +56,6 @@ type Ticket = model.Ticket
 type Tracker = model.Tracker
 type User = model.User
 type Role = model.Role
-type Permission = model.Permission
 type IdpClient = model.IdpClient
 type RsaKey = model.RsaKey
 type IdpIdentity = model.IdpIdentity

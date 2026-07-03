@@ -12,22 +12,23 @@ import (
 func TestRole(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	permissions, err := client.Permission.List()
-	g.Expect(len(permissions)).Should(BeNumerically(">=", 2))
+	// Get available scopes from the hub
+	scopes, err := client.Scope.List()
 	g.Expect(err).To(BeNil())
+	g.Expect(len(scopes)).Should(BeNumerically(">=", 2))
 
-	// Define the role to create with permissions
-	role := &api.Role{
-		Name: "testrole",
-		Permissions: []api.Ref{
-			{ID: permissions[0].ID},
-			{ID: permissions[1].ID},
-		},
-	}
-
-	// Get seeded
+	// Get seeded roles
 	seeded, err := client.Role.List()
 	g.Expect(err).To(BeNil())
+
+	// Define the role to create with scopes
+	role := &api.Role{
+		Name: "testrole",
+		Scopes: []string{
+			scopes[0].Name,
+			scopes[1].Name,
+		},
+	}
 
 	// CREATE: Create the role
 	err = client.Role.Create(role)
@@ -47,16 +48,17 @@ func TestRole(t *testing.T) {
 	retrieved, err := client.Role.Get(role.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
-	eq, report := cmp.Eq(role, retrieved, "Permissions.Name")
+	eq, report := cmp.Eq(role, retrieved)
 	g.Expect(eq).To(BeTrue(), report)
 
-	// Verify permissions are associated
-	g.Expect(len(retrieved.Permissions)).To(Equal(2))
-	g.Expect(retrieved.Permissions).To(ContainElement(api.Ref{ID: permissions[0].ID, Name: permissions[0].Name}))
-	g.Expect(retrieved.Permissions).To(ContainElement(api.Ref{ID: permissions[1].ID, Name: permissions[1].Name}))
+	// Verify scopes are associated
+	g.Expect(len(retrieved.Scopes)).To(Equal(2))
+	g.Expect(retrieved.Scopes).To(ContainElement(scopes[0].Name))
+	g.Expect(retrieved.Scopes).To(ContainElement(scopes[1].Name))
 
 	// UPDATE: Modify the role
 	role.Name = "updatedrole"
+	role.Scopes = []string{scopes[0].Name}
 
 	err = client.Role.Update(role)
 	g.Expect(err).To(BeNil())
@@ -65,7 +67,7 @@ func TestRole(t *testing.T) {
 	updated, err := client.Role.Get(role.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(updated).NotTo(BeNil())
-	eq, report = cmp.Eq(role, updated, "UpdateUser", "Permissions.Name")
+	eq, report = cmp.Eq(role, updated, "UpdateUser")
 	g.Expect(eq).To(BeTrue(), report)
 
 	// DELETE: Remove the role
