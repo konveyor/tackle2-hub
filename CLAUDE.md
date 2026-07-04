@@ -285,6 +285,7 @@ login-page/
     strings.json        # Branding strings: app title, page titles, image paths
     logo.svg            # Default brand logo
   src/
+    index.html          # HTML template source (contains Go template actions)
     index.tsx           # Entry point; reads window.__LOGIN_CONFIG__ and routes to a page
     types.ts            # LoginConfig interface (runtime config injected by hub)
     branding.ts         # Typed access to build-time branding via __BRANDING_STRINGS__
@@ -346,9 +347,11 @@ RUN cd /opt/app/login-page && BRANDING=./my-custom-branding npm run build
 
 ### Runtime Configuration Injection
 
-The hub serves `dist/index.html` and replaces the placeholder
-`window.__LOGIN_CONFIG__=null` with a JSON object before writing the response.
-This carries per-request dynamic values; it does **not** carry branding.
+The rspack build outputs `dist/index.html.tmpl` — a Go `text/template` file.
+The source `src/index.html` contains Go template actions (e.g. `{{ .ConfigJSON }}`)
+which rspack passes through unchanged (HTML minification is disabled for this
+reason).  At startup the `loginpage` package parses the template once; on each
+request `loginpage.ServeHTML` executes the template with JSON-serialized config.
 
 **`LoginConfig` shape** (TypeScript → `internal/loginpage.Config` in Go):
 
@@ -371,7 +374,7 @@ The Go API is `loginpage.ServeHTML(w http.ResponseWriter, cfg loginpage.Config)`
 
 The compiled JS/CSS/font assets are served under `/oidc/assets/` by the hub's
 OIDC handler (`internal/api/auth.go`).  The rspack `publicPath` is set to
-`/oidc/assets/` in production builds so that all asset references in `index.html`
+`/oidc/assets/` in production builds so that all asset references in the HTML
 use that prefix.
 
 ### Adding a New Page Type
@@ -391,7 +394,8 @@ use that prefix.
 | Bundler | Rspack 2 with `builtin:swc-loader` |
 | Branding injection | `DefinePlugin` (`__BRANDING_STRINGS__`) |
 | Asset copy | `CopyRspackPlugin` |
-| HTML template | `HtmlRspackPlugin` |
+| HTML template | `HtmlRspackPlugin` → outputs `index.html.tmpl` |
+| Config injection | Go `text/template` (parsed at init from embedded `.tmpl`) |
 | Go embedding | `go:embed` in `internal/loginpage/embed.go` |
 
 ---

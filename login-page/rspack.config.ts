@@ -74,7 +74,10 @@ const config: Configuration = {
     new TsCheckerRspackPlugin(),
     new rspack.HtmlRspackPlugin({
       template: "./src/index.html",
-      filename: "index.html",
+      filename: "index.html.tmpl",
+      // Minification is disabled so that Go template actions ({{ .ConfigJSON }})
+      // in the source HTML pass through to the output unchanged.
+      minify: false,
       // TODO Add support for branding.styles.favicon
       // TODO Add support for branding.styles.themeCss
     }),

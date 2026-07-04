@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"io/fs"
 	"net/http"
-	"strings"
+	"text/template"
 
 	liberr "github.com/jortel/go-utils/error"
 )
@@ -35,31 +35,36 @@ type FederatedIdpConfig struct {
 	LoginURL string `json:"loginUrl"`
 }
 
-// configPlaceholder is the exact string emitted by rspack's minifier for the
-// placeholder in src/index.html.  The hub replaces this with the real config
-// before writing the response.
-const configPlaceholder = "window.__LOGIN_CONFIG__=null"
+// templateData carries values for the Go template execution.
+type templateData struct {
+	ConfigJSON string
+}
 
-// ServeHTML reads index.html from the embedded FS, injects the supplied config
-// as window.__LOGIN_CONFIG__, and writes the result to w.
-func ServeHTML(w http.ResponseWriter, cfg Config) (err error) {
-	raw, err := fs.ReadFile(FS, "dist/index.html")
+// pageTmpl is the parsed Go template for the login page HTML.
+// It is parsed once from the embedded dist/index.html.tmpl at init.
+var pageTmpl *template.Template
+
+func init() {
+	raw, err := fs.ReadFile(FS, "dist/index.html.tmpl")
 	if err != nil {
-		err = liberr.Wrap(err)
-		return
+		panic(err)
 	}
+	pageTmpl = template.Must(template.New("index").Parse(string(raw)))
+}
 
+// ServeHTML executes the embedded HTML template with the supplied config
+// injected as window.__LOGIN_CONFIG__ and writes the result to w.
+func ServeHTML(w http.ResponseWriter, cfg Config) (err error) {
 	configJSON, err := json.Marshal(cfg)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
 
-	injected := "window.__LOGIN_CONFIG__=" + string(configJSON)
-	html := strings.Replace(string(raw), configPlaceholder, injected, 1)
-
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, err = w.Write([]byte(html))
+	err = pageTmpl.Execute(w, templateData{
+		ConfigJSON: string(configJSON),
+	})
 	if err != nil {
 		err = liberr.Wrap(err)
 	}
@@ -70,7 +75,8 @@ func ServeHTML(w http.ResponseWriter, cfg Config) (err error) {
 // (JS, CSS, fonts, images) from the embedded FS.  The handler strips the
 // /assets/ prefix from the request path before looking up the file so that
 // a request for /oidc/assets/main.abc123.js resolves to dist/main.abc123.js.
-func AssetHandler() http.Handler {
+func AssetHandler() (handler http.Handler) {
 	assets, _ := fs.Sub(FS, "dist")
-	return http.StripPrefix("/oidc/assets/", http.FileServer(http.FS(assets)))
+	handler = http.StripPrefix("/oidc/assets/", http.FileServer(http.FS(assets)))
+	return
 }
