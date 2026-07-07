@@ -1,5 +1,10 @@
 ARG SEED_ROOT=/opt/app-root/src/tackle2-seed
 
+FROM quay.io/konveyor/static-report as report
+
+FROM quay.io/centos/centos:stream9 as centos
+RUN dnf -y install epel-release && dnf -y install tini
+
 FROM registry.access.redhat.com/ubi10/nodejs-22:latest as login-page
 COPY --chown=1001:0 login-page/ .
 RUN npm ci && npm run build
@@ -14,11 +19,6 @@ ARG SEED_ROOT
 RUN if [ ! -d "${SEED_ROOT}" ]; then \
       git clone --branch ${SEED_BRANCH} https://github.com/${SEED_PROJECT} ${SEED_ROOT}; \
     fi
-
-FROM quay.io/konveyor/static-report as report
-
-FROM quay.io/centos/centos:stream9 as centos
-RUN dnf -y install epel-release && dnf -y install tini
 
 FROM registry.access.redhat.com/ubi10/ubi-minimal
 RUN mkdir -p /hub && chmod 0777 /hub
