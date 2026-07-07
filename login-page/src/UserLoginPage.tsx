@@ -53,24 +53,25 @@ export const UserLoginPage: React.FC<UserLoginPageProps> = ({ config }) => {
       }
       footerListVariants={ListVariant.inline}
     >
-      <form method="post" action={formAction ?? ""}>
-        <LoginForm
-          usernameLabel="Username"
-          usernameValue={username}
-          onChangeUsername={(_e, v) => setUsername(v)}
-          isValidUsername={!hasError}
-          passwordLabel="Password"
-          passwordValue={password}
-          onChangePassword={(_e, v) => setPassword(v)}
-          isValidPassword={!hasError}
-          showHelperText={hasError}
-          helperText={helperText}
-          helperTextIcon={<ExclamationCircleIcon />}
-          loginButtonLabel="Log in"
-          isShowPasswordEnabled
-          // onLoginButtonClick is omitted; native form submit handles the POST
-        />
-      </form>
+      <LoginForm
+        method="post"
+        action={formAction ?? ""}
+        id="pf-login-form-id"
+        usernameLabel="Username"
+        usernameValue={username}
+        onChangeUsername={(_e, v) => setUsername(v)}
+        isValidUsername={!hasError}
+        passwordLabel="Password"
+        passwordValue={password}
+        onChangePassword={(_e, v) => setPassword(v)}
+        isValidPassword={!hasError}
+        showHelperText={hasError}
+        helperText={helperText}
+        helperTextIcon={<ExclamationCircleIcon />}
+        loginButtonLabel="Log in"
+        isShowPasswordEnabled
+        // onLoginButtonClick is omitted; native form submit handles the POST
+      />
     </PFLoginPage>
   );
 };

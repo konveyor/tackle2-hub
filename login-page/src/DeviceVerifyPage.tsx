@@ -42,8 +42,7 @@ export const DeviceVerifyPage: React.FC<DeviceVerifyPageProps> = ({ config }) =>
         title="Enter the user code shown on your device to grant access."
         style={{ marginBottom: "var(--pf-t--global--spacer--md)" }}
       />
-      <form method="post" action={deviceFormAction ?? ""}>
-        <Form>
+        <Form method="post" action={deviceFormAction ?? ""} id="pf-device-verify-form-id">
           <FormGroup label="User Code" fieldId="userCode">
             <TextInput
               id="userCode"
@@ -66,7 +65,6 @@ export const DeviceVerifyPage: React.FC<DeviceVerifyPageProps> = ({ config }) =>
             </Button>
           </ActionGroup>
         </Form>
-      </form>
     </PFLoginPage>
   );
 };
