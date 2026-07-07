@@ -5,6 +5,9 @@ GOSWAG = $(GOBIN)/swag
 CONTROLLERGEN = $(GOBIN)/controller-gen
 IMG   ?= tackle2-hub:latest
 HUB_BASE_URL ?= http://localhost:8080
+LOGIN_PAGE_DIR = $(CURDIR)/login-page
+LOGIN_PAGE_DIST = $(LOGIN_PAGE_DIR)/dist
+export LOGIN_PAGE_PATH ?= $(LOGIN_PAGE_DIST)
 
 PKG = ./internal/... \
       ./shared/... \
@@ -26,7 +29,7 @@ vet:
 	go vet $(PKG)
 
 # Build hub
-hub: generate fmt vet
+hub: login-page generate fmt vet
 	go build $(BUILD)
 
 # Build image
@@ -35,17 +38,34 @@ docker-build:
 
 podman-build:
 	podman build -t $(IMG) .
-	
+
 # Build manager binary with compiler optimizations disabled
-debug: generate fmt vet
+debug: login-page generate fmt vet
 	go build -gcflags=all="-N -l" $(BUILD)
 
 docker: vet
 	go build $(BUILD)
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
-run: fmt vet
+run: login-page fmt vet
 	go run ./cmd/main.go
+
+# Build the login page frontend.
+.PHONY: login-page
+login-page: $(LOGIN_PAGE_DIST)
+
+$(LOGIN_PAGE_DIR)/node_modules: $(LOGIN_PAGE_DIR)/package-lock.json $(LOGIN_PAGE_DIR)/package.json
+	cd $(LOGIN_PAGE_DIR) && npm ci
+	@touch $@
+
+$(LOGIN_PAGE_DIST): $(LOGIN_PAGE_DIR)/node_modules $(shell find $(LOGIN_PAGE_DIR)/src $(LOGIN_PAGE_DIR)/branding -type f 2>/dev/null)
+	cd $(LOGIN_PAGE_DIR) && npm run build
+	@touch $@
+
+# Remove login page build artifacts.
+.PHONY: clean-login-page
+clean-login-page:
+	cd $(LOGIN_PAGE_DIR) && npm run clean
 
 .PHONY: login
 login: bin/login
@@ -144,6 +164,7 @@ test-binding:
 	for pkg in $$(go list ./test/binding/...); do \
 	  HUB_BASE_URL="$(HUB_BASE_URL)" go test -count=1 -v -failfast -parallel=1 "$$pkg" || exit 1; \
 	done
+
 test-auth:
 	for pkg in $$(go list ./test/auth/...); do \
 	  HUB_BASE_URL="$(HUB_BASE_URL)" go test -count=1 -v -failfast "$$pkg" || exit 1; \
