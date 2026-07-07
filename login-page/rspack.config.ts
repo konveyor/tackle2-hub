@@ -20,11 +20,10 @@ console.log("Using branding from:", brandingPath);
 
 const isDev = process.env.NODE_ENV === "development";
 
-// Build output goes into the Go embed package so that `go:embed dist` in
-// internal/loginpage/embed.go picks it up directly. The frontend source
-// intentionally lives in login-page/ (project root) while the compiled
-// artifacts are placed where the Go build needs them.
-const distPath = pathTo("..", "internal", "loginpage", "dist");
+// Build output stays in login-page/dist/ local to this project.
+// The Dockerfile copies it to /opt/app/login-page in the container image.
+// For local development, set LOGIN_PAGE_PATH=login-page/dist when running the hub.
+const distPath = pathTo("dist");
 
 const config: Configuration = {
   mode: isDev ? "development" : "production",

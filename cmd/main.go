@@ -17,6 +17,7 @@ import (
 	"github.com/konveyor/tackle2-hub/internal/importer"
 	"github.com/konveyor/tackle2-hub/internal/k8s"
 	crd "github.com/konveyor/tackle2-hub/internal/k8s/api"
+	"github.com/konveyor/tackle2-hub/internal/loginpage"
 	"github.com/konveyor/tackle2-hub/internal/metrics"
 	"github.com/konveyor/tackle2-hub/internal/migration"
 	"github.com/konveyor/tackle2-hub/internal/model"
@@ -128,6 +129,7 @@ func main() {
 	if err != nil {
 		return
 	}
+	loginpage.Setup()
 	// Document migration.
 	jsdMigrator := migration.DocumentMigrator{
 		DB:     db,

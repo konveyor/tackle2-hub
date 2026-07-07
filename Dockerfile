@@ -1,5 +1,9 @@
 ARG SEED_ROOT=/opt/app-root/src/tackle2-seed
 
+FROM registry.access.redhat.com/ubi10/nodejs-22:latest as login-page
+COPY --chown=1001:0 login-page/ .
+RUN npm ci && npm run build
+
 FROM registry.access.redhat.com/ubi10/go-toolset:latest as builder
 ENV GOPATH=$APP_ROOT
 COPY --chown=1001:0 . .
@@ -26,6 +30,7 @@ COPY --from=centos /usr/bin/tini /usr/bin/tini
 COPY --from=builder /opt/app-root/src/bin/hub /usr/local/bin/tackle-hub
 COPY --from=builder ${SEED_ROOT}/resources/ /tmp/seed
 COPY --from=report /usr/local/static-report /tmp/analysis/report
+COPY --from=login-page /opt/app-root/src/dist /opt/app/login-page
 
 RUN echo "${VERSION}" > /etc/hub-build
 

@@ -38,6 +38,7 @@ const (
 	EnvDisconnected            = "DISCONNECTED"
 	EnvAnalysisReportPath      = "ANALYSIS_REPORT_PATH"
 	EnvAnalysisArchiverEnabled = "ANALYSIS_ARCHIVER_ENABLED"
+	EnvLoginPagePath           = "LOGIN_PAGE_PATH"
 	EnvDiscoveryLabel          = "DISCOVERY_LABEL"
 	EnvLogMaster               = "LOG_MASTER"
 	EnvLogMigration            = "LOG_MIGRATION"
@@ -118,6 +119,10 @@ type Hub struct {
 	Analysis struct {
 		ReportPath      string
 		ArchiverEnabled bool
+	}
+	// LoginPage settings.
+	LoginPage struct {
+		Path string
 	}
 	// Discovery settings.
 	Discovery struct {
@@ -312,6 +317,10 @@ func (r *Hub) Load() (err error) {
 	r.Analysis.ReportPath, found = os.LookupEnv(EnvAnalysisReportPath)
 	if !found {
 		r.Analysis.ReportPath = "/tmp/analysis/report"
+	}
+	r.LoginPage.Path, found = os.LookupEnv(EnvLoginPagePath)
+	if !found {
+		r.LoginPage.Path = "/opt/app/login-page"
 	}
 	s, found = os.LookupEnv(EnvAnalysisArchiverEnabled)
 	if found {

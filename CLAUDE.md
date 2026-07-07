@@ -292,24 +292,28 @@ login-page/
     LoginPage.tsx       # PF6 login form (username/password + optional federated IdP)
     DeviceVerifyPage.tsx # PF6 device code entry form
     DeviceSuccessPage.tsx # PF6 device authorization success page
-  dist/  →  internal/loginpage/dist/   # Build output (see below)
+  dist/                 # Build output (gitignored; see below)
 ```
 
-> The rspack `output.path` is set to `../internal/loginpage/dist/`, so the
-> frontend build writes directly into the Go embed package.  There is no
-> separate copy step.
+> The rspack `output.path` is `login-page/dist/` (local to the frontend
+> project).  The Dockerfile copies it to `/opt/app/login-page` in the
+> container image.  The Go binary has no compile-time dependency on the
+> frontend build.
 
 ### Building the Frontend
 
 ```bash
 cd login-page
 npm install
-npm run build          # outputs to internal/loginpage/dist/
+npm run build          # outputs to login-page/dist/
 ```
 
-The Go binary embeds `internal/loginpage/dist/` at compile time via the
-`//go:embed dist` directive in `internal/loginpage/embed.go`.  After running
-`npm run build` a `go build` picks up the new assets automatically.
+The hub reads assets from disk at runtime from the path configured by
+`LOGIN_PAGE_PATH` (default `/opt/app/login-page`).  There is no `go:embed`
+step — `go build` succeeds on a fresh clone without a frontend build.
+
+**Local development:** set `LOGIN_PAGE_PATH=login-page/dist` when running
+the hub binary so it serves the locally built assets.
 
 ### Custom Branding
 
@@ -338,11 +342,13 @@ Image assets (SVGs, PNGs) in the branding directory are copied to `dist/branding
 by `CopyRspackPlugin`.  Reference them from `strings.json` using the path
 `branding/<filename>` (relative to the served root).
 
-**Dockerfile example:**
+**Dockerfile example (custom branding at image build time):**
 
 ```dockerfile
-COPY my-custom-branding/ /opt/app/login-page/my-custom-branding/
-RUN cd /opt/app/login-page && BRANDING=./my-custom-branding npm run build
+FROM registry.access.redhat.com/ubi10/nodejs-22:latest as login-page
+COPY --chown=1001:0 login-page/ .
+COPY --chown=1001:0 my-custom-branding/ my-custom-branding/
+RUN npm ci && BRANDING=./my-custom-branding npm run build
 ```
 
 ### Runtime Configuration Injection
@@ -350,8 +356,13 @@ RUN cd /opt/app/login-page && BRANDING=./my-custom-branding npm run build
 The rspack build outputs `dist/index.html.tmpl` — a Go `text/template` file.
 The source `src/index.html` contains Go template actions (e.g. `{{ .ConfigJSON }}`)
 which rspack passes through unchanged (HTML minification is disabled for this
-reason).  At startup the `loginpage` package parses the template once; on each
-request `loginpage.ServeHTML` executes the template with JSON-serialized config.
+reason).
+
+At hub startup, `loginpage.Setup()` reads `index.html.tmpl` from the
+`LOGIN_PAGE_PATH` directory and parses it with Go's `text/template` package.
+If the file is not found, an error is logged and a plain error page is served
+instead (the hub does not panic).  On each request, `loginpage.ServeHTML`
+executes the cached template with the JSON-serialized config.
 
 **`LoginConfig` shape** (TypeScript → `internal/loginpage.Config` in Go):
 
@@ -395,8 +406,9 @@ use that prefix.
 | Branding injection | `DefinePlugin` (`__BRANDING_STRINGS__`) |
 | Asset copy | `CopyRspackPlugin` |
 | HTML template | `HtmlRspackPlugin` → outputs `index.html.tmpl` |
-| Config injection | Go `text/template` (parsed at init from embedded `.tmpl`) |
-| Go embedding | `go:embed` in `internal/loginpage/embed.go` |
+| Config injection | Go `text/template` (read from disk at startup via `LOGIN_PAGE_PATH`) |
+| Asset serving | `http.FileServer(http.Dir(LoginPage.Path))` |
+| Runtime path | `LOGIN_PAGE_PATH` env var (default `/opt/app/login-page`) |
 
 ---
 
