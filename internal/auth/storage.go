@@ -816,8 +816,8 @@ func (r *Login) parseCredentials() (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
-	r.login = r.request.PostFormValue("login")
-	r.password = r.request.PostFormValue("password")
+	r.login = r.request.PostFormValue("pf-login-username-id")
+	r.password = r.request.PostFormValue("pf-login-password-id")
 	return
 }
 
