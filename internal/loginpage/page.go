@@ -5,7 +5,9 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 	"text/template"
+	"time"
 
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
@@ -49,28 +51,89 @@ type templateData struct {
 // It is nil when the login page is not configured (assets not present).
 var pageTmpl *template.Template
 
+// tmplMu protects pageTmpl and tmplModTime from concurrent access.
+var tmplMu sync.RWMutex
+
+// tmplModTime records the modification time of the template file when it was
+// last loaded so that changes can be detected on subsequent requests.
+var tmplModTime time.Time
+
+// tmplPath returns the absolute path to the login page template file.
+func tmplPath() (path string) {
+	path = filepath.Join(settings.Settings.LoginPage.Path, "index.html.tmpl")
+	return
+}
+
 // Setup reads and parses the HTML template from the configured LoginPage.Path.
 // If the template file is not found, the error is logged and pageTmpl is left
 // nil so that ServeHTML returns a self-describing error page instead of
 // panicking. Setup must be called once at hub startup.
 func Setup() {
-	path := filepath.Join(settings.Settings.LoginPage.Path, "index.html.tmpl")
+	path := tmplPath()
+	info, err := os.Stat(path)
+	if err != nil {
+		Log.Error(err, "Login page template not found; OIDC login page will not be available.", "path", path)
+		return
+	}
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		Log.Error(err, "Login page template not found; OIDC login page will not be available.", "path", path)
 		return
 	}
-	pageTmpl, err = template.New("index").Parse(string(raw))
+	parsed, err := template.New("index").Parse(string(raw))
 	if err != nil {
 		Log.Error(err, "Failed to parse login page template.", "path", path)
+		return
 	}
+	tmplMu.Lock()
+	defer tmplMu.Unlock()
+	pageTmpl = parsed
+	tmplModTime = info.ModTime()
+}
+
+// reload checks whether the template file has been modified since last loaded
+// and reparses it when a change is detected.
+func reload() {
+	path := tmplPath()
+	info, err := os.Stat(path)
+	if err != nil {
+		return
+	}
+	tmplMu.RLock()
+	unchanged := info.ModTime().Equal(tmplModTime)
+	tmplMu.RUnlock()
+	if unchanged {
+		return
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		Log.Error(err, "Failed to read login page template on reload.", "path", path)
+		return
+	}
+	parsed, err := template.New("index").Parse(string(raw))
+	if err != nil {
+		Log.Error(err, "Failed to parse login page template on reload.", "path", path)
+		return
+	}
+	tmplMu.Lock()
+	defer tmplMu.Unlock()
+	pageTmpl = parsed
+	tmplModTime = info.ModTime()
+	Log.Info("Login page template reloaded.", "path", path)
 }
 
 // ServeHTML executes the HTML template with the supplied config injected as
 // window.__LOGIN_CONFIG__ and writes the result to w.  When the login page is
-// not configured, a plain error page is written instead.
+// not configured, a plain error page is written instead. The template is
+// automatically reloaded when the file on disk has changed.
 func ServeHTML(w http.ResponseWriter, cfg Config) (err error) {
-	if pageTmpl == nil {
+	reload()
+
+	tmplMu.RLock()
+	tmpl := pageTmpl
+	tmplMu.RUnlock()
+
+	if tmpl == nil {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusInternalServerError)
 		_, err = w.Write([]byte(unconfiguredPage))
@@ -87,7 +150,7 @@ func ServeHTML(w http.ResponseWriter, cfg Config) (err error) {
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err = pageTmpl.Execute(w, templateData{
+	err = tmpl.Execute(w, templateData{
 		ConfigJSON: string(configJSON),
 	})
 	if err != nil {
