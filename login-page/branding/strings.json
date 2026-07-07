@@ -15,7 +15,7 @@
     "successMessage": "You have successfully authorized the device. You may close this window."
   },
   "styles": {
-    "brandImage": "branding/logo.svg",
+    "brandImage": "{{publicPath}}branding/logo.svg",
     "backgroundImage": "",
     "favicon": "",
     "themeCss": ""

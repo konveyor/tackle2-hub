@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import Handlebars from "handlebars";
 import { rspack } from "@rspack/core";
 import type { Configuration } from "@rspack/core";
 import { TsCheckerRspackPlugin } from "ts-checker-rspack-plugin";
@@ -13,9 +14,6 @@ const pathTo = (...parts: string[]) => path.resolve(__dirname, ...parts);
 // This allows container image builds to swap in custom branding without changing source.
 const baseBrandingPath = process.env.BRANDING ?? "./branding";
 const brandingPath = pathTo(baseBrandingPath);
-const brandingStrings = JSON.parse(
-  readFileSync(path.resolve(brandingPath, "strings.json"), "utf8")
-);
 console.log("Using branding from:", brandingPath);
 
 const isDev = process.env.NODE_ENV === "development";
@@ -24,6 +22,15 @@ const isDev = process.env.NODE_ENV === "development";
 // The Dockerfile copies it to /opt/app/login-page in the container image.
 // For local development, set LOGIN_PAGE_PATH=login-page/dist when running the hub.
 const distPath = pathTo("dist");
+
+const publicPath = isDev ? "/" : "/oidc/assets/";
+
+// Compile strings.json as a Handlebars template so that {{publicPath}} placeholders
+// are resolved to the correct asset prefix for the build mode.
+const brandingRaw = readFileSync(path.resolve(brandingPath, "strings.json"), "utf8");
+const brandingStrings = JSON.parse(
+  Handlebars.compile(brandingRaw)({ publicPath })
+);
 
 const config: Configuration = {
   mode: isDev ? "development" : "production",
@@ -34,7 +41,7 @@ const config: Configuration = {
     path: distPath,
     // /oidc/assets/ matches the static file handler registered in internal/api/auth.go.
     // In dev mode, assets are served by the rspack dev server at its own port.
-    publicPath: isDev ? "/" : "/oidc/assets/",
+    publicPath,
     filename: isDev ? "[name].js" : "[name].[contenthash:8].js",
     cssFilename: isDev ? "[name].css" : "[name].[contenthash:8].css",
     clean: true,
