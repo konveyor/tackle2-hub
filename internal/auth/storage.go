@@ -787,6 +787,12 @@ func (r *Login) complete() (err error) {
 	}
 
 	if r.login == "" || r.password == "" {
+		if r.isExpired() {
+			if rErr := r.renewAuthRequest(); rErr != nil {
+				err = rErr
+				return
+			}
+		}
 		err = r.renderPage()
 		return
 	}
@@ -804,6 +810,14 @@ func (r *Login) complete() (err error) {
 
 	err = r.updateAuthRequest()
 	if err != nil {
+		if rErr := r.renewAuthRequest(); rErr != nil {
+			return
+		}
+		r.authErrorMsg = "Login attempt timed out, please login again."
+		if rErr := r.renderPage(); rErr != nil {
+			Log.Error(rErr, "Failed to render login page after timeout.")
+		}
+		err = nil
 		return
 	}
 
@@ -898,6 +912,43 @@ func (r *Login) updateAuthRequest() (err error) {
 	r.authReq.idpRefreshToken = r.password
 	r.authReq.issued = time.Now()
 	r.authReq.done = true
+	return
+}
+
+// renewAuthRequest creates a new auth request from the expired one's OIDC
+// parameters and updates r.authReqId to the new ID. Returns an error when the
+// original request is no longer in the map and cannot be renewed.
+func (r *Login) renewAuthRequest() (err error) {
+	r.storage.mutex.Lock()
+	defer r.storage.mutex.Unlock()
+	expired, found := r.storage.authReqById[r.authReqId]
+	if !found {
+		err = liberr.Wrap(errors.New("authRequest not found; cannot renew"))
+		return
+	}
+	now := time.Now()
+	newId := r.storage.genId()
+	renewed := &AuthRequest{
+		AuthRequest: expired.AuthRequest,
+		requestId:   newId,
+		issued:      now,
+		expiration:  now.Add(time.Hour),
+	}
+	delete(r.storage.authReqById, r.authReqId)
+	delete(r.storage.authReqByCode, expired.authCode)
+	r.storage.authReqById[newId] = renewed
+	r.authReqId = newId
+	return
+}
+
+// isExpired reports whether the current auth request is expired or absent.
+func (r *Login) isExpired() (expired bool) {
+	r.storage.mutex.Lock()
+	defer r.storage.mutex.Unlock()
+	authReq, found := r.storage.authReqById[r.authReqId]
+	if !found || time.Now().After(authReq.expiration) {
+		expired = true
+	}
 	return
 }
 
