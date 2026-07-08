@@ -66,3 +66,30 @@ spec:
     - openid
     - profile
     - email
+
+---
+# web-ui-with-secret client (confidential, with secret reference for testing)
+apiVersion: tackle.konveyor.io/v1alpha1
+kind: IdpClient
+metadata:
+  name: web-ui-with-secret
+  namespace: konveyor-tackle
+spec:
+  id: 4
+  clientId: web-ui-with-secret
+  clientSecret:
+    kind: Secret
+    name: web-ui-secret
+    namespace: konveyor-tackle
+  applicationType: web
+  grants:
+    - urn:ietf:params:oauth:grant-type:jwt-bearer
+    - authorization_code
+    - refresh_token
+  redirecturis:
+    - ${issuer.proto}://${issuer.host}{,*}/**
+  scopes:
+    - offline_access
+    - openid
+    - profile
+    - email
