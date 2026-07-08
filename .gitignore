@@ -6,3 +6,4 @@ hack/tool/tackle-config.yml
 .vscode/
 login-page/node_modules/
 login-page/dist/
+.run/
