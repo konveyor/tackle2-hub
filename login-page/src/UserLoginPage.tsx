@@ -42,11 +42,15 @@ export const UserLoginPage: React.FC<UserLoginPageProps> = ({ config }) => {
 
   return (
     <PFLoginPage
-      brandImgSrc={styles?.brandImage ?? ""}
-      brandImgAlt={application?.name ?? application?.title ?? ""}
-      backgroundImgSrc={styles?.backgroundImage ?? ""}
       loginTitle={loginPage?.title ?? "Log in to your account"}
       loginSubtitle={loginPage?.subtitle}
+      backgroundImgSrc={styles?.backgroundImage ?? ""}
+      brandImgProps={{
+        src: styles?.brandImage ?? "",
+        alt: application?.name ?? application?.title ?? "",
+        widths: { default: "260px" }
+      }}
+      textContent={loginPage?.textContent ?? ""}
       socialMediaLoginContent={socialLoginContent}
       socialMediaLoginAriaLabel={
         federatedIdp ? "Alternative login options" : undefined

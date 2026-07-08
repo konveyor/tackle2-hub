@@ -6,7 +6,8 @@
   },
   "loginPage": {
     "title": "Log in to your account",
-    "subtitle": "Enter your credentials"
+    "subtitle": "Enter your credentials",
+    "textContent": ""
   },
   "devicePage": {
     "title": "Device Authorization",
