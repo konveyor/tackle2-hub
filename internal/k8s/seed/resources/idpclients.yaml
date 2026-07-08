@@ -8,10 +8,6 @@ metadata:
 spec:
   id: 1
   clientId: web-ui
-  clientSecret:
-    kind: Secret
-    name: web-ui-secret
-    namespace: konveyor-tackle
   applicationType: web
   grants:
     - urn:ietf:params:oauth:grant-type:jwt-bearer
