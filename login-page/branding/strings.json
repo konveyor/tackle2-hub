@@ -12,6 +12,7 @@
   "devicePage": {
     "title": "Device Authorization",
     "subtitle": "Enter the code displayed on your device",
+    "textContent": "",
     "successTitle": "Authorization Complete",
     "successMessage": "You have successfully authorized the device. You may close this window."
   },

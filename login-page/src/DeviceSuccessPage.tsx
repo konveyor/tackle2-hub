@@ -22,10 +22,15 @@ export const DeviceSuccessPage: React.FC<DeviceSuccessPageProps> = (_props: Devi
 
   return (
     <PFLoginPage
-      brandImgSrc={styles?.brandImage ?? ""}
-      brandImgAlt={application?.name ?? application?.title ?? ""}
-      backgroundImgSrc={styles?.backgroundImage ?? ""}
       loginTitle={devicePage?.successTitle ?? "Authorization Complete"}
+      loginSubtitle={devicePage?.successMessage ?? "You have successfully authorized the device. You may close this window."}
+      backgroundImgSrc={styles?.backgroundImage ?? ""}
+      brandImgProps={{
+        src: styles?.brandImage ?? "",
+        alt: application?.name ?? application?.title ?? "",
+        widths: { default: "260px" }
+      }}
+      textContent={devicePage?.textContent ?? ""}
     >
       <EmptyState
         variant={EmptyStateVariant.lg}

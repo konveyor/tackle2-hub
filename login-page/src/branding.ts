@@ -19,6 +19,7 @@ export interface LoginBrandingStrings {
   devicePage: {
     title: string;
     subtitle?: string;
+    textContent?: string;
     successTitle: string;
     successMessage: string;
   };

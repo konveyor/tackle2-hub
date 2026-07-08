@@ -27,13 +27,17 @@ export const DeviceVerifyPage: React.FC<DeviceVerifyPageProps> = ({ config }) =>
 
   return (
     <PFLoginPage
-      brandImgSrc={styles?.brandImage ?? ""}
-      brandImgAlt={application?.name ?? application?.title ?? ""}
-      backgroundImgSrc={styles?.backgroundImage ?? ""}
       loginTitle={devicePage?.title ?? "Device Authorization"}
       loginSubtitle={
         devicePage?.subtitle ?? "Enter the code displayed on your device"
       }
+      backgroundImgSrc={styles?.backgroundImage ?? ""}
+      brandImgProps={{
+        src: styles?.brandImage ?? "",
+        alt: application?.name ?? application?.title ?? "",
+        widths: { default: "260px" }
+      }}
+      textContent={devicePage?.textContent ?? ""}
     >
       <Alert
         variant="info"
