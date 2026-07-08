@@ -24,13 +24,9 @@ export const UserLoginPage: React.FC<UserLoginPageProps> = ({ config }) => {
   const { formAction, errorMessage, federatedIdp } = config;
   const { loginPage, styles, application } = brandingStrings;
 
+  // TODO Add support for other system error messages (e.g. authRequestId timeout)
   const hasError = Boolean(errorMessage);
-
-  const helperText = hasError ? (
-    <>
-      <ExclamationCircleIcon /> {errorMessage}
-    </>
-  ) : undefined;
+  const helperText = hasError ? errorMessage : undefined;
 
   // TODO Add support for >1 federated IdP button
   // Federated IdP link rendered as a footer list item when configured.
