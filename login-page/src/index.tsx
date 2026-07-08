@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import { UserLoginPage } from "./UserLoginPage";
 import { DeviceVerifyPage } from "./DeviceVerifyPage";
 import { DeviceSuccessPage } from "./DeviceSuccessPage";
+import { SessionExpiredPage } from "./SessionExpiredPage";
 import type { LoginConfig } from "./types";
 
 import "@patternfly/react-core/dist/styles/base.css";
@@ -31,6 +32,8 @@ const App = () => {
       return <DeviceVerifyPage config={config} />;
     case "device-success":
       return <DeviceSuccessPage config={config} />;
+    case "session-expired":
+      return <SessionExpiredPage config={config} />;
     default:
       return <UserLoginPage config={config} />;
   }

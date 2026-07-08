@@ -3,7 +3,7 @@
 // background images) is baked into the bundle at build time.
 export interface LoginConfig {
   // Selects which page component to render.
-  page: "login" | "device-verify" | "device-success";
+  page: "login" | "device-verify" | "device-success" | "session-expired";
 
   // Login page: POST target URL including authRequestId query param.
   formAction?: string;

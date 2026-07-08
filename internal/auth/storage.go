@@ -789,7 +789,10 @@ func (r *Login) complete() (err error) {
 	if r.login == "" || r.password == "" {
 		if r.isExpired() {
 			if rErr := r.renewAuthRequest(); rErr != nil {
-				err = rErr
+				if pgErr := r.renderExpiredPage(); pgErr != nil {
+					Log.Error(pgErr, "Failed to render session-expired page.")
+				}
+				err = nil
 				return
 			}
 		}
@@ -811,6 +814,10 @@ func (r *Login) complete() (err error) {
 	err = r.updateAuthRequest()
 	if err != nil {
 		if rErr := r.renewAuthRequest(); rErr != nil {
+			if pgErr := r.renderExpiredPage(); pgErr != nil {
+				Log.Error(pgErr, "Failed to render session-expired page.")
+			}
+			err = nil
 			return
 		}
 		r.authErrorMsg = "Login attempt timed out, please login again."
@@ -957,6 +964,16 @@ func (r *Login) redirect() {
 	issuer := AppendIssuer(r.request, api.AuthorizeCbRoute)
 	cbURL := fmt.Sprintf("%s?id=%s", issuer, r.authReqId)
 	http.Redirect(r.writer, r.request, cbURL, http.StatusFound)
+}
+
+// renderExpiredPage serves the session-expired page when the auth request
+// has been fully removed and cannot be renewed.
+func (r *Login) renderExpiredPage() (err error) {
+	cfg := loginpage.Config{
+		Page: "session-expired",
+	}
+	err = loginpage.ServeHTML(r.writer, cfg)
+	return
 }
 
 // renderPage serves the login page with the hub-injected configuration.
