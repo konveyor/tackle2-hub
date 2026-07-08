@@ -11,6 +11,7 @@ import (
 
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
+	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/settings"
 )
 
@@ -164,8 +165,15 @@ func ServeHTML(w http.ResponseWriter, cfg Config) (err error) {
 // The handler strips the /oidc/assets/ prefix so that a request for
 // /oidc/assets/main.abc123.js resolves to <LoginPage.Path>/main.abc123.js.
 func AssetHandler() (handler http.Handler) {
-	dir := http.Dir(settings.Settings.LoginPage.Path)
-	handler = http.StripPrefix("/oidc/assets/", http.FileServer(dir))
+	path := settings.Settings.LoginPage.Path
+	if path == "" {
+		handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			http.NotFound(w, r)
+		})
+		return
+	}
+	dir := http.Dir(path)
+	handler = http.StripPrefix(api.OIDCRoutes+api.AssetsRoute+"/", http.FileServer(dir))
 	return
 }
 

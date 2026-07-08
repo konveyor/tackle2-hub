@@ -281,7 +281,7 @@ login-page/
   package.json          # npm project (ESM, @tackle-hub/login-page)
   tsconfig.json         # TypeScript config targeting ES2020 / bundler resolution
   rspack.config.ts      # Rspack 2 build config with branding + asset serving
-  branding/             # Default branding (swappable at container build time)
+  branding/             # Default branding (swappable at build time)
     strings.json        # Branding strings: app title, page titles, image paths
     logo.svg            # Default brand logo
   src/
@@ -289,7 +289,7 @@ login-page/
     index.tsx           # Entry point; reads window.__LOGIN_CONFIG__ and routes to a page
     types.ts            # LoginConfig interface (runtime config injected by hub)
     branding.ts         # Typed access to build-time branding via __BRANDING_STRINGS__
-    LoginPage.tsx       # PF6 login form (username/password + optional federated IdP)
+    UserLoginPage.tsx   # PF6 login form (username/password + optional federated IdP)
     DeviceVerifyPage.tsx # PF6 device code entry form
     DeviceSuccessPage.tsx # PF6 device authorization success page
   dist/                 # Build output (gitignored; see below)

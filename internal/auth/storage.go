@@ -795,7 +795,9 @@ func (r *Login) complete() (err error) {
 	if err != nil {
 		Log.Info(err.Error())
 		r.authErrorMsg = "Invalid username or password."
-		_ = r.renderPage()
+		if rErr := r.renderPage(); rErr != nil {
+			Log.Error(rErr, "Failed to render login page after authentication failure.")
+		}
 		err = nil
 		return
 	}

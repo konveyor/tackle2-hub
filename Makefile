@@ -58,7 +58,7 @@ $(LOGIN_PAGE_DIR)/node_modules: $(LOGIN_PAGE_DIR)/package-lock.json $(LOGIN_PAGE
 	cd $(LOGIN_PAGE_DIR) && npm ci
 	@touch $@
 
-$(LOGIN_PAGE_DIST): $(LOGIN_PAGE_DIR)/node_modules $(shell find $(LOGIN_PAGE_DIR)/src $(LOGIN_PAGE_DIR)/branding -type f 2>/dev/null)
+$(LOGIN_PAGE_DIST): $(LOGIN_PAGE_DIR)/node_modules $(shell find $(LOGIN_PAGE_DIR) -type f -not -path '*/node_modules/*' -not -path '*/dist/*' 2>/dev/null)
 	cd $(LOGIN_PAGE_DIR) && npm run build
 	@touch $@
 

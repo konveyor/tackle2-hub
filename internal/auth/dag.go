@@ -56,7 +56,9 @@ func (h *DagHandler) Verify(ctx *gin.Context) {
 		Page:             "device-verify",
 		DeviceFormAction: AppendIssuer(ctx.Request, api.DeviceRoute),
 	}
-	_ = loginpage.ServeHTML(ctx.Writer, cfg)
+	if err := loginpage.ServeHTML(ctx.Writer, cfg); err != nil {
+		Log.Error(err, "Failed to render device-verify page.")
+	}
 }
 
 // VerifySubmit godoc
@@ -110,7 +112,9 @@ func (h *DagHandler) VerifySubmit(ctx *gin.Context) {
 	cfg := loginpage.Config{
 		Page: "device-success",
 	}
-	_ = loginpage.ServeHTML(ctx.Writer, cfg)
+	if err := loginpage.ServeHTML(ctx.Writer, cfg); err != nil {
+		Log.Error(err, "Failed to render device-success page.")
+	}
 }
 
 // currentUser returns the authenticated user from the gin context.
