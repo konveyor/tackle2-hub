@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "clean": "rimraf ./dist ../internal/loginpage/dist",
-    "clean:all": "rimraf ./dist ../internal/loginpage/dist ./node_modules",
+    "clean": "rimraf ./dist",
+    "clean:all": "rimraf ./dist ./node_modules",
     "build": "rspack build",
     "dev": "rspack serve",
     "typecheck": "tsc --noEmit"
