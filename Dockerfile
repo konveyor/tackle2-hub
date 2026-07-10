@@ -1,21 +1,21 @@
 ARG SEED_ROOT=/opt/app-root/src/tackle2-seed
 ARG BRANDING=internal/frontend/auth/content/branding
 
-FROM quay.io/konveyor/static-report as report
+FROM quay.io/konveyor/static-report AS report
 
-FROM quay.io/centos/centos:stream9 as centos
+FROM quay.io/centos/centos:stream9 AS centos
 RUN dnf -y install epel-release && dnf -y install tini
 
-FROM registry.access.redhat.com/ubi10/nodejs-22:latest as login-page
+FROM registry.access.redhat.com/ubi10/nodejs-22:latest AS frontend
 ARG BRANDING
 COPY --chown=1001:0 internal/frontend/auth/content/ .
 COPY --chown=1001:0 ${BRANDING}/ branding/
 RUN npm ci && npm run build
 
-FROM registry.access.redhat.com/ubi10/go-toolset:latest as builder
+FROM registry.access.redhat.com/ubi10/go-toolset:latest AS builder
 ENV GOPATH=$APP_ROOT
 COPY --chown=1001:0 . .
-COPY --from=login-page /opt/app-root/src/dist/ internal/frontend/auth/content/dist/
+COPY --chown=1001:0 --from=frontend /opt/app-root/src/dist/ internal/frontend/auth/content/dist/
 RUN make docker
 ARG SEED_PROJECT=konveyor/tackle2-seed
 ARG SEED_BRANCH=main
