@@ -7,7 +7,6 @@ to maintain consistency and code quality across the codebase.
 
 - [Project Organization](#project-organization)
 - [Package Organization](#package-organization)
-- [Login Page Frontend](#login-page-frontend)
 - [Object-Oriented Design](#object-oriented-design)
 - [Function Design](#function-design)
 - [Function and Method Standards](#function-and-method-standards)
@@ -268,59 +267,6 @@ shared/
 
 ---
 
-## Login Page Frontend
-
-The `login-page/` directory at the repository root contains a standalone React +
-PatternFly 6 project that provides the OIDC login and device authorization pages
-served by the hub.
-
-### Directory Structure
-
-```
-login-page/
-  package.json          # npm project (ESM, @tackle-hub/login-page)
-  tsconfig.json         # TypeScript config targeting ES2020 / bundler resolution
-  rspack.config.ts      # Rspack 2 build config with branding + asset serving
-  branding/             # Default branding (swappable at build time)
-    strings.json        # Branding strings: app title, page titles, image paths
-    logo.svg            # Default brand logo
-  src/
-    index.html          # HTML template source (contains Go template actions)
-    index.tsx           # Entry point; reads window.__LOGIN_CONFIG__ and routes to a page
-    types.ts            # LoginConfig interface (runtime config injected by hub)
-    branding.ts         # Typed access to build-time branding via __BRANDING_STRINGS__
-    UserLoginPage.tsx   # PF6 login form (username/password + optional federated IdP)
-    DeviceVerifyPage.tsx # PF6 device code entry form
-    DeviceSuccessPage.tsx # PF6 device authorization success page
-  dist/                 # Build output (gitignored; see below)
-```
-
-> The rspack `output.path` is `login-page/dist/` (local to the frontend
-> project).  The Dockerfile copies it to `/opt/app/login-page` in the
-> container image.  The Go binary has no compile-time dependency on the
-> frontend build.
-
-### Building the Frontend
-
-```bash
-cd login-page
-npm install
-npm run build          # outputs to login-page/dist/
-```
-
-The hub reads assets from disk at runtime from the path configured by
-`LOGIN_PAGE_PATH` (default `/opt/app/login-page`).  There is no `go:embed`
-step — `go build` succeeds on a fresh clone without a frontend build.
-
-**Local development:** set `LOGIN_PAGE_PATH=login-page/dist` when running
-the hub binary so it serves the locally built assets.
-
-### Custom Branding
-
-Branding strings are baked into the bundle at build time by rspack's `DefinePlugin`.
-The `BRANDING` environment variable selects which directory to read `strings.json`
-and image assets from; it defaults to `./branding`.
-
 ```bash
 # Override branding at image build time
 cd login-page
@@ -412,6 +358,8 @@ use that prefix.
 
 ---
 
+=======
+>>>>>>> 7e8cfc99 (Refactor login page to use go:embed and fix route organization)
 ## Object-Oriented Design
 
 ### Prefer Structs with Methods
@@ -1271,6 +1219,15 @@ When in doubt, look at existing code in `internal/api/`, `internal/model/`, and 
 of these patterns in practice.
 
 ## References
+
+### Subsystem Documentation
+
+- See `internal/api/CLAUDE.md` for REST API endpoint design patterns
+- See `internal/frontend/README.md` for frontend component organization
+- See `internal/frontend/auth/README.md` for login page frontend details
+- See `internal/auth/README.md` for authentication and authorization
+
+### Code Examples
 
 - See `internal/api/application.go` for handler examples
 - See `internal/api/base.go` for base handler patterns

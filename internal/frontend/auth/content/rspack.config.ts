@@ -10,24 +10,17 @@ import { TsCheckerRspackPlugin } from "ts-checker-rspack-plugin";
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const pathTo = (...parts: string[]) => path.resolve(__dirname, ...parts);
 
-// Branding: default to ./branding, overridden by BRANDING env var at build time.
-// This allows container image builds to swap in custom branding without changing source.
-const baseBrandingPath = process.env.BRANDING ?? "./branding";
-const brandingPath = pathTo(baseBrandingPath);
+const brandingPath = pathTo("./branding");
 console.log("Using branding from:", brandingPath);
 
 const isDev = process.env.NODE_ENV === "development";
 
-// Build output stays in login-page/dist/ local to this project.
-// The Dockerfile copies it to /opt/app/login-page in the container image.
-// For local development, set LOGIN_PAGE_PATH=login-page/dist when running the hub.
 const distPath = pathTo("dist");
 
-const publicPath = isDev ? "/" : "/oidc/assets/";
+const publicPath = isDev ? "/" : "/hub/frontend/auth/";
 
-// Compile strings.json as a Handlebars template so that {{publicPath}} placeholders
-// are resolved to the correct asset prefix for the build mode.
 const brandingRaw = readFileSync(path.resolve(brandingPath, "strings.json"), "utf8");
+
 const brandingStrings = JSON.parse(
   Handlebars.compile(brandingRaw)({ publicPath })
 );
@@ -39,8 +32,6 @@ const config: Configuration = {
   },
   output: {
     path: distPath,
-    // /oidc/assets/ matches the static file handler registered in internal/api/auth.go.
-    // In dev mode, assets are served by the rspack dev server at its own port.
     publicPath,
     filename: isDev ? "[name].js" : "[name].[contenthash:8].js",
     cssFilename: isDev ? "[name].css" : "[name].[contenthash:8].css",
@@ -81,7 +72,7 @@ const config: Configuration = {
     new rspack.HtmlRspackPlugin({
       template: "./src/index.html",
       filename: "index.html.tmpl",
-      // Minification is disabled so that Go template actions ({{ .ConfigJSON }})
+      // Minification is disabled so that Go template actions ({{ . }})
       // in the source HTML pass through to the output unchanged.
       minify: false,
       // TODO Add support for branding.styles.favicon

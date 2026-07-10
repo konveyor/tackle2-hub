@@ -5,9 +5,8 @@ GOSWAG = $(GOBIN)/swag
 CONTROLLERGEN = $(GOBIN)/controller-gen
 IMG   ?= tackle2-hub:latest
 HUB_BASE_URL ?= http://localhost:8080
-LOGIN_PAGE_DIR = $(CURDIR)/login-page
-LOGIN_PAGE_DIST = $(LOGIN_PAGE_DIR)/dist
-export LOGIN_PAGE_PATH ?= $(LOGIN_PAGE_DIST)
+FRONTEND_AUTH_DIR = $(CURDIR)/internal/frontend/auth/content
+FRONTEND_AUTH_MARKER = $(FRONTEND_AUTH_DIR)/.dist-built
 
 PKG = ./internal/... \
       ./shared/... \
@@ -29,7 +28,7 @@ vet:
 	go vet $(PKG)
 
 # Build hub
-hub: login-page generate fmt vet
+hub: frontend generate fmt vet
 	go build $(BUILD)
 
 # Build image
@@ -40,32 +39,33 @@ podman-build:
 	podman build -t $(IMG) .
 
 # Build manager binary with compiler optimizations disabled
-debug: login-page generate fmt vet
+debug: frontend generate fmt vet
 	go build -gcflags=all="-N -l" $(BUILD)
 
 docker: vet
 	go build $(BUILD)
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
-run: login-page fmt vet
+run: frontend fmt vet
 	go run ./cmd/main.go
 
-# Build the login page frontend.
-.PHONY: login-page
-login-page: $(LOGIN_PAGE_DIST)
+# Build frontend
+.PHONY: frontend
+frontend: $(FRONTEND_AUTH_MARKER)
 
-$(LOGIN_PAGE_DIR)/node_modules: $(LOGIN_PAGE_DIR)/package-lock.json $(LOGIN_PAGE_DIR)/package.json
-	cd $(LOGIN_PAGE_DIR) && npm ci
+$(FRONTEND_AUTH_DIR)/node_modules: $(FRONTEND_AUTH_DIR)/package-lock.json $(FRONTEND_AUTH_DIR)/package.json
+	cd $(FRONTEND_AUTH_DIR) && npm ci
 	@touch $@
 
-$(LOGIN_PAGE_DIST): $(LOGIN_PAGE_DIR)/node_modules $(shell find $(LOGIN_PAGE_DIR) -type f -not -path '*/node_modules/*' -not -path '*/dist/*' 2>/dev/null)
-	cd $(LOGIN_PAGE_DIR) && npm run build
+$(FRONTEND_AUTH_MARKER): $(FRONTEND_AUTH_DIR)/node_modules $(shell find $(FRONTEND_AUTH_DIR)/src $(FRONTEND_AUTH_DIR)/branding $(FRONTEND_AUTH_DIR)/*.ts -type f 2>/dev/null)
+	cd $(FRONTEND_AUTH_DIR) && npm run build
 	@touch $@
 
-# Remove login page build artifacts.
-.PHONY: clean-login-page
-clean-login-page:
-	cd $(LOGIN_PAGE_DIR) && npm run clean
+# Clean all frontend builds
+.PHONY: clean-frontend
+clean-frontend:
+	cd $(FRONTEND_AUTH_DIR) && npm run clean
+	rm -f $(FRONTEND_AUTH_MARKER)
 
 .PHONY: login
 login: bin/login

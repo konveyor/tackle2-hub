@@ -17,7 +17,7 @@ import (
 	"github.com/bmatcuk/doublestar/v4"
 	"github.com/go-jose/go-jose/v4"
 	liberr "github.com/jortel/go-utils/error"
-	"github.com/konveyor/tackle2-hub/internal/loginpage"
+	frontend "github.com/konveyor/tackle2-hub/internal/frontend/auth"
 	"github.com/konveyor/tackle2-hub/internal/secret"
 	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/zitadel/oidc/v3/pkg/oidc"
@@ -969,20 +969,25 @@ func (r *Login) redirect() {
 // renderExpiredPage serves the session-expired page when the auth request
 // has been fully removed and cannot be renewed.
 func (r *Login) renderExpiredPage() (err error) {
-	cfg := loginpage.Config{
-		Page: "session-expired",
+	pageReq := frontend.Request{
+		Page: frontend.SessionExpired,
 	}
-	err = loginpage.ServeHTML(r.writer, cfg)
+	h := frontend.Handler{}
+	err = h.Render(r.writer, pageReq)
 	return
 }
 
 // renderPage serves the login page with the hub-injected configuration.
 func (r *Login) renderPage() (err error) {
-	formAction := AppendIssuer(r.request, api.LoginRoute) +
-		"?" + AuthRequestId + "=" + r.authReqId
+	formAction := AppendIssuer(
+		r.request,
+		api.LoginRoute) +
+		"?" + AuthRequestId +
+		"=" +
+		r.authReqId
 
-	cfg := loginpage.Config{
-		Page:         "login",
+	pageReq := frontend.Request{
+		Page:         frontend.Login,
 		FormAction:   formAction,
 		ErrorMessage: r.authErrorMsg,
 	}
@@ -997,13 +1002,14 @@ func (r *Login) renderPage() (err error) {
 		query := parsedURL.Query()
 		query.Set(AuthRequestId, r.authReqId)
 		parsedURL.RawQuery = query.Encode()
-		cfg.FederatedIdp = &loginpage.FederatedIdpConfig{
+		pageReq.FederatedIdp = &frontend.FedIdp{
 			Name:     federated.Idp.Name,
 			LoginURL: parsedURL.String(),
 		}
 	}
 
-	err = loginpage.ServeHTML(r.writer, cfg)
+	h := frontend.Handler{}
+	err = h.Render(r.writer, pageReq)
 	return
 }
 

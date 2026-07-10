@@ -16,7 +16,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/konveyor/tackle2-hub/internal/loginpage"
+	frontend "github.com/konveyor/tackle2-hub/internal/frontend/auth"
 	"github.com/konveyor/tackle2-hub/shared/api"
 	httphelper "github.com/zitadel/oidc/v3/pkg/http"
 )
@@ -52,13 +52,12 @@ func (h *DagHandler) OIDCAuth() (auth *OIDCAuth) {
 //
 // Verify displays device authorization verification page.
 func (h *DagHandler) Verify(ctx *gin.Context) {
-	cfg := loginpage.Config{
-		Page:             "device-verify",
+	pageReq := frontend.Request{
+		Page:             frontend.DeviceVerify,
 		DeviceFormAction: AppendIssuer(ctx.Request, api.DeviceRoute),
 	}
-	if err := loginpage.ServeHTML(ctx.Writer, cfg); err != nil {
-		Log.Error(err, "Failed to render device-verify page.")
-	}
+	h2 := frontend.Handler{}
+	_ = h2.Render(ctx.Writer, pageReq)
 }
 
 // VerifySubmit godoc
@@ -101,20 +100,17 @@ func (h *DagHandler) VerifySubmit(ctx *gin.Context) {
 		})
 		return
 	}
-
 	subject := h.currentUser(ctx)
 	err := h.storage.UpdateDevAuth(userCode, subject, true, false, time.Now())
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-
-	cfg := loginpage.Config{
-		Page: "device-success",
+	pageReq := frontend.Request{
+		Page: frontend.DeviceSucceeded,
 	}
-	if err := loginpage.ServeHTML(ctx.Writer, cfg); err != nil {
-		Log.Error(err, "Failed to render device-success page.")
-	}
+	h2 := frontend.Handler{}
+	_ = h2.Render(ctx.Writer, pageReq)
 }
 
 // currentUser returns the authenticated user from the gin context.

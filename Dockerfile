@@ -1,4 +1,5 @@
 ARG SEED_ROOT=/opt/app-root/src/tackle2-seed
+ARG BRANDING=internal/frontend/auth/content/branding
 
 FROM quay.io/konveyor/static-report as report
 
@@ -6,12 +7,15 @@ FROM quay.io/centos/centos:stream9 as centos
 RUN dnf -y install epel-release && dnf -y install tini
 
 FROM registry.access.redhat.com/ubi10/nodejs-22:latest as login-page
-COPY --chown=1001:0 login-page/ .
+ARG BRANDING
+COPY --chown=1001:0 internal/frontend/auth/content/ .
+COPY --chown=1001:0 ${BRANDING}/ branding/
 RUN npm ci && npm run build
 
 FROM registry.access.redhat.com/ubi10/go-toolset:latest as builder
 ENV GOPATH=$APP_ROOT
 COPY --chown=1001:0 . .
+COPY --from=login-page /opt/app-root/src/dist/ internal/frontend/auth/content/dist/
 RUN make docker
 ARG SEED_PROJECT=konveyor/tackle2-seed
 ARG SEED_BRANCH=main
@@ -30,7 +34,7 @@ COPY --from=centos /usr/bin/tini /usr/bin/tini
 COPY --from=builder /opt/app-root/src/bin/hub /usr/local/bin/tackle-hub
 COPY --from=builder ${SEED_ROOT}/resources/ /tmp/seed
 COPY --from=report /usr/local/static-report /tmp/analysis/report
-COPY --from=login-page /opt/app-root/src/dist /opt/app/login-page
+# Login page assets are now embedded in the binary via go:embed
 
 RUN echo "${VERSION}" > /etc/hub-build
 

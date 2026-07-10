@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"runtime/debug"
+	"strings"
 	"syscall"
 
 	"github.com/gin-gonic/gin"
@@ -13,11 +14,11 @@ import (
 	"github.com/konveyor/tackle2-hub/internal/api"
 	"github.com/konveyor/tackle2-hub/internal/auth"
 	"github.com/konveyor/tackle2-hub/internal/database"
+	"github.com/konveyor/tackle2-hub/internal/frontend"
 	"github.com/konveyor/tackle2-hub/internal/heap"
 	"github.com/konveyor/tackle2-hub/internal/importer"
 	"github.com/konveyor/tackle2-hub/internal/k8s"
 	crd "github.com/konveyor/tackle2-hub/internal/k8s/api"
-	"github.com/konveyor/tackle2-hub/internal/loginpage"
 	"github.com/konveyor/tackle2-hub/internal/metrics"
 	"github.com/konveyor/tackle2-hub/internal/migration"
 	"github.com/konveyor/tackle2-hub/internal/model"
@@ -77,6 +78,19 @@ func port() (port string) {
 	return
 }
 
+// Run router.
+// The /hub (ingress) prefix is stripped.
+func Run(e *gin.Engine) (err error) {
+	err = http.ListenAndServe(
+		port(),
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				r.URL.Path = strings.TrimPrefix(r.URL.Path, "/hub")
+				e.ServeHTTP(w, r)
+			}))
+	return
+}
+
 // main.
 // Note: The initialization order is very important.
 func main() {
@@ -129,7 +143,6 @@ func main() {
 	if err != nil {
 		return
 	}
-	loginpage.Setup()
 	// Document migration.
 	jsdMigrator := migration.DocumentMigrator{
 		DB:     db,
@@ -193,6 +206,9 @@ func main() {
 	for _, h := range api.All() {
 		h.AddRoutes(router)
 	}
+	for _, h := range frontend.ALL() {
+		h.AddRoutes(router)
+	}
 	//
 	// Auth domain.
 	err = auth.Domain.Seed()
@@ -203,6 +219,5 @@ func main() {
 	if err != nil {
 		return
 	}
-	//
-	err = router.Run(port())
+	err = Run(router)
 }

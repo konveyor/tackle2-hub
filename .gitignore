@@ -4,6 +4,7 @@ vendor/
 hack/tool/tackle-data
 hack/tool/tackle-config.yml
 .vscode/
-login-page/node_modules/
-login-page/dist/
+**/node_modules/
+**/content/dist/
+!**/content/.dist-built
 .run/
