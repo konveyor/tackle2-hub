@@ -34,4 +34,13 @@ export DB_PATH=./.run/dev/hub.db
 export BUCKET_PATH=./.run/bucket
 
 echo "Running HUB"
-make run
+set +e
+if ! make run; then
+  if [ -n "${TMUX:-}" ] || [ ! -t 0 ]; then
+    echo ""
+    echo "Press any key to exit..."
+    read -n 1 -s -r
+  fi
+  exit 1
+fi
+
