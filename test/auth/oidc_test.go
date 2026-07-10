@@ -204,7 +204,9 @@ func TestAuthorizationCodeFlow(t *testing.T) {
 	g.Expect(resp.StatusCode).To(Equal(http.StatusOK))
 	body, _ := io.ReadAll(resp.Body)
 	html := string(body)
-	g.Expect(html).To(ContainSubstring("Tackle Login"))
+	// Verify login page HTML with injected config
+	g.Expect(html).To(ContainSubstring("window.__LOGIN_CONFIG__"))
+	g.Expect(html).To(ContainSubstring(`"page":"login"`))
 
 	// Extract auth request ID from URL
 	parsedURL, err := url.Parse(loginURL)
@@ -215,8 +217,8 @@ func TestAuthorizationCodeFlow(t *testing.T) {
 	// Step 2: Submit login form (POST /login?authRequestId=...)
 	loginURL = issuer + "/login?authRequestId=" + authReqID
 	loginForm := url.Values{}
-	loginForm.Set("login", username)
-	loginForm.Set("password", password)
+	loginForm.Set("pf-login-username-id", username)
+	loginForm.Set("pf-login-password-id", password)
 
 	resp, err = httpClient.PostForm(loginURL, loginForm)
 	g.Expect(err).To(BeNil())
@@ -308,26 +310,26 @@ func TestAuthorizationCodeFlowWithScopes(t *testing.T) {
 		_ = client.IdpClient.Delete(testClient.ID)
 	})
 
-	permissions, err := client.Permission.List()
+	scopes, err := client.Scope.List()
 	g.Expect(err).To(BeNil())
-	g.Expect(len(permissions)).To(BeNumerically(">", 0))
+	g.Expect(len(scopes)).To(BeNumerically(">", 0))
 
 	// Find applications:get permission
-	var appsGetPerm *api.Permission
-	for i := range permissions {
-		if permissions[i].Scope == "applications:get" {
-			appsGetPerm = &permissions[i]
+	var appGetScope *api.Scope
+	for i := range scopes {
+		if scopes[i].Name == "applications:get" {
+			appGetScope = &scopes[i]
 			break
 		}
 	}
-	g.Expect(appsGetPerm).NotTo(BeNil(), "applications:get permission not found")
+	g.Expect(appGetScope).NotTo(BeNil(), "applications:get scope not found")
 
 	// Create role with multiple permissions including applications:get
 	role := api.Role{
 		Name: "Test Role",
-		Permissions: []api.Ref{
-			{ID: permissions[0].ID, Name: permissions[0].Name}, // First permission (for scope test)
-			{ID: appsGetPerm.ID, Name: appsGetPerm.Name},       // applications:get
+		Scopes: []string{
+			scopes[0].Name,   // First permission (for scope test)
+			appGetScope.Name, // applications:get
 		},
 	}
 	err = client.Role.Create(&role)
@@ -400,7 +402,9 @@ func TestAuthorizationCodeFlowWithScopes(t *testing.T) {
 	g.Expect(resp.StatusCode).To(Equal(http.StatusOK))
 	body, _ := io.ReadAll(resp.Body)
 	html := string(body)
-	g.Expect(html).To(ContainSubstring("Tackle Login"))
+	// Verify login page HTML with injected config
+	g.Expect(html).To(ContainSubstring("window.__LOGIN_CONFIG__"))
+	g.Expect(html).To(ContainSubstring(`"page":"login"`))
 
 	// Extract auth request ID from URL
 	parsedURL, err := url.Parse(loginURL)
@@ -411,8 +415,8 @@ func TestAuthorizationCodeFlowWithScopes(t *testing.T) {
 	// Step 2: Submit login form
 	loginURL = issuer + "/login?authRequestId=" + authReqID
 	loginForm := url.Values{}
-	loginForm.Set("login", username)
-	loginForm.Set("password", password)
+	loginForm.Set("pf-login-username-id", username)
+	loginForm.Set("pf-login-password-id", password)
 
 	resp, err = httpClient.PostForm(loginURL, loginForm)
 	g.Expect(err).To(BeNil())
@@ -477,7 +481,7 @@ func TestAuthorizationCodeFlowWithScopes(t *testing.T) {
 	// Verify scopes are in the token
 	scopeRaw, ok := claims["scope"].(string)
 	g.Expect(ok).To(BeTrue())
-	g.Expect(scopeRaw).To(ContainSubstring(permissions[0].Scope))
+	g.Expect(scopeRaw).To(ContainSubstring(scopes[0].Name))
 
 	// Test using the access token
 	req, _ := http.NewRequest("GET", Settings.Addon.Hub.URL+"/applications", nil)

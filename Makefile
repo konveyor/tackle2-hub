@@ -5,6 +5,8 @@ GOSWAG = $(GOBIN)/swag
 CONTROLLERGEN = $(GOBIN)/controller-gen
 IMG   ?= tackle2-hub:latest
 HUB_BASE_URL ?= http://localhost:8080
+FRONTEND_AUTH_DIR = $(CURDIR)/internal/frontend/auth/content
+FRONTEND_AUTH_MARKER = $(FRONTEND_AUTH_DIR)/.dist-built
 
 PKG = ./internal/... \
       ./shared/... \
@@ -22,11 +24,11 @@ fmt: $(GOIMPORTS)
 	$(GOIMPORTS) -w $(PKGDIR)
 
 # Run go vet against code
-vet:
+vet: frontend-stub
 	go vet $(PKG)
 
 # Build hub
-hub: generate fmt vet
+hub: frontend generate fmt vet
 	go build $(BUILD)
 
 # Build image
@@ -35,17 +37,40 @@ docker-build:
 
 podman-build:
 	podman build -t $(IMG) .
-	
+
 # Build manager binary with compiler optimizations disabled
-debug: generate fmt vet
+debug: frontend generate fmt vet
 	go build -gcflags=all="-N -l" $(BUILD)
 
 docker: vet
 	go build $(BUILD)
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
-run: fmt vet
+run: frontend fmt vet
 	go run ./cmd/main.go
+
+# Build frontend
+.PHONY: frontend-stub
+frontend-stub:
+	mkdir -p $(FRONTEND_AUTH_DIR)/dist
+	touch $(FRONTEND_AUTH_DIR)/dist/empty
+
+.PHONY: frontend
+frontend: $(FRONTEND_AUTH_MARKER)
+
+$(FRONTEND_AUTH_DIR)/node_modules: $(FRONTEND_AUTH_DIR)/package-lock.json $(FRONTEND_AUTH_DIR)/package.json
+	cd $(FRONTEND_AUTH_DIR) && npm ci
+	@touch $@
+
+$(FRONTEND_AUTH_MARKER): $(FRONTEND_AUTH_DIR)/node_modules $(shell find $(FRONTEND_AUTH_DIR)/src $(FRONTEND_AUTH_DIR)/branding $(FRONTEND_AUTH_DIR)/*.ts -type f 2>/dev/null)
+	cd $(FRONTEND_AUTH_DIR) && npm run build
+	@touch $@
+
+# Clean all frontend builds
+.PHONY: clean-frontend
+clean-frontend:
+	cd $(FRONTEND_AUTH_DIR) && npm run clean
+	rm -f $(FRONTEND_AUTH_MARKER)
 
 .PHONY: login
 login: bin/login
@@ -130,21 +155,22 @@ endif
 .PHONY: test test-api test-integration migration test-binding test-auth test-all
 
 # Run unit tests (all tests outside /test directory).
-test:
+test: frontend-stub
 	go test -count=1 -v $(shell go list ./... | grep -v "hub/test")
 
-test-db:
+test-db: frontend-stub
 	go test -count=1 -timeout=6h -v ./database...
 
 # Run Hub REST API tests.
 test-api:
 	# Deprecated
 
-test-binding:
+test-binding: frontend-stub
 	for pkg in $$(go list ./test/binding/...); do \
 	  HUB_BASE_URL="$(HUB_BASE_URL)" go test -count=1 -v -failfast -parallel=1 "$$pkg" || exit 1; \
 	done
-test-auth:
+
+test-auth: frontend-stub
 	for pkg in $$(go list ./test/auth/...); do \
 	  HUB_BASE_URL="$(HUB_BASE_URL)" go test -count=1 -v -failfast "$$pkg" || exit 1; \
 	done

@@ -2520,7 +2520,7 @@ func TestSeedClientsFromCRD(t *testing.T) {
 	var clients []IdpClient
 	err = db.Find(&clients).Error
 	g.Expect(err).To(BeNil())
-	g.Expect(clients).To(HaveLen(3))
+	g.Expect(clients).To(HaveLen(4))
 
 	// Find and verify web-ui client
 	var webUI IdpClient
@@ -2529,7 +2529,7 @@ func TestSeedClientsFromCRD(t *testing.T) {
 	g.Expect(webUI.ID).To(Equal(uint(1)))
 	g.Expect(webUI.ClientId).To(Equal("web-ui"))
 	g.Expect(webUI.ApplicationType).To(Equal("web"))
-	g.Expect(webUI.Secret).To(Equal("test-secret-value"))
+	g.Expect(webUI.Secret).To(BeEmpty())
 	g.Expect(webUI.Grants).To(ContainElement("authorization_code"))
 	g.Expect(webUI.Scopes).To(ContainElement("openid"))
 
@@ -2548,6 +2548,14 @@ func TestSeedClientsFromCRD(t *testing.T) {
 	g.Expect(kaiIDE.ID).To(Equal(uint(3)))
 	g.Expect(kaiIDE.ApplicationType).To(Equal("native"))
 	g.Expect(kaiIDE.Secret).To(BeEmpty())
+
+	// Find and verify web-ui-with-secret client (confidential)
+	var confidential IdpClient
+	err = db.First(&confidential, "ClientId = ?", "web-ui-with-secret").Error
+	g.Expect(err).To(BeNil())
+	g.Expect(confidential.ID).To(Equal(uint(4)))
+	g.Expect(confidential.ApplicationType).To(Equal("web"))
+	g.Expect(confidential.Secret).NotTo(BeEmpty())
 }
 
 // TestSeedClientsUpdate tests updating existing clients from CRDs.
@@ -2592,7 +2600,13 @@ func TestSeedClientsUpdate(t *testing.T) {
 	g.Expect(updated.Grants).To(ContainElement("authorization_code"))
 	g.Expect(updated.Grants).To(ContainElement("refresh_token"))
 	g.Expect(updated.Grants).NotTo(ContainElement("old-grant"))
-	g.Expect(updated.Secret).To(Equal("test-secret-value")) // Secret resolved
+	g.Expect(updated.Secret).To(BeEmpty())
+
+	// Verify confidential client has secret resolved
+	var confidential IdpClient
+	err = db.First(&confidential, "ClientId = ?", "web-ui-with-secret").Error
+	g.Expect(err).To(BeNil())
+	g.Expect(confidential.Secret).NotTo(BeEmpty())
 }
 
 // TestSeedClientsDeleteOrphaned tests deleting orphaned seeded clients.
@@ -2651,10 +2665,10 @@ func TestSeedClientsDeleteOrphaned(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(nonSeededCheck.ID).To(Equal(uint(1001)))
 
-	// Verify total count (3 from CRDs + 1 custom)
+	// Verify total count (4 from CRDs + 1 custom)
 	var count int64
 	db.Model(&IdpClient{}).Count(&count)
-	g.Expect(count).To(Equal(int64(4)))
+	g.Expect(count).To(Equal(int64(5)))
 }
 
 // TestSeedClientsIDPreservation tests that IDs from CRDs are preserved across multiple seeds.
@@ -2697,7 +2711,7 @@ func TestSeedClientsIDPreservation(t *testing.T) {
 	// Verify count after first seed
 	var count int64
 	db.Model(&IdpClient{}).Count(&count)
-	g.Expect(count).To(Equal(int64(3)))
+	g.Expect(count).To(Equal(int64(4)))
 
 	// Second seed (should preserve IDs)
 	err = domain.seedClients(db)
@@ -2715,9 +2729,9 @@ func TestSeedClientsIDPreservation(t *testing.T) {
 	g.Expect(kantra.ID).To(Equal(uint(2)))
 	g.Expect(kaiIDE.ID).To(Equal(uint(3)))
 
-	// Verify count after second seed (should still be 3)
+	// Verify count after second seed (should still be 4)
 	db.Model(&IdpClient{}).Count(&count)
-	g.Expect(count).To(Equal(int64(3)))
+	g.Expect(count).To(Equal(int64(4)))
 }
 
 // TestClientWithWildcard tests Client.With() with wildcard redirect URIs.

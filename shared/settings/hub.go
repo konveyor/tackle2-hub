@@ -32,6 +32,7 @@ const (
 	EnvFrequencyReaper         = "FREQUENCY_REAPER"
 	EnvFrequencyHeap           = "FREQUENCY_HEAP"
 	EnvDevelopment             = "DEVELOPMENT"
+	EnvFrontendAuthDist        = "FRONTEND_AUTH_DIST"
 	EnvBucketTTL               = "BUCKET_TTL"
 	EnvFileTTL                 = "FILE_TTL"
 	EnvAppName                 = "APP_NAME"
@@ -110,6 +111,10 @@ type Hub struct {
 	}
 	// Development environment
 	Development bool
+	// Frontend settings.
+	Frontend struct {
+		AuthDist string
+	}
 	// Product - deployed as product.
 	Product bool
 	// Disconnected indicates no cluster.
@@ -290,6 +295,10 @@ func (r *Hub) Load() (err error) {
 	if found {
 		b, _ := strconv.ParseBool(s)
 		r.Development = b
+	}
+	s, found = os.LookupEnv(EnvFrontendAuthDist)
+	if found {
+		r.Frontend.AuthDist = s
 	}
 	s, found = os.LookupEnv(EnvBucketTTL)
 	if found {

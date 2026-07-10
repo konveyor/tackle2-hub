@@ -3,3 +3,8 @@ vendor/
 .idea
 hack/tool/tackle-data
 hack/tool/tackle-config.yml
+.vscode/
+**/node_modules/
+**/content/dist/
+!**/content/.dist-built
+.run/

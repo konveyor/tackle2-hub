@@ -16,6 +16,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	frontend "github.com/konveyor/tackle2-hub/internal/frontend/auth"
 	"github.com/konveyor/tackle2-hub/shared/api"
 	httphelper "github.com/zitadel/oidc/v3/pkg/http"
 )
@@ -51,103 +52,12 @@ func (h *DagHandler) OIDCAuth() (auth *OIDCAuth) {
 //
 // Verify displays device authorization verification page.
 func (h *DagHandler) Verify(ctx *gin.Context) {
-	formAction := AppendIssuer(ctx.Request, api.DeviceRoute)
-	html := `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Device Authorization</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .container {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            padding: 40px;
-            max-width: 400px;
-            width: 100%;
-        }
-        h1 {
-            color: #333;
-            font-size: 20px;
-            margin-bottom: 8px;
-            text-align: center;
-        }
-        .subtitle {
-            color: #666;
-            font-size: 13px;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-        label {
-            display: block;
-            color: #333;
-            font-size: 13px;
-            font-weight: 500;
-            margin-bottom: 8px;
-        }
-        input[type="text"] {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-            font-family: monospace;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            transition: border-color 0.2s;
-        }
-        input[type="text"]:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        button {
-            width: 100%;
-            padding: 12px;
-            margin-top: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: transform 0.1s, box-shadow 0.2s;
-        }
-        button:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-        button:active {
-            transform: translateY(0);
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Device Authorization</h1>
-        <p class="subtitle">Enter the code displayed on your device</p>
-        <form method="POST" action="` + formAction + `">
-            <label for="userCode">User Code</label>
-            <input type="text" id="userCode" name="userCode" placeholder="XXXX-XXXX" required autofocus>
-            <button type="submit">Authorize Device</button>
-        </form>
-    </div>
-</body>
-</html>
-`
-	ctx.Data(http.StatusOK, "text/html; charset=utf-8", []byte(html))
+	pageReq := frontend.Request{
+		Page:             frontend.DeviceVerify,
+		DeviceFormAction: AppendIssuer(ctx.Request, api.DeviceRoute),
+	}
+	h2 := frontend.Handler{}
+	_ = h2.Render(ctx.Writer, pageReq)
 }
 
 // VerifySubmit godoc
@@ -190,75 +100,17 @@ func (h *DagHandler) VerifySubmit(ctx *gin.Context) {
 		})
 		return
 	}
-
 	subject := h.currentUser(ctx)
 	err := h.storage.UpdateDevAuth(userCode, subject, true, false, time.Now())
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-
-	html := `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Authorization Complete</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .container {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            padding: 40px;
-            max-width: 400px;
-            width: 100%;
-            text-align: center;
-        }
-        .checkmark {
-            width: 64px;
-            height: 64px;
-            border-radius: 50%;
-            background: #4caf50;
-            margin: 0 auto 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-            color: white;
-        }
-        h1 {
-            color: #333;
-            font-size: 20px;
-            margin-bottom: 16px;
-        }
-        p {
-            color: #666;
-            font-size: 13px;
-            line-height: 1.6;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="checkmark">✓</div>
-        <h1>Authorization Complete</h1>
-        <p>You have successfully authorized the device.<br>You may close this window.</p>
-    </div>
-</body>
-</html>
-`
-	ctx.Data(http.StatusOK, "text/html; charset=utf-8", []byte(html))
+	pageReq := frontend.Request{
+		Page: frontend.DeviceSucceeded,
+	}
+	h2 := frontend.Handler{}
+	_ = h2.Render(ctx.Writer, pageReq)
 }
 
 // currentUser returns the authenticated user from the gin context.

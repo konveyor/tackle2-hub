@@ -8,17 +8,18 @@ metadata:
 spec:
   id: 1
   clientId: web-ui
-  clientSecret:
-    kind: Secret
-    name: web-ui-secret
-    namespace: konveyor-tackle
   applicationType: web
   grants:
-  - authorization_code
-  - refresh_token
+    - urn:ietf:params:oauth:grant-type:jwt-bearer
+    - authorization_code
+    - refresh_token
+  redirecturis:
+    - ${issuer.proto}://${issuer.host}{,*}/**
   scopes:
-  - openid
-  - profile
+    - offline_access
+    - openid
+    - profile
+    - email
 
 ---
 # kantra client (public, no secret)
@@ -32,9 +33,15 @@ spec:
   clientId: kantra
   applicationType: native
   grants:
-  - urn:ietf:params:oauth:grant-type:device_code
+    - urn:ietf:params:oauth:grant-type:device_code
+    - authorization_code
+    - refresh_token
+  redirecturis: []
   scopes:
-  - openid
+    - offline_access
+    - openid
+    - profile
+    - email
 
 ---
 # kai-ide client (public, no secret)
@@ -48,6 +55,41 @@ spec:
   clientId: kai-ide
   applicationType: native
   grants:
-  - authorization_code
+    - urn:ietf:params:oauth:grant-type:jwt-bearer
+    - authorization_code
+    - refresh_token
+  redirecturis:
+    - vscode://konveyor.konveyor-core/auth
+    - http://127.0.0.1/callback
   scopes:
-  - openid
+    - offline_access
+    - openid
+    - profile
+    - email
+
+---
+# web-ui-with-secret client (confidential, with secret reference for testing)
+apiVersion: tackle.konveyor.io/v1alpha1
+kind: IdpClient
+metadata:
+  name: web-ui-with-secret
+  namespace: konveyor-tackle
+spec:
+  id: 4
+  clientId: web-ui-with-secret
+  clientSecret:
+    kind: Secret
+    name: web-ui-secret
+    namespace: konveyor-tackle
+  applicationType: web
+  grants:
+    - urn:ietf:params:oauth:grant-type:jwt-bearer
+    - authorization_code
+    - refresh_token
+  redirecturis:
+    - ${issuer.proto}://${issuer.host}{,*}/**
+  scopes:
+    - offline_access
+    - openid
+    - profile
+    - email

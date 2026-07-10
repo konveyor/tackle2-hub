@@ -1127,6 +1127,15 @@ of these patterns in practice.
 
 ## References
 
+### Subsystem Documentation
+
+- See `internal/api/CLAUDE.md` for REST API endpoint design patterns
+- See `internal/frontend/README.md` for frontend component organization
+- See `internal/frontend/auth/README.md` for login page frontend details
+- See `internal/auth/README.md` for authentication and authorization
+
+### Code Examples
+
 - See `internal/api/application.go` for handler examples
 - See `internal/api/base.go` for base handler patterns
 - See `internal/api/filter/filter_test.go` for Gomega test examples

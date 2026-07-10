@@ -1,0 +1,25 @@
+{
+  "application": {
+    "title": "Konveyor",
+    "name": "Konveyor Hub",
+    "description": "Sign in to continue"
+  },
+  "loginPage": {
+    "title": "Log in to your account",
+    "subtitle": "Enter your credentials",
+    "textContent": ""
+  },
+  "devicePage": {
+    "title": "Device Authorization",
+    "subtitle": "Enter the code displayed on your device",
+    "textContent": "",
+    "successTitle": "Authorization Complete",
+    "successMessage": "You have successfully authorized the device. You may close this window."
+  },
+  "styles": {
+    "brandImage": "{{publicPath}}branding/logo.svg",
+    "backgroundImage": "",
+    "favicon": "",
+    "themeCss": ""
+  }
+}

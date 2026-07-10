@@ -24,7 +24,7 @@ func TestFederatedLoadClients(t *testing.T) {
 	err := federated.Load("konveyor-tackle")
 	g.Expect(err).To(BeNil())
 
-	g.Expect(federated.Clients).To(HaveLen(3))
+	g.Expect(federated.Clients).To(HaveLen(4))
 
 	// Verify web-ui client
 	var webUI *IdpClient
@@ -61,6 +61,18 @@ func TestFederatedLoadClients(t *testing.T) {
 	g.Expect(kaiIDE).NotTo(BeNil())
 	g.Expect(kaiIDE.ID).To(Equal(uint(3)))
 	g.Expect(kaiIDE.ApplicationType).To(Equal("native"))
+
+	// Verify web-ui-with-secret client
+	var confidential *IdpClient
+	for i := range federated.Clients {
+		if federated.Clients[i].ClientId == "web-ui-with-secret" {
+			confidential = &federated.Clients[i]
+			break
+		}
+	}
+	g.Expect(confidential).NotTo(BeNil())
+	g.Expect(confidential.ID).To(Equal(uint(4)))
+	g.Expect(confidential.ApplicationType).To(Equal("web"))
 }
 
 // TestFederatedGetClientsWithSecret tests secret resolution for clients with clientSecret reference.
@@ -77,18 +89,16 @@ func TestFederatedGetClientsWithSecret(t *testing.T) {
 	err := federated.Load("konveyor-tackle")
 	g.Expect(err).To(BeNil())
 
-	// Find web-ui client
-	var webUI *IdpClient
+	// Find web-ui-with-secret client (confidential client with secret reference)
+	var confidential *IdpClient
 	for i := range federated.Clients {
-		if federated.Clients[i].ClientId == "web-ui" {
-			webUI = &federated.Clients[i]
+		if federated.Clients[i].ClientId == "web-ui-with-secret" {
+			confidential = &federated.Clients[i]
 			break
 		}
 	}
-	g.Expect(webUI).NotTo(BeNil())
-
-	// Verify secret was resolved from Kubernetes Secret
-	g.Expect(webUI.Secret).To(Equal("test-secret-value"))
+	g.Expect(confidential).NotTo(BeNil())
+	g.Expect(confidential.Secret).To(Equal("test-secret-value"))
 }
 
 // TestFederatedGetClientsPublic tests public clients work without secrets.
