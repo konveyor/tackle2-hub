@@ -24,7 +24,7 @@ fmt: $(GOIMPORTS)
 	$(GOIMPORTS) -w $(PKGDIR)
 
 # Run go vet against code
-vet:
+vet: frontend-stub
 	go vet $(PKG)
 
 # Build hub
@@ -50,6 +50,11 @@ run: frontend fmt vet
 	go run ./cmd/main.go
 
 # Build frontend
+.PHONY: frontend-stub
+frontend-stub:
+	mkdir -p $(FRONTEND_AUTH_DIR)/dist
+	touch $(FRONTEND_AUTH_DIR)/dist/empty
+
 .PHONY: frontend
 frontend: $(FRONTEND_AUTH_MARKER)
 
@@ -150,22 +155,22 @@ endif
 .PHONY: test test-api test-integration migration test-binding test-auth test-all
 
 # Run unit tests (all tests outside /test directory).
-test:
+test: frontend-stub
 	go test -count=1 -v $(shell go list ./... | grep -v "hub/test")
 
-test-db:
+test-db: frontend-stub
 	go test -count=1 -timeout=6h -v ./database...
 
 # Run Hub REST API tests.
 test-api:
 	# Deprecated
 
-test-binding:
+test-binding: frontend-stub
 	for pkg in $$(go list ./test/binding/...); do \
 	  HUB_BASE_URL="$(HUB_BASE_URL)" go test -count=1 -v -failfast -parallel=1 "$$pkg" || exit 1; \
 	done
 
-test-auth:
+test-auth: frontend-stub
 	for pkg in $$(go list ./test/auth/...); do \
 	  HUB_BASE_URL="$(HUB_BASE_URL)" go test -count=1 -v -failfast "$$pkg" || exit 1; \
 	done
