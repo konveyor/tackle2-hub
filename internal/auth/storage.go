@@ -785,49 +785,24 @@ func (r *Login) complete() (err error) {
 	if err != nil {
 		return
 	}
-
 	if r.login == "" || r.password == "" {
-		if r.isExpired() {
-			if rErr := r.renewAuthRequest(); rErr != nil {
-				if pgErr := r.renderExpiredPage(); pgErr != nil {
-					Log.Error(pgErr, "Failed to render session-expired page.")
-				}
-				err = nil
-				return
-			}
-		}
-		err = r.renderPage()
+		_ = r.renderPage()
 		return
 	}
-
 	err = r.authenticate()
 	if err != nil {
 		Log.Info(err.Error())
 		r.authErrorMsg = "Invalid username or password."
-		if rErr := r.renderPage(); rErr != nil {
-			Log.Error(rErr, "Failed to render login page after authentication failure.")
-		}
+		_ = r.renderPage()
 		err = nil
 		return
 	}
-
 	err = r.updateAuthRequest()
 	if err != nil {
-		if rErr := r.renewAuthRequest(); rErr != nil {
-			if pgErr := r.renderExpiredPage(); pgErr != nil {
-				Log.Error(pgErr, "Failed to render session-expired page.")
-			}
-			err = nil
-			return
-		}
-		r.authErrorMsg = "Login attempt timed out, please login again."
-		if rErr := r.renderPage(); rErr != nil {
-			Log.Error(rErr, "Failed to render login page after timeout.")
-		}
+		_ = r.renderExpiredPage()
 		err = nil
 		return
 	}
-
 	r.redirect()
 	return
 }
@@ -922,43 +897,6 @@ func (r *Login) updateAuthRequest() (err error) {
 	return
 }
 
-// renewAuthRequest creates a new auth request from the expired one's OIDC
-// parameters and updates r.authReqId to the new ID. Returns an error when the
-// original request is no longer in the map and cannot be renewed.
-func (r *Login) renewAuthRequest() (err error) {
-	r.storage.mutex.Lock()
-	defer r.storage.mutex.Unlock()
-	expired, found := r.storage.authReqById[r.authReqId]
-	if !found {
-		err = liberr.Wrap(errors.New("authRequest not found; cannot renew"))
-		return
-	}
-	now := time.Now()
-	newId := r.storage.genId()
-	renewed := &AuthRequest{
-		AuthRequest: expired.AuthRequest,
-		requestId:   newId,
-		issued:      now,
-		expiration:  now.Add(time.Hour),
-	}
-	delete(r.storage.authReqById, r.authReqId)
-	delete(r.storage.authReqByCode, expired.authCode)
-	r.storage.authReqById[newId] = renewed
-	r.authReqId = newId
-	return
-}
-
-// isExpired reports whether the current auth request is expired or absent.
-func (r *Login) isExpired() (expired bool) {
-	r.storage.mutex.Lock()
-	defer r.storage.mutex.Unlock()
-	authReq, found := r.storage.authReqById[r.authReqId]
-	if !found || time.Now().After(authReq.expiration) {
-		expired = true
-	}
-	return
-}
-
 // redirect redirects to the authorization callback.
 func (r *Login) redirect() {
 	issuer := AppendIssuer(r.request, api.AuthorizeCbRoute)
@@ -969,6 +907,11 @@ func (r *Login) redirect() {
 // renderExpiredPage serves the session-expired page when the auth request
 // has been fully removed and cannot be renewed.
 func (r *Login) renderExpiredPage() (err error) {
+	defer func() {
+		if err != nil {
+			Log.Error(err, "")
+		}
+	}()
 	pageReq := frontend.Request{
 		Page: frontend.SessionExpired,
 	}
@@ -979,6 +922,11 @@ func (r *Login) renderExpiredPage() (err error) {
 
 // renderPage serves the login page with the hub-injected configuration.
 func (r *Login) renderPage() (err error) {
+	defer func() {
+		if err != nil {
+			Log.Error(err, "")
+		}
+	}()
 	formAction := AppendIssuer(
 		r.request,
 		api.LoginRoute) +

@@ -1,6 +1,8 @@
 import React from "react";
 import {
+  Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
   EmptyStateVariant,
   LoginPage as PFLoginPage,
@@ -41,9 +43,13 @@ export const SessionExpiredPage: React.FC<SessionExpiredPageProps> = (
         headingLevel="h2"
       >
         <EmptyStateBody>
-          Your login session has expired. Please return to the application and
-          try again.
+          Login session has expired.
         </EmptyStateBody>
+        <EmptyStateActions>
+          <Button component="a" href="/" variant="primary">
+            Return to Application
+          </Button>
+        </EmptyStateActions>
       </EmptyState>
     </PFLoginPage>
   );
