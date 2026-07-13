@@ -6,12 +6,14 @@ import (
 
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/internal/model"
+	"github.com/konveyor/tackle2-hub/shared/settings"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
 var (
-	Log = logr.New("tickets", 0)
+	Log      = logr.New("tickets", 0)
+	Settings = &settings.Settings
 )
 
 // Intervals
@@ -29,7 +31,11 @@ type Manager struct {
 }
 
 // Run the manager.
+// Not started when in disconnected mode.
 func (m *Manager) Run(ctx context.Context) {
+	if Settings.Disconnected {
+		return
+	}
 	go func() {
 		Log.Info("Started.")
 		defer Log.Info("Died.")
@@ -93,7 +99,8 @@ func (m *Manager) testConnection(tracker *model.Tracker) (err error) {
 	tracker.Connected = connected
 	tracker.LastUpdated = time.Now()
 
-	result := m.DB.Save(tracker)
+	db := m.DB.Select("Connected", "Message", "LastUpdated")
+	result := db.Updates(tracker)
 	if result.Error != nil {
 		err = result.Error
 		return
