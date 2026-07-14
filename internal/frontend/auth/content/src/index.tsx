@@ -6,6 +6,7 @@ import { DeviceVerifyPage } from "./DeviceVerifyPage";
 import { DeviceSuccessPage } from "./DeviceSuccessPage";
 import { SessionExpiredPage } from "./SessionExpiredPage";
 import type { LoginConfig } from "./types";
+import { brandingStrings } from "./branding";
 
 import "@patternfly/react-core/dist/styles/base.css";
 // TODO Add support for branding.styles.themeCss (or in rspack.config.ts)
@@ -38,6 +39,8 @@ const App = () => {
       return <UserLoginPage config={config} />;
   }
 }
+
+document.title = brandingStrings.application.name ?? brandingStrings.application.title;
 
 const container = document.getElementById("root");
 if (!container) {
