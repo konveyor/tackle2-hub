@@ -11,7 +11,7 @@ internal/frontend/auth/
   handler.go            # Go handler with embedded assets and Render function
   content/              # Frontend project (React + PatternFly 6)
     package.json        # npm project (ESM, @tackle-hub/login-page)
-    tsconfig.json       # TypeScript config targeting ES2020 / bundler resolution
+    tsconfig.json       # TypeScript config targeting ES2023 / bundler resolution
     rspack.config.ts    # Rspack 2 build config with branding + asset serving
     branding/           # Default branding (swappable at container build time)
       strings.json      # Branding strings: app title, page titles, image paths
@@ -24,6 +24,7 @@ internal/frontend/auth/
       UserLoginPage.tsx # PF6 login form (username/password + optional federated IdP)
       DeviceVerifyPage.tsx # PF6 device code entry form
       DeviceSuccessPage.tsx # PF6 device authorization success page
+      SessionExpiredPage.tsx # PF6 session-expired notice with return link
     dist/               # Build output (gitignored; embedded via go:embed)
 ```
 
@@ -34,7 +35,7 @@ internal/frontend/auth/
 
 ```bash
 cd internal/frontend/auth/content
-npm install
+npm clean-install --ignore-scripts
 npm run build          # outputs to internal/frontend/auth/content/dist/
 ```
 
@@ -47,8 +48,10 @@ make hub       # Builds Go binary with embedded assets
 
 Or manually:
 ```bash
-cd internal/frontend/auth/content && npm run build
-cd ../../../.. && go build cmd/main.go
+pushd internal/frontend/auth/content
+npm run build
+popd
+go build cmd/main.go
 ```
 
 ## Custom Branding
@@ -70,26 +73,27 @@ docker build --build-arg BRANDING=my-custom-branding -t tackle2-hub .
 ```json
 {
   "application": { "title": "...", "name": "...", "description": "..." },
-  "loginPage":   { "title": "...", "subtitle": "..." },
-  "devicePage":  { "title": "...", "subtitle": "...", "successTitle": "...", "successMessage": "..." },
-  "images":      { "brand": "branding/logo.svg", "background": "" }
+  "loginPage":   { "title": "...", "subtitle": "...", "textContent": "" },
+  "devicePage":  { "title": "...", "subtitle": "...", "textContent": "", "successTitle": "...", "successMessage": "..." },
+  "styles":      { "brandImage": "{{publicPath}}branding/logo.svg", "backgroundImage": "", "favicon": "", "themeCss": "" }
 }
 ```
 
 Image assets (SVGs, PNGs) in the branding directory are copied to `dist/branding/`
-by `CopyRspackPlugin`. Reference them from `strings.json` using the path
-`branding/<filename>` (relative to the served root).
+by `CopyRspackPlugin`. Reference them from `strings.json` using the Handlebars placeholder
+`{{publicPath}}branding/<filename>` — the `handlebars` npm package compiles `strings.json`
+at build time, substituting `{{publicPath}}` with the value from `rspack.config.ts`.
 
 ### Dockerfile Branding
 
 See `Dockerfile` for details. The build copies custom branding before running `npm run build`:
 
 ```dockerfile
-FROM registry.access.redhat.com/ubi10/nodejs-22:latest as login-page
+FROM registry.access.redhat.com/ubi10/nodejs-22:latest AS frontend
 ARG BRANDING=internal/frontend/auth/content/branding
 COPY --chown=1001:0 internal/frontend/auth/content/ .
 COPY --chown=1001:0 ${BRANDING}/ branding/
-RUN npm ci && npm run build
+RUN npm clean-install --ignore-scripts --no-audit && npm run build
 ```
 
 ## Runtime Configuration Injection
@@ -108,7 +112,7 @@ TypeScript definition in `content/src/types.ts`, mirrored as `Request` struct in
 
 ```typescript
 interface LoginConfig {
-  page: "login" | "device-verify" | "device-success";
+  page: "login" | "device-verify" | "device-success" | "session-expired";
   formAction?: string;       // POST URL for login form
   errorMessage?: string;     // Shown on authentication failure
   federatedIdp?: {
@@ -137,8 +141,8 @@ err := auth.Handler{}.Render(w, req)
 The compiled JS/CSS/font assets are embedded in the Go binary and served at
 `/frontend/auth/*` (or `/hub/frontend/auth/*` when behind a proxy with base path).
 
-The rspack `publicPath` is set dynamically based on the `HUB_BASE_PATH` environment
-variable during build to handle different deployment scenarios.
+The rspack `publicPath` is hardcoded to `"/"` in development and `"/hub/frontend/auth/"`
+in production (see `rspack.config.ts`).
 
 ## Adding a New Page Type
 

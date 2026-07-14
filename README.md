@@ -21,42 +21,29 @@ The hub provides a REST API, inventory and
 
 ### Building
 
-Build the hub binary **and** the login page frontend in one step:
+Build the hub binary **and** the login frontend in one step:
 
 ```bash
 make hub
 ```
 
-### Running locally with the login page
-
-The hub reads login page assets from `LOGIN_PAGE_PATH` (default `/opt/app/login-page`).
-The `run` target builds the frontend, then runs the hub binary with `LOGIN_PAGE_PATH`
-automatically pointed at the local build output (`login-page/dist`):
-
-```bash
-make run
-```
-
-To override the path (e.g. a pre-built copy elsewhere):
-
-```bash
-make run LOGIN_PAGE_PATH=/path/to/login-page/dist
-```
-
 ### Building the login page separately
 
-```bash
-make login-page
-```
+Although the frontend login pages are embedded in the hub binary, the frontend login pages
+can be built apart from the hub binary:
 
-This runs `npm ci` (only when `node_modules/` is absent or `package-lock.json` changes)
-followed by `npm run build`. Output goes to `login-page/dist/`.
+```bash
+make frontend
+```
 
 To clean login page build artifacts:
 
 ```bash
-make clean-login-page
+make clean-frontend
 ```
+
+For hub to use the new pages, hub must be stopped, recompiled and restarted.  Currently, there
+is no way to recompile the frontend pages without recompiling the hub binary.
 
 ### Container builds
 
