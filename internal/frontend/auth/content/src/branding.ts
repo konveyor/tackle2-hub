@@ -26,7 +26,7 @@ export interface LoginBrandingStrings {
   styles: {
     brandImage?: string;
     backgroundImage?: string;
-    favicon?: string; // TODO: Add favicon support (in rspack.config.ts)
+    favicon?: string;
     themeCss?: string; // TODO: Add theme CSS support (in rspack.config.ts or index.tsx)
   };
 }
