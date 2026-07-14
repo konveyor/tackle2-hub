@@ -10,7 +10,7 @@ FROM registry.access.redhat.com/ubi10/nodejs-22:latest AS frontend
 ARG BRANDING
 COPY --chown=1001:0 internal/frontend/auth/content/ .
 COPY --chown=1001:0 ${BRANDING}/ branding/
-RUN npm ci && npm run build
+RUN npm clean-install --ignore-scripts --no-audit && npm run build
 
 FROM registry.access.redhat.com/ubi10/go-toolset:latest AS builder
 ENV GOPATH=$APP_ROOT
