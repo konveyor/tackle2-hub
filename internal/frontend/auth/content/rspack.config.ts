@@ -27,7 +27,7 @@ const brandingStrings = JSON.parse(
 
 const faviconPath = (JSON.parse(
   Handlebars.compile(brandingRaw)({ publicPath: `${brandingPath}/../` })
-) as LoginBrandingStrings)?.styles?.favicon ?? undefined;
+) as LoginBrandingStrings)?.styles?.favicon || undefined;
 
 const config: Configuration = {
   mode: isDev ? "development" : "production",
