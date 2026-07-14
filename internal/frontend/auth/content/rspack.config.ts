@@ -6,6 +6,7 @@ import Handlebars from "handlebars";
 import { rspack } from "@rspack/core";
 import type { Configuration } from "@rspack/core";
 import { TsCheckerRspackPlugin } from "ts-checker-rspack-plugin";
+import { LoginBrandingStrings } from "./src/branding";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const pathTo = (...parts: string[]) => path.resolve(__dirname, ...parts);
@@ -20,10 +21,13 @@ const distPath = pathTo("dist");
 const publicPath = isDev ? "/" : "/hub/frontend/auth/";
 
 const brandingRaw = readFileSync(path.resolve(brandingPath, "strings.json"), "utf8");
-
 const brandingStrings = JSON.parse(
   Handlebars.compile(brandingRaw)({ publicPath })
-);
+) as LoginBrandingStrings;
+
+const faviconPath = (JSON.parse(
+  Handlebars.compile(brandingRaw)({ publicPath: `${brandingPath}/../` })
+) as LoginBrandingStrings)?.styles?.favicon || undefined;
 
 const config: Configuration = {
   mode: isDev ? "development" : "production",
@@ -70,13 +74,18 @@ const config: Configuration = {
   plugins: [
     new TsCheckerRspackPlugin(),
     new rspack.HtmlRspackPlugin({
-      template: "./src/index.html",
       filename: "index.html.tmpl",
+      template: "./src/index.html",
+      templateParameters: {
+        title: brandingStrings.application.title,
+        name: brandingStrings.application.name ?? brandingStrings.application.title,
+        description: brandingStrings.application.description ?? "",
+      },
+      favicon: faviconPath,
+
       // Minification is disabled so that Go template actions ({{ . }})
       // in the source HTML pass through to the output unchanged.
       minify: false,
-      // TODO Add support for branding.styles.favicon
-      // TODO Add support for branding.styles.themeCss
     }),
     new rspack.CssExtractRspackPlugin({
       filename: isDev ? "[name].css" : "[name].[contenthash:8].css",

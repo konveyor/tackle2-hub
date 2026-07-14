@@ -19,7 +19,7 @@
   "styles": {
     "brandImage": "{{publicPath}}branding/logo.svg",
     "backgroundImage": "",
-    "favicon": "",
+    "favicon": "{{publicPath}}branding/favicon.ico",
     "themeCss": ""
   }
 }
