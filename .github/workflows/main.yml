@@ -37,7 +37,7 @@ jobs:
   test-frontend-lookup-container:
     runs-on: ubuntu-latest
     outputs:
-      frontend-image: ${{ steps.grepBuilder.outputs.builder }}
+      image: ${{ steps.grepBuilder.outputs.image }}
 
     steps:
       - uses: actions/checkout@v7
@@ -45,13 +45,13 @@ jobs:
       - name: Lookup frontend image builder from the project's Dockerfile
         id: grepBuilder
         run: |
-          frontend-image=$(grep -i 'as frontend' Dockerfile | sed -e 's/^from \(.*\) as frontend$/\1/i')
-          echo "frontend-image=$frontend-image" >> "$GITHUB_OUTPUT"
+          image=$(grep -i 'as frontend' Dockerfile | sed -e 's/^from \(.*\) as frontend$/\1/i')
+          echo "image=${image}" >> "$GITHUB_OUTPUT"
 
   test-frontend:
     needs: test-frontend-lookup-container
     runs-on: ubuntu-latest
-    container: ${{ needs.test-frontend-lookup-container.outputs.frontend-image }}
+    container: ${{ needs.test-frontend-lookup-container.outputs.image }}
     steps:
       - uses: actions/checkout@v7
 
