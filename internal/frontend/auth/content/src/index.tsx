@@ -40,7 +40,7 @@ const App = () => {
   }
 }
 
-document.title = brandingStrings.application.name ?? brandingStrings.application.title;
+document.title = brandingStrings.application?.name ?? brandingStrings.application?.title ?? "Hub";
 
 const container = document.getElementById("root");
 if (!container) {
