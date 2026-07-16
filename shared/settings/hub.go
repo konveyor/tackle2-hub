@@ -380,7 +380,7 @@ func (r *Hub) Load() (err error) {
 		n, _ := strconv.Atoi(s)
 		r.Log.Auth = n
 	} else {
-		r.Log.Auth = r.Log.Master
+		r.Log.Auth = max(r.Log.Master, 1)
 	}
 	s, found = os.LookupEnv(EnvLogCmd)
 	if found {
@@ -394,14 +394,14 @@ func (r *Hub) Load() (err error) {
 		n, _ := strconv.Atoi(s)
 		r.Log.SSH = n
 	} else {
-		r.Log.SSH = r.Log.Master
+		r.Log.SSH = max(r.Log.Master, 1)
 	}
 	s, found = os.LookupEnv(EnvLogScm)
 	if found {
 		n, _ := strconv.Atoi(s)
 		r.Log.SCM = n
 	} else {
-		r.Log.SCM = r.Log.Master
+		r.Log.SCM = max(r.Log.Master, 1)
 	}
 	return
 }

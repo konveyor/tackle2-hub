@@ -79,7 +79,7 @@ func (h AnalysisProfileHandler) GetBundle(ctx *gin.Context) {
 	bundle := ApBundle{}
 	tmpDir, err := bundle.Build(h.DB(ctx), id)
 	if err != nil {
-		_ = ctx.Error(err)
+		ctx.Status(http.StatusInternalServerError)
 		return
 	}
 	defer func() {
@@ -296,6 +296,15 @@ type ApBundle struct {
 
 // Build constructs the bundle.
 func (b *ApBundle) Build(db *gorm.DB, id uint) (path string, err error) {
+	defer func() {
+		if err != nil {
+			Log.Info("Bundle build failed.",
+				"id",
+				id,
+				"reason",
+				err.Error())
+		}
+	}()
 	b.db = db
 	m, err := b.fetch(id)
 	if err != nil {
