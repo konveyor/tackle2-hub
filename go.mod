@@ -1,6 +1,6 @@
 module github.com/konveyor/tackle2-hub
 
-go 1.25.0
+go 1.25.12
 
 require (
 	github.com/PaesslerAG/gval v1.2.2
@@ -25,7 +25,8 @@ require (
 	github.com/swaggo/swag v1.16.1
 	github.com/vfaronov/httpheader v0.1.0
 	github.com/zitadel/oidc/v3 v3.47.2
-	golang.org/x/crypto v0.49.0
+	golang.org/x/crypto v0.54.0
+	golang.org/x/oauth2 v0.36.0
 	gopkg.in/op/go-logging.v1 v1.0.0-20160211212156-b2cb9fa56473
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -121,13 +122,12 @@ require (
 	go.opentelemetry.io/otel/trace v1.43.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
 	golang.org/x/arch v0.3.0 // indirect
-	golang.org/x/net v0.52.0 // indirect
-	golang.org/x/oauth2 v0.36.0 // indirect
-	golang.org/x/sys v0.42.0 // indirect
-	golang.org/x/term v0.41.0 // indirect
-	golang.org/x/text v0.36.0 // indirect
+	golang.org/x/net v0.57.0 // indirect
+	golang.org/x/sys v0.47.0 // indirect
+	golang.org/x/term v0.45.0 // indirect
+	golang.org/x/text v0.40.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
-	golang.org/x/tools v0.43.0 // indirect
+	golang.org/x/tools v0.47.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
