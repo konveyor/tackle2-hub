@@ -1,19 +1,25 @@
 package auth
 
 import (
+	"context"
+	"crypto/tls"
 	"embed"
 	"io/fs"
+	"net/url"
 	"sort"
+	"strings"
 
 	"github.com/google/uuid"
 	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/internal/auth/seed"
-	as "github.com/konveyor/tackle2-hub/internal/auth/settings"
 	"github.com/konveyor/tackle2-hub/internal/database"
+	crd "github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
 	"gopkg.in/yaml.v2"
 	"gorm.io/gorm"
+	core "k8s.io/api/core/v1"
+	k8sClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -30,7 +36,7 @@ const (
 var Domain *Tenant
 
 func init() {
-	Domain = NewTenant(nil)
+	Domain = NewTenant(nil, nil)
 	var err error
 	seedDir, err = fs.Sub(seedFS, "seed")
 	if err != nil {
@@ -39,9 +45,10 @@ func init() {
 }
 
 // NewTenant returns a new RBAC domain manager.
-func NewTenant(db *gorm.DB) *Tenant {
+func NewTenant(db *gorm.DB, client k8sClient.Client) *Tenant {
 	return &Tenant{
 		DB:          db,
+		client:      client,
 		roleByName:  make(map[string]uint),
 		scopeByName: make(map[string]Scope),
 		resources: map[string]bool{
@@ -53,9 +60,12 @@ func NewTenant(db *gorm.DB) *Tenant {
 // Tenant the RBAC domain.
 type Tenant struct {
 	DB          *gorm.DB
+	client      k8sClient.Client
 	resources   map[string]bool
 	roleByName  map[string]uint
 	scopeByName map[string]Scope
+	Idp         IdentityProvider
+	Ldap        LdapProvider
 }
 
 // Register registers a scope resource.
@@ -86,6 +96,19 @@ func (d *Tenant) Scopes() (scopes []string) {
 // HasScope returns true when the domain has the scope.
 func (d *Tenant) HasScope(scope string) (found bool) {
 	_, found = d.scopeByName[scope]
+	return
+}
+
+// Load the domain.
+func (d *Tenant) Load() (err error) {
+	err = d.getIdp()
+	if err != nil {
+		return
+	}
+	err = d.getLdap()
+	if err != nil {
+		return
+	}
 	return
 }
 
@@ -204,11 +227,11 @@ func (d *Tenant) buildUserRoles(user seed.User) (roles []Role, err error) {
 }
 
 // clientPatch computes the client reconciliation patch from CRD clients.
-func (d *Tenant) clientPatch(existing map[string]IdpClient, wanted []as.IdpClient) (patch *IdpClientPatch) {
+func (d *Tenant) clientPatch(existing map[string]IdpClient, wanted []IdpClient) (patch *IdpClientPatch) {
 	patch = &IdpClientPatch{
 		db: d.DB,
 	}
-	wantedMap := make(map[string]as.IdpClient)
+	wantedMap := make(map[string]IdpClient)
 	for _, client := range wanted {
 		wantedMap[client.ClientId] = client
 	}
@@ -219,19 +242,18 @@ func (d *Tenant) clientPatch(existing map[string]IdpClient, wanted []as.IdpClien
 			}
 		}
 	}
-	for _, settingsClient := range wanted {
-		if existingClient, found := existing[settingsClient.ClientId]; found {
-			patch.toUpdate = append(patch.toUpdate, clientWithSettings{
+	for _, resource := range wanted {
+		if existingClient, found := existing[resource.ClientId]; found {
+			patch.toUpdate = append(patch.toUpdate, clientWithResource{
 				client:   existingClient,
-				settings: settingsClient,
+				resource: resource,
 			})
 		} else {
-			newClient := IdpClient{}
-			newClient.With(&settingsClient)
+			newClient := resource
 			newClient.Subject = uuid.New().String()
-			patch.toCreate = append(patch.toCreate, clientWithSettings{
+			patch.toCreate = append(patch.toCreate, clientWithResource{
 				client:   newClient,
-				settings: settingsClient,
+				resource: resource,
 			})
 		}
 	}
@@ -389,7 +411,8 @@ func (d *Tenant) seedClients(db *gorm.DB) (err error) {
 	if err != nil {
 		return
 	}
-	patch := d.clientPatch(existing, federated.Clients)
+	resources, err := d.getClientResources()
+	patch := d.clientPatch(existing, resources)
 	err = patch.Apply(db)
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -478,6 +501,111 @@ func (d *Tenant) userPatch(existing map[string]User, wanted []seed.User) (patch 
 			})
 		}
 	}
+	return
+}
+
+// getClientResources returns client resources.
+func (d *Tenant) getClientResources() (found []IdpClient, err error) {
+	list := crd.IdpClientList{}
+	opt := k8sClient.InNamespace(Settings.Namespace)
+	err = d.client.List(context.Background(), &list, opt)
+	if err != nil {
+		return
+	}
+	for _, m := range list.Items {
+		client := IdpClient{
+			ClientId:        m.Spec.ClientId,
+			ApplicationType: m.Spec.ApplicationType,
+			Grants:          m.Spec.Grants,
+			RedirectURIs:    m.Spec.RedirectURIs,
+			Scopes:          m.Spec.Scopes,
+		}
+		client.ID = m.Spec.ID
+		ref := m.Spec.ClientSecret
+		if ref != nil {
+			client.Secret, err = d.getSecret(ref, "clientSecret")
+			if err != nil {
+				err = liberr.Wrap(err)
+				return
+			}
+		}
+
+		found = append(found, client)
+	}
+	return
+}
+
+// getIdp get a federated identity provider.
+func (d *Tenant) getIdp() (err error) {
+	list := crd.IdentityProviderList{}
+	opt := k8sClient.InNamespace(Settings.Namespace)
+	err = d.client.List(context.Background(), &list, opt)
+	if err != nil {
+		return
+	}
+	for _, m := range list.Items {
+		m2 := IdentityProvider{}
+		err = m2.with(&m)
+		if err != nil {
+			return
+		}
+		ref := m.Spec.ClientSecret
+		if ref != nil {
+			m2.ClientSecret, err = d.getSecret(ref, "clientSecret")
+			if err != nil {
+				err = liberr.Wrap(err)
+				return
+			}
+		}
+		d.Idp = m2
+		break
+	}
+	return
+}
+
+// getLdap get a federated LDAP provider.
+func (d *Tenant) getLdap() (err error) {
+	list := crd.LdapProviderList{}
+	opt := k8sClient.InNamespace(Settings.Namespace)
+	err = d.client.List(context.Background(), &list, opt)
+	if err != nil {
+		return
+	}
+	for _, m := range list.Items {
+		m2 := LdapProvider{}
+		err = m2.with(&m)
+		if err != nil {
+			return
+		}
+		ref := m.Spec.Password
+		if ref != nil {
+			m2.Password, err = d.getSecret(ref, "password")
+			if err != nil {
+				return
+			}
+		}
+		d.Ldap = m2
+		break
+	}
+	return
+}
+
+// secret returns the secret by key.
+func (d *Tenant) getSecret(ref *core.ObjectReference, key string) (s string, err error) {
+	secret := &core.Secret{}
+	err = d.client.Get(
+		context.Background(),
+		k8sClient.ObjectKey{
+			Namespace: ref.Namespace,
+			Name:      ref.Name,
+		},
+		secret)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	b := secret.Data[key]
+	s = string(b)
 	return
 }
 
@@ -580,14 +708,14 @@ func (p *RolePatch) Apply(db *gorm.DB) (err error) {
 type IdpClientPatch struct {
 	db       *gorm.DB
 	toDelete []uint
-	toUpdate []clientWithSettings
-	toCreate []clientWithSettings
+	toUpdate []clientWithResource
+	toCreate []clientWithResource
 }
 
-// clientWithSettings pairs database client with settings data.
-type clientWithSettings struct {
+// clientWithSetting pairs database client with resource.
+type clientWithResource struct {
 	client   IdpClient
-	settings as.IdpClient
+	resource IdpClient
 }
 
 // Apply applies the client patch to the database.
@@ -599,10 +727,7 @@ func (p *IdpClientPatch) Apply(db *gorm.DB) (err error) {
 			return
 		}
 	}
-	for _, item := range p.toUpdate {
-		m := &IdpClient{}
-		m.With(&item.settings)
-		m.ID = item.client.ID
+	for _, m := range p.toUpdate {
 		err = db.Model(m).Updates(m).Error
 		if err != nil {
 			err = liberr.Wrap(err)
@@ -615,6 +740,118 @@ func (p *IdpClientPatch) Apply(db *gorm.DB) (err error) {
 			err = liberr.Wrap(err)
 			return
 		}
+	}
+	return
+}
+
+//
+// Federated
+//
+
+// IdentityProvider defines a federated IdP.
+type IdentityProvider struct {
+	Enabled      bool
+	Primary      bool
+	Name         string
+	Issuer       string
+	ClientId     string
+	ClientSecret string
+	RedirectURI  string
+	Scopes       []string
+	TLS          *tls.Config
+	//
+	injected bool
+}
+
+// Inject template values:
+// - ${issuer}
+// - ${issuer.proto}
+// - ${issuer.host}
+// - ${issuer.port}
+// - ${issuer.path}
+// Note: not thread-safe.
+func (r *IdentityProvider) Inject(issuer string) {
+	if r.injected {
+		return
+	}
+	issuerURL, _ := url.Parse(issuer)
+	for _, u := range []*string{
+		&r.Issuer,
+		&r.RedirectURI,
+	} {
+		*u = strings.Replace(*u, "${issuer}", issuer, -1)
+		*u = strings.Replace(*u, "${issuer.proto}", issuerURL.Scheme, -1)
+		*u = strings.Replace(*u, "${issuer.host}", issuerURL.Hostname(), -1)
+		*u = strings.Replace(*u, "${issuer.port}", issuerURL.Port(), -1)
+		*u = strings.Replace(*u, "${issuer.path}", issuerURL.Path, -1)
+	}
+	r.injected = true
+}
+
+// String returns a string representation.
+func (r IdentityProvider) String() (s string) {
+	clone := r
+	clone.TLS = nil
+	b, _ := yaml.Marshal(clone)
+	s = string(b)
+	return
+}
+
+// with populates self with the crd.
+func (r *IdentityProvider) with(idp *crd.IdentityProvider) (err error) {
+	r.Enabled = true
+	r.Primary = idp.Spec.Primary
+	r.Name = idp.Name
+	r.Issuer = idp.Spec.Issuer
+	r.ClientId = idp.Spec.ClientId
+	r.RedirectURI = idp.Spec.RedirectURI
+	r.Scopes = idp.Spec.Scopes
+	r.TLS, err = idp.Spec.TLS.AsConfig()
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	return
+}
+
+// LdapProvider defines a federated LDAP directory.
+type LdapProvider struct {
+	Enabled      bool
+	Name         string
+	Kind         string
+	URL          string
+	BaseDN       string
+	BindDN       string
+	Password     string
+	UserFilter   string
+	GroupFilter  string
+	HasMemberOf  bool
+	RoleMappings []MappingRule
+	TLS          *tls.Config
+}
+
+// with populates self using the crd.
+func (r *LdapProvider) with(ds *crd.LdapProvider) (err error) {
+	r.Enabled = true
+	r.Name = ds.Name
+	r.Kind = ds.Spec.Kind
+	r.URL = ds.Spec.URL
+	r.BaseDN = ds.Spec.BaseDN
+	r.BindDN = ds.Spec.BindDN
+	r.UserFilter = ds.Spec.UserFilter
+	r.GroupFilter = ds.Spec.GroupFilter
+	r.HasMemberOf = ds.Spec.HasMemberOf
+	for _, m := range ds.Spec.RoleMappings {
+		r.RoleMappings = append(r.RoleMappings, MappingRule{
+			Any:   m.Any,
+			And:   m.And,
+			Roles: m.Roles,
+		})
+	}
+	r.TLS, err = ds.Spec.TLS.AsConfig()
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
 	}
 	return
 }

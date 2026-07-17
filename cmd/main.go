@@ -138,7 +138,11 @@ func main() {
 		return
 	}
 	// Auth
-	auth.Domain = auth.NewTenant(db)
+	auth.Domain = auth.NewTenant(db, client)
+	err = auth.Domain.Load()
+	if err != nil {
+		return
+	}
 	auth.IdP, err = auth.New(db)
 	if err != nil {
 		return

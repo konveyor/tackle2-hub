@@ -85,20 +85,20 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 	}
 	builtin.storage.idpHandler = builtin.idpHandler
 	ds := LDAP{
-		Kind:        federated.Ldap.Kind,
-		Name:        federated.Ldap.Name,
-		URL:         federated.Ldap.URL,
-		BaseDN:      federated.Ldap.BaseDN,
-		BindDN:      federated.Ldap.BindDN,
-		Password:    federated.Ldap.Password,
-		UserFilter:  federated.Ldap.UserFilter,
-		GroupFilter: federated.Ldap.GroupFilter,
-		HasMemberOf: federated.Ldap.HasMemberOf,
-		TLS:         federated.Ldap.TLS,
+		Kind:        Domain.Ldap.Kind,
+		Name:        Domain.Ldap.Name,
+		URL:         Domain.Ldap.URL,
+		BaseDN:      Domain.Ldap.BaseDN,
+		BindDN:      Domain.Ldap.BindDN,
+		Password:    Domain.Ldap.Password,
+		UserFilter:  Domain.Ldap.UserFilter,
+		GroupFilter: Domain.Ldap.GroupFilter,
+		HasMemberOf: Domain.Ldap.HasMemberOf,
+		TLS:         Domain.Ldap.TLS,
 	}
-	ds.mapper.Use(federated.Ldap.RoleMappings)
+	ds.mapper.Use(Domain.Ldap.RoleMappings)
 	builtin.dsHandler = &LdapHandler{
-		enabled: federated.Ldap.Enabled,
+		enabled: Domain.Ldap.Enabled,
 		cache:   builtin.cache,
 		db:      db,
 		ds:      ds,
@@ -149,8 +149,8 @@ func (p *Builtin) Cache() *Cache {
 // Ready notification of an incoming request.
 func (p *Builtin) Ready(r *http.Request) {
 	p.ready.Do(func() {
-		federated.Idp.Inject(Issuer(r))
-		Log.Info("Injected:\n" + federated.String())
+		Domain.Idp.Inject(Issuer(r))
+		Log.Info("Injected:\n" + Domain.Idp.String())
 	})
 }
 

@@ -15,8 +15,8 @@ import (
 	"github.com/go-ldap/ldap/v3"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	as "github.com/konveyor/tackle2-hub/internal/auth/settings"
 	"github.com/konveyor/tackle2-hub/internal/database"
+	"github.com/konveyor/tackle2-hub/internal/k8s"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
 	. "github.com/onsi/gomega"
@@ -2499,20 +2499,17 @@ func TestSeedClientsFromCRD(t *testing.T) {
 	originalDisconnected := Settings.Disconnected
 	defer func() {
 		Settings.Disconnected = originalDisconnected
-		federated = &as.Federated{} // Reset federated for next test
 	}()
 	Settings.Disconnected = true
 
-	// Setup DB
+	// Setup DB and client.
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
-
-	// Load federated settings (gets fake client with seed data)
-	err = federated.Load("konveyor-tackle")
+	client, err := k8s.NewClient()
 	g.Expect(err).To(BeNil())
 
 	// Seed clients
-	domain := NewTenant(db)
+	domain := NewTenant(db, client)
 	err = domain.seedClients(db)
 	g.Expect(err).To(BeNil())
 
@@ -2565,11 +2562,13 @@ func TestSeedClientsUpdate(t *testing.T) {
 	originalDisconnected := Settings.Disconnected
 	defer func() {
 		Settings.Disconnected = originalDisconnected
-		federated = &as.Federated{} // Reset federated for next test
 	}()
 	Settings.Disconnected = true
 
+	// Setup DB and client.
 	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+	client, err := k8s.NewClient()
 	g.Expect(err).To(BeNil())
 
 	// Pre-create client in DB with different grants
@@ -2583,12 +2582,8 @@ func TestSeedClientsUpdate(t *testing.T) {
 	err = db.Create(existing).Error
 	g.Expect(err).To(BeNil())
 
-	// Load CRDs
-	err = federated.Load("konveyor-tackle")
-	g.Expect(err).To(BeNil())
-
 	// Seed clients
-	domain := NewTenant(db)
+	domain := NewTenant(db, client)
 	err = domain.seedClients(db)
 	g.Expect(err).To(BeNil())
 
@@ -2616,11 +2611,13 @@ func TestSeedClientsDeleteOrphaned(t *testing.T) {
 	originalDisconnected := Settings.Disconnected
 	defer func() {
 		Settings.Disconnected = originalDisconnected
-		federated = &as.Federated{} // Reset federated for next test
 	}()
 	Settings.Disconnected = true
 
+	// Setup DB and client.
 	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+	client, err := k8s.NewClient()
 	g.Expect(err).To(BeNil())
 
 	// Create orphaned seeded client (ID < 1000, not in CRDs)
@@ -2645,12 +2642,8 @@ func TestSeedClientsDeleteOrphaned(t *testing.T) {
 	err = db.Create(nonSeeded).Error
 	g.Expect(err).To(BeNil())
 
-	// Load CRDs (web-ui, kantra, kai-ide)
-	err = federated.Load("konveyor-tackle")
-	g.Expect(err).To(BeNil())
-
 	// Seed clients
-	domain := NewTenant(db)
+	domain := NewTenant(db, client)
 	err = domain.seedClients(db)
 	g.Expect(err).To(BeNil())
 
@@ -2678,18 +2671,16 @@ func TestSeedClientsIDPreservation(t *testing.T) {
 	originalDisconnected := Settings.Disconnected
 	defer func() {
 		Settings.Disconnected = originalDisconnected
-		federated = &as.Federated{} // Reset federated for next test
 	}()
 	Settings.Disconnected = true
 
+	// Setup DB and client.
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
-
-	// Load CRDs
-	err = federated.Load("konveyor-tackle")
+	client, err := k8s.NewClient()
 	g.Expect(err).To(BeNil())
 
-	domain := NewTenant(db)
+	domain := NewTenant(db, client)
 
 	// First seed
 	err = domain.seedClients(db)
@@ -3140,6 +3131,135 @@ func TestClientInjectComplexWildcardPatterns(t *testing.T) {
 	}
 }
 
+// TestIdentityProviderInject tests template variable injection.
+func TestIdentityProviderInject(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	idp := &IdentityProvider{
+		Issuer:      "https://${issuer.host}/auth",
+		RedirectURI: "${issuer.proto}://${issuer.host}:${issuer.port}/callback",
+	}
+
+	issuer := "https://hub.example.com:8443/oidc"
+	idp.Inject(issuer)
+
+	g.Expect(idp.Issuer).To(Equal("https://hub.example.com/auth"))
+	g.Expect(idp.RedirectURI).To(Equal("https://hub.example.com:8443/callback"))
+}
+
+// TestIdentityProviderInjectIssuerVariable tests ${issuer} template variable.
+func TestIdentityProviderInjectIssuerVariable(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	idp := &IdentityProvider{
+		Issuer:      "${issuer}/external",
+		RedirectURI: "${issuer}/callback",
+	}
+
+	issuer := "https://auth.example.com"
+	idp.Inject(issuer)
+
+	g.Expect(idp.Issuer).To(Equal("https://auth.example.com/external"))
+	g.Expect(idp.RedirectURI).To(Equal("https://auth.example.com/callback"))
+}
+
+// TestIdentityProviderInjectIdempotent tests that Inject() is idempotent.
+func TestIdentityProviderInjectIdempotent(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	idp := &IdentityProvider{
+		Issuer:      "https://${issuer.host}/auth",
+		RedirectURI: "${issuer}/callback",
+	}
+
+	issuer := "https://hub.example.com/oidc"
+
+	idp.Inject(issuer)
+	firstIssuer := idp.Issuer
+	firstRedirect := idp.RedirectURI
+
+	idp.Inject("https://different.example.com/oidc")
+
+	g.Expect(idp.Issuer).To(Equal(firstIssuer))
+	g.Expect(idp.RedirectURI).To(Equal(firstRedirect))
+}
+
+// TestIdentityProviderInjectNoTemplates tests Inject() with no template variables.
+func TestIdentityProviderInjectNoTemplates(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	idp := &IdentityProvider{
+		Issuer:      "https://static.example.com/auth",
+		RedirectURI: "https://app.example.com/callback",
+	}
+
+	issuer := "https://hub.example.com/oidc"
+	idp.Inject(issuer)
+
+	g.Expect(idp.Issuer).To(Equal("https://static.example.com/auth"))
+	g.Expect(idp.RedirectURI).To(Equal("https://app.example.com/callback"))
+}
+
+// TestIdentityProviderInjectAllVariables tests all template variables.
+func TestIdentityProviderInjectAllVariables(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	idp := &IdentityProvider{
+		Issuer:      "${issuer.proto}://${issuer.host}:${issuer.port}${issuer.path}/auth",
+		RedirectURI: "${issuer}/callback",
+	}
+
+	issuer := "https://hub.example.com:9443/oidc"
+	idp.Inject(issuer)
+
+	g.Expect(idp.Issuer).To(Equal("https://hub.example.com:9443/oidc/auth"))
+	g.Expect(idp.RedirectURI).To(Equal("https://hub.example.com:9443/oidc/callback"))
+}
+
+// TestIdentityProviderInjectDefaultPort tests template variables with default port.
+func TestIdentityProviderInjectDefaultPort(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	idp := &IdentityProvider{
+		Issuer:      "https://${issuer.host}:${issuer.port}/auth",
+		RedirectURI: "http://${issuer.host}:${issuer.port}/callback",
+	}
+
+	issuer := "https://hub.example.com/oidc"
+	idp.Inject(issuer)
+
+	// When port is default (443 for https), ${issuer.port} expands to empty string
+	g.Expect(idp.Issuer).To(Equal("https://hub.example.com:/auth"))
+	g.Expect(idp.RedirectURI).To(Equal("http://hub.example.com:/callback"))
+}
+
+// TestIdentityProviderInjectConcurrent tests thread-safety of Inject().
+func TestIdentityProviderInjectConcurrent(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	idp := &IdentityProvider{
+		Issuer:      "https://${issuer.host}/auth",
+		RedirectURI: "${issuer}/callback",
+	}
+
+	issuer := "https://hub.example.com/oidc"
+
+	done := make(chan bool, 10)
+	for i := 0; i < 10; i++ {
+		go func() {
+			idp.Inject(issuer)
+			done <- true
+		}()
+	}
+
+	for i := 0; i < 10; i++ {
+		<-done
+	}
+
+	g.Expect(idp.Issuer).To(Equal("https://hub.example.com/auth"))
+	g.Expect(idp.RedirectURI).To(Equal("https://hub.example.com/oidc/callback"))
+}
+
 // setupTestDB creates an in-memory SQLite database for testing.
 func setupTestDB() (db *gorm.DB, err error) {
 	db, err = database.OpenTest()
@@ -3188,10 +3308,10 @@ func (m *mockRelyingParty) Logger(context.Context) (*slog.Logger, bool) { return
 func TestEndSessionURL(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	savedIdp := federated.Idp
-	defer func() { federated.Idp = savedIdp }()
+	savedIdp := Domain.Idp
+	defer func() { Domain.Idp = savedIdp }()
 
-	federated.Idp = as.IdentityProvider{
+	Domain.Idp = IdentityProvider{
 		Enabled:  true,
 		ClientId: "hub-client",
 	}
@@ -3217,10 +3337,10 @@ func TestEndSessionURL(t *testing.T) {
 func TestEndSessionURLNoRedirect(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	savedIdp := federated.Idp
-	defer func() { federated.Idp = savedIdp }()
+	savedIdp := Domain.Idp
+	defer func() { Domain.Idp = savedIdp }()
 
-	federated.Idp = as.IdentityProvider{
+	Domain.Idp = IdentityProvider{
 		Enabled:  true,
 		ClientId: "hub-client",
 	}
@@ -3245,10 +3365,10 @@ func TestEndSessionURLNoRedirect(t *testing.T) {
 func TestEndSessionURLExistingQuery(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	savedFederated := *federated
-	defer func() { *federated = savedFederated }()
+	savedIdp := Domain.Idp
+	defer func() { Domain.Idp = savedIdp }()
 
-	federated.Idp = as.IdentityProvider{
+	Domain.Idp = IdentityProvider{
 		Enabled:  true,
 		ClientId: "hub-client",
 	}
@@ -3273,10 +3393,10 @@ func TestEndSessionURLExistingQuery(t *testing.T) {
 func TestEndSessionURLDisabled(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	savedFederated := *federated
-	defer func() { *federated = savedFederated }()
+	savedIdp := Domain.Idp
+	defer func() { Domain.Idp = savedIdp }()
 
-	federated.Idp = as.IdentityProvider{
+	Domain.Idp = IdentityProvider{
 		Enabled: false,
 	}
 
@@ -3296,10 +3416,10 @@ func TestEndSessionURLDisabled(t *testing.T) {
 func TestEndSessionURLNoEndpoint(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	savedFederated := *federated
-	defer func() { *federated = savedFederated }()
+	savedIdp := Domain.Idp
+	defer func() { Domain.Idp = savedIdp }()
 
-	federated.Idp = as.IdentityProvider{
+	Domain.Idp = IdentityProvider{
 		Enabled:  true,
 		ClientId: "hub-client",
 	}
@@ -3320,10 +3440,10 @@ func TestEndSessionURLNoEndpoint(t *testing.T) {
 func TestEndSessionURLNoClient(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	savedFederated := *federated
-	defer func() { *federated = savedFederated }()
+	savedIdp := Domain.Idp
+	defer func() { Domain.Idp = savedIdp }()
 
-	federated.Idp = as.IdentityProvider{
+	Domain.Idp = IdentityProvider{
 		Enabled:  true,
 		ClientId: "hub-client",
 	}
@@ -4269,7 +4389,7 @@ func TestScopeGenerationWithNounVerb(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create domain and register resources
-	domain := NewTenant(db)
+	domain := NewTenant(db, nil)
 	domain.Register("applications")
 	domain.Register("tags")
 

@@ -10,7 +10,6 @@ import (
 	dr "github.com/bmatcuk/doublestar/v4"
 	"github.com/go-ldap/ldap/v3"
 	liberr "github.com/jortel/go-utils/error"
-	"github.com/konveyor/tackle2-hub/internal/auth/settings"
 	"github.com/konveyor/tackle2-hub/internal/secret"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -372,7 +371,7 @@ type RoleMapper struct {
 }
 
 // Use settings ruleset.
-func (r *RoleMapper) Use(ruleSet []settings.MappingRule) {
+func (r *RoleMapper) Use(ruleSet []MappingRule) {
 	for _, rule := range ruleSet {
 		r.RuleSet = append(
 			r.RuleSet,

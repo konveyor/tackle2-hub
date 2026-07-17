@@ -8,7 +8,6 @@ import (
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/internal/auth/cache"
 	"github.com/konveyor/tackle2-hub/internal/auth/seed"
-	as "github.com/konveyor/tackle2-hub/internal/auth/settings"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/shared/settings"
 	"gorm.io/gorm"
@@ -38,18 +37,13 @@ const (
 )
 
 var (
-	Settings  = &settings.Settings
-	Log       = logr.New("auth", Settings.Log.Auth)
-	federated = &as.Federated{}
-	IdP       Provider
+	Settings = &settings.Settings
+	Log      = logr.New("auth", Settings.Log.Auth)
+	IdP      Provider
 )
 
 // New returns an auth provider.
 func New(db *gorm.DB) (p Provider, err error) {
-	err = federated.Load(Settings.Namespace)
-	if err != nil {
-		return
-	}
 	builtin, err := NewBuiltin(db)
 	if err != nil {
 		return
