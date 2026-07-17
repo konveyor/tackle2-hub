@@ -2508,8 +2508,10 @@ func TestSeedClientsFromCRD(t *testing.T) {
 	client, err := k8s.NewClient()
 	g.Expect(err).To(BeNil())
 
-	// Seed clients
+	// Load and seed clients
 	domain := NewTenant(db, client)
+	err = domain.Load()
+	g.Expect(err).To(BeNil())
 	err = domain.seedClients(db)
 	g.Expect(err).To(BeNil())
 
@@ -2582,8 +2584,10 @@ func TestSeedClientsUpdate(t *testing.T) {
 	err = db.Create(existing).Error
 	g.Expect(err).To(BeNil())
 
-	// Seed clients
+	// Load and seed clients
 	domain := NewTenant(db, client)
+	err = domain.Load()
+	g.Expect(err).To(BeNil())
 	err = domain.seedClients(db)
 	g.Expect(err).To(BeNil())
 
@@ -2642,8 +2646,10 @@ func TestSeedClientsDeleteOrphaned(t *testing.T) {
 	err = db.Create(nonSeeded).Error
 	g.Expect(err).To(BeNil())
 
-	// Seed clients
+	// Load and seed clients
 	domain := NewTenant(db, client)
+	err = domain.Load()
+	g.Expect(err).To(BeNil())
 	err = domain.seedClients(db)
 	g.Expect(err).To(BeNil())
 
@@ -2681,6 +2687,8 @@ func TestSeedClientsIDPreservation(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	domain := NewTenant(db, client)
+	err = domain.Load()
+	g.Expect(err).To(BeNil())
 
 	// First seed
 	err = domain.seedClients(db)

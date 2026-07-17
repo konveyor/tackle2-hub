@@ -64,6 +64,9 @@ type Tenant struct {
 	resources   map[string]bool
 	roleByName  map[string]uint
 	scopeByName map[string]Scope
+	clients     []IdpClient
+	roles       []seed.Role
+	users       []seed.User
 	Idp         IdentityProvider
 	Ldap        LdapProvider
 }
@@ -106,6 +109,18 @@ func (d *Tenant) Load() (err error) {
 		return
 	}
 	err = d.getLdap()
+	if err != nil {
+		return
+	}
+	d.clients, err = d.getClientResources()
+	if err != nil {
+		return
+	}
+	d.roles, err = d.readRoles()
+	if err != nil {
+		return
+	}
+	d.users, err = d.readUsers()
 	if err != nil {
 		return
 	}
@@ -244,17 +259,14 @@ func (d *Tenant) clientPatch(existing map[string]IdpClient, wanted []IdpClient) 
 	}
 	for _, resource := range wanted {
 		if existingClient, found := existing[resource.ClientId]; found {
-			patch.toUpdate = append(patch.toUpdate, clientWithResource{
-				client:   existingClient,
-				resource: resource,
-			})
+			updated := resource
+			updated.Model = existingClient.Model
+			updated.Subject = existingClient.Subject
+			patch.toUpdate = append(patch.toUpdate, updated)
 		} else {
 			newClient := resource
 			newClient.Subject = uuid.New().String()
-			patch.toCreate = append(patch.toCreate, clientWithResource{
-				client:   newClient,
-				resource: resource,
-			})
+			patch.toCreate = append(patch.toCreate, newClient)
 		}
 	}
 	return
@@ -411,8 +423,7 @@ func (d *Tenant) seedClients(db *gorm.DB) (err error) {
 	if err != nil {
 		return
 	}
-	resources, err := d.getClientResources()
-	patch := d.clientPatch(existing, resources)
+	patch := d.clientPatch(existing, d.clients)
 	err = patch.Apply(db)
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -425,15 +436,11 @@ func (d *Tenant) seedClients(db *gorm.DB) (err error) {
 // Preserves existing role IDs, deletes orphaned seeded roles (ID < MaxId),
 // and creates new roles with static IDs from YAML.
 func (d *Tenant) seedRoles(db *gorm.DB) (err error) {
-	roles, err := d.readRoles()
-	if err != nil {
-		return
-	}
 	existing, err := d.fetchRoles(db)
 	if err != nil {
 		return
 	}
-	patch := d.rolePatch(existing, roles)
+	patch := d.rolePatch(existing, d.roles)
 	err = patch.Apply(db)
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -446,15 +453,11 @@ func (d *Tenant) seedRoles(db *gorm.DB) (err error) {
 // Preserves existing user IDs, deletes orphaned seeded users (ID < MaxId),
 // and creates new users with static IDs from YAML.
 func (d *Tenant) seedUsers(db *gorm.DB) (err error) {
-	users, err := d.readUsers()
-	if err != nil {
-		return
-	}
 	existing, err := d.fetchUsers(db)
 	if err != nil {
 		return
 	}
-	patch := d.userPatch(existing, users)
+	patch := d.userPatch(existing, d.users)
 	err = patch.Apply(db)
 	if err != nil {
 		err = liberr.Wrap(err)
@@ -704,18 +707,12 @@ func (p *RolePatch) Apply(db *gorm.DB) (err error) {
 	return
 }
 
-// IdpClientPatch represents changes to reconcile clients from YAML.
+// IdpClientPatch represents changes to reconcile clients from CRDs.
 type IdpClientPatch struct {
 	db       *gorm.DB
 	toDelete []uint
-	toUpdate []clientWithResource
-	toCreate []clientWithResource
-}
-
-// clientWithSetting pairs database client with resource.
-type clientWithResource struct {
-	client   IdpClient
-	resource IdpClient
+	toUpdate []IdpClient
+	toCreate []IdpClient
 }
 
 // Apply applies the client patch to the database.
@@ -727,15 +724,17 @@ func (p *IdpClientPatch) Apply(db *gorm.DB) (err error) {
 			return
 		}
 	}
-	for _, m := range p.toUpdate {
-		err = db.Model(m).Updates(m).Error
+	for i := range p.toUpdate {
+		m := &p.toUpdate[i]
+		err = db.Save(m).Error
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
 		}
 	}
-	for _, item := range p.toCreate {
-		err = db.Create(&item.client).Error
+	for i := range p.toCreate {
+		m := &p.toCreate[i]
+		err = db.Create(m).Error
 		if err != nil {
 			err = liberr.Wrap(err)
 			return
