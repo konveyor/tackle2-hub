@@ -48,7 +48,7 @@ func (r *Command) Run() (err error) {
 
 // RunWith executes the command with context.
 func (r *Command) RunWith(ctx context.Context) (err error) {
-	Log.V(1).Info("Run: " + r.String())
+	Log.V(1).Info("Run: " + r.Command())
 	defer func() {
 		r.Error = err
 		Log.V(1).Info(r.String())
@@ -78,9 +78,10 @@ func (r *Command) RunWith(ctx context.Context) (err error) {
 	err = cmd.Wait()
 	if err != nil {
 		err = &FailedError{
-			Command: r.Command(),
-			Exit:    cmd.ProcessState.ExitCode(),
-			Output:  string(r.Output()),
+			WithError: err,
+			Command:   r.Command(),
+			Exit:      cmd.ProcessState.ExitCode(),
+			Output:    string(r.Output()),
 		}
 		err = liberr.Wrap(err)
 		return
@@ -135,16 +136,18 @@ func (r *Command) String() (s string) {
 
 // FailedError command failed error.
 type FailedError struct {
-	Command string
-	Exit    int
-	Output  string
+	WithError error
+	Command   string
+	Exit      int
+	Output    string
 }
 
 func (e *FailedError) Error() (s string) {
 	s = fmt.Sprintf(
-		"(exit=%d) %s: FAILED, Output: %s",
+		"(exit=%d) %s: FAILED, Reason: %s, Output: %s",
 		e.Exit,
 		e.Command,
+		e.WithError.Error(),
 		e.Output)
 	return
 }

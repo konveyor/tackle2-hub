@@ -79,7 +79,7 @@ func (h AnalysisProfileHandler) GetBundle(ctx *gin.Context) {
 	bundle := ApBundle{}
 	tmpDir, err := bundle.Build(h.DB(ctx), id)
 	if err != nil {
-		ctx.Status(http.StatusInternalServerError)
+		_ = ctx.Error(err)
 		return
 	}
 	defer func() {
