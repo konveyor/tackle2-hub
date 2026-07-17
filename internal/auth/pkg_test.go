@@ -17,8 +17,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/konveyor/tackle2-hub/internal/database"
 	"github.com/konveyor/tackle2-hub/internal/k8s"
+	crd "github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
+	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	. "github.com/onsi/gomega"
 	"github.com/zitadel/oidc/v3/pkg/client/rp"
 	httphelper "github.com/zitadel/oidc/v3/pkg/http"
@@ -4441,4 +4443,87 @@ func TestScopeGenerationWithNounVerb(t *testing.T) {
 		g.Expect(foundVerbs).To(HaveKey("post"))
 		g.Expect(foundVerbs).To(HaveKey("put"))
 	}
+}
+
+// TestReload tests that Reload() loads CRD changes, preserves
+// registered resources, and produces a working provider.
+func TestReload(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	originalDisconnected := Settings.Disconnected
+	defer func() {
+		Settings.Disconnected = originalDisconnected
+	}()
+	Settings.Disconnected = true
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	client, err := k8s.NewClient()
+	g.Expect(err).To(BeNil())
+
+	// Save and restore global state.
+	savedDomain := Domain()
+	savedIdp := Idp()
+	defer func() {
+		SetDomain(savedDomain)
+		SetIdp(savedIdp)
+	}()
+
+	// Initial setup (mimics startup in main.go).
+	tenant := NewTenant(db, client)
+	tenant.Register("applications")
+	tenant.Register("tags")
+	err = tenant.Load()
+	g.Expect(err).To(BeNil())
+	err = tenant.Seed()
+	g.Expect(err).To(BeNil())
+	SetDomain(tenant)
+	p, err := New(db)
+	g.Expect(err).To(BeNil())
+	SetIdp(p)
+
+	// Verify no IdP configured initially.
+	g.Expect(Domain().Idp.Enabled).To(BeFalse())
+
+	// Create an IdentityProvider CRD in the fake client.
+	idpCRD := &crd.IdentityProvider{
+		ObjectMeta: meta.ObjectMeta{
+			Name:      "test-idp",
+			Namespace: Settings.Namespace,
+		},
+		Spec: crd.IdentityProviderSpec{
+			Issuer:      "https://idp.example.com",
+			ClientId:    "test-client",
+			RedirectURI: "https://app.example.com/callback",
+			Scopes:      []string{"openid"},
+			TLS:         crd.TLS{Insecure: true},
+		},
+	}
+	err = client.Create(context.Background(), idpCRD)
+	g.Expect(err).To(BeNil())
+
+	// Reload.
+	err = Reload(db, client)
+	g.Expect(err).To(BeNil())
+
+	// Verify IdP was loaded.
+	g.Expect(Domain().Idp.Enabled).To(BeTrue())
+	g.Expect(Domain().Idp.ClientId).To(Equal("test-client"))
+	g.Expect(Domain().Idp.Issuer).To(Equal("https://idp.example.com"))
+
+	// Verify registered resources preserved.
+	resources := Domain().Resources()
+	g.Expect(resources).To(ContainElement("applications"))
+	g.Expect(resources).To(ContainElement("tags"))
+	g.Expect(resources).To(ContainElement(ADMIN))
+
+	// Verify scopes were rebuilt for registered resources.
+	g.Expect(Domain().HasScope("applications:get")).To(BeTrue())
+	g.Expect(Domain().HasScope("tags:delete")).To(BeTrue())
+
+	// Verify provider works (can issue a token).
+	token, err := Idp().NewToken("test-subject", time.Hour)
+	g.Expect(err).To(BeNil())
+	g.Expect(token.Secret).NotTo(BeEmpty())
 }
