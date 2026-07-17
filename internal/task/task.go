@@ -687,7 +687,7 @@ func (r *Task) secret() (secret core.Secret, err error) {
 	owner := &auth.Task{
 		ID: r.ID,
 	}
-	token, err := auth.IdP.TaskGrant(owner)
+	token, err := auth.Idp().TaskGrant(owner)
 	if err != nil {
 		return
 	}

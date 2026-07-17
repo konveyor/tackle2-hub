@@ -20,7 +20,7 @@ type Request struct {
 
 // Authenticate authenticates the credentials presented in the request.
 func (r *Request) Authenticate() (result Result, err error) {
-	jwToken, err := IdP.Authenticate(r)
+	jwToken, err := Idp().Authenticate(r)
 	if err != nil {
 		Log.Info(
 			"Token not authenticated.",
@@ -29,9 +29,9 @@ func (r *Request) Authenticate() (result Result, err error) {
 		return
 	}
 	result.Authenticated = true
-	result.Scopes = IdP.Scopes(jwToken)
-	result.User = IdP.User(jwToken)
-	result.Subject = IdP.Subject(jwToken)
+	result.Scopes = Idp().Scopes(jwToken)
+	result.User = Idp().User(jwToken)
+	result.Subject = Idp().Subject(jwToken)
 	return
 }
 

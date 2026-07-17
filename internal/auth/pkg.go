@@ -2,6 +2,7 @@ package auth
 
 import (
 	"net/http"
+	"sync/atomic"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -39,8 +40,24 @@ const (
 var (
 	Settings = &settings.Settings
 	Log      = logr.New("auth", Settings.Log.Auth)
-	IdP      Provider
+	idp      atomic.Value
 )
+
+// Idp returns the current auth provider.
+func Idp() (p Provider) {
+	v := idp.Load()
+	if v != nil {
+		p = v.(Provider)
+	}
+	return
+}
+
+// SetIdp sets the auth provider.
+func SetIdp(p Provider) {
+	if p != nil {
+		idp.Store(p)
+	}
+}
 
 // New returns an auth provider.
 func New(db *gorm.DB) (p Provider, err error) {

@@ -143,10 +143,11 @@ func main() {
 	if err != nil {
 		return
 	}
-	auth.IdP, err = auth.New(db)
+	p, err := auth.New(db)
 	if err != nil {
 		return
 	}
+	auth.SetIdp(p)
 	// Document migration.
 	jsdMigrator := migration.DocumentMigrator{
 		DB:     db,
@@ -219,7 +220,7 @@ func main() {
 	if err != nil {
 		return
 	}
-	err = auth.IdP.Cache().Refresh()
+	err = auth.Idp().Cache().Refresh()
 	if err != nil {
 		return
 	}
