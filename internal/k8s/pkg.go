@@ -2,11 +2,9 @@ package k8s
 
 import (
 	liberr "github.com/jortel/go-utils/error"
-	"github.com/konveyor/tackle2-hub/internal/controller"
 	fakemgr "github.com/konveyor/tackle2-hub/internal/k8s/fake"
 	"github.com/konveyor/tackle2-hub/internal/k8s/simulator"
 	"github.com/konveyor/tackle2-hub/shared/settings"
-	"gorm.io/gorm"
 	k8s "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -52,7 +50,7 @@ func NewClientSet() (newClient k8s.Interface, err error) {
 }
 
 // NewManager builds new k8s manager.
-func NewManager(db *gorm.DB) (mgr manager.Manager, err error) {
+func NewManager() (mgr manager.Manager, err error) {
 	if Settings.Disconnected {
 		mgr = fakemgr.NewManager(simulator.New())
 		return
@@ -68,11 +66,6 @@ func NewManager(db *gorm.DB) (mgr manager.Manager, err error) {
 			MetricsBindAddress: "0",
 			Namespace:          Settings.Hub.Namespace,
 		})
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	err = controller.Add(mgr, db)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return

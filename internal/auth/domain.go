@@ -32,11 +32,8 @@ const (
 	LastId = 1000
 )
 
-// Domain is the default tenant.
-var Domain *Tenant
-
 func init() {
-	Domain = NewTenant(nil, nil)
+	SetDomain(NewTenant(nil, nil))
 	var err error
 	seedDir, err = fs.Sub(seedFS, "seed")
 	if err != nil {
@@ -162,6 +159,18 @@ func (d *Tenant) Seed() (err error) {
 	if err != nil {
 		err = liberr.Wrap(err)
 	}
+	return
+}
+
+// String returns a string representation.
+func (d Tenant) String() (s string) {
+	clone := d
+	clone.DB = nil
+	clone.client = nil
+	clone.Idp.TLS = nil
+	clone.Ldap.TLS = nil
+	b, _ := yaml.Marshal(clone)
+	s = string(b)
 	return
 }
 

@@ -742,7 +742,7 @@ func (r *Storage) Login(writer http.ResponseWriter, request *http.Request, authR
 			Log.Error(err, "")
 		}
 	}()
-	if Domain.Idp.Enabled && Domain.Idp.Primary {
+	if Domain().Idp.Enabled && Domain().Idp.Primary {
 		loginURL := AppendIssuer(request, api.IdpLoginRoute)
 		parsedURL, _ := url.Parse(loginURL)
 		query := parsedURL.Query()
@@ -940,7 +940,7 @@ func (r *Login) renderPage() (err error) {
 		ErrorMessage: r.authErrorMsg,
 	}
 
-	if Domain.Idp.Enabled {
+	if Domain().Idp.Enabled {
 		loginURL := AppendIssuer(r.request, api.IdpLoginRoute)
 		parsedURL, pErr := url.Parse(loginURL)
 		if pErr != nil {
@@ -951,7 +951,7 @@ func (r *Login) renderPage() (err error) {
 		query.Set(AuthRequestId, r.authReqId)
 		parsedURL.RawQuery = query.Encode()
 		pageReq.FederatedIdp = &frontend.FedIdp{
-			Name:     Domain.Idp.Name,
+			Name:     Domain().Idp.Name,
 			LoginURL: parsedURL.String(),
 		}
 	}

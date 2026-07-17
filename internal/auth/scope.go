@@ -42,7 +42,7 @@ func (r *Scope) Match(resource string, method string) (b bool) {
 
 // Expand returns scopes with expanded wildcards.
 func (r *Scope) Expand() (expanded []Scope) {
-	return r.ExpandWith(Domain.Resources())
+	return r.ExpandWith(Domain().Resources())
 }
 
 // ExpandWith returns scopes with expanded wildcards using provided resources.

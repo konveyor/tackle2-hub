@@ -2,16 +2,19 @@ package auth
 
 import (
 	"net/http"
+	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/internal/auth/cache"
 	"github.com/konveyor/tackle2-hub/internal/auth/seed"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/shared/settings"
 	"gorm.io/gorm"
+	k8sClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -38,14 +41,16 @@ const (
 )
 
 var (
-	Settings = &settings.Settings
-	Log      = logr.New("auth", Settings.Log.Auth)
-	idp      atomic.Value
+	reloadMutex sync.Mutex
+	Settings    = &settings.Settings
+	Log         = logr.New("auth", Settings.Log.Auth)
+	provider    atomic.Value
+	domain      atomic.Value
 )
 
 // Idp returns the current auth provider.
 func Idp() (p Provider) {
-	v := idp.Load()
+	v := provider.Load()
 	if v != nil {
 		p = v.(Provider)
 	}
@@ -55,8 +60,55 @@ func Idp() (p Provider) {
 // SetIdp sets the auth provider.
 func SetIdp(p Provider) {
 	if p != nil {
-		idp.Store(p)
+		Log.Info("Provider updated")
+		provider.Store(p)
+
 	}
+}
+
+// Domain returns the current tenant.
+func Domain() (d *Tenant) {
+	v := domain.Load()
+	if v != nil {
+		d = v.(*Tenant)
+	}
+	return
+}
+
+// SetDomain sets the tenant.
+func SetDomain(d *Tenant) {
+	if d != nil {
+		Log.Info("Domain updated:\n" + d.String())
+		domain.Store(d)
+	}
+}
+
+// Reload reloads the domain and auth provider.
+// Preserves registered resources from the current domain.
+func Reload(db *gorm.DB, client k8sClient.Client) (err error) {
+	reloadMutex.Lock()
+	defer reloadMutex.Unlock()
+	old := Domain()
+	tenant := NewTenant(db, client)
+	tenant.resources = old.resources
+	err = tenant.Load()
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = tenant.Seed()
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	p, err := New(db)
+	if err != nil {
+		return
+	}
+	SetDomain(tenant)
+	SetIdp(p)
+	Log.Info("Reloaded.")
+	return
 }
 
 // New returns an auth provider.

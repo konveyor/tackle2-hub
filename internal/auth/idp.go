@@ -40,7 +40,7 @@ type FedIdpHandler struct {
 
 // Login initiates the external IdP authentication flow.
 func (h *FedIdpHandler) Login(ctx *gin.Context) {
-	if !Domain.Idp.Enabled {
+	if !Domain().Idp.Enabled {
 		ctx.AbortWithStatus(http.StatusNotFound)
 		return
 	}
@@ -55,7 +55,7 @@ func (h *FedIdpHandler) Login(ctx *gin.Context) {
 
 // LoginFinished handles the redirect back from the external IdP.
 func (h *FedIdpHandler) LoginFinished(ctx *gin.Context) {
-	if !Domain.Idp.Enabled {
+	if !Domain().Idp.Enabled {
 		ctx.AbortWithStatus(http.StatusNotFound)
 		return
 	}
@@ -78,15 +78,15 @@ func (h *FedIdpHandler) RpClient() (rpClient rp.RelyingParty, err error) {
 	}
 	relay, err := rp.NewRelyingPartyOIDC(
 		context.Background(),
-		Domain.Idp.Issuer,
-		Domain.Idp.ClientId,
-		Domain.Idp.ClientSecret,
-		Domain.Idp.RedirectURI,
-		Domain.Idp.Scopes,
+		Domain().Idp.Issuer,
+		Domain().Idp.ClientId,
+		Domain().Idp.ClientSecret,
+		Domain().Idp.RedirectURI,
+		Domain().Idp.Scopes,
 		rp.WithHTTPClient(
 			&http.Client{
 				Transport: &http.Transport{
-					TLSClientConfig: Domain.Idp.TLS,
+					TLSClientConfig: Domain().Idp.TLS,
 				},
 			}),
 	)
@@ -135,7 +135,7 @@ func (h *FedIdpHandler) identitySaved(m *Identity) {
 // is redirected back to the original destination after the IdP session ends.
 // Returns an empty logoutURL when the IdP is not enabled or has no end_session_endpoint.
 func (h *FedIdpHandler) EndSessionURL(postLogoutRedirectURI string) (logoutURL string, err error) {
-	if !Domain.Idp.Enabled {
+	if !Domain().Idp.Enabled {
 		return
 	}
 	rpClient, err := h.RpClient()
@@ -152,7 +152,7 @@ func (h *FedIdpHandler) EndSessionURL(postLogoutRedirectURI string) (logoutURL s
 		return
 	}
 	q := parsed.Query()
-	q.Set("client_id", Domain.Idp.ClientId)
+	q.Set("client_id", Domain().Idp.ClientId)
 	if postLogoutRedirectURI != "" {
 		q.Set("post_logout_redirect_uri", postLogoutRedirectURI)
 	}
@@ -375,7 +375,7 @@ func (f *FedIdpLogin) ensureIdentity() (err error) {
 func (f *FedIdpLogin) buildIdentity() (identity *Identity) {
 	identity = &Identity{
 		Kind:    IdentityKindOpenid,
-		Issuer:  Domain.Idp.Name,
+		Issuer:  Domain().Idp.Name,
 		Subject: f.userInfo.Subject,
 		Login:   f.userInfo.PreferredUsername,
 		Email:   f.userInfo.Email,

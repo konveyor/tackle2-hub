@@ -13,6 +13,7 @@ import (
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/internal/api"
 	"github.com/konveyor/tackle2-hub/internal/auth"
+	"github.com/konveyor/tackle2-hub/internal/controller"
 	"github.com/konveyor/tackle2-hub/internal/database"
 	"github.com/konveyor/tackle2-hub/internal/frontend"
 	"github.com/konveyor/tackle2-hub/internal/heap"
@@ -118,9 +119,13 @@ func main() {
 	}
 	//
 	// Add controller manager.
-	addonManager, aErr := k8s.NewManager(db)
+	addonManager, aErr := k8s.NewManager()
 	if aErr != nil {
 		err = aErr
+		return
+	}
+	err = controller.Add(addonManager, db)
+	if err != nil {
 		return
 	}
 	go func() {
@@ -138,8 +143,8 @@ func main() {
 		return
 	}
 	// Auth
-	auth.Domain = auth.NewTenant(db, client)
-	err = auth.Domain.Load()
+	auth.SetDomain(auth.NewTenant(db, client))
+	err = auth.Domain().Load()
 	if err != nil {
 		return
 	}
@@ -216,7 +221,7 @@ func main() {
 	}
 	//
 	// Auth domain.
-	err = auth.Domain.Seed()
+	err = auth.Domain().Seed()
 	if err != nil {
 		return
 	}

@@ -3316,10 +3316,10 @@ func (m *mockRelyingParty) Logger(context.Context) (*slog.Logger, bool) { return
 func TestEndSessionURL(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	savedIdp := Domain.Idp
-	defer func() { Domain.Idp = savedIdp }()
+	savedIdp := Domain().Idp
+	defer func() { Domain().Idp = savedIdp }()
 
-	Domain.Idp = IdentityProvider{
+	Domain().Idp = IdentityProvider{
 		Enabled:  true,
 		ClientId: "hub-client",
 	}
@@ -3345,10 +3345,10 @@ func TestEndSessionURL(t *testing.T) {
 func TestEndSessionURLNoRedirect(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	savedIdp := Domain.Idp
-	defer func() { Domain.Idp = savedIdp }()
+	savedIdp := Domain().Idp
+	defer func() { Domain().Idp = savedIdp }()
 
-	Domain.Idp = IdentityProvider{
+	Domain().Idp = IdentityProvider{
 		Enabled:  true,
 		ClientId: "hub-client",
 	}
@@ -3373,10 +3373,10 @@ func TestEndSessionURLNoRedirect(t *testing.T) {
 func TestEndSessionURLExistingQuery(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	savedIdp := Domain.Idp
-	defer func() { Domain.Idp = savedIdp }()
+	savedIdp := Domain().Idp
+	defer func() { Domain().Idp = savedIdp }()
 
-	Domain.Idp = IdentityProvider{
+	Domain().Idp = IdentityProvider{
 		Enabled:  true,
 		ClientId: "hub-client",
 	}
@@ -3401,10 +3401,10 @@ func TestEndSessionURLExistingQuery(t *testing.T) {
 func TestEndSessionURLDisabled(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	savedIdp := Domain.Idp
-	defer func() { Domain.Idp = savedIdp }()
+	savedIdp := Domain().Idp
+	defer func() { Domain().Idp = savedIdp }()
 
-	Domain.Idp = IdentityProvider{
+	Domain().Idp = IdentityProvider{
 		Enabled: false,
 	}
 
@@ -3424,10 +3424,10 @@ func TestEndSessionURLDisabled(t *testing.T) {
 func TestEndSessionURLNoEndpoint(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	savedIdp := Domain.Idp
-	defer func() { Domain.Idp = savedIdp }()
+	savedIdp := Domain().Idp
+	defer func() { Domain().Idp = savedIdp }()
 
-	Domain.Idp = IdentityProvider{
+	Domain().Idp = IdentityProvider{
 		Enabled:  true,
 		ClientId: "hub-client",
 	}
@@ -3448,10 +3448,10 @@ func TestEndSessionURLNoEndpoint(t *testing.T) {
 func TestEndSessionURLNoClient(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	savedIdp := Domain.Idp
-	defer func() { Domain.Idp = savedIdp }()
+	savedIdp := Domain().Idp
+	defer func() { Domain().Idp = savedIdp }()
 
-	Domain.Idp = IdentityProvider{
+	Domain().Idp = IdentityProvider{
 		Enabled:  true,
 		ClientId: "hub-client",
 	}
@@ -3981,9 +3981,9 @@ func TestScopeExpand(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	// Register test resources in Tenant
-	Domain.Register("applications")
-	Domain.Register("tags")
-	Domain.Register("identities")
+	Domain().Register("applications")
+	Domain().Register("tags")
+	Domain().Register("identities")
 
 	// Test 1: Wildcard resource and method (*:*)
 	scope := Scope{Resource: "*", Method: "*"}
@@ -4073,8 +4073,8 @@ func TestExpandScopes(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	// Register test resources in Tenant
-	Domain.Register("applications")
-	Domain.Register("tags")
+	Domain().Register("applications")
+	Domain().Register("tags")
 
 	// Test 1: Expand single wildcard scope
 	scopes := ExpandScopes("applications:*")
@@ -4270,8 +4270,8 @@ func TestExternalIdpWildcardExpansion(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	// Register test resources in Tenant
-	Domain.Register("applications")
-	Domain.Register("tags")
+	Domain().Register("applications")
+	Domain().Register("tags")
 
 	// Simulate external IdP scopes with wildcards
 	idpScopes := []string{

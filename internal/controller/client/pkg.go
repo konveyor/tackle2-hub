@@ -3,10 +3,10 @@ package client
 import (
 	"context"
 	"strings"
-	"syscall"
 
 	"github.com/go-logr/logr"
 	logr2 "github.com/jortel/go-utils/logr"
+	"github.com/konveyor/tackle2-hub/internal/auth"
 	crd "github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
 	"gorm.io/gorm"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
@@ -139,7 +139,6 @@ func (r *Reconciler) ready(idpClient *IdpClient) (ready v1.Condition) {
 }
 
 // changed an idpClient has been created/updated.
-// When detected, the hub is restarted.
 func (r *Reconciler) changed(p *IdpClient) (err error) {
 	if !r.seen[p.Name] {
 		return
@@ -148,25 +147,16 @@ func (r *Reconciler) changed(p *IdpClient) (err error) {
 		"IdP client added/changed.",
 		"name",
 		p.Name)
-	r.hubRestart()
+	err = auth.Reload(r.DB, r.Client)
 	return
 }
 
 // deleted an idpClient has been deleted.
-// When detected, the hub is restarted.
 func (r *Reconciler) deleted(name string) (err error) {
 	Log.Info(
 		"IdP client deleted.",
 		"name",
 		name)
-	r.hubRestart()
+	err = auth.Reload(r.DB, r.Client)
 	return
-}
-
-// hubRestart restarts the hub.
-func (r *Reconciler) hubRestart() {
-	Log.Info("**** RESTARTING HUB *****")
-	_ = syscall.Kill(
-		syscall.Getpid(),
-		syscall.SIGTERM)
 }
