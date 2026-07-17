@@ -32,7 +32,6 @@ type IdentityProvider = crd.IdentityProvider
 // Add the controller.
 func Add(mgr manager.Manager, db *gorm.DB) (err error) {
 	reconciler := &Reconciler{
-		seen:   make(map[string]bool),
 		Client: mgr.GetClient(),
 		Log:    Log,
 		DB:     db,
@@ -59,14 +58,11 @@ func Add(mgr manager.Manager, db *gorm.DB) (err error) {
 }
 
 // Reconciler reconciles idp CRs.
-// The seen (map) is used to ensure resources are
-// reconciled at least once at startup.
 type Reconciler struct {
 	record.EventRecorder
 	k8s.Client
-	DB   *gorm.DB
-	Log  logr.Logger
-	seen map[string]bool
+	DB  *gorm.DB
+	Log logr.Logger
 }
 
 // Reconcile a Addon CR.
@@ -88,8 +84,7 @@ func (r Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (r
 		}
 		return
 	}
-	_, found := r.seen[idp.Name]
-	if found && idp.Reconciled() {
+	if idp.Reconciled() {
 		return
 	}
 	// Changed
@@ -109,8 +104,6 @@ func (r Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (r
 	if err != nil {
 		return
 	}
-
-	r.seen[idp.Name] = true
 
 	return
 }
@@ -140,9 +133,6 @@ func (r *Reconciler) ready(idp *IdentityProvider) (ready v1.Condition) {
 
 // changed an idp has been created/updated.
 func (r *Reconciler) changed(p *IdentityProvider) (err error) {
-	if !r.seen[p.Name] {
-		return
-	}
 	Log.Info(
 		"IdP added/changed.",
 		"name",

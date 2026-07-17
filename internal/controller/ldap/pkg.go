@@ -32,7 +32,6 @@ type LdapProvider = crd.LdapProvider
 // Add the controller.
 func Add(mgr manager.Manager, db *gorm.DB) (err error) {
 	reconciler := &Reconciler{
-		seen:   make(map[string]bool),
 		Client: mgr.GetClient(),
 		Log:    Log,
 		DB:     db,
@@ -59,14 +58,11 @@ func Add(mgr manager.Manager, db *gorm.DB) (err error) {
 }
 
 // Reconciler reconciles ldap CRs.
-// The seen (map) is used to ensure resources are
-// reconciled at least once at startup.
 type Reconciler struct {
 	record.EventRecorder
 	k8s.Client
-	DB   *gorm.DB
-	Log  logr.Logger
-	seen map[string]bool
+	DB  *gorm.DB
+	Log logr.Logger
 }
 
 // Reconcile a Addon CR.
@@ -87,8 +83,7 @@ func (r Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (r
 		}
 		return
 	}
-	_, found := r.seen[p.Name]
-	if found && p.Reconciled() {
+	if p.Reconciled() {
 		return
 	}
 	// Changed
@@ -108,8 +103,6 @@ func (r Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (r
 	if err != nil {
 		return
 	}
-
-	r.seen[p.Name] = true
 
 	return
 }
@@ -139,9 +132,6 @@ func (r *Reconciler) ready(p *LdapProvider) (ready v1.Condition) {
 
 // changed an ldap has been added/updated.
 func (r *Reconciler) changed(p *LdapProvider) (err error) {
-	if !r.seen[p.Name] {
-		return
-	}
 	Log.Info(
 		"LDAP Provider added/changed.",
 		"name",
