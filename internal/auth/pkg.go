@@ -41,9 +41,9 @@ const (
 )
 
 var (
-	reloadMutex sync.Mutex
 	Settings    = &settings.Settings
 	Log         = logr.New("auth", Settings.Log.Auth)
+	reloadMutex sync.Mutex
 	provider    atomic.Value
 	domain      atomic.Value
 )
