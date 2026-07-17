@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	liberr "github.com/jortel/go-utils/error"
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/internal/auth/cache"
 	"github.com/konveyor/tackle2-hub/internal/auth/seed"
@@ -88,24 +87,22 @@ func SetDomain(d *Tenant) {
 func Reload(db *gorm.DB, client k8sClient.Client) (err error) {
 	reloadMutex.Lock()
 	defer reloadMutex.Unlock()
-	old := Domain()
+	d := Domain()
 	tenant := NewTenant(db, client)
-	tenant.resources = old.resources
+	tenant.resources = d.resources
 	err = tenant.Load()
 	if err != nil {
-		err = liberr.Wrap(err)
 		return
 	}
 	err = tenant.Seed()
 	if err != nil {
-		err = liberr.Wrap(err)
 		return
 	}
+	SetDomain(tenant)
 	p, err := New(db)
 	if err != nil {
 		return
 	}
-	SetDomain(tenant)
 	SetIdp(p)
 	Log.Info("Reloaded.")
 	return

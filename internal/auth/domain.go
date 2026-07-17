@@ -434,9 +434,6 @@ func (d *Tenant) seedClients(db *gorm.DB) (err error) {
 	}
 	patch := d.clientPatch(existing, d.clients)
 	err = patch.Apply(db)
-	if err != nil {
-		err = liberr.Wrap(err)
-	}
 	return
 }
 
@@ -451,9 +448,6 @@ func (d *Tenant) seedRoles(db *gorm.DB) (err error) {
 	}
 	patch := d.rolePatch(existing, d.roles)
 	err = patch.Apply(db)
-	if err != nil {
-		err = liberr.Wrap(err)
-	}
 	return
 }
 
@@ -468,9 +462,6 @@ func (d *Tenant) seedUsers(db *gorm.DB) (err error) {
 	}
 	patch := d.userPatch(existing, d.users)
 	err = patch.Apply(db)
-	if err != nil {
-		err = liberr.Wrap(err)
-	}
 	return
 }
 
@@ -522,6 +513,7 @@ func (d *Tenant) getClientResources() (found []IdpClient, err error) {
 	opt := k8sClient.InNamespace(Settings.Namespace)
 	err = d.client.List(context.Background(), &list, opt)
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	for _, m := range list.Items {
@@ -537,7 +529,6 @@ func (d *Tenant) getClientResources() (found []IdpClient, err error) {
 		if ref != nil {
 			client.Secret, err = d.getSecret(ref, "clientSecret")
 			if err != nil {
-				err = liberr.Wrap(err)
 				return
 			}
 		}
@@ -553,6 +544,7 @@ func (d *Tenant) getIdp() (err error) {
 	opt := k8sClient.InNamespace(Settings.Namespace)
 	err = d.client.List(context.Background(), &list, opt)
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	for _, m := range list.Items {
@@ -565,7 +557,6 @@ func (d *Tenant) getIdp() (err error) {
 		if ref != nil {
 			m2.ClientSecret, err = d.getSecret(ref, "clientSecret")
 			if err != nil {
-				err = liberr.Wrap(err)
 				return
 			}
 		}
@@ -581,6 +572,7 @@ func (d *Tenant) getLdap() (err error) {
 	opt := k8sClient.InNamespace(Settings.Namespace)
 	err = d.client.List(context.Background(), &list, opt)
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	for _, m := range list.Items {
