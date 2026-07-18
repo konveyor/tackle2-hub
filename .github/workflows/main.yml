@@ -8,11 +8,15 @@ on:
     paths-ignore:
       - '**.md'
 
+concurrency:
+  group: main-hub-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-go@v5
         with:
           go-version: '1.25'
@@ -23,34 +27,62 @@ jobs:
   test-unit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-go@v5
         with:
           go-version: '1.25'
           cache: true
       - run: make test
 
-  # ───── Start Hub (ordering / visibility job) ─────
-  start-hub:
-    needs: test-unit
+  test-frontend-lookup-container:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: echo "Hub will be started in dependent test jobs"
+    outputs:
+      image: ${{ steps.grepBuilder.outputs.image }}
 
-  # ───── test-binding ─────
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Lookup frontend image builder from the project's Dockerfile
+        id: grepBuilder
+        run: |
+          image=$(grep -i 'as frontend' Dockerfile | sed -e 's/^from \(.*\) as frontend$/\1/i')
+          echo "image=${image}" >> "$GITHUB_OUTPUT"
+
+  test-frontend:
+    needs: test-frontend-lookup-container
+    runs-on: ubuntu-latest
+    container: ${{ needs.test-frontend-lookup-container.outputs.image }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install
+        working-directory: internal/frontend/auth/content
+        run: |
+          npm version
+          npm clean-install --ignore-scripts --no-audit
+
+      # TODO: Add linting when it's available
+      # TODO: Add unit tests when they're available
+
+      - name: Build
+        working-directory: internal/frontend/auth/content
+        run: |
+          npm run build
+
+  # ───── disconnected binding tests ─────
   test-binding:
-    needs: [test-unit, start-hub]
+    needs:
+      - lint
+      - test-unit
+      - test-frontend
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-go@v5
         with:
           go-version: '1.25'
           cache: true
-
-      - run: make vet
 
       - uses: ./.github/actions/start-hub
         with:
@@ -60,17 +92,15 @@ jobs:
       - name: Run binding tests
         run: HUB_BASE_URL=http://localhost:8080 make test-binding
 
-  # Single image build (only once)
+  # ───── operator level integration tests ─────
   build-image:
     needs:
-      - lint
-      - test-unit
       - test-binding
     runs-on: ubuntu-latest
     env:
       IMG: ttl.sh/konveyor-hub-${{ github.sha }}:2h
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-go@v5
         with:
           go-version: '1.25'
