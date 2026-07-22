@@ -61,7 +61,6 @@ func SetIdp(p Provider) {
 	if p != nil {
 		Log.Info("Provider updated")
 		provider.Store(p)
-
 	}
 }
 
