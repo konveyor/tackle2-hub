@@ -30,6 +30,7 @@ import (
 type Storage struct {
 	mutex               sync.Mutex
 	keySet              KeySet
+	domain              *Tenant
 	db                  *gorm.DB
 	authReqById         map[string]*AuthRequest
 	authReqByCode       map[string]string
@@ -742,7 +743,7 @@ func (r *Storage) Login(writer http.ResponseWriter, request *http.Request, authR
 			Log.Error(err, "")
 		}
 	}()
-	if Domain().Idp.Enabled && Domain().Idp.Primary {
+	if r.domain.Idp.Enabled && r.domain.Idp.Primary {
 		loginURL := AppendIssuer(request, api.IdpLoginRoute)
 		parsedURL, _ := url.Parse(loginURL)
 		query := parsedURL.Query()
@@ -753,6 +754,7 @@ func (r *Storage) Login(writer http.ResponseWriter, request *http.Request, authR
 	}
 	login := &Login{
 		storage:   r,
+		domain:    r.domain,
 		writer:    writer,
 		request:   request,
 		authReqId: authReqId,
@@ -768,6 +770,7 @@ func (r *Storage) Login(writer http.ResponseWriter, request *http.Request, authR
 // Login represents the state of a user login flow.
 type Login struct {
 	storage   *Storage
+	domain    *Tenant
 	writer    http.ResponseWriter
 	request   *http.Request
 	authReqId string
@@ -940,7 +943,7 @@ func (r *Login) renderPage() (err error) {
 		ErrorMessage: r.authErrorMsg,
 	}
 
-	if Domain().Idp.Enabled {
+	if r.domain.Idp.Enabled {
 		loginURL := AppendIssuer(r.request, api.IdpLoginRoute)
 		parsedURL, pErr := url.Parse(loginURL)
 		if pErr != nil {
@@ -951,7 +954,7 @@ func (r *Login) renderPage() (err error) {
 		query.Set(AuthRequestId, r.authReqId)
 		parsedURL.RawQuery = query.Encode()
 		pageReq.FederatedIdp = &frontend.FedIdp{
-			Name:     Domain().Idp.Name,
+			Name:     r.domain.Idp.Name,
 			LoginURL: parsedURL.String(),
 		}
 	}

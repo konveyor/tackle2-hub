@@ -42,6 +42,7 @@ func NewBuiltin(db *gorm.DB, domain *Tenant) (builtin *Builtin, err error) {
 		authReqByCode:       make(map[string]string),
 		devAuthReqByDevCode: make(map[string]*DeviceAuthRequest),
 		devAuthByUserCode:   make(map[string]string),
+		domain:              domain,
 		cache:               cache,
 	}
 	basePath := api.OIDCRoutes
@@ -82,6 +83,7 @@ func NewBuiltin(db *gorm.DB, domain *Tenant) (builtin *Builtin, err error) {
 	builtin.idpHandler = &FedIdpHandler{
 		db:      db,
 		storage: builtin.storage,
+		domain:  domain,
 		cache:   cache,
 	}
 	builtin.storage.idpHandler = builtin.idpHandler

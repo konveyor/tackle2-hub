@@ -3328,6 +3328,7 @@ func TestEndSessionURL(t *testing.T) {
 	}
 
 	h := &FedIdpHandler{
+		domain: domain,
 		rpClient: &mockRelyingParty{
 			endSessionEndpoint: "https://keycloak.example.com/realms/myrealm/protocol/openid-connect/logout",
 		},
@@ -3358,6 +3359,7 @@ func TestEndSessionURLNoRedirect(t *testing.T) {
 	}
 
 	h := &FedIdpHandler{
+		domain: domain,
 		rpClient: &mockRelyingParty{
 			endSessionEndpoint: "https://keycloak.example.com/logout",
 		},
@@ -3387,6 +3389,7 @@ func TestEndSessionURLExistingQuery(t *testing.T) {
 	}
 
 	h := &FedIdpHandler{
+		domain: domain,
 		rpClient: &mockRelyingParty{
 			endSessionEndpoint: "https://keycloak.example.com/logout?foo=bar",
 		},
@@ -3415,6 +3418,7 @@ func TestEndSessionURLDisabled(t *testing.T) {
 	}
 
 	h := &FedIdpHandler{
+		domain: domain,
 		rpClient: &mockRelyingParty{
 			endSessionEndpoint: "https://keycloak.example.com/logout",
 		},
@@ -3440,6 +3444,7 @@ func TestEndSessionURLNoEndpoint(t *testing.T) {
 	}
 
 	h := &FedIdpHandler{
+		domain: domain,
 		rpClient: &mockRelyingParty{
 			endSessionEndpoint: "",
 		},
@@ -3464,7 +3469,9 @@ func TestEndSessionURLNoClient(t *testing.T) {
 		ClientId: "hub-client",
 	}
 
-	h := &FedIdpHandler{}
+	h := &FedIdpHandler{
+		domain: domain,
+	}
 
 	logoutURL, err := h.EndSessionURL("https://app.example.com/")
 	g.Expect(err).NotTo(BeNil())
@@ -4338,7 +4345,8 @@ func TestFedIdpRoleScopeExpansion(t *testing.T) {
 
 	// Create FedIdpHandler and FedIdpLogin
 	handler := &FedIdpHandler{
-		cache: provider.cache,
+		domain: &Tenant{},
+		cache:  provider.cache,
 	}
 
 	login := &FedIdpLogin{
