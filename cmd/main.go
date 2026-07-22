@@ -143,8 +143,9 @@ func main() {
 		return
 	}
 	// Auth
-	auth.SetDomain(auth.NewTenant(db, client))
-	err = auth.Domain().Load()
+	domain := auth.NewTenant(db, client)
+	auth.SetDomain(domain)
+	err = domain.Load()
 	if err != nil {
 		return
 	}
@@ -221,7 +222,7 @@ func main() {
 	}
 	//
 	// Auth domain.
-	err = auth.Domain().Seed()
+	err = domain.Seed()
 	if err != nil {
 		return
 	}

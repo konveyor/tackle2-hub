@@ -40,16 +40,16 @@ const (
 )
 
 var (
-	Settings    = &settings.Settings
-	Log         = logr.New("auth", Settings.Log.Auth)
-	reloadMutex sync.Mutex
-	provider    atomic.Value
-	domain      atomic.Value
+	Settings        = &settings.Settings
+	Log             = logr.New("auth", Settings.Log.Auth)
+	reloadMutex     sync.Mutex
+	currentProvider atomic.Value
+	currentDomain   atomic.Value
 )
 
 // Idp returns the current auth provider.
 func Idp() (p Provider) {
-	v := provider.Load()
+	v := currentProvider.Load()
 	if v != nil {
 		p = v.(Provider)
 	}
@@ -60,13 +60,13 @@ func Idp() (p Provider) {
 func SetIdp(p Provider) {
 	if p != nil {
 		Log.Info("Provider updated")
-		provider.Store(p)
+		currentProvider.Store(p)
 	}
 }
 
 // Domain returns the current tenant.
 func Domain() (d *Tenant) {
-	v := domain.Load()
+	v := currentDomain.Load()
 	if v != nil {
 		d = v.(*Tenant)
 	}
@@ -77,7 +77,7 @@ func Domain() (d *Tenant) {
 func SetDomain(d *Tenant) {
 	if d != nil {
 		Log.Info("Domain updated:\n" + d.String())
-		domain.Store(d)
+		currentDomain.Store(d)
 	}
 }
 

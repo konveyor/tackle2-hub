@@ -76,17 +76,18 @@ func (h *FedIdpHandler) RpClient() (rpClient rp.RelyingParty, err error) {
 		rpClient = h.rpClient
 		return
 	}
+	domain := Domain()
 	relay, err := rp.NewRelyingPartyOIDC(
 		context.Background(),
-		Domain().Idp.Issuer,
-		Domain().Idp.ClientId,
-		Domain().Idp.ClientSecret,
-		Domain().Idp.RedirectURI,
-		Domain().Idp.Scopes,
+		domain.Idp.Issuer,
+		domain.Idp.ClientId,
+		domain.Idp.ClientSecret,
+		domain.Idp.RedirectURI,
+		domain.Idp.Scopes,
 		rp.WithHTTPClient(
 			&http.Client{
 				Transport: &http.Transport{
-					TLSClientConfig: Domain().Idp.TLS,
+					TLSClientConfig: domain.Idp.TLS,
 				},
 			}),
 	)

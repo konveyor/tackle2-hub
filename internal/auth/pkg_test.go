@@ -20,7 +20,6 @@ import (
 	crd "github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
-	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	. "github.com/onsi/gomega"
 	"github.com/zitadel/oidc/v3/pkg/client/rp"
 	httphelper "github.com/zitadel/oidc/v3/pkg/http"
@@ -28,6 +27,7 @@ import (
 	"github.com/zitadel/oidc/v3/pkg/op"
 	"golang.org/x/oauth2"
 	"gorm.io/gorm"
+	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // testIssuer returns the issuer URL for test requests.
@@ -3318,10 +3318,11 @@ func (m *mockRelyingParty) Logger(context.Context) (*slog.Logger, bool) { return
 func TestEndSessionURL(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	savedIdp := Domain().Idp
-	defer func() { Domain().Idp = savedIdp }()
+	domain := Domain()
+	savedIdp := domain.Idp
+	defer func() { domain.Idp = savedIdp }()
 
-	Domain().Idp = IdentityProvider{
+	domain.Idp = IdentityProvider{
 		Enabled:  true,
 		ClientId: "hub-client",
 	}
@@ -3347,10 +3348,11 @@ func TestEndSessionURL(t *testing.T) {
 func TestEndSessionURLNoRedirect(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	savedIdp := Domain().Idp
-	defer func() { Domain().Idp = savedIdp }()
+	domain := Domain()
+	savedIdp := domain.Idp
+	defer func() { domain.Idp = savedIdp }()
 
-	Domain().Idp = IdentityProvider{
+	domain.Idp = IdentityProvider{
 		Enabled:  true,
 		ClientId: "hub-client",
 	}
@@ -3375,10 +3377,11 @@ func TestEndSessionURLNoRedirect(t *testing.T) {
 func TestEndSessionURLExistingQuery(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	savedIdp := Domain().Idp
-	defer func() { Domain().Idp = savedIdp }()
+	domain := Domain()
+	savedIdp := domain.Idp
+	defer func() { domain.Idp = savedIdp }()
 
-	Domain().Idp = IdentityProvider{
+	domain.Idp = IdentityProvider{
 		Enabled:  true,
 		ClientId: "hub-client",
 	}
@@ -3403,10 +3406,11 @@ func TestEndSessionURLExistingQuery(t *testing.T) {
 func TestEndSessionURLDisabled(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	savedIdp := Domain().Idp
-	defer func() { Domain().Idp = savedIdp }()
+	domain := Domain()
+	savedIdp := domain.Idp
+	defer func() { domain.Idp = savedIdp }()
 
-	Domain().Idp = IdentityProvider{
+	domain.Idp = IdentityProvider{
 		Enabled: false,
 	}
 
@@ -3426,10 +3430,11 @@ func TestEndSessionURLDisabled(t *testing.T) {
 func TestEndSessionURLNoEndpoint(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	savedIdp := Domain().Idp
-	defer func() { Domain().Idp = savedIdp }()
+	domain := Domain()
+	savedIdp := domain.Idp
+	defer func() { domain.Idp = savedIdp }()
 
-	Domain().Idp = IdentityProvider{
+	domain.Idp = IdentityProvider{
 		Enabled:  true,
 		ClientId: "hub-client",
 	}
@@ -3450,10 +3455,11 @@ func TestEndSessionURLNoEndpoint(t *testing.T) {
 func TestEndSessionURLNoClient(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	savedIdp := Domain().Idp
-	defer func() { Domain().Idp = savedIdp }()
+	domain := Domain()
+	savedIdp := domain.Idp
+	defer func() { domain.Idp = savedIdp }()
 
-	Domain().Idp = IdentityProvider{
+	domain.Idp = IdentityProvider{
 		Enabled:  true,
 		ClientId: "hub-client",
 	}
@@ -3983,9 +3989,10 @@ func TestScopeExpand(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	// Register test resources in Tenant
-	Domain().Register("applications")
-	Domain().Register("tags")
-	Domain().Register("identities")
+	domain := Domain()
+	domain.Register("applications")
+	domain.Register("tags")
+	domain.Register("identities")
 
 	// Test 1: Wildcard resource and method (*:*)
 	scope := Scope{Resource: "*", Method: "*"}
@@ -4075,8 +4082,9 @@ func TestExpandScopes(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	// Register test resources in Tenant
-	Domain().Register("applications")
-	Domain().Register("tags")
+	domain := Domain()
+	domain.Register("applications")
+	domain.Register("tags")
 
 	// Test 1: Expand single wildcard scope
 	scopes := ExpandScopes("applications:*")
@@ -4272,8 +4280,9 @@ func TestExternalIdpWildcardExpansion(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	// Register test resources in Tenant
-	Domain().Register("applications")
-	Domain().Register("tags")
+	domain := Domain()
+	domain.Register("applications")
+	domain.Register("tags")
 
 	// Simulate external IdP scopes with wildcards
 	idpScopes := []string{

@@ -83,22 +83,23 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		storage: builtin.storage,
 		cache:   cache,
 	}
+	domain := Domain()
 	builtin.storage.idpHandler = builtin.idpHandler
 	ds := LDAP{
-		Kind:        Domain().Ldap.Kind,
-		Name:        Domain().Ldap.Name,
-		URL:         Domain().Ldap.URL,
-		BaseDN:      Domain().Ldap.BaseDN,
-		BindDN:      Domain().Ldap.BindDN,
-		Password:    Domain().Ldap.Password,
-		UserFilter:  Domain().Ldap.UserFilter,
-		GroupFilter: Domain().Ldap.GroupFilter,
-		HasMemberOf: Domain().Ldap.HasMemberOf,
-		TLS:         Domain().Ldap.TLS,
+		Kind:        domain.Ldap.Kind,
+		Name:        domain.Ldap.Name,
+		URL:         domain.Ldap.URL,
+		BaseDN:      domain.Ldap.BaseDN,
+		BindDN:      domain.Ldap.BindDN,
+		Password:    domain.Ldap.Password,
+		UserFilter:  domain.Ldap.UserFilter,
+		GroupFilter: domain.Ldap.GroupFilter,
+		HasMemberOf: domain.Ldap.HasMemberOf,
+		TLS:         domain.Ldap.TLS,
 	}
-	ds.mapper.Use(Domain().Ldap.RoleMappings)
+	ds.mapper.Use(domain.Ldap.RoleMappings)
 	builtin.dsHandler = &LdapHandler{
-		enabled: Domain().Ldap.Enabled,
+		enabled: domain.Ldap.Enabled,
 		cache:   builtin.cache,
 		db:      db,
 		ds:      ds,
