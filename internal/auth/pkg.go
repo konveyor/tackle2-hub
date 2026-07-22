@@ -97,19 +97,19 @@ func Reload(db *gorm.DB, client k8sClient.Client) (err error) {
 	if err != nil {
 		return
 	}
-	SetDomain(tenant)
-	p, err := New(db)
+	p, err := New(db, tenant)
 	if err != nil {
 		return
 	}
+	SetDomain(tenant)
 	SetIdp(p)
 	Log.Info("Reloaded.")
 	return
 }
 
 // New returns an auth provider.
-func New(db *gorm.DB) (p Provider, err error) {
-	builtin, err := NewBuiltin(db)
+func New(db *gorm.DB, domain *Tenant) (p Provider, err error) {
+	builtin, err := NewBuiltin(db, domain)
 	if err != nil {
 		return
 	}

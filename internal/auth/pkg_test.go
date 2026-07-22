@@ -70,7 +70,7 @@ func TestUserGrant(t *testing.T) {
 	g.Expect(user.Subject).NotTo(BeEmpty())
 
 	// Create provider
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Test creating token with valid subject
@@ -132,7 +132,7 @@ func TestTaskGrant(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create provider
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Test creating task token
@@ -196,7 +196,7 @@ func TestTaskSubjectFormat(t *testing.T) {
 	err = db.Create(task3).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Test task.1 - Subject() returns hex format, User() returns login (decimal)
@@ -243,7 +243,7 @@ func TestTaskSubjectParsing(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create task
@@ -283,7 +283,7 @@ func TestTaskSubjectScopes(t *testing.T) {
 	err = db.Create(task).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	token, err := provider.TaskGrant(task)
@@ -318,7 +318,7 @@ func TestTaskTokenLifecycle(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create task
@@ -365,7 +365,7 @@ func TestMultipleTasksWithTokens(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create multiple tasks
@@ -440,7 +440,7 @@ func TestJWTAuthentication(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Use HMAC signing with the configured token key for testing
@@ -531,7 +531,7 @@ func TestLegacyHMACTokenAuthentication(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Simulate old NewToken() behavior:
@@ -590,7 +590,7 @@ func TestUserExtraction(t *testing.T) {
 	err = db.First(user, user.ID).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create a token with claims
@@ -624,7 +624,7 @@ func TestScopesExtraction(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create a token with multiple scopes
@@ -667,7 +667,7 @@ func TestInvalidBearerToken(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Test missing "Bearer" prefix
@@ -761,7 +761,7 @@ func TestKeyCacheWithTaskStates(t *testing.T) {
 	err = db.Create(task).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create token for running task - should work
@@ -807,7 +807,7 @@ func TestNoAuthProvider(t *testing.T) {
 
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
-	builtin, err := NewBuiltin(db)
+	builtin, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 	provider := NewNoAuth(builtin)
 
@@ -913,7 +913,7 @@ func TestCacheTokenDelete(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create provider with cache
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create token
@@ -957,7 +957,7 @@ func TestTaskRevoke(t *testing.T) {
 	err = db.Create(task).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create task token
@@ -1006,7 +1006,7 @@ func TestTaskRevokeMultipleTokens(t *testing.T) {
 	err = db.Create(task).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create first token
@@ -1078,7 +1078,7 @@ func TestTaskRevokeNoTokens(t *testing.T) {
 	err = db.Create(task).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Revoke should not error even though no tokens exist
@@ -1114,7 +1114,7 @@ func TestCascadeDeleteUser(t *testing.T) {
 	err = db.First(user, user.ID).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create token for user
@@ -1156,7 +1156,7 @@ func TestCascadeDeleteTask(t *testing.T) {
 	err = db.Create(task).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create token for task
@@ -1203,7 +1203,7 @@ func TestClientPAT(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(client.Subject).NotTo(BeEmpty())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create PAT for client
@@ -1247,7 +1247,7 @@ func TestCascadeDeleteIdpClient(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(client.Subject).NotTo(BeEmpty())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create token for client (simulating client credentials grant)
@@ -1295,7 +1295,7 @@ func TestCascadeDeleteIdpIdentity(t *testing.T) {
 	err = db.Create(identity).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create token for identity
@@ -1350,7 +1350,7 @@ func TestBuiltinRevoke(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create provider
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create token
@@ -1810,7 +1810,7 @@ func TestCacheNotificationPropagation(t *testing.T) {
 	err = db.Create(user).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// User should be in cache (loaded during provider initialization)
@@ -1853,7 +1853,7 @@ func TestIdpIdentityTokenBinding(t *testing.T) {
 	err = db.Create(identity).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create token bound to IdP identity (scopes come from grant)
@@ -1894,7 +1894,7 @@ func TestScopeCalculation(t *testing.T) {
 	err = db.Create(userNoRoles).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	token, err := provider.NewToken(userNoRoles.Subject, 24*time.Hour)
@@ -1996,7 +1996,7 @@ func TestTokenBindingEdgeCases(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 	cache := provider.cache
 
@@ -2089,7 +2089,7 @@ func TestCacheFindSubject(t *testing.T) {
 	err = db.Create(identity).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Test finding user by subject
@@ -2123,7 +2123,7 @@ func TestCacheFindSubjectNotFound(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Try to find non-existent subject
@@ -2143,7 +2143,7 @@ func TestCacheFindSubjectMiss(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Force initial cache load by accessing a non-existent subject
@@ -2203,7 +2203,7 @@ func TestStorageFindSubject(t *testing.T) {
 	err = db.Create(identity).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Storage uses cache under the hood
@@ -2251,7 +2251,7 @@ func TestCacheFindUserByLogin(t *testing.T) {
 	err = db.First(user, user.ID).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Find by userid
@@ -2276,7 +2276,7 @@ func TestCacheFindUserByLoginNotification(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Force initial cache load
@@ -2318,7 +2318,7 @@ func TestStoreDeviceAuthorization(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 	storage := provider.storage
 
@@ -2356,7 +2356,7 @@ func TestGetDeviceAuthorizatonStatePending(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 	storage := provider.storage
 
@@ -2396,7 +2396,7 @@ func TestGetDeviceAuthorizatonStateDone(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 	storage := provider.storage
 
@@ -2440,7 +2440,7 @@ func TestGetDeviceAuthorizatonStateDenied(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 	storage := provider.storage
 
@@ -2481,7 +2481,7 @@ func TestGetDeviceAuthorizatonStateNotFound(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 	storage := provider.storage
 
@@ -3489,7 +3489,7 @@ func TestCreateAccessToken_UpdatesExistingToken(t *testing.T) {
 		&RsaKey{},
 		&Identity{})
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	user := &User{Login: "testuser"}
@@ -3566,7 +3566,7 @@ func TestCreateAccessToken_CascadeDeleteOnGrantDeletion(t *testing.T) {
 		&RsaKey{},
 		&Identity{})
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	user := &User{Login: "testuser"}
@@ -3632,7 +3632,7 @@ func TestAuthRequest_CreatesGrantAndLinksToken(t *testing.T) {
 		&RsaKey{},
 		&Identity{})
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	user := &User{Login: "testuser"}
@@ -3695,7 +3695,7 @@ func TestClientRequest_NoGrantCreated(t *testing.T) {
 		&RsaKey{},
 		&Identity{})
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create IdP client in database and cache
@@ -3775,7 +3775,7 @@ func TestCreateAccessAndRefreshTokens_FullFlow(t *testing.T) {
 		&RsaKey{},
 		&Identity{})
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	user := &User{Login: "testuser"}
@@ -4227,7 +4227,7 @@ func TestAdminWildcardScopes(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create provider
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create token
@@ -4333,7 +4333,7 @@ func TestFedIdpRoleScopeExpansion(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create provider and cache
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create FedIdpHandler and FedIdpLogin
@@ -4488,7 +4488,7 @@ func TestReload(t *testing.T) {
 	err = tenant.Seed()
 	g.Expect(err).To(BeNil())
 	SetDomain(tenant)
-	p, err := New(db)
+	p, err := New(db, tenant)
 	g.Expect(err).To(BeNil())
 	SetIdp(p)
 

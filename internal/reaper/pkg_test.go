@@ -1467,7 +1467,7 @@ func TestGrantReaper_MultipleGrants(t *testing.T) {
 
 // setupIdp creates an auth provider for testing without federated IdP configuration.
 func setupIdp(db *gorm.DB) (p auth.Provider, err error) {
-	builtin, err := auth.NewBuiltin(db)
+	builtin, err := auth.NewBuiltin(db, &auth.Tenant{})
 	if err != nil {
 		return
 	}

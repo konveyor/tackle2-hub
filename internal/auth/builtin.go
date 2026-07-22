@@ -19,11 +19,12 @@ import (
 )
 
 // NewBuiltin returns a configured provider.
-func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
+func NewBuiltin(db *gorm.DB, domain *Tenant) (builtin *Builtin, err error) {
 	cache := cache2.New(db)
 	builtin = &Builtin{
-		cache: cache,
-		db:    db,
+		domain: domain,
+		cache:  cache,
+		db:     db,
 	}
 	err = cache.Refresh()
 	if err != nil {
@@ -83,7 +84,6 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		storage: builtin.storage,
 		cache:   cache,
 	}
-	domain := Domain()
 	builtin.storage.idpHandler = builtin.idpHandler
 	ds := LDAP{
 		Kind:        domain.Ldap.Kind,
@@ -115,6 +115,7 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 type Builtin struct {
 	ready      sync.Once
 	db         *gorm.DB
+	domain     *Tenant
 	provider   op.OpenIDProvider
 	idpHandler *FedIdpHandler
 	dsHandler  *LdapHandler
@@ -150,8 +151,8 @@ func (p *Builtin) Cache() *Cache {
 // Ready notification of an incoming request.
 func (p *Builtin) Ready(r *http.Request) {
 	p.ready.Do(func() {
-		Domain().Idp.Inject(Issuer(r))
-		Log.Info("Injected:\n" + Domain().Idp.String())
+		p.domain.Idp.Inject(Issuer(r))
+		Log.Info("Injected:\n" + p.domain.Idp.String())
 	})
 }
 

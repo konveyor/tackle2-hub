@@ -144,15 +144,15 @@ func main() {
 	}
 	// Auth
 	domain := auth.NewTenant(db, client)
-	auth.SetDomain(domain)
 	err = domain.Load()
 	if err != nil {
 		return
 	}
-	p, err := auth.New(db)
+	p, err := auth.New(db, domain)
 	if err != nil {
 		return
 	}
+	auth.SetDomain(domain)
 	auth.SetIdp(p)
 	// Document migration.
 	jsdMigrator := migration.DocumentMigrator{
