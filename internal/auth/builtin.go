@@ -151,10 +151,11 @@ func (p *Builtin) Cache() *Cache {
 }
 
 // Ready notification of an incoming request.
+// The (dynamic) issuer is derived.
 func (p *Builtin) Ready(r *http.Request) {
 	p.ready.Do(func() {
 		p.domain.Idp.Inject(Issuer(r))
-		Log.Info("Injected:\n" + p.domain.Idp.String())
+		Log.Info("Issuer derived:" + p.domain.Idp.Issuer)
 	})
 }
 

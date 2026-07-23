@@ -169,6 +169,8 @@ func (d Tenant) String() (s string) {
 	clone.client = nil
 	clone.Idp.TLS = nil
 	clone.Ldap.TLS = nil
+	clone.Idp.ClientSecret = "***masked***"
+	clone.Ldap.Password = "***masked***"
 	b, _ := yaml.Marshal(clone)
 	s = string(b)
 	return
@@ -786,15 +788,6 @@ func (r *IdentityProvider) Inject(issuer string) {
 		*u = strings.Replace(*u, "${issuer.path}", issuerURL.Path, -1)
 	}
 	r.injected = true
-}
-
-// String returns a string representation.
-func (r IdentityProvider) String() (s string) {
-	clone := r
-	clone.TLS = nil
-	b, _ := yaml.Marshal(clone)
-	s = string(b)
-	return
 }
 
 // with populates self with the crd.
