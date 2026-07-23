@@ -15,6 +15,7 @@ import (
 	"github.com/go-ldap/ldap/v3"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/konveyor/tackle2-hub/internal/auth/seed"
 	"github.com/konveyor/tackle2-hub/internal/database"
 	"github.com/konveyor/tackle2-hub/internal/k8s"
 	crd "github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
@@ -4516,4 +4517,873 @@ func TestReload(t *testing.T) {
 	token, err := Idp().NewToken("test-subject", time.Hour)
 	g.Expect(err).To(BeNil())
 	g.Expect(token.Secret).NotTo(BeEmpty())
+}
+
+// TestRegister tests registering scope resources.
+func TestRegister(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	d := NewTenant(nil, nil)
+
+	// Admin is always registered.
+	g.Expect(d.Resources()).To(ContainElement(ADMIN))
+
+	// Register new resources.
+	d.Register("applications")
+	d.Register("tags")
+	resources := d.Resources()
+	g.Expect(resources).To(ContainElement("applications"))
+	g.Expect(resources).To(ContainElement("tags"))
+
+	// Duplicate registration is idempotent.
+	d.Register("applications")
+	count := 0
+	for _, r := range d.Resources() {
+		if r == "applications" {
+			count++
+		}
+	}
+	g.Expect(count).To(Equal(1))
+
+	// Empty string is rejected.
+	before := len(d.Resources())
+	d.Register("")
+	g.Expect(d.Resources()).To(HaveLen(before))
+}
+
+// TestTenantString tests the String() secret masking.
+func TestTenantString(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	d := NewTenant(nil, nil)
+	d.Idp = IdentityProvider{
+		Enabled:      true,
+		ClientId:     "hub-client",
+		ClientSecret: "super-secret-value",
+	}
+	d.Ldap = LdapProvider{
+		Enabled:  true,
+		Password: "ldap-password",
+	}
+
+	s := d.String()
+	g.Expect(s).NotTo(BeEmpty())
+	g.Expect(s).NotTo(ContainSubstring("super-secret-value"))
+	g.Expect(s).NotTo(ContainSubstring("ldap-password"))
+	g.Expect(s).To(ContainSubstring("****"))
+}
+
+// TestBuildScopes tests scope generation from registered resources.
+func TestBuildScopes(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	d := NewTenant(nil, nil)
+	d.Register("apps")
+	d.Register("tags")
+
+	g.Expect(d.Scopes()).To(BeEmpty())
+
+	d.buildScopes()
+
+	// 3 resources (admin, apps, tags) × 6 verbs = 18
+	scopes := d.Scopes()
+	g.Expect(scopes).To(HaveLen(18))
+
+	// Spot check.
+	g.Expect(d.HasScope("apps:get")).To(BeTrue())
+	g.Expect(d.HasScope("apps:post")).To(BeTrue())
+	g.Expect(d.HasScope("tags:delete")).To(BeTrue())
+	g.Expect(d.HasScope("admin:decrypt")).To(BeTrue())
+
+	// Unknown scope.
+	g.Expect(d.HasScope("unknown:get")).To(BeFalse())
+
+	// Idempotent.
+	d.buildScopes()
+	g.Expect(d.Scopes()).To(HaveLen(18))
+}
+
+// TestBuildRoleScopes tests building scopes from a seed role definition.
+func TestBuildRoleScopes(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	d := NewTenant(nil, nil)
+	d.Register("applications")
+	d.Register("tags")
+	d.buildScopes()
+
+	// Exact verbs.
+	role := seed.Role{
+		Name: "reader",
+		Resources: []struct {
+			Name  string   `yaml:"name"`
+			Verbs []string `yaml:"verbs"`
+		}{
+			{Name: "applications", Verbs: []string{"get"}},
+			{Name: "tags", Verbs: []string{"get", "post"}},
+		},
+	}
+	scopes := d.buildRoleScopes(role)
+	g.Expect(scopes).To(ContainElement("applications:get"))
+	g.Expect(scopes).To(ContainElement("tags:get"))
+	g.Expect(scopes).To(ContainElement("tags:post"))
+	g.Expect(scopes).To(HaveLen(3))
+
+	// Wildcard verb expands to all verbs for that resource.
+	role = seed.Role{
+		Name: "app-admin",
+		Resources: []struct {
+			Name  string   `yaml:"name"`
+			Verbs []string `yaml:"verbs"`
+		}{
+			{Name: "applications", Verbs: []string{"*"}},
+		},
+	}
+	scopes = d.buildRoleScopes(role)
+	g.Expect(scopes).To(HaveLen(6))
+	g.Expect(scopes).To(ContainElement("applications:get"))
+	g.Expect(scopes).To(ContainElement("applications:delete"))
+	g.Expect(scopes).To(ContainElement("applications:decrypt"))
+
+	// Wildcard resource expands to all resources.
+	role = seed.Role{
+		Name: "global-reader",
+		Resources: []struct {
+			Name  string   `yaml:"name"`
+			Verbs []string `yaml:"verbs"`
+		}{
+			{Name: "*", Verbs: []string{"get"}},
+		},
+	}
+	scopes = d.buildRoleScopes(role)
+	g.Expect(scopes).To(ContainElement("applications:get"))
+	g.Expect(scopes).To(ContainElement("tags:get"))
+	g.Expect(scopes).To(ContainElement("admin:get"))
+
+	// Unknown resource is skipped (logged, not included).
+	role = seed.Role{
+		Name: "unknown",
+		Resources: []struct {
+			Name  string   `yaml:"name"`
+			Verbs []string `yaml:"verbs"`
+		}{
+			{Name: "nonexistent", Verbs: []string{"get"}},
+			{Name: "applications", Verbs: []string{"get"}},
+		},
+	}
+	scopes = d.buildRoleScopes(role)
+	g.Expect(scopes).To(ContainElement("applications:get"))
+	g.Expect(scopes).NotTo(ContainElement("nonexistent:get"))
+}
+
+// TestBuildUserRoles tests building role list from a seed user definition.
+func TestBuildUserRoles(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	d := NewTenant(nil, nil)
+	d.roleByName["admin"] = 1
+	d.roleByName["viewer"] = 2
+
+	// Known roles.
+	user := seed.User{
+		Login: "testuser",
+		Roles: []string{"admin", "viewer"},
+	}
+	roles, err := d.buildUserRoles(user)
+	g.Expect(err).To(BeNil())
+	g.Expect(roles).To(HaveLen(2))
+	ids := make(map[uint]bool)
+	for _, r := range roles {
+		ids[r.ID] = true
+	}
+	g.Expect(ids).To(HaveKey(uint(1)))
+	g.Expect(ids).To(HaveKey(uint(2)))
+
+	// Unknown role is skipped (not an error).
+	user = seed.User{
+		Login: "testuser2",
+		Roles: []string{"admin", "nonexistent"},
+	}
+	roles, err = d.buildUserRoles(user)
+	g.Expect(err).To(BeNil())
+	g.Expect(roles).To(HaveLen(1))
+	g.Expect(roles[0].ID).To(Equal(uint(1)))
+
+	// Duplicate role names produce a single entry.
+	user = seed.User{
+		Login: "testuser3",
+		Roles: []string{"admin", "admin"},
+	}
+	roles, err = d.buildUserRoles(user)
+	g.Expect(err).To(BeNil())
+	g.Expect(roles).To(HaveLen(1))
+
+	// Empty roles.
+	user = seed.User{Login: "noroles"}
+	roles, err = d.buildUserRoles(user)
+	g.Expect(err).To(BeNil())
+	g.Expect(roles).To(BeEmpty())
+}
+
+// TestRolePatch tests the role reconciliation patch computation.
+func TestRolePatch(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	d := NewTenant(nil, nil)
+	d.Register("apps")
+	d.buildScopes()
+
+	// Create: no existing roles, wanted roles should all be created.
+	existing := map[string]Role{}
+	wanted := []seed.Role{
+		{
+			ID:   1,
+			Name: "admin",
+			Resources: []struct {
+				Name  string   `yaml:"name"`
+				Verbs []string `yaml:"verbs"`
+			}{
+				{Name: "apps", Verbs: []string{"get"}},
+			},
+		},
+	}
+	patch := d.rolePatch(existing, wanted)
+	g.Expect(patch.toCreate).To(HaveLen(1))
+	g.Expect(patch.toCreate[0].Name).To(Equal("admin"))
+	g.Expect(patch.toCreate[0].ID).To(Equal(uint(1)))
+	g.Expect(patch.toCreate[0].Scopes).To(ContainElement("apps:get"))
+	g.Expect(patch.toUpdate).To(BeEmpty())
+	g.Expect(patch.toDelete).To(BeEmpty())
+
+	// Update: existing role is updated with new scopes.
+	existing = map[string]Role{
+		"admin": {
+			Model:  model.Model{ID: 1},
+			Name:   "admin",
+			Scopes: []string{"apps:get"},
+		},
+	}
+	wanted[0].Resources[0].Verbs = []string{"get", "post"}
+	patch = d.rolePatch(existing, wanted)
+	g.Expect(patch.toCreate).To(BeEmpty())
+	g.Expect(patch.toUpdate).To(HaveLen(1))
+	g.Expect(patch.toUpdate[0].ID).To(Equal(uint(1)))
+	g.Expect(patch.toUpdate[0].Scopes).To(ContainElement("apps:post"))
+	g.Expect(patch.toDelete).To(BeEmpty())
+
+	// Delete orphaned seeded role (ID < LastId).
+	existing = map[string]Role{
+		"admin": {
+			Model: model.Model{ID: 1},
+			Name:  "admin",
+		},
+		"orphaned": {
+			Model: model.Model{ID: 500},
+			Name:  "orphaned",
+		},
+	}
+	wanted = []seed.Role{
+		{ID: 1, Name: "admin"},
+	}
+	patch = d.rolePatch(existing, wanted)
+	g.Expect(patch.toDelete).To(ContainElement(uint(500)))
+
+	// Preserve user-created role (ID >= LastId).
+	existing = map[string]Role{
+		"custom": {
+			Model: model.Model{ID: 1500},
+			Name:  "custom",
+		},
+	}
+	wanted = []seed.Role{}
+	patch = d.rolePatch(existing, wanted)
+	g.Expect(patch.toDelete).To(BeEmpty())
+}
+
+// TestUserPatch tests the user reconciliation patch computation.
+func TestUserPatch(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	d := NewTenant(nil, nil)
+	d.roleByName["admin"] = 1
+
+	// Create: new user.
+	existing := map[string]User{}
+	wanted := []seed.User{
+		{ID: 1, Login: "admin", Password: "admin", Roles: []string{"admin"}},
+	}
+	patch := d.userPatch(existing, wanted)
+	g.Expect(patch.toCreate).To(HaveLen(1))
+	g.Expect(patch.toCreate[0].user.Login).To(Equal("admin"))
+	g.Expect(patch.toCreate[0].user.ID).To(Equal(uint(1)))
+	g.Expect(patch.toCreate[0].roles).To(HaveLen(1))
+	g.Expect(patch.toUpdate).To(BeEmpty())
+	g.Expect(patch.toDelete).To(BeEmpty())
+
+	// Update: existing user gets roles updated.
+	existing = map[string]User{
+		"admin": {
+			Model:   model.Model{ID: 1},
+			Subject: "existing-subject",
+			Login:   "admin",
+		},
+	}
+	patch = d.userPatch(existing, wanted)
+	g.Expect(patch.toCreate).To(BeEmpty())
+	g.Expect(patch.toUpdate).To(HaveLen(1))
+	g.Expect(patch.toUpdate[0].user.ID).To(Equal(uint(1)))
+	g.Expect(patch.toUpdate[0].roles).To(HaveLen(1))
+	g.Expect(patch.toDelete).To(BeEmpty())
+
+	// Delete orphaned seeded user (ID < LastId).
+	existing = map[string]User{
+		"admin": {
+			Model: model.Model{ID: 1},
+			Login: "admin",
+		},
+		"orphaned": {
+			Model: model.Model{ID: 500},
+			Login: "orphaned",
+		},
+	}
+	wanted = []seed.User{
+		{ID: 1, Login: "admin", Roles: []string{"admin"}},
+	}
+	patch = d.userPatch(existing, wanted)
+	g.Expect(patch.toDelete).To(ContainElement(uint(500)))
+
+	// Preserve user-created user (ID >= LastId).
+	existing = map[string]User{
+		"custom": {
+			Model: model.Model{ID: 1500},
+			Login: "custom",
+		},
+	}
+	wanted = []seed.User{}
+	patch = d.userPatch(existing, wanted)
+	g.Expect(patch.toDelete).To(BeEmpty())
+}
+
+// TestClientPatch tests the client reconciliation patch computation.
+func TestClientPatch(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	d := NewTenant(nil, nil)
+
+	// Create: new client.
+	existing := map[string]IdpClient{}
+	wanted := []IdpClient{
+		{
+			Model:           model.Model{ID: 1},
+			ClientId:        "web-ui",
+			ApplicationType: "web",
+		},
+	}
+	patch := d.clientPatch(existing, wanted)
+	g.Expect(patch.toCreate).To(HaveLen(1))
+	g.Expect(patch.toCreate[0].ClientId).To(Equal("web-ui"))
+	g.Expect(patch.toCreate[0].Subject).NotTo(BeEmpty())
+	g.Expect(patch.toUpdate).To(BeEmpty())
+	g.Expect(patch.toDelete).To(BeEmpty())
+
+	// Update: existing client is updated.
+	existing = map[string]IdpClient{
+		"web-ui": {
+			Model:           model.Model{ID: 1},
+			Subject:         "existing-subject",
+			ClientId:        "web-ui",
+			ApplicationType: "web",
+			Grants:          []string{"old-grant"},
+		},
+	}
+	wanted = []IdpClient{
+		{
+			Model:           model.Model{ID: 1},
+			ClientId:        "web-ui",
+			ApplicationType: "web",
+			Grants:          []string{"authorization_code"},
+		},
+	}
+	patch = d.clientPatch(existing, wanted)
+	g.Expect(patch.toCreate).To(BeEmpty())
+	g.Expect(patch.toUpdate).To(HaveLen(1))
+	g.Expect(patch.toUpdate[0].ID).To(Equal(uint(1)))
+	g.Expect(patch.toUpdate[0].Subject).To(Equal("existing-subject"))
+	g.Expect(patch.toDelete).To(BeEmpty())
+
+	// Delete orphaned seeded client (ID < LastId).
+	existing = map[string]IdpClient{
+		"orphaned": {
+			Model:    model.Model{ID: 500},
+			ClientId: "orphaned",
+		},
+	}
+	wanted = []IdpClient{}
+	patch = d.clientPatch(existing, wanted)
+	g.Expect(patch.toDelete).To(ContainElement(uint(500)))
+
+	// Preserve user-created client (ID >= LastId).
+	existing = map[string]IdpClient{
+		"custom": {
+			Model:    model.Model{ID: 1500},
+			ClientId: "custom",
+		},
+	}
+	wanted = []IdpClient{}
+	patch = d.clientPatch(existing, wanted)
+	g.Expect(patch.toDelete).To(BeEmpty())
+}
+
+// TestSeedRolesFromYAML tests seeding roles from embedded YAML definitions.
+func TestSeedRolesFromYAML(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	originalDisconnected := Settings.Disconnected
+	defer func() {
+		Settings.Disconnected = originalDisconnected
+	}()
+	Settings.Disconnected = true
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+	client, err := k8s.NewClient()
+	g.Expect(err).To(BeNil())
+
+	domain := NewTenant(db, client)
+	domain.Register("applications")
+	domain.Register("tags")
+	err = domain.Load()
+	g.Expect(err).To(BeNil())
+	domain.buildScopes()
+
+	err = domain.seedRoles(db)
+	g.Expect(err).To(BeNil())
+
+	// Verify seeded roles exist.
+	var roles []Role
+	err = db.Find(&roles).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(len(roles)).To(BeNumerically(">=", 4))
+
+	// Verify specific roles.
+	var admin Role
+	err = db.First(&admin, "Name = ?", "admin").Error
+	g.Expect(err).To(BeNil())
+	g.Expect(admin.ID).To(Equal(uint(1)))
+	g.Expect(admin.Scopes).NotTo(BeEmpty())
+
+	var architect Role
+	err = db.First(&architect, "Name = ?", "architect").Error
+	g.Expect(err).To(BeNil())
+	g.Expect(architect.ID).To(Equal(uint(2)))
+
+	var migrator Role
+	err = db.First(&migrator, "Name = ?", "migrator").Error
+	g.Expect(err).To(BeNil())
+	g.Expect(migrator.ID).To(Equal(uint(3)))
+
+	var pm Role
+	err = db.First(&pm, "Name = ?", "project-manager").Error
+	g.Expect(err).To(BeNil())
+	g.Expect(pm.ID).To(Equal(uint(4)))
+}
+
+// TestSeedRolesUpdate tests that re-seeding updates existing roles.
+func TestSeedRolesUpdate(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	originalDisconnected := Settings.Disconnected
+	defer func() {
+		Settings.Disconnected = originalDisconnected
+	}()
+	Settings.Disconnected = true
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+	client, err := k8s.NewClient()
+	g.Expect(err).To(BeNil())
+
+	domain := NewTenant(db, client)
+	domain.Register("applications")
+	err = domain.Load()
+	g.Expect(err).To(BeNil())
+	domain.buildScopes()
+
+	// Pre-create a role with stale scopes.
+	stale := &Role{
+		Model:  model.Model{ID: 1},
+		Name:   "admin",
+		Scopes: []string{"old-scope"},
+	}
+	err = db.Create(stale).Error
+	g.Expect(err).To(BeNil())
+
+	// Seed should update the role.
+	err = domain.seedRoles(db)
+	g.Expect(err).To(BeNil())
+
+	var updated Role
+	err = db.First(&updated, 1).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(updated.Scopes).NotTo(ContainElement("old-scope"))
+	g.Expect(updated.Scopes).NotTo(BeEmpty())
+}
+
+// TestSeedRolesDeleteOrphaned tests deletion of orphaned seeded roles.
+func TestSeedRolesDeleteOrphaned(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	originalDisconnected := Settings.Disconnected
+	defer func() {
+		Settings.Disconnected = originalDisconnected
+	}()
+	Settings.Disconnected = true
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+	client, err := k8s.NewClient()
+	g.Expect(err).To(BeNil())
+
+	// Create orphaned seeded role (ID < LastId, not in YAML).
+	orphaned := &Role{
+		Model: model.Model{ID: 900},
+		Name:  "orphaned-role",
+	}
+	err = db.Create(orphaned).Error
+	g.Expect(err).To(BeNil())
+
+	// Create user-created role (ID >= LastId, should be preserved).
+	custom := &Role{
+		Model: model.Model{ID: 1500},
+		Name:  "custom-role",
+	}
+	err = db.Create(custom).Error
+	g.Expect(err).To(BeNil())
+
+	domain := NewTenant(db, client)
+	domain.Register("applications")
+	err = domain.Load()
+	g.Expect(err).To(BeNil())
+	domain.buildScopes()
+
+	err = domain.seedRoles(db)
+	g.Expect(err).To(BeNil())
+
+	// Orphaned seeded role should be deleted.
+	var check Role
+	err = db.First(&check, 900).Error
+	g.Expect(err).NotTo(BeNil())
+
+	// User-created role should be preserved.
+	err = db.First(&check, 1500).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(check.Name).To(Equal("custom-role"))
+}
+
+// TestSeedRolesIDPreservation tests that IDs are stable across re-seeds.
+func TestSeedRolesIDPreservation(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	originalDisconnected := Settings.Disconnected
+	defer func() {
+		Settings.Disconnected = originalDisconnected
+	}()
+	Settings.Disconnected = true
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+	client, err := k8s.NewClient()
+	g.Expect(err).To(BeNil())
+
+	domain := NewTenant(db, client)
+	domain.Register("applications")
+	err = domain.Load()
+	g.Expect(err).To(BeNil())
+	domain.buildScopes()
+
+	// First seed.
+	err = domain.seedRoles(db)
+	g.Expect(err).To(BeNil())
+
+	var count1 int64
+	db.Model(&Role{}).Count(&count1)
+
+	// Second seed.
+	err = domain.seedRoles(db)
+	g.Expect(err).To(BeNil())
+
+	var count2 int64
+	db.Model(&Role{}).Count(&count2)
+	g.Expect(count2).To(Equal(count1))
+
+	// Verify IDs are stable.
+	var admin Role
+	err = db.First(&admin, "Name = ?", "admin").Error
+	g.Expect(err).To(BeNil())
+	g.Expect(admin.ID).To(Equal(uint(1)))
+
+	var architect Role
+	err = db.First(&architect, "Name = ?", "architect").Error
+	g.Expect(err).To(BeNil())
+	g.Expect(architect.ID).To(Equal(uint(2)))
+}
+
+// TestSeedUsersFromYAML tests seeding users from embedded YAML definitions.
+func TestSeedUsersFromYAML(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	originalDisconnected := Settings.Disconnected
+	defer func() {
+		Settings.Disconnected = originalDisconnected
+	}()
+	Settings.Disconnected = true
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+	client, err := k8s.NewClient()
+	g.Expect(err).To(BeNil())
+
+	domain := NewTenant(db, client)
+	domain.Register("applications")
+	err = domain.Load()
+	g.Expect(err).To(BeNil())
+	domain.buildScopes()
+
+	// Seed roles first (users reference roles).
+	err = domain.seedRoles(db)
+	g.Expect(err).To(BeNil())
+	err = domain.buildRoleMap(db)
+	g.Expect(err).To(BeNil())
+
+	// Seed users.
+	err = domain.seedUsers(db)
+	g.Expect(err).To(BeNil())
+
+	// Verify admin user was created.
+	var admin User
+	err = db.First(&admin, "Login = ?", "admin").Error
+	g.Expect(err).To(BeNil())
+	g.Expect(admin.ID).To(Equal(uint(1)))
+	g.Expect(admin.Subject).NotTo(BeEmpty())
+	g.Expect(admin.Login).To(Equal("admin"))
+
+	// Verify user has roles (via association).
+	var roles []model.Role
+	err = db.Model(&admin).Association("Roles").Find(&roles)
+	g.Expect(err).To(BeNil())
+	g.Expect(roles).NotTo(BeEmpty())
+}
+
+// TestSeedUsersDeleteOrphaned tests deletion of orphaned seeded users.
+func TestSeedUsersDeleteOrphaned(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	originalDisconnected := Settings.Disconnected
+	defer func() {
+		Settings.Disconnected = originalDisconnected
+	}()
+	Settings.Disconnected = true
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+	client, err := k8s.NewClient()
+	g.Expect(err).To(BeNil())
+
+	// Create orphaned seeded user (ID < LastId, not in YAML).
+	orphaned := &User{
+		Model:   model.Model{ID: 900},
+		Subject: "orphaned-subject",
+		Login:   "orphaned-user",
+	}
+	err = db.Create(orphaned).Error
+	g.Expect(err).To(BeNil())
+
+	// Create user-created user (ID >= LastId, should be preserved).
+	custom := &User{
+		Model:   model.Model{ID: 1500},
+		Subject: "custom-subject",
+		Login:   "custom-user",
+	}
+	err = db.Create(custom).Error
+	g.Expect(err).To(BeNil())
+
+	domain := NewTenant(db, client)
+	domain.Register("applications")
+	err = domain.Load()
+	g.Expect(err).To(BeNil())
+	domain.buildScopes()
+	err = domain.seedRoles(db)
+	g.Expect(err).To(BeNil())
+	err = domain.buildRoleMap(db)
+	g.Expect(err).To(BeNil())
+
+	err = domain.seedUsers(db)
+	g.Expect(err).To(BeNil())
+
+	// Orphaned seeded user should be deleted.
+	var check User
+	err = db.First(&check, 900).Error
+	g.Expect(err).NotTo(BeNil())
+
+	// User-created user should be preserved.
+	err = db.First(&check, 1500).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(check.Login).To(Equal("custom-user"))
+}
+
+// TestSeedUsersIDPreservation tests that user IDs are stable across re-seeds.
+func TestSeedUsersIDPreservation(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	originalDisconnected := Settings.Disconnected
+	defer func() {
+		Settings.Disconnected = originalDisconnected
+	}()
+	Settings.Disconnected = true
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+	client, err := k8s.NewClient()
+	g.Expect(err).To(BeNil())
+
+	domain := NewTenant(db, client)
+	domain.Register("applications")
+	err = domain.Load()
+	g.Expect(err).To(BeNil())
+	domain.buildScopes()
+	err = domain.seedRoles(db)
+	g.Expect(err).To(BeNil())
+	err = domain.buildRoleMap(db)
+	g.Expect(err).To(BeNil())
+
+	// First seed.
+	err = domain.seedUsers(db)
+	g.Expect(err).To(BeNil())
+
+	var admin1 User
+	err = db.First(&admin1, "Login = ?", "admin").Error
+	g.Expect(err).To(BeNil())
+	subject1 := admin1.Subject
+
+	var count1 int64
+	db.Model(&User{}).Count(&count1)
+
+	// Second seed.
+	err = domain.seedUsers(db)
+	g.Expect(err).To(BeNil())
+
+	var count2 int64
+	db.Model(&User{}).Count(&count2)
+	g.Expect(count2).To(Equal(count1))
+
+	var admin2 User
+	err = db.First(&admin2, "Login = ?", "admin").Error
+	g.Expect(err).To(BeNil())
+	g.Expect(admin2.ID).To(Equal(uint(1)))
+	g.Expect(admin2.Subject).To(Equal(subject1))
+}
+
+// TestPruneScopes tests that unknown scopes are removed from user-created roles.
+func TestPruneScopes(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	d := NewTenant(db, nil)
+	d.Register("applications")
+	d.buildScopes()
+
+	// Create a user-created role (ID > LastId) with a mix of valid and invalid scopes.
+	customRole := &Role{
+		Model:  model.Model{ID: 1500},
+		Name:   "custom-role",
+		Scopes: []string{"applications:get", "nonexistent:post", "applications:delete"},
+	}
+	err = db.Create(customRole).Error
+	g.Expect(err).To(BeNil())
+
+	// Create a seeded role (ID < LastId) — pruneScopes should ignore it.
+	seededRole := &Role{
+		Model:  model.Model{ID: 10},
+		Name:   "seeded-role",
+		Scopes: []string{"applications:get", "bogus:delete"},
+	}
+	err = db.Create(seededRole).Error
+	g.Expect(err).To(BeNil())
+
+	err = d.pruneScopes(db)
+	g.Expect(err).To(BeNil())
+
+	// User-created role should have the invalid scope removed.
+	var updated Role
+	err = db.First(&updated, 1500).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(updated.Scopes).To(ContainElement("applications:get"))
+	g.Expect(updated.Scopes).To(ContainElement("applications:delete"))
+	g.Expect(updated.Scopes).NotTo(ContainElement("nonexistent:post"))
+
+	// Seeded role is untouched (not pruned).
+	var seeded Role
+	err = db.First(&seeded, 10).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(seeded.Scopes).To(ContainElement("bogus:delete"))
+}
+
+// TestPruneScopesAllValid tests that roles with only valid scopes are unchanged.
+func TestPruneScopesAllValid(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	d := NewTenant(db, nil)
+	d.Register("applications")
+	d.buildScopes()
+
+	validRole := &Role{
+		Model:  model.Model{ID: 1501},
+		Name:   "valid-role",
+		Scopes: []string{"applications:get", "applications:post"},
+	}
+	err = db.Create(validRole).Error
+	g.Expect(err).To(BeNil())
+
+	err = d.pruneScopes(db)
+	g.Expect(err).To(BeNil())
+
+	var unchanged Role
+	err = db.First(&unchanged, 1501).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(unchanged.Scopes).To(HaveLen(2))
+	g.Expect(unchanged.Scopes).To(ContainElement("applications:get"))
+	g.Expect(unchanged.Scopes).To(ContainElement("applications:post"))
+}
+
+// TestPruneScopesAllInvalid tests that all scopes are removed when none are valid.
+func TestPruneScopesAllInvalid(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	d := NewTenant(db, nil)
+	d.Register("applications")
+	d.buildScopes()
+
+	invalidRole := &Role{
+		Model:  model.Model{ID: 1502},
+		Name:   "invalid-role",
+		Scopes: []string{"bogus:get", "nonexistent:post"},
+	}
+	err = db.Create(invalidRole).Error
+	g.Expect(err).To(BeNil())
+
+	err = d.pruneScopes(db)
+	g.Expect(err).To(BeNil())
+
+	var pruned Role
+	err = db.First(&pruned, 1502).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(pruned.Scopes).To(BeEmpty())
 }
