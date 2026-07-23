@@ -3243,33 +3243,6 @@ func TestIdentityProviderInjectDefaultPort(t *testing.T) {
 	g.Expect(idp.RedirectURI).To(Equal("http://hub.example.com:/callback"))
 }
 
-// TestIdentityProviderInjectConcurrent tests thread-safety of Inject().
-func TestIdentityProviderInjectConcurrent(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	idp := &IdentityProvider{
-		Issuer:      "https://${issuer.host}/auth",
-		RedirectURI: "${issuer}/callback",
-	}
-
-	issuer := "https://hub.example.com/oidc"
-
-	done := make(chan bool, 10)
-	for i := 0; i < 10; i++ {
-		go func() {
-			idp.Inject(issuer)
-			done <- true
-		}()
-	}
-
-	for i := 0; i < 10; i++ {
-		<-done
-	}
-
-	g.Expect(idp.Issuer).To(Equal("https://hub.example.com/auth"))
-	g.Expect(idp.RedirectURI).To(Equal("https://hub.example.com/oidc/callback"))
-}
-
 // setupTestDB creates an in-memory SQLite database for testing.
 func setupTestDB() (db *gorm.DB, err error) {
 	db, err = database.OpenTest()

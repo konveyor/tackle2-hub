@@ -169,8 +169,8 @@ func (d Tenant) String() (s string) {
 	clone.client = nil
 	clone.Idp.TLS = nil
 	clone.Ldap.TLS = nil
-	clone.Idp.ClientSecret = "***masked***"
-	clone.Ldap.Password = "***masked***"
+	clone.Idp.ClientSecret = "****"
+	clone.Ldap.Password = "****"
 	b, _ := yaml.Marshal(clone)
 	s = string(b)
 	return
@@ -761,8 +761,6 @@ type IdentityProvider struct {
 	RedirectURI  string
 	Scopes       []string
 	TLS          *tls.Config
-	//
-	injected bool
 }
 
 // Inject template values:
@@ -771,11 +769,7 @@ type IdentityProvider struct {
 // - ${issuer.host}
 // - ${issuer.port}
 // - ${issuer.path}
-// Note: not thread-safe.
 func (r *IdentityProvider) Inject(issuer string) {
-	if r.injected {
-		return
-	}
 	issuerURL, _ := url.Parse(issuer)
 	for _, u := range []*string{
 		&r.Issuer,
@@ -787,7 +781,6 @@ func (r *IdentityProvider) Inject(issuer string) {
 		*u = strings.Replace(*u, "${issuer.port}", issuerURL.Port(), -1)
 		*u = strings.Replace(*u, "${issuer.path}", issuerURL.Path, -1)
 	}
-	r.injected = true
 }
 
 // with populates self with the crd.
