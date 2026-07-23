@@ -155,7 +155,7 @@ func (p *Builtin) Cache() *Cache {
 func (p *Builtin) Ready(r *http.Request) {
 	p.ready.Do(func() {
 		p.domain.Idp.Inject(Issuer(r))
-		Log.Info("Issuer derived:" + p.domain.Idp.Issuer)
+		Log.Info("Issuer derived: " + p.domain.Idp.Issuer)
 	})
 }
 
