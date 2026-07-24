@@ -550,6 +550,7 @@ func (d *Tenant) getIdp() (err error) {
 		return
 	}
 	if len(list.Items) == 0 {
+		d.Idp = IdentityProvider{}
 		return
 	}
 	if len(list.Items) > 1 {
@@ -595,6 +596,7 @@ func (d *Tenant) getLdap() (err error) {
 		return
 	}
 	if len(list.Items) == 0 {
+		d.Ldap = LdapProvider{}
 		return
 	}
 	if len(list.Items) > 1 {
