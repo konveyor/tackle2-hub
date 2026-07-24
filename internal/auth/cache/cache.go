@@ -697,7 +697,7 @@ func (d *Data) addTokenScopes(m *Token) {
 		if !found {
 			err = &NotFound{
 				Resource: "SA.scopes",
-				Id:       strconv.Itoa(int(*m.UserID)),
+				Id:       strconv.Itoa(int(*m.ServiceAccountID)),
 			}
 			return
 		}
