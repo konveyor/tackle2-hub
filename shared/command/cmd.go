@@ -6,6 +6,8 @@ package command
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"io"
 	"os/exec"
 	"strings"
@@ -46,6 +48,7 @@ func (r *Command) Run() (err error) {
 
 // RunWith executes the command with context.
 func (r *Command) RunWith(ctx context.Context) (err error) {
+	Log.V(1).Info("Run: " + r.Command())
 	defer func() {
 		r.Error = err
 		Log.V(1).Info(r.String())
@@ -74,6 +77,12 @@ func (r *Command) RunWith(ctx context.Context) (err error) {
 	}
 	err = cmd.Wait()
 	if err != nil {
+		err = &FailedError{
+			WithError: err,
+			Command:   r.Command(),
+			Exit:      cmd.ProcessState.ExitCode(),
+			Output:    string(r.Output()),
+		}
 		err = liberr.Wrap(err)
 		return
 	}
@@ -98,24 +107,53 @@ func (r *Command) Output() (b []byte) {
 	return
 }
 
-// String returns a string representation.
-func (r *Command) String() (s string) {
+// Command returns the command (path) plus arguments.
+func (r *Command) Command() (s string) {
 	parts := []string{
-		"[CMD] ",
 		r.Path,
 		strings.Join(r.Options, " "),
 	}
-	if r.Error == nil {
-		parts = append(parts, "\nSUCCEEDED")
-	} else {
-		parts = append(parts, "\nFAILED:", r.Error.Error())
+	s = strings.Join(parts, " ")
+	return
+}
+
+// String returns a string representation.
+func (r *Command) String() (s string) {
+	parts := []string{
+		"[CMD]",
 	}
-	if Log.V(2).Enabled() {
-		output := r.Output()
-		if len(output) > 0 {
-			parts = append(parts, "\noutput:\n", string(output))
-		}
+	if r.Error == nil {
+		parts = append(
+			parts,
+			r.Command(),
+			": SUCCEEDED")
+	} else {
+		parts = append(parts, r.Error.Error())
 	}
 	s = strings.Join(parts, " ")
+	return
+}
+
+// FailedError command failed error.
+type FailedError struct {
+	WithError error
+	Command   string
+	Exit      int
+	Output    string
+}
+
+func (e *FailedError) Error() (s string) {
+	s = fmt.Sprintf(
+		"(exit=%d) %s: FAILED, Reason: %s, Output: %s",
+		e.Exit,
+		e.Command,
+		e.WithError.Error(),
+		e.Output)
+	return
+}
+
+func (e *FailedError) Is(err error) (matched bool) {
+	inst := &FailedError{}
+	matched = errors.As(err, &inst)
 	return
 }

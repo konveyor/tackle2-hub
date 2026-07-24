@@ -15,6 +15,7 @@ import (
 	"github.com/konveyor/tackle2-hub/internal/jsd"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	tasking "github.com/konveyor/tackle2-hub/internal/task"
+	"github.com/konveyor/tackle2-hub/shared/command"
 	"github.com/mattn/go-sqlite3"
 	"gorm.io/gorm"
 )
@@ -166,6 +167,15 @@ func ErrorHandler() gin.HandlerFunc {
 		if errors.Is(err, &TrackerError{}) {
 			rtx.Respond(
 				http.StatusServiceUnavailable,
+				gin.H{
+					"error": err.Error(),
+				})
+			return
+		}
+
+		if errors.Is(err, &command.FailedError{}) {
+			rtx.Respond(
+				http.StatusInternalServerError,
 				gin.H{
 					"error": err.Error(),
 				})
