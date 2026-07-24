@@ -208,7 +208,7 @@ func TestTaskGrant(t *testing.T) {
 	user := provider.User(jwToken)
 	g.Expect(user).To(Equal(sa.Name))
 
-	// Verify scopes are AddonScopes
+	// Verify scopes are from the addon SA role.
 	scopes := provider.Scopes(jwToken)
 	g.Expect(scopes).NotTo(BeEmpty())
 	scopeStrings := make([]string, len(scopes))
@@ -228,7 +228,7 @@ func TestTaskGrant(t *testing.T) {
 	g.Expect(*dbToken.ServiceAccountID).To(Equal(sa.ID))
 }
 
-// TestTaskSubjectScopes tests that task subjects get AddonScopes.
+// TestTaskSubjectScopes tests that task tokens get scopes from the addon SA role.
 func TestTaskSubjectScopes(t *testing.T) {
 	g := NewGomegaWithT(t)
 
@@ -250,8 +250,7 @@ func TestTaskSubjectScopes(t *testing.T) {
 	jwToken, err := provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
 
-	// Verify scopes match AddonScopes
-
+	// Verify scopes match the addon SA role.
 	scopes := provider.Scopes(jwToken)
 	scopeStrings := make([]string, len(scopes))
 	for i, s := range scopes {
@@ -3113,8 +3112,16 @@ func setupTestDB() (db *gorm.DB, err error) {
 // seedAddon seeds the addon service account (with role) needed by TaskGrant.
 func seedAddon(db *gorm.DB) (err error) {
 	role := Role{
-		Name:   "addon",
-		Scopes: AddonScopes,
+		Name: "addon",
+		Scopes: []string{
+			"addons:get",
+			"applications:get",
+			"applications:post",
+			"applications:put",
+			"applications.facts:*",
+			"identities:get",
+			"tasks:get",
+		},
 	}
 	role.ID = 5
 	err = db.Create(&role).Error
