@@ -3472,6 +3472,110 @@ func TestUser_With_Tokens(t *testing.T) {
 	g.Expect(r.Tokens[1].ID).To(gomega.Equal(uint(101)))
 }
 
+// TestServiceAccount_With tests the ServiceAccount.With() method
+func TestServiceAccount_With(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	m := &model.ServiceAccount{
+		Model: model.Model{
+			ID:         1,
+			CreateUser: "admin",
+		},
+		Subject: "sa-uuid-1234",
+		Name:    "ci-bot",
+		Roles: []model.Role{
+			{Model: model.Model{ID: 10}, Name: "admin"},
+			{Model: model.Model{ID: 11}, Name: "developer"},
+		},
+		Tokens: []model.Token{
+			{Model: model.Model{ID: 100}},
+			{Model: model.Model{ID: 101}},
+		},
+	}
+
+	r := &ServiceAccount{}
+	r.With(m)
+
+	g.Expect(r.ID).To(gomega.Equal(uint(1)))
+	g.Expect(r.Subject).To(gomega.Equal("sa-uuid-1234"))
+	g.Expect(r.Name).To(gomega.Equal("ci-bot"))
+	g.Expect(len(r.Roles)).To(gomega.Equal(2))
+	g.Expect(r.Roles[0].ID).To(gomega.Equal(uint(10)))
+	g.Expect(r.Roles[0].Name).To(gomega.Equal("admin"))
+	g.Expect(r.Roles[1].ID).To(gomega.Equal(uint(11)))
+	g.Expect(r.Roles[1].Name).To(gomega.Equal("developer"))
+	g.Expect(len(r.Tokens)).To(gomega.Equal(2))
+	g.Expect(r.Tokens[0].ID).To(gomega.Equal(uint(100)))
+	g.Expect(r.Tokens[1].ID).To(gomega.Equal(uint(101)))
+}
+
+// TestServiceAccount_Model tests the ServiceAccount.Model() method
+func TestServiceAccount_Model(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	r := &ServiceAccount{
+		Resource: Resource{ID: 1},
+		Subject:  "sa-uuid-1234",
+		Name:     "ci-bot",
+		Roles: []Ref{
+			{ID: 10, Name: "admin"},
+			{ID: 11, Name: "developer"},
+		},
+	}
+
+	m := r.Model()
+
+	g.Expect(m.ID).To(gomega.Equal(uint(1)))
+	g.Expect(m.Subject).To(gomega.Equal("sa-uuid-1234"))
+	g.Expect(m.Name).To(gomega.Equal("ci-bot"))
+	g.Expect(len(m.Roles)).To(gomega.Equal(2))
+	g.Expect(m.Roles[0].ID).To(gomega.Equal(uint(10)))
+	g.Expect(m.Roles[1].ID).To(gomega.Equal(uint(11)))
+}
+
+// TestServiceAccount_Model_EmptyRoles tests ServiceAccount.Model() with empty roles
+func TestServiceAccount_Model_EmptyRoles(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	r := &ServiceAccount{
+		Resource: Resource{ID: 1},
+		Subject:  "sa-uuid-1234",
+		Name:     "ci-bot",
+		Roles:    []Ref{},
+	}
+
+	m := r.Model()
+
+	g.Expect(m.ID).To(gomega.Equal(uint(1)))
+	g.Expect(m.Name).To(gomega.Equal("ci-bot"))
+	g.Expect(len(m.Roles)).To(gomega.Equal(0))
+}
+
+// TestServiceAccount_With_EmptyAssociations tests ServiceAccount.With() with no roles or tokens
+func TestServiceAccount_With_EmptyAssociations(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	m := &model.ServiceAccount{
+		Model: model.Model{
+			ID:         1,
+			CreateUser: "admin",
+		},
+		Subject: "sa-uuid-1234",
+		Name:    "ci-bot",
+	}
+
+	r := &ServiceAccount{}
+	r.With(m)
+
+	g.Expect(r.ID).To(gomega.Equal(uint(1)))
+	g.Expect(r.Subject).To(gomega.Equal("sa-uuid-1234"))
+	g.Expect(r.Name).To(gomega.Equal("ci-bot"))
+	g.Expect(r.Roles).ToNot(gomega.BeNil())
+	g.Expect(len(r.Roles)).To(gomega.Equal(0))
+	g.Expect(r.Tokens).ToNot(gomega.BeNil())
+	g.Expect(len(r.Tokens)).To(gomega.Equal(0))
+}
+
 // TestIdpClient_With tests the IdpClient.With() method
 func TestIdpClient_With(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)

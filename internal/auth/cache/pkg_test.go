@@ -24,6 +24,7 @@ func setupTestDB() (db *gorm.DB, err error) {
 	// Auto-migrate test models
 	err = db.AutoMigrate(
 		&User{},
+		&ServiceAccount{},
 		&model.Task{},
 		&Role{},
 		&Token{},
@@ -105,6 +106,272 @@ func TestCacheEntityUpdates(t *testing.T) {
 	cache.IdentityDeleted(400)
 	_, err = cache.FindIdentityByLogin("idp-userid")
 	g.Expect(err).NotTo(BeNil())
+}
+
+// TestSaSavedDeleted tests SaSaved/SaDeleted methods.
+func TestSaSavedDeleted(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	sa := &ServiceAccount{
+		Model:   Model{ID: 100},
+		Subject: "sa-subject-100",
+		Name:    "ci-bot",
+	}
+	cache.SaSaved(sa)
+
+	// Findable by subject.
+	subject, err := cache.FindSubject("sa-subject-100")
+	g.Expect(err).To(BeNil())
+	g.Expect(subject.IsServiceAccount()).To(BeTrue())
+	g.Expect(subject.IsUser()).To(BeFalse())
+	g.Expect(subject.ServiceAccountId).NotTo(BeNil())
+	g.Expect(*subject.ServiceAccountId).To(Equal(uint(100)))
+	g.Expect(subject.ServiceAccount).NotTo(BeNil())
+	g.Expect(subject.ServiceAccount.Name).To(Equal("ci-bot"))
+	g.Expect(subject.Key).To(Equal("sa-subject-100"))
+
+	// Delete removes from cache.
+	cache.SaDeleted(100)
+	_, err = cache.FindSubject("sa-subject-100")
+	g.Expect(err).NotTo(BeNil())
+}
+
+// TestSaDeletedRemovesTokens tests that SaDeleted removes associated tokens.
+func TestSaDeletedRemovesTokens(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	sa := &ServiceAccount{
+		Model:   Model{ID: 200},
+		Subject: "sa-subject-200",
+		Name:    "deploy-bot",
+	}
+	cache.SaSaved(sa)
+
+	// Add tokens for this service account.
+	saID := uint(200)
+	token1 := &Token{
+		Token: model.Token{
+			Model:            Model{ID: 201},
+			ServiceAccountID: &saID,
+			Digest:           secret.Hash("sa-token-201"),
+			Expiration:       time.Now().Add(24 * time.Hour),
+		},
+		Secret: "sa-token-201",
+	}
+	token2 := &Token{
+		Token: model.Token{
+			Model:            Model{ID: 202},
+			ServiceAccountID: &saID,
+			Digest:           secret.Hash("sa-token-202"),
+			Expiration:       time.Now().Add(24 * time.Hour),
+		},
+		Secret: "sa-token-202",
+	}
+	cache.TokenSaved(token1)
+	cache.TokenSaved(token2)
+
+	_, err = cache.FindToken("sa-token-201")
+	g.Expect(err).To(BeNil())
+	_, err = cache.FindToken("sa-token-202")
+	g.Expect(err).To(BeNil())
+
+	// Delete SA should remove both tokens.
+	cache.SaDeleted(200)
+
+	_, err = cache.FindToken("sa-token-201")
+	g.Expect(err).NotTo(BeNil())
+	_, err = cache.FindToken("sa-token-202")
+	g.Expect(err).NotTo(BeNil())
+}
+
+// TestSaDeletedDoesNotRemoveUserTokens tests that SaDeleted does not remove user tokens.
+func TestSaDeletedDoesNotRemoveUserTokens(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	// SA and user with same numeric ID.
+	saID := uint(300)
+	sa := &ServiceAccount{
+		Model:   Model{ID: saID},
+		Subject: "sa-subject-300",
+		Name:    "bot",
+	}
+	cache.SaSaved(sa)
+
+	user := &User{
+		Model:   Model{ID: saID},
+		Subject: "user-subject-300",
+		Login:   "user300",
+	}
+	cache.UserSaved(user)
+
+	// Token belonging to user.
+	userToken := &Token{
+		Token: model.Token{
+			Model:      Model{ID: 301},
+			UserID:     &saID,
+			Digest:     secret.Hash("user-token-301"),
+			Expiration: time.Now().Add(24 * time.Hour),
+		},
+		Secret: "user-token-301",
+	}
+	cache.TokenSaved(userToken)
+
+	// Token belonging to SA.
+	saToken := &Token{
+		Token: model.Token{
+			Model:            Model{ID: 302},
+			ServiceAccountID: &saID,
+			Digest:           secret.Hash("sa-token-302"),
+			Expiration:       time.Now().Add(24 * time.Hour),
+		},
+		Secret: "sa-token-302",
+	}
+	cache.TokenSaved(saToken)
+
+	// Delete SA.
+	cache.SaDeleted(saID)
+
+	// User token should still exist.
+	_, err = cache.FindToken("user-token-301")
+	g.Expect(err).To(BeNil())
+
+	// SA token should be removed.
+	_, err = cache.FindToken("sa-token-302")
+	g.Expect(err).NotTo(BeNil())
+}
+
+// TestSaScopes tests that service account scopes are derived from roles.
+func TestSaScopes(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Create roles in DB.
+	role1 := &Role{
+		Model:  Model{ID: 1},
+		Name:   "admin",
+		Scopes: []string{"applications:get", "applications:post"},
+	}
+	role2 := &Role{
+		Model:  Model{ID: 2},
+		Name:   "viewer",
+		Scopes: []string{"applications:get"},
+	}
+	err = db.Create(role1).Error
+	g.Expect(err).To(BeNil())
+	err = db.Create(role2).Error
+	g.Expect(err).To(BeNil())
+
+	// Create SA with roles in DB.
+	sa := &ServiceAccount{
+		Model:   Model{ID: 400},
+		Subject: "sa-subject-400",
+		Name:    "scoped-bot",
+		Roles:   []Role{*role1, *role2},
+	}
+	err = db.Create(sa).Error
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	subject, err := cache.FindSubject("sa-subject-400")
+	g.Expect(err).To(BeNil())
+	g.Expect(subject.IsServiceAccount()).To(BeTrue())
+	g.Expect(subject.Scopes).To(ContainElement("applications:get"))
+	g.Expect(subject.Scopes).To(ContainElement("applications:post"))
+}
+
+// TestSaLogin tests Subject.Login() for service account subjects.
+func TestSaLogin(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	saID := uint(1)
+	subject := &Subject{
+		ServiceAccountId: &saID,
+		ServiceAccount: &ServiceAccount{
+			Name: "ci-bot",
+		},
+	}
+	g.Expect(subject.IsServiceAccount()).To(BeTrue())
+	g.Expect(subject.Login()).To(Equal("ci-bot"))
+}
+
+// TestSubjectIsServiceAccount tests Subject.IsServiceAccount().
+func TestSubjectIsServiceAccount(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// SA subject.
+	saID := uint(1)
+	saSubject := &Subject{ServiceAccountId: &saID, ServiceAccount: &ServiceAccount{}}
+	g.Expect(saSubject.IsServiceAccount()).To(BeTrue())
+	g.Expect(saSubject.IsUser()).To(BeFalse())
+	g.Expect(saSubject.IsTask()).To(BeFalse())
+
+	// Empty subject.
+	emptySubject := &Subject{}
+	g.Expect(emptySubject.IsServiceAccount()).To(BeFalse())
+}
+
+// TestSaMixedSubjectTypes tests that SA subjects coexist with other subject types.
+func TestSaMixedSubjectTypes(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	user := &User{
+		Model:   Model{ID: 1},
+		Subject: "user-subject-1",
+		Login:   "user1",
+	}
+	cache.UserSaved(user)
+
+	sa := &ServiceAccount{
+		Model:   Model{ID: 2},
+		Subject: "sa-subject-2",
+		Name:    "ci-bot",
+	}
+	cache.SaSaved(sa)
+
+	// Both findable.
+	userSubj, err := cache.FindSubject("user-subject-1")
+	g.Expect(err).To(BeNil())
+	g.Expect(userSubj.IsUser()).To(BeTrue())
+	g.Expect(userSubj.IsServiceAccount()).To(BeFalse())
+
+	saSubj, err := cache.FindSubject("sa-subject-2")
+	g.Expect(err).To(BeNil())
+	g.Expect(saSubj.IsServiceAccount()).To(BeTrue())
+	g.Expect(saSubj.IsUser()).To(BeFalse())
+	g.Expect(saSubj.Login()).To(Equal("ci-bot"))
 }
 
 // TestCacheTransaction tests cache transaction behavior.
