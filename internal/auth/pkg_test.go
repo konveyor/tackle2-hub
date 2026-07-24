@@ -118,6 +118,53 @@ func TestUserGrant(t *testing.T) {
 	g.Expect(err).NotTo(BeNil())
 }
 
+// TestNewTokenWithServiceAccount tests creating a PAT for a service account subject.
+func TestNewTokenWithServiceAccount(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db, &Tenant{})
+	g.Expect(err).To(BeNil())
+
+	// Load the seeded addon SA.
+	var sa ServiceAccount
+	err = db.First(&sa, 1).Error
+	g.Expect(err).To(BeNil())
+
+	// Create a PAT for the SA subject.
+	token, err := provider.NewToken(sa.Subject, 24*time.Hour)
+	g.Expect(err).To(BeNil())
+	g.Expect(token.Secret).NotTo(BeEmpty())
+	g.Expect(token.ServiceAccountID).NotTo(BeNil())
+	g.Expect(*token.ServiceAccountID).To(Equal(sa.ID))
+	g.Expect(token.UserID).To(BeNil())
+
+	// Authenticate.
+	request := newTestRequest()
+	request.With("Bearer " + token.Secret)
+	jwToken, err := provider.Authenticate(request)
+	g.Expect(err).To(BeNil())
+
+	// Verify subject claim.
+	claims := jwToken.Claims.(jwt.MapClaims)
+	g.Expect(claims[ClaimSub]).To(Equal(sa.Subject))
+
+	// Verify User() returns the SA name.
+	user := provider.User(jwToken)
+	g.Expect(user).To(Equal(sa.Name))
+
+	// Verify scopes are derived from the SA's roles.
+	scopes := provider.Scopes(jwToken)
+	g.Expect(scopes).NotTo(BeEmpty())
+	scopeStrings := make([]string, len(scopes))
+	for i, s := range scopes {
+		scopeStrings[i] = s.String()
+	}
+	g.Expect(scopeStrings).To(ContainElement("addons:get"))
+}
+
 // TestTaskGrant tests creating and authenticating with task tokens.
 func TestTaskGrant(t *testing.T) {
 	g := NewGomegaWithT(t)
@@ -140,6 +187,7 @@ func TestTaskGrant(t *testing.T) {
 	g.Expect(token.Secret).NotTo(BeEmpty())
 	g.Expect(token.TaskID).NotTo(BeNil())
 	g.Expect(*token.TaskID).To(Equal(task.ID))
+	g.Expect(token.ServiceAccountID).NotTo(BeNil())
 
 	// Test authenticating with the task token
 	request := newTestRequest()
@@ -176,6 +224,8 @@ func TestTaskGrant(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(dbToken.TaskID).NotTo(BeNil())
 	g.Expect(*dbToken.TaskID).To(Equal(task.ID))
+	g.Expect(dbToken.ServiceAccountID).NotTo(BeNil())
+	g.Expect(*dbToken.ServiceAccountID).To(Equal(sa.ID))
 }
 
 // TestTaskSubjectScopes tests that task subjects get AddonScopes.
@@ -244,7 +294,7 @@ func TestTaskTokenLifecycle(t *testing.T) {
 	_, err = provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
 
-	// Revoke task - removes tokens (but subject still parseable)
+	// Revoke task - removes tokens.
 	provider.TaskRevoke(300)
 
 	// Authentication fails (token removed)
@@ -1074,6 +1124,57 @@ func TestCascadeDeleteIdpIdentity(t *testing.T) {
 	g.Expect(errors.Is(err, gorm.ErrRecordNotFound)).To(BeTrue())
 }
 
+// TestCascadeDeleteServiceAccount tests that deleting a service account cascades to delete tokens.
+func TestCascadeDeleteServiceAccount(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Create a separate SA (not the seeded addon, which other tests need).
+	role := &model.Role{
+		Name:   "sa-cascade-role",
+		Scopes: []string{"applications:get"},
+	}
+	err = db.Create(role).Error
+	g.Expect(err).To(BeNil())
+
+	sa := &ServiceAccount{
+		Subject: uuid.New().String(),
+		Name:    "cascade-sa",
+		Roles:   []Role{*role},
+	}
+	sa.ID = 100
+	err = db.Create(sa).Error
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db, &Tenant{})
+	g.Expect(err).To(BeNil())
+
+	// Create token for SA.
+	token, err := provider.NewToken(sa.Subject, 24*time.Hour)
+	g.Expect(err).To(BeNil())
+
+	// Verify token exists.
+	var count int64
+	db.Model(&model.Token{}).Where("ServiceAccountID = ?", sa.ID).Count(&count)
+	g.Expect(count).To(Equal(int64(1)))
+
+	// Delete SA (should cascade delete token).
+	err = db.Delete(sa).Error
+	g.Expect(err).To(BeNil())
+
+	// Verify token was cascade deleted.
+	db.Model(&model.Token{}).Where("ServiceAccountID = ?", sa.ID).Count(&count)
+	g.Expect(count).To(Equal(int64(0)))
+
+	// Verify token no longer in database by ID.
+	var deletedToken model.Token
+	err = db.First(&deletedToken, token.ID).Error
+	g.Expect(err).NotTo(BeNil())
+	g.Expect(errors.Is(err, gorm.ErrRecordNotFound)).To(BeTrue())
+}
+
 // TestBuiltinRevoke tests the Builtin Revoke method removes key from cache and DB.
 func TestBuiltinRevoke(t *testing.T) {
 	g := NewGomegaWithT(t)
@@ -1839,6 +1940,20 @@ func TestCacheFindSubject(t *testing.T) {
 	g.Expect(subject.Email).To(Equal("idp@example.com"))
 	// IdpIdentity no longer has scopes - they come from Grant or Token
 	g.Expect(subject.Scopes).To(BeEmpty())
+
+	// Test finding service account by subject
+	var sa ServiceAccount
+	err = db.First(&sa, 1).Error
+	g.Expect(err).To(BeNil())
+
+	subject, err = provider.cache.FindSubject(sa.Subject)
+	g.Expect(err).To(BeNil())
+	g.Expect(subject).NotTo(BeNil())
+	g.Expect(subject.IsServiceAccount()).To(BeTrue())
+	g.Expect(subject.IsUser()).To(BeFalse())
+	g.Expect(subject.Key).To(Equal(sa.Subject))
+	g.Expect(subject.ServiceAccount.Name).To(Equal("addon"))
+	g.Expect(subject.Scopes).NotTo(BeEmpty())
 }
 
 // TestCacheFindSubjectNotFound tests NotFound error when subject doesn't exist.
@@ -5131,4 +5246,232 @@ func TestPruneScopesAllInvalid(t *testing.T) {
 	err = db.First(&pruned, 1502).Error
 	g.Expect(err).To(BeNil())
 	g.Expect(pruned.Scopes).To(BeEmpty())
+}
+
+// TestSaPatch tests the service account reconciliation patch computation.
+func TestSaPatch(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	d := NewTenant(nil, nil)
+	d.roleByName["addon"] = 5
+
+	// Create: new SA.
+	existing := map[string]ServiceAccount{}
+	wanted := []seed.ServiceAccount{
+		{ID: 1, Name: "addon", Roles: []string{"addon"}},
+	}
+	patch := d.saPatch(existing, wanted)
+	g.Expect(patch.toCreate).To(HaveLen(1))
+	g.Expect(patch.toCreate[0].sa.Name).To(Equal("addon"))
+	g.Expect(patch.toCreate[0].sa.ID).To(Equal(uint(1)))
+	g.Expect(patch.toCreate[0].sa.Subject).NotTo(BeEmpty())
+	g.Expect(patch.toCreate[0].roles).To(HaveLen(1))
+	g.Expect(patch.toUpdate).To(BeEmpty())
+	g.Expect(patch.toDelete).To(BeEmpty())
+
+	// Update: existing SA gets roles updated.
+	existing = map[string]ServiceAccount{
+		"addon": {
+			Model:   model.Model{ID: 1},
+			Subject: "existing-subject",
+			Name:    "addon",
+		},
+	}
+	patch = d.saPatch(existing, wanted)
+	g.Expect(patch.toCreate).To(BeEmpty())
+	g.Expect(patch.toUpdate).To(HaveLen(1))
+	g.Expect(patch.toUpdate[0].sa.ID).To(Equal(uint(1)))
+	g.Expect(patch.toUpdate[0].sa.Subject).To(Equal("existing-subject"))
+	g.Expect(patch.toUpdate[0].roles).To(HaveLen(1))
+	g.Expect(patch.toDelete).To(BeEmpty())
+
+	// Delete orphaned seeded SA (ID < LastId).
+	existing = map[string]ServiceAccount{
+		"addon": {
+			Model: model.Model{ID: 1},
+			Name:  "addon",
+		},
+		"orphaned": {
+			Model: model.Model{ID: 500},
+			Name:  "orphaned",
+		},
+	}
+	wanted = []seed.ServiceAccount{
+		{ID: 1, Name: "addon", Roles: []string{"addon"}},
+	}
+	patch = d.saPatch(existing, wanted)
+	g.Expect(patch.toDelete).To(ContainElement(uint(500)))
+
+	// Preserve user-created SA (ID >= LastId).
+	existing = map[string]ServiceAccount{
+		"custom": {
+			Model: model.Model{ID: 1500},
+			Name:  "custom",
+		},
+	}
+	wanted = []seed.ServiceAccount{}
+	patch = d.saPatch(existing, wanted)
+	g.Expect(patch.toDelete).To(BeEmpty())
+}
+
+// TestSeedServiceAccountsFromYAML tests seeding service accounts from embedded YAML.
+func TestSeedServiceAccountsFromYAML(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	originalDisconnected := Settings.Disconnected
+	defer func() {
+		Settings.Disconnected = originalDisconnected
+	}()
+	Settings.Disconnected = true
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Delete the SA created by setupTestDB so we can test seeding from scratch.
+	db.Delete(&ServiceAccount{}, 1)
+
+	client, err := k8s.NewClient()
+	g.Expect(err).To(BeNil())
+
+	domain := NewTenant(db, client)
+	domain.Register("applications")
+	err = domain.Load()
+	g.Expect(err).To(BeNil())
+	domain.buildScopes()
+
+	err = domain.seedRoles(db)
+	g.Expect(err).To(BeNil())
+	err = domain.buildRoleMap(db)
+	g.Expect(err).To(BeNil())
+
+	err = domain.seedServiceAccounts(db)
+	g.Expect(err).To(BeNil())
+
+	// Verify addon SA was created.
+	var sa ServiceAccount
+	err = db.First(&sa, "Name = ?", "addon").Error
+	g.Expect(err).To(BeNil())
+	g.Expect(sa.ID).To(Equal(uint(1)))
+	g.Expect(sa.Subject).NotTo(BeEmpty())
+	g.Expect(sa.Name).To(Equal("addon"))
+
+	// Verify SA has roles.
+	var roles []model.Role
+	err = db.Model(&sa).Association("Roles").Find(&roles)
+	g.Expect(err).To(BeNil())
+	g.Expect(roles).NotTo(BeEmpty())
+}
+
+// TestSeedServiceAccountsDeleteOrphaned tests deletion of orphaned seeded SAs.
+func TestSeedServiceAccountsDeleteOrphaned(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	originalDisconnected := Settings.Disconnected
+	defer func() {
+		Settings.Disconnected = originalDisconnected
+	}()
+	Settings.Disconnected = true
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Create orphaned seeded SA (ID < LastId, not in YAML).
+	orphaned := &ServiceAccount{
+		Model:   model.Model{ID: 900},
+		Subject: "orphaned-sa-subject",
+		Name:    "orphaned-sa",
+	}
+	err = db.Create(orphaned).Error
+	g.Expect(err).To(BeNil())
+
+	// Create user-created SA (ID >= LastId, should be preserved).
+	custom := &ServiceAccount{
+		Model:   model.Model{ID: 1500},
+		Subject: "custom-sa-subject",
+		Name:    "custom-sa",
+	}
+	err = db.Create(custom).Error
+	g.Expect(err).To(BeNil())
+
+	client, err := k8s.NewClient()
+	g.Expect(err).To(BeNil())
+
+	domain := NewTenant(db, client)
+	domain.Register("applications")
+	err = domain.Load()
+	g.Expect(err).To(BeNil())
+	domain.buildScopes()
+	err = domain.seedRoles(db)
+	g.Expect(err).To(BeNil())
+	err = domain.buildRoleMap(db)
+	g.Expect(err).To(BeNil())
+
+	err = domain.seedServiceAccounts(db)
+	g.Expect(err).To(BeNil())
+
+	// Orphaned seeded SA should be deleted.
+	var check ServiceAccount
+	err = db.First(&check, 900).Error
+	g.Expect(err).NotTo(BeNil())
+
+	// User-created SA should be preserved.
+	err = db.First(&check, 1500).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(check.Name).To(Equal("custom-sa"))
+}
+
+// TestSeedServiceAccountsIDPreservation tests that SA IDs are stable across re-seeds.
+func TestSeedServiceAccountsIDPreservation(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	originalDisconnected := Settings.Disconnected
+	defer func() {
+		Settings.Disconnected = originalDisconnected
+	}()
+	Settings.Disconnected = true
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	// Delete the SA created by setupTestDB so we can test seeding from scratch.
+	db.Delete(&ServiceAccount{}, 1)
+
+	client, err := k8s.NewClient()
+	g.Expect(err).To(BeNil())
+
+	domain := NewTenant(db, client)
+	domain.Register("applications")
+	err = domain.Load()
+	g.Expect(err).To(BeNil())
+	domain.buildScopes()
+	err = domain.seedRoles(db)
+	g.Expect(err).To(BeNil())
+	err = domain.buildRoleMap(db)
+	g.Expect(err).To(BeNil())
+
+	// First seed.
+	err = domain.seedServiceAccounts(db)
+	g.Expect(err).To(BeNil())
+
+	var sa1 ServiceAccount
+	err = db.First(&sa1, "Name = ?", "addon").Error
+	g.Expect(err).To(BeNil())
+	subject1 := sa1.Subject
+
+	var count1 int64
+	db.Model(&ServiceAccount{}).Count(&count1)
+
+	// Second seed.
+	err = domain.seedServiceAccounts(db)
+	g.Expect(err).To(BeNil())
+
+	var count2 int64
+	db.Model(&ServiceAccount{}).Count(&count2)
+	g.Expect(count2).To(Equal(count1))
+
+	var sa2 ServiceAccount
+	err = db.First(&sa2, "Name = ?", "addon").Error
+	g.Expect(err).To(BeNil())
+	g.Expect(sa2.ID).To(Equal(uint(1)))
+	g.Expect(sa2.Subject).To(Equal(subject1))
 }
