@@ -13,6 +13,7 @@ import (
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/internal/api"
 	"github.com/konveyor/tackle2-hub/internal/auth"
+	"github.com/konveyor/tackle2-hub/internal/controller"
 	"github.com/konveyor/tackle2-hub/internal/database"
 	"github.com/konveyor/tackle2-hub/internal/frontend"
 	"github.com/konveyor/tackle2-hub/internal/heap"
@@ -118,9 +119,13 @@ func main() {
 	}
 	//
 	// Add controller manager.
-	addonManager, aErr := k8s.NewManager(db)
+	addonManager, aErr := k8s.NewManager()
 	if aErr != nil {
 		err = aErr
+		return
+	}
+	err = controller.Add(addonManager, db)
+	if err != nil {
 		return
 	}
 	go func() {
@@ -138,11 +143,17 @@ func main() {
 		return
 	}
 	// Auth
-	auth.Domain = auth.NewTenant(db)
-	auth.IdP, err = auth.New(db)
+	domain := auth.NewTenant(db, client)
+	err = domain.Load()
 	if err != nil {
 		return
 	}
+	p, err := auth.New(db, domain)
+	if err != nil {
+		return
+	}
+	auth.SetDomain(domain)
+	auth.SetIdp(p)
 	// Document migration.
 	jsdMigrator := migration.DocumentMigrator{
 		DB:     db,
@@ -211,11 +222,11 @@ func main() {
 	}
 	//
 	// Auth domain.
-	err = auth.Domain.Seed()
+	err = domain.Seed()
 	if err != nil {
 		return
 	}
-	err = auth.IdP.Cache().Refresh()
+	err = auth.Idp().Cache().Refresh()
 	if err != nil {
 		return
 	}

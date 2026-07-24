@@ -182,7 +182,7 @@ func (h AuthHandler) IdpClientCreate(ctx *gin.Context) {
 		return
 	}
 
-	auth.IdP.Cache().ClientSaved((*cache.IdpClient)(m))
+	auth.Idp().Cache().ClientSaved((*cache.IdpClient)(m))
 
 	r.With(m)
 
@@ -243,7 +243,7 @@ func (h AuthHandler) IdpClientUpdate(ctx *gin.Context) {
 		return
 	}
 
-	auth.IdP.Cache().ClientSaved((*cache.IdpClient)(m))
+	auth.Idp().Cache().ClientSaved((*cache.IdpClient)(m))
 
 	h.Status(ctx, http.StatusNoContent)
 }
@@ -273,7 +273,7 @@ func (h AuthHandler) IdpClientDelete(ctx *gin.Context) {
 		return
 	}
 
-	auth.IdP.Cache().ClientDeleted(id)
+	auth.Idp().Cache().ClientDeleted(id)
 
 	h.Status(ctx, http.StatusNoContent)
 }
@@ -521,7 +521,7 @@ func (h AuthHandler) UserCreate(ctx *gin.Context) {
 		return
 	}
 
-	auth.IdP.Cache().UserSaved(m)
+	auth.Idp().Cache().UserSaved(m)
 
 	r.With(m)
 
@@ -596,7 +596,7 @@ func (h AuthHandler) UserUpdate(ctx *gin.Context) {
 		return
 	}
 
-	auth.IdP.Cache().UserSaved(updated)
+	auth.Idp().Cache().UserSaved(updated)
 
 	h.Status(ctx, http.StatusNoContent)
 }
@@ -637,7 +637,7 @@ func (h AuthHandler) UserDelete(ctx *gin.Context) {
 		return
 	}
 
-	auth.IdP.Cache().UserDeleted(id)
+	auth.Idp().Cache().UserDeleted(id)
 
 	h.Status(ctx, http.StatusNoContent)
 }
@@ -717,7 +717,7 @@ func (h AuthHandler) RoleCreate(ctx *gin.Context) {
 		return
 	}
 	for _, scope := range r.Scopes {
-		if !auth.Domain.HasScope(scope) {
+		if !auth.Domain().HasScope(scope) {
 			_ = ctx.Error(
 				&BadRequestError{
 					Reason: "unknown scope: " + scope,
@@ -740,7 +740,7 @@ func (h AuthHandler) RoleCreate(ctx *gin.Context) {
 	}
 	r.With(m)
 
-	auth.IdP.Cache().RoleSaved(m)
+	auth.Idp().Cache().RoleSaved(m)
 
 	h.Respond(ctx, http.StatusCreated, r)
 }
@@ -769,7 +769,7 @@ func (h AuthHandler) RoleUpdate(ctx *gin.Context) {
 		return
 	}
 	for _, scope := range r.Scopes {
-		if !auth.Domain.HasScope(scope) {
+		if !auth.Domain().HasScope(scope) {
 			_ = ctx.Error(
 				&BadRequestError{
 					Reason: "unknown scope: " + scope,
@@ -795,7 +795,7 @@ func (h AuthHandler) RoleUpdate(ctx *gin.Context) {
 	}
 	r.With(m)
 
-	auth.IdP.Cache().RoleSaved(m)
+	auth.Idp().Cache().RoleSaved(m)
 
 	h.Status(ctx, http.StatusNoContent)
 }
@@ -827,7 +827,7 @@ func (h AuthHandler) RoleDelete(ctx *gin.Context) {
 		return
 	}
 
-	auth.IdP.Cache().RoleDeleted(id)
+	auth.Idp().Cache().RoleDeleted(id)
 
 	h.Status(ctx, http.StatusNoContent)
 }
@@ -845,7 +845,7 @@ func (h AuthHandler) RoleDelete(ctx *gin.Context) {
 // @router /auth/scopes [get]
 func (h AuthHandler) ScopeList(ctx *gin.Context) {
 	resources := []resource.Scope{}
-	for _, scope := range auth.Domain.Scopes() {
+	for _, scope := range auth.Domain().Scopes() {
 		r := Scope{}
 		r.With(scope)
 		resources = append(
@@ -929,7 +929,7 @@ func (h AuthHandler) GrantDelete(ctx *gin.Context) {
 		return
 	}
 
-	auth.IdP.Cache().GrantDeleted(id)
+	auth.Idp().Cache().GrantDeleted(id)
 
 	h.Status(ctx, http.StatusNoContent)
 }
@@ -960,7 +960,7 @@ func (h AuthHandler) TokenCreate(ctx *gin.Context) {
 	}
 	subject := h.CurrentSubject(ctx)
 	lifespan := time.Until(r.Expiration)
-	token, err := auth.IdP.NewToken(subject, lifespan)
+	token, err := auth.Idp().NewToken(subject, lifespan)
 	if err != nil {
 		h.Respond(ctx,
 			http.StatusUnauthorized,
@@ -1068,7 +1068,7 @@ func (h AuthHandler) TokenDelete(ctx *gin.Context) {
 		return
 	}
 
-	auth.IdP.Cache().TokenDeleted(id)
+	auth.Idp().Cache().TokenDeleted(id)
 
 	h.Status(ctx, http.StatusNoContent)
 }
@@ -1097,7 +1097,7 @@ func (h AuthHandler) TokenRevoke(ctx *gin.Context) {
 			return
 		}
 	}
-	err = auth.IdP.Revoke(id)
+	err = auth.Idp().Revoke(id)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -1116,7 +1116,7 @@ func (h AuthHandler) Login(ctx *gin.Context) {
 			})
 		return
 	}
-	err := auth.IdP.Login(ctx.Writer, ctx.Request, authReqID)
+	err := auth.Idp().Login(ctx.Writer, ctx.Request, authReqID)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -1134,7 +1134,7 @@ func (h AuthHandler) Login(ctx *gin.Context) {
 func (h AuthHandler) GetSelf(ctx *gin.Context) {
 	r := AuthSelf{}
 	s := h.CurrentSubject(ctx)
-	subject, err := auth.IdP.Cache().FindSubject(s)
+	subject, err := auth.Idp().Cache().FindSubject(s)
 	if err == nil {
 		r.Login = h.CurrentUser(ctx)
 		r.Subject = h.CurrentSubject(ctx)
@@ -1179,14 +1179,9 @@ func (h AuthHandler) GetSelf(ctx *gin.Context) {
 
 // OIDC returns the handler for OIDC routes.
 func (h AuthHandler) OIDC() func(*gin.Context) {
-	baseHandler := auth.IdP.Handler()
-	strippedHandler := http.StripPrefix(api.OIDCRoutes, baseHandler)
-	idpHandler := auth.IdP.IdpHandler()
-	dagHandler := auth.IdP.DagHandler()
-	oidcAuth := dagHandler.OIDCAuth()
-
 	return func(ctx *gin.Context) {
-		auth.IdP.Ready(ctx.Request)
+		p := auth.Idp()
+		p.Ready(ctx.Request)
 
 		reqCtx := context.WithValue(
 			ctx.Request.Context(),
@@ -1194,19 +1189,19 @@ func (h AuthHandler) OIDC() func(*gin.Context) {
 			ctx.Request)
 		ctx.Request = ctx.Request.WithContext(reqCtx)
 
+		idpHandler := p.IdpHandler()
+		dagHandler := p.DagHandler()
+
 		path := ctx.Param("path")
 		switch path {
 		case api.LoginRoute:
 			h.Login(ctx)
 		case api.IdpLoginRoute:
-			if idpHandler != nil {
-				idpHandler.Login(ctx)
-			}
+			idpHandler.Login(ctx)
 		case api.IdpCbRoute:
-			if idpHandler != nil {
-				idpHandler.LoginFinished(ctx)
-			}
+			idpHandler.LoginFinished(ctx)
 		case api.DeviceRoute:
+			oidcAuth := dagHandler.OIDCAuth()
 			oidcAuth.AuthRequired(ctx)
 			if !ctx.IsAborted() {
 				if ctx.Request.Method == http.MethodPost {
@@ -1216,11 +1211,12 @@ func (h AuthHandler) OIDC() func(*gin.Context) {
 				}
 			}
 		case api.DeviceLoginRoute:
-			oidcAuth.Login(ctx)
+			dagHandler.OIDCAuth().Login(ctx)
 		case api.DeviceCbRoute:
-			oidcAuth.Callback(ctx)
+			dagHandler.OIDCAuth().Callback(ctx)
 		default:
-			strippedHandler.ServeHTTP(ctx.Writer, ctx.Request)
+			baseHandler := p.Handler()
+			http.StripPrefix(api.OIDCRoutes, baseHandler).ServeHTTP(ctx.Writer, ctx.Request)
 		}
 	}
 }
@@ -1230,7 +1226,7 @@ func (h *AuthHandler) addScopes(m *Token) (err error) {
 	if m.Kind != auth.KindAPIKey {
 		return
 	}
-	token, err := auth.IdP.Cache().FindTokenById(m.ID)
+	token, err := auth.Idp().Cache().FindTokenById(m.ID)
 	if err != nil {
 		return
 	}
@@ -1289,7 +1285,7 @@ func Authenticate() func(ctx *gin.Context) {
 // Required authenticates the user and enforces that
 // the user has been granted the required scope.
 func Required(resource string) func(*gin.Context) {
-	auth.Domain.Register(resource)
+	auth.Domain().Register(resource)
 	return func(ctx *gin.Context) {
 		Authenticate()(ctx)
 		if ctx.IsAborted() {

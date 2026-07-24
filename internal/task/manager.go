@@ -367,7 +367,7 @@ func (m *Manager) Cancel(db *gorm.DB, id uint) (err error) {
 					snErr,
 					"Snapshot not created.")
 			}
-			auth.IdP.TaskRevoke(task.ID)
+			auth.Idp().TaskRevoke(task.ID)
 			err = task.Cancel(m.Client)
 			if err != nil {
 				return
@@ -869,7 +869,7 @@ func (m *Manager) updateRunning(ctx context.Context) {
 					"Task completed.",
 					"id",
 					task.ID)
-				auth.IdP.TaskRevoke(task.ID)
+				auth.Idp().TaskRevoke(task.ID)
 				err = m.podSnapshot(task, pod)
 				if err != nil {
 					Log.Error(err, "")

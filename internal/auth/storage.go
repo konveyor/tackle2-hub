@@ -30,6 +30,7 @@ import (
 type Storage struct {
 	mutex               sync.Mutex
 	keySet              KeySet
+	domain              *Tenant
 	db                  *gorm.DB
 	authReqById         map[string]*AuthRequest
 	authReqByCode       map[string]string
@@ -742,7 +743,7 @@ func (r *Storage) Login(writer http.ResponseWriter, request *http.Request, authR
 			Log.Error(err, "")
 		}
 	}()
-	if federated.Idp.Enabled && federated.Idp.Primary {
+	if r.domain.Idp.Enabled && r.domain.Idp.Primary {
 		loginURL := AppendIssuer(request, api.IdpLoginRoute)
 		parsedURL, _ := url.Parse(loginURL)
 		query := parsedURL.Query()
@@ -753,11 +754,34 @@ func (r *Storage) Login(writer http.ResponseWriter, request *http.Request, authR
 	}
 	login := &Login{
 		storage:   r,
+		domain:    r.domain,
+		cache:     r.cache,
+		dsHandler: r.dsHandler,
 		writer:    writer,
 		request:   request,
 		authReqId: authReqId,
 	}
 	err = login.complete()
+	return
+}
+
+// updateAuthRequest updates the auth request with authenticated subject.
+func (r *Storage) updateAuthRequest(id, subject, refreshToken string) (err error) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	authReq, found := r.authReqById[id]
+	if !found {
+		err = oidc.ErrInvalidGrant().WithDescription("authRequest not-found.")
+		return
+	}
+	if time.Now().After(authReq.expiration) {
+		err = oidc.ErrInvalidGrant().WithDescription("authRequest expired")
+		return
+	}
+	authReq.subject = subject
+	authReq.idpRefreshToken = refreshToken
+	authReq.issued = time.Now()
+	authReq.done = true
 	return
 }
 
@@ -768,6 +792,9 @@ func (r *Storage) Login(writer http.ResponseWriter, request *http.Request, authR
 // Login represents the state of a user login flow.
 type Login struct {
 	storage   *Storage
+	domain    *Tenant
+	cache     *Cache
+	dsHandler *LdapHandler
 	writer    http.ResponseWriter
 	request   *http.Request
 	authReqId string
@@ -775,7 +802,6 @@ type Login struct {
 	login        string
 	password     string
 	subject      *Subject
-	authReq      *AuthRequest
 	authErrorMsg string
 }
 
@@ -845,8 +871,7 @@ func (r *Login) authenticate() (err error) {
 
 // authUser authenticates a user.
 func (r *Login) authUser() (err error) {
-	cache := r.storage.cache
-	user, err := cache.FindUserByLogin(r.login)
+	user, err := r.cache.FindUserByLogin(r.login)
 	if err == nil {
 		if !secret.MatchPassword(r.password, user.Password) {
 			err = &NotAuthenticated{
@@ -856,7 +881,7 @@ func (r *Login) authUser() (err error) {
 			return
 		}
 		var scopes []string
-		scopes, err = cache.FindScopes(user.Subject)
+		scopes, err = r.cache.FindScopes(user.Subject)
 		if err != nil {
 			return
 		}
@@ -868,32 +893,15 @@ func (r *Login) authUser() (err error) {
 	return
 }
 
-// authUser authenticates an LDAP user.
+// authLdapUser authenticates an LDAP user.
 func (r *Login) authLdapUser() (err error) {
-	r.subject, err = r.storage.dsHandler.Authenticate(r.login, r.password)
+	r.subject, err = r.dsHandler.Authenticate(r.login, r.password)
 	return
 }
 
 // updateAuthRequest updates the auth request with authenticated user.
 func (r *Login) updateAuthRequest() (err error) {
-	r.storage.mutex.Lock()
-	defer r.storage.mutex.Unlock()
-
-	var found bool
-	r.authReq, found = r.storage.authReqById[r.authReqId]
-	if !found {
-		err = oidc.ErrInvalidGrant().WithDescription("authRequest not-found.")
-		return
-	}
-	if time.Now().After(r.authReq.expiration) {
-		err = oidc.ErrInvalidGrant().WithDescription("authRequest expired")
-		return
-	}
-
-	r.authReq.subject = r.subject.Key
-	r.authReq.idpRefreshToken = r.password
-	r.authReq.issued = time.Now()
-	r.authReq.done = true
+	err = r.storage.updateAuthRequest(r.authReqId, r.subject.Key, r.password)
 	return
 }
 
@@ -940,7 +948,7 @@ func (r *Login) renderPage() (err error) {
 		ErrorMessage: r.authErrorMsg,
 	}
 
-	if federated.Idp.Enabled {
+	if r.domain.Idp.Enabled {
 		loginURL := AppendIssuer(r.request, api.IdpLoginRoute)
 		parsedURL, pErr := url.Parse(loginURL)
 		if pErr != nil {
@@ -951,7 +959,7 @@ func (r *Login) renderPage() (err error) {
 		query.Set(AuthRequestId, r.authReqId)
 		parsedURL.RawQuery = query.Encode()
 		pageReq.FederatedIdp = &frontend.FedIdp{
-			Name:     federated.Idp.Name,
+			Name:     r.domain.Idp.Name,
 			LoginURL: parsedURL.String(),
 		}
 	}

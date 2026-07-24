@@ -19,11 +19,12 @@ import (
 )
 
 // NewBuiltin returns a configured provider.
-func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
+func NewBuiltin(db *gorm.DB, domain *Tenant) (builtin *Builtin, err error) {
 	cache := cache2.New(db)
 	builtin = &Builtin{
-		cache: cache,
-		db:    db,
+		domain: domain,
+		cache:  cache,
+		db:     db,
 	}
 	err = cache.Refresh()
 	if err != nil {
@@ -41,6 +42,7 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 		authReqByCode:       make(map[string]string),
 		devAuthReqByDevCode: make(map[string]*DeviceAuthRequest),
 		devAuthByUserCode:   make(map[string]string),
+		domain:              domain,
 		cache:               cache,
 	}
 	basePath := api.OIDCRoutes
@@ -81,24 +83,25 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 	builtin.idpHandler = &FedIdpHandler{
 		db:      db,
 		storage: builtin.storage,
+		domain:  domain,
 		cache:   cache,
 	}
 	builtin.storage.idpHandler = builtin.idpHandler
 	ds := LDAP{
-		Kind:        federated.Ldap.Kind,
-		Name:        federated.Ldap.Name,
-		URL:         federated.Ldap.URL,
-		BaseDN:      federated.Ldap.BaseDN,
-		BindDN:      federated.Ldap.BindDN,
-		Password:    federated.Ldap.Password,
-		UserFilter:  federated.Ldap.UserFilter,
-		GroupFilter: federated.Ldap.GroupFilter,
-		HasMemberOf: federated.Ldap.HasMemberOf,
-		TLS:         federated.Ldap.TLS,
+		Kind:        domain.Ldap.Kind,
+		Name:        domain.Ldap.Name,
+		URL:         domain.Ldap.URL,
+		BaseDN:      domain.Ldap.BaseDN,
+		BindDN:      domain.Ldap.BindDN,
+		Password:    domain.Ldap.Password,
+		UserFilter:  domain.Ldap.UserFilter,
+		GroupFilter: domain.Ldap.GroupFilter,
+		HasMemberOf: domain.Ldap.HasMemberOf,
+		TLS:         domain.Ldap.TLS,
 	}
-	ds.mapper.Use(federated.Ldap.RoleMappings)
+	ds.mapper.Use(domain.Ldap.RoleMappings)
 	builtin.dsHandler = &LdapHandler{
-		enabled: federated.Ldap.Enabled,
+		enabled: domain.Ldap.Enabled,
 		cache:   builtin.cache,
 		db:      db,
 		ds:      ds,
@@ -114,6 +117,7 @@ func NewBuiltin(db *gorm.DB) (builtin *Builtin, err error) {
 type Builtin struct {
 	ready      sync.Once
 	db         *gorm.DB
+	domain     *Tenant
 	provider   op.OpenIDProvider
 	idpHandler *FedIdpHandler
 	dsHandler  *LdapHandler
@@ -147,10 +151,11 @@ func (p *Builtin) Cache() *Cache {
 }
 
 // Ready notification of an incoming request.
+// The (dynamic) issuer is determined.
 func (p *Builtin) Ready(r *http.Request) {
 	p.ready.Do(func() {
-		federated.Idp.Inject(Issuer(r))
-		Log.Info("Injected:\n" + federated.String())
+		p.domain.Idp.Inject(Issuer(r))
+		Log.Info("Issuer determined: " + p.domain.Idp.Issuer)
 	})
 }
 

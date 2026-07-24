@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	as "github.com/konveyor/tackle2-hub/internal/auth/settings"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/settings"
@@ -89,17 +88,6 @@ func (m *IdpClient) GetScopes() (scopes []string) {
 	scopes = uniqueStrings(scopes)
 	sort.Strings(scopes)
 	return
-}
-
-// With populates self with the settings client.
-func (m *IdpClient) With(client *as.IdpClient) {
-	m.ID = client.ID
-	m.ClientId = client.ClientId
-	m.Secret = client.Secret
-	m.ApplicationType = client.ApplicationType
-	m.Grants = client.Grants
-	m.RedirectURIs = client.RedirectURIs
-	m.Scopes = client.Scopes
 }
 
 // Grant alias.

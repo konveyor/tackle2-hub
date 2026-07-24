@@ -15,8 +15,10 @@ import (
 	"github.com/go-ldap/ldap/v3"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	as "github.com/konveyor/tackle2-hub/internal/auth/settings"
+	"github.com/konveyor/tackle2-hub/internal/auth/seed"
 	"github.com/konveyor/tackle2-hub/internal/database"
+	"github.com/konveyor/tackle2-hub/internal/k8s"
+	crd "github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/internal/secret"
 	. "github.com/onsi/gomega"
@@ -26,6 +28,7 @@ import (
 	"github.com/zitadel/oidc/v3/pkg/op"
 	"golang.org/x/oauth2"
 	"gorm.io/gorm"
+	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // testIssuer returns the issuer URL for test requests.
@@ -68,7 +71,7 @@ func TestUserGrant(t *testing.T) {
 	g.Expect(user.Subject).NotTo(BeEmpty())
 
 	// Create provider
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Test creating token with valid subject
@@ -130,7 +133,7 @@ func TestTaskGrant(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create provider
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Test creating task token
@@ -194,7 +197,7 @@ func TestTaskSubjectFormat(t *testing.T) {
 	err = db.Create(task3).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Test task.1 - Subject() returns hex format, User() returns login (decimal)
@@ -241,7 +244,7 @@ func TestTaskSubjectParsing(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create task
@@ -281,7 +284,7 @@ func TestTaskSubjectScopes(t *testing.T) {
 	err = db.Create(task).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	token, err := provider.TaskGrant(task)
@@ -316,7 +319,7 @@ func TestTaskTokenLifecycle(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create task
@@ -363,7 +366,7 @@ func TestMultipleTasksWithTokens(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create multiple tasks
@@ -438,7 +441,7 @@ func TestJWTAuthentication(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Use HMAC signing with the configured token key for testing
@@ -529,7 +532,7 @@ func TestLegacyHMACTokenAuthentication(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Simulate old NewToken() behavior:
@@ -588,7 +591,7 @@ func TestUserExtraction(t *testing.T) {
 	err = db.First(user, user.ID).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create a token with claims
@@ -622,7 +625,7 @@ func TestScopesExtraction(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create a token with multiple scopes
@@ -665,7 +668,7 @@ func TestInvalidBearerToken(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Test missing "Bearer" prefix
@@ -759,7 +762,7 @@ func TestKeyCacheWithTaskStates(t *testing.T) {
 	err = db.Create(task).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create token for running task - should work
@@ -805,7 +808,7 @@ func TestNoAuthProvider(t *testing.T) {
 
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
-	builtin, err := NewBuiltin(db)
+	builtin, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 	provider := NewNoAuth(builtin)
 
@@ -911,7 +914,7 @@ func TestCacheTokenDelete(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create provider with cache
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create token
@@ -955,7 +958,7 @@ func TestTaskRevoke(t *testing.T) {
 	err = db.Create(task).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create task token
@@ -1004,7 +1007,7 @@ func TestTaskRevokeMultipleTokens(t *testing.T) {
 	err = db.Create(task).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create first token
@@ -1076,7 +1079,7 @@ func TestTaskRevokeNoTokens(t *testing.T) {
 	err = db.Create(task).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Revoke should not error even though no tokens exist
@@ -1112,7 +1115,7 @@ func TestCascadeDeleteUser(t *testing.T) {
 	err = db.First(user, user.ID).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create token for user
@@ -1154,7 +1157,7 @@ func TestCascadeDeleteTask(t *testing.T) {
 	err = db.Create(task).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create token for task
@@ -1201,7 +1204,7 @@ func TestClientPAT(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(client.Subject).NotTo(BeEmpty())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create PAT for client
@@ -1245,7 +1248,7 @@ func TestCascadeDeleteIdpClient(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(client.Subject).NotTo(BeEmpty())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create token for client (simulating client credentials grant)
@@ -1293,7 +1296,7 @@ func TestCascadeDeleteIdpIdentity(t *testing.T) {
 	err = db.Create(identity).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create token for identity
@@ -1348,7 +1351,7 @@ func TestBuiltinRevoke(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create provider
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create token
@@ -1808,7 +1811,7 @@ func TestCacheNotificationPropagation(t *testing.T) {
 	err = db.Create(user).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// User should be in cache (loaded during provider initialization)
@@ -1851,7 +1854,7 @@ func TestIdpIdentityTokenBinding(t *testing.T) {
 	err = db.Create(identity).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create token bound to IdP identity (scopes come from grant)
@@ -1892,7 +1895,7 @@ func TestScopeCalculation(t *testing.T) {
 	err = db.Create(userNoRoles).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	token, err := provider.NewToken(userNoRoles.Subject, 24*time.Hour)
@@ -1994,7 +1997,7 @@ func TestTokenBindingEdgeCases(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 	cache := provider.cache
 
@@ -2087,7 +2090,7 @@ func TestCacheFindSubject(t *testing.T) {
 	err = db.Create(identity).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Test finding user by subject
@@ -2121,7 +2124,7 @@ func TestCacheFindSubjectNotFound(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Try to find non-existent subject
@@ -2141,7 +2144,7 @@ func TestCacheFindSubjectMiss(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Force initial cache load by accessing a non-existent subject
@@ -2201,7 +2204,7 @@ func TestStorageFindSubject(t *testing.T) {
 	err = db.Create(identity).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Storage uses cache under the hood
@@ -2249,7 +2252,7 @@ func TestCacheFindUserByLogin(t *testing.T) {
 	err = db.First(user, user.ID).Error
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Find by userid
@@ -2274,7 +2277,7 @@ func TestCacheFindUserByLoginNotification(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Force initial cache load
@@ -2316,7 +2319,7 @@ func TestStoreDeviceAuthorization(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 	storage := provider.storage
 
@@ -2354,7 +2357,7 @@ func TestGetDeviceAuthorizatonStatePending(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 	storage := provider.storage
 
@@ -2394,7 +2397,7 @@ func TestGetDeviceAuthorizatonStateDone(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 	storage := provider.storage
 
@@ -2438,7 +2441,7 @@ func TestGetDeviceAuthorizatonStateDenied(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 	storage := provider.storage
 
@@ -2479,7 +2482,7 @@ func TestGetDeviceAuthorizatonStateNotFound(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 	storage := provider.storage
 
@@ -2499,20 +2502,19 @@ func TestSeedClientsFromCRD(t *testing.T) {
 	originalDisconnected := Settings.Disconnected
 	defer func() {
 		Settings.Disconnected = originalDisconnected
-		federated = &as.Federated{} // Reset federated for next test
 	}()
 	Settings.Disconnected = true
 
-	// Setup DB
+	// Setup DB and client.
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
-
-	// Load federated settings (gets fake client with seed data)
-	err = federated.Load("konveyor-tackle")
+	client, err := k8s.NewClient()
 	g.Expect(err).To(BeNil())
 
-	// Seed clients
-	domain := NewTenant(db)
+	// Load and seed clients
+	domain := NewTenant(db, client)
+	err = domain.Load()
+	g.Expect(err).To(BeNil())
 	err = domain.seedClients(db)
 	g.Expect(err).To(BeNil())
 
@@ -2565,11 +2567,13 @@ func TestSeedClientsUpdate(t *testing.T) {
 	originalDisconnected := Settings.Disconnected
 	defer func() {
 		Settings.Disconnected = originalDisconnected
-		federated = &as.Federated{} // Reset federated for next test
 	}()
 	Settings.Disconnected = true
 
+	// Setup DB and client.
 	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+	client, err := k8s.NewClient()
 	g.Expect(err).To(BeNil())
 
 	// Pre-create client in DB with different grants
@@ -2583,12 +2587,10 @@ func TestSeedClientsUpdate(t *testing.T) {
 	err = db.Create(existing).Error
 	g.Expect(err).To(BeNil())
 
-	// Load CRDs
-	err = federated.Load("konveyor-tackle")
+	// Load and seed clients
+	domain := NewTenant(db, client)
+	err = domain.Load()
 	g.Expect(err).To(BeNil())
-
-	// Seed clients
-	domain := NewTenant(db)
 	err = domain.seedClients(db)
 	g.Expect(err).To(BeNil())
 
@@ -2616,11 +2618,13 @@ func TestSeedClientsDeleteOrphaned(t *testing.T) {
 	originalDisconnected := Settings.Disconnected
 	defer func() {
 		Settings.Disconnected = originalDisconnected
-		federated = &as.Federated{} // Reset federated for next test
 	}()
 	Settings.Disconnected = true
 
+	// Setup DB and client.
 	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+	client, err := k8s.NewClient()
 	g.Expect(err).To(BeNil())
 
 	// Create orphaned seeded client (ID < 1000, not in CRDs)
@@ -2645,12 +2649,10 @@ func TestSeedClientsDeleteOrphaned(t *testing.T) {
 	err = db.Create(nonSeeded).Error
 	g.Expect(err).To(BeNil())
 
-	// Load CRDs (web-ui, kantra, kai-ide)
-	err = federated.Load("konveyor-tackle")
+	// Load and seed clients
+	domain := NewTenant(db, client)
+	err = domain.Load()
 	g.Expect(err).To(BeNil())
-
-	// Seed clients
-	domain := NewTenant(db)
 	err = domain.seedClients(db)
 	g.Expect(err).To(BeNil())
 
@@ -2678,18 +2680,18 @@ func TestSeedClientsIDPreservation(t *testing.T) {
 	originalDisconnected := Settings.Disconnected
 	defer func() {
 		Settings.Disconnected = originalDisconnected
-		federated = &as.Federated{} // Reset federated for next test
 	}()
 	Settings.Disconnected = true
 
+	// Setup DB and client.
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
-
-	// Load CRDs
-	err = federated.Load("konveyor-tackle")
+	client, err := k8s.NewClient()
 	g.Expect(err).To(BeNil())
 
-	domain := NewTenant(db)
+	domain := NewTenant(db, client)
+	err = domain.Load()
+	g.Expect(err).To(BeNil())
 
 	// First seed
 	err = domain.seedClients(db)
@@ -3140,6 +3142,108 @@ func TestClientInjectComplexWildcardPatterns(t *testing.T) {
 	}
 }
 
+// TestIdentityProviderInject tests template variable injection.
+func TestIdentityProviderInject(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	idp := &IdentityProvider{
+		Issuer:      "https://${issuer.host}/auth",
+		RedirectURI: "${issuer.proto}://${issuer.host}:${issuer.port}/callback",
+	}
+
+	issuer := "https://hub.example.com:8443/oidc"
+	idp.Inject(issuer)
+
+	g.Expect(idp.Issuer).To(Equal("https://hub.example.com/auth"))
+	g.Expect(idp.RedirectURI).To(Equal("https://hub.example.com:8443/callback"))
+}
+
+// TestIdentityProviderInjectIssuerVariable tests ${issuer} template variable.
+func TestIdentityProviderInjectIssuerVariable(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	idp := &IdentityProvider{
+		Issuer:      "${issuer}/external",
+		RedirectURI: "${issuer}/callback",
+	}
+
+	issuer := "https://auth.example.com"
+	idp.Inject(issuer)
+
+	g.Expect(idp.Issuer).To(Equal("https://auth.example.com/external"))
+	g.Expect(idp.RedirectURI).To(Equal("https://auth.example.com/callback"))
+}
+
+// TestIdentityProviderInjectIdempotent tests that Inject() is idempotent.
+func TestIdentityProviderInjectIdempotent(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	idp := &IdentityProvider{
+		Issuer:      "https://${issuer.host}/auth",
+		RedirectURI: "${issuer}/callback",
+	}
+
+	issuer := "https://hub.example.com/oidc"
+
+	idp.Inject(issuer)
+	firstIssuer := idp.Issuer
+	firstRedirect := idp.RedirectURI
+
+	idp.Inject("https://different.example.com/oidc")
+
+	g.Expect(idp.Issuer).To(Equal(firstIssuer))
+	g.Expect(idp.RedirectURI).To(Equal(firstRedirect))
+}
+
+// TestIdentityProviderInjectNoTemplates tests Inject() with no template variables.
+func TestIdentityProviderInjectNoTemplates(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	idp := &IdentityProvider{
+		Issuer:      "https://static.example.com/auth",
+		RedirectURI: "https://app.example.com/callback",
+	}
+
+	issuer := "https://hub.example.com/oidc"
+	idp.Inject(issuer)
+
+	g.Expect(idp.Issuer).To(Equal("https://static.example.com/auth"))
+	g.Expect(idp.RedirectURI).To(Equal("https://app.example.com/callback"))
+}
+
+// TestIdentityProviderInjectAllVariables tests all template variables.
+func TestIdentityProviderInjectAllVariables(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	idp := &IdentityProvider{
+		Issuer:      "${issuer.proto}://${issuer.host}:${issuer.port}${issuer.path}/auth",
+		RedirectURI: "${issuer}/callback",
+	}
+
+	issuer := "https://hub.example.com:9443/oidc"
+	idp.Inject(issuer)
+
+	g.Expect(idp.Issuer).To(Equal("https://hub.example.com:9443/oidc/auth"))
+	g.Expect(idp.RedirectURI).To(Equal("https://hub.example.com:9443/oidc/callback"))
+}
+
+// TestIdentityProviderInjectDefaultPort tests template variables with default port.
+func TestIdentityProviderInjectDefaultPort(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	idp := &IdentityProvider{
+		Issuer:      "https://${issuer.host}:${issuer.port}/auth",
+		RedirectURI: "http://${issuer.host}:${issuer.port}/callback",
+	}
+
+	issuer := "https://hub.example.com/oidc"
+	idp.Inject(issuer)
+
+	// When port is default (443 for https), ${issuer.port} expands to empty string
+	g.Expect(idp.Issuer).To(Equal("https://hub.example.com:/auth"))
+	g.Expect(idp.RedirectURI).To(Equal("http://hub.example.com:/callback"))
+}
+
 // setupTestDB creates an in-memory SQLite database for testing.
 func setupTestDB() (db *gorm.DB, err error) {
 	db, err = database.OpenTest()
@@ -3188,15 +3292,17 @@ func (m *mockRelyingParty) Logger(context.Context) (*slog.Logger, bool) { return
 func TestEndSessionURL(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	savedIdp := federated.Idp
-	defer func() { federated.Idp = savedIdp }()
+	domain := Domain()
+	savedIdp := domain.Idp
+	defer func() { domain.Idp = savedIdp }()
 
-	federated.Idp = as.IdentityProvider{
+	domain.Idp = IdentityProvider{
 		Enabled:  true,
 		ClientId: "hub-client",
 	}
 
 	h := &FedIdpHandler{
+		domain: domain,
 		rpClient: &mockRelyingParty{
 			endSessionEndpoint: "https://keycloak.example.com/realms/myrealm/protocol/openid-connect/logout",
 		},
@@ -3217,15 +3323,17 @@ func TestEndSessionURL(t *testing.T) {
 func TestEndSessionURLNoRedirect(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	savedIdp := federated.Idp
-	defer func() { federated.Idp = savedIdp }()
+	domain := Domain()
+	savedIdp := domain.Idp
+	defer func() { domain.Idp = savedIdp }()
 
-	federated.Idp = as.IdentityProvider{
+	domain.Idp = IdentityProvider{
 		Enabled:  true,
 		ClientId: "hub-client",
 	}
 
 	h := &FedIdpHandler{
+		domain: domain,
 		rpClient: &mockRelyingParty{
 			endSessionEndpoint: "https://keycloak.example.com/logout",
 		},
@@ -3245,15 +3353,17 @@ func TestEndSessionURLNoRedirect(t *testing.T) {
 func TestEndSessionURLExistingQuery(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	savedFederated := *federated
-	defer func() { *federated = savedFederated }()
+	domain := Domain()
+	savedIdp := domain.Idp
+	defer func() { domain.Idp = savedIdp }()
 
-	federated.Idp = as.IdentityProvider{
+	domain.Idp = IdentityProvider{
 		Enabled:  true,
 		ClientId: "hub-client",
 	}
 
 	h := &FedIdpHandler{
+		domain: domain,
 		rpClient: &mockRelyingParty{
 			endSessionEndpoint: "https://keycloak.example.com/logout?foo=bar",
 		},
@@ -3273,14 +3383,16 @@ func TestEndSessionURLExistingQuery(t *testing.T) {
 func TestEndSessionURLDisabled(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	savedFederated := *federated
-	defer func() { *federated = savedFederated }()
+	domain := Domain()
+	savedIdp := domain.Idp
+	defer func() { domain.Idp = savedIdp }()
 
-	federated.Idp = as.IdentityProvider{
+	domain.Idp = IdentityProvider{
 		Enabled: false,
 	}
 
 	h := &FedIdpHandler{
+		domain: domain,
 		rpClient: &mockRelyingParty{
 			endSessionEndpoint: "https://keycloak.example.com/logout",
 		},
@@ -3296,15 +3408,17 @@ func TestEndSessionURLDisabled(t *testing.T) {
 func TestEndSessionURLNoEndpoint(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	savedFederated := *federated
-	defer func() { *federated = savedFederated }()
+	domain := Domain()
+	savedIdp := domain.Idp
+	defer func() { domain.Idp = savedIdp }()
 
-	federated.Idp = as.IdentityProvider{
+	domain.Idp = IdentityProvider{
 		Enabled:  true,
 		ClientId: "hub-client",
 	}
 
 	h := &FedIdpHandler{
+		domain: domain,
 		rpClient: &mockRelyingParty{
 			endSessionEndpoint: "",
 		},
@@ -3320,15 +3434,18 @@ func TestEndSessionURLNoEndpoint(t *testing.T) {
 func TestEndSessionURLNoClient(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	savedFederated := *federated
-	defer func() { *federated = savedFederated }()
+	domain := Domain()
+	savedIdp := domain.Idp
+	defer func() { domain.Idp = savedIdp }()
 
-	federated.Idp = as.IdentityProvider{
+	domain.Idp = IdentityProvider{
 		Enabled:  true,
 		ClientId: "hub-client",
 	}
 
-	h := &FedIdpHandler{}
+	h := &FedIdpHandler{
+		domain: domain,
+	}
 
 	logoutURL, err := h.EndSessionURL("https://app.example.com/")
 	g.Expect(err).NotTo(BeNil())
@@ -3353,7 +3470,7 @@ func TestCreateAccessToken_UpdatesExistingToken(t *testing.T) {
 		&RsaKey{},
 		&Identity{})
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	user := &User{Login: "testuser"}
@@ -3430,7 +3547,7 @@ func TestCreateAccessToken_CascadeDeleteOnGrantDeletion(t *testing.T) {
 		&RsaKey{},
 		&Identity{})
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	user := &User{Login: "testuser"}
@@ -3496,7 +3613,7 @@ func TestAuthRequest_CreatesGrantAndLinksToken(t *testing.T) {
 		&RsaKey{},
 		&Identity{})
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	user := &User{Login: "testuser"}
@@ -3559,7 +3676,7 @@ func TestClientRequest_NoGrantCreated(t *testing.T) {
 		&RsaKey{},
 		&Identity{})
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create IdP client in database and cache
@@ -3639,7 +3756,7 @@ func TestCreateAccessAndRefreshTokens_FullFlow(t *testing.T) {
 		&RsaKey{},
 		&Identity{})
 
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	user := &User{Login: "testuser"}
@@ -3853,9 +3970,10 @@ func TestScopeExpand(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	// Register test resources in Tenant
-	Domain.Register("applications")
-	Domain.Register("tags")
-	Domain.Register("identities")
+	domain := Domain()
+	domain.Register("applications")
+	domain.Register("tags")
+	domain.Register("identities")
 
 	// Test 1: Wildcard resource and method (*:*)
 	scope := Scope{Resource: "*", Method: "*"}
@@ -3945,8 +4063,9 @@ func TestExpandScopes(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	// Register test resources in Tenant
-	Domain.Register("applications")
-	Domain.Register("tags")
+	domain := Domain()
+	domain.Register("applications")
+	domain.Register("tags")
 
 	// Test 1: Expand single wildcard scope
 	scopes := ExpandScopes("applications:*")
@@ -4089,7 +4208,7 @@ func TestAdminWildcardScopes(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create provider
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create token
@@ -4142,8 +4261,9 @@ func TestExternalIdpWildcardExpansion(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	// Register test resources in Tenant
-	Domain.Register("applications")
-	Domain.Register("tags")
+	domain := Domain()
+	domain.Register("applications")
+	domain.Register("tags")
 
 	// Simulate external IdP scopes with wildcards
 	idpScopes := []string{
@@ -4194,12 +4314,13 @@ func TestFedIdpRoleScopeExpansion(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create provider and cache
-	provider, err := NewBuiltin(db)
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create FedIdpHandler and FedIdpLogin
 	handler := &FedIdpHandler{
-		cache: provider.cache,
+		domain: &Tenant{},
+		cache:  provider.cache,
 	}
 
 	login := &FedIdpLogin{
@@ -4269,7 +4390,7 @@ func TestScopeGenerationWithNounVerb(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create domain and register resources
-	domain := NewTenant(db)
+	domain := NewTenant(db, nil)
 	domain.Register("applications")
 	domain.Register("tags")
 
@@ -4313,4 +4434,956 @@ func TestScopeGenerationWithNounVerb(t *testing.T) {
 		g.Expect(foundVerbs).To(HaveKey("post"))
 		g.Expect(foundVerbs).To(HaveKey("put"))
 	}
+}
+
+// TestReload tests that Reload() loads CRD changes, preserves
+// registered resources, and produces a working provider.
+func TestReload(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	originalDisconnected := Settings.Disconnected
+	defer func() {
+		Settings.Disconnected = originalDisconnected
+	}()
+	Settings.Disconnected = true
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	client, err := k8s.NewClient()
+	g.Expect(err).To(BeNil())
+
+	// Save and restore global state.
+	savedDomain := Domain()
+	savedIdp := Idp()
+	defer func() {
+		SetDomain(savedDomain)
+		SetIdp(savedIdp)
+	}()
+
+	// Initial setup (mimics startup in main.go).
+	tenant := NewTenant(db, client)
+	tenant.Register("applications")
+	tenant.Register("tags")
+	err = tenant.Load()
+	g.Expect(err).To(BeNil())
+	err = tenant.Seed()
+	g.Expect(err).To(BeNil())
+	SetDomain(tenant)
+	p, err := New(db, tenant)
+	g.Expect(err).To(BeNil())
+	SetIdp(p)
+
+	// Verify no IdP configured initially.
+	g.Expect(Domain().Idp.Enabled).To(BeFalse())
+
+	// Create an IdentityProvider CRD in the fake client.
+	idpCRD := &crd.IdentityProvider{
+		ObjectMeta: meta.ObjectMeta{
+			Name:      "test-idp",
+			Namespace: Settings.Namespace,
+		},
+		Spec: crd.IdentityProviderSpec{
+			Issuer:      "https://idp.example.com",
+			ClientId:    "test-client",
+			RedirectURI: "https://app.example.com/callback",
+			Scopes:      []string{"openid"},
+			TLS:         crd.TLS{Insecure: true},
+		},
+	}
+	err = client.Create(context.Background(), idpCRD)
+	g.Expect(err).To(BeNil())
+
+	// Reload.
+	err = Reload(db, client)
+	g.Expect(err).To(BeNil())
+
+	// Verify IdP was loaded.
+	g.Expect(Domain().Idp.Enabled).To(BeTrue())
+	g.Expect(Domain().Idp.ClientId).To(Equal("test-client"))
+	g.Expect(Domain().Idp.Issuer).To(Equal("https://idp.example.com"))
+
+	// Verify registered resources preserved.
+	resources := Domain().Resources()
+	g.Expect(resources).To(ContainElement("applications"))
+	g.Expect(resources).To(ContainElement("tags"))
+	g.Expect(resources).To(ContainElement(ADMIN))
+
+	// Verify scopes were rebuilt for registered resources.
+	g.Expect(Domain().HasScope("applications:get")).To(BeTrue())
+	g.Expect(Domain().HasScope("tags:delete")).To(BeTrue())
+
+	// Verify provider works (can issue a token).
+	token, err := Idp().NewToken("test-subject", time.Hour)
+	g.Expect(err).To(BeNil())
+	g.Expect(token.Secret).NotTo(BeEmpty())
+}
+
+// TestRegister tests registering scope resources.
+func TestRegister(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	d := NewTenant(nil, nil)
+
+	// Admin is always registered.
+	g.Expect(d.Resources()).To(ContainElement(ADMIN))
+
+	// Register new resources.
+	d.Register("applications")
+	d.Register("tags")
+	resources := d.Resources()
+	g.Expect(resources).To(ContainElement("applications"))
+	g.Expect(resources).To(ContainElement("tags"))
+
+	// Duplicate registration is idempotent.
+	d.Register("applications")
+	count := 0
+	for _, r := range d.Resources() {
+		if r == "applications" {
+			count++
+		}
+	}
+	g.Expect(count).To(Equal(1))
+
+	// Empty string is rejected.
+	before := len(d.Resources())
+	d.Register("")
+	g.Expect(d.Resources()).To(HaveLen(before))
+}
+
+// TestTenantString tests the String() secret masking.
+func TestTenantString(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	d := NewTenant(nil, nil)
+	d.Idp = IdentityProvider{
+		Enabled:      true,
+		ClientId:     "hub-client",
+		ClientSecret: "super-secret-value",
+	}
+	d.Ldap = LdapProvider{
+		Enabled:  true,
+		Password: "ldap-password",
+	}
+
+	s := d.String()
+	g.Expect(s).NotTo(BeEmpty())
+	g.Expect(s).NotTo(ContainSubstring("super-secret-value"))
+	g.Expect(s).NotTo(ContainSubstring("ldap-password"))
+	g.Expect(s).To(ContainSubstring("****"))
+}
+
+// TestBuildScopes tests scope generation from registered resources.
+func TestBuildScopes(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	d := NewTenant(nil, nil)
+	d.Register("apps")
+	d.Register("tags")
+
+	g.Expect(d.Scopes()).To(BeEmpty())
+
+	d.buildScopes()
+
+	// 3 resources (admin, apps, tags) × 6 verbs = 18
+	scopes := d.Scopes()
+	g.Expect(scopes).To(HaveLen(18))
+
+	// Spot check.
+	g.Expect(d.HasScope("apps:get")).To(BeTrue())
+	g.Expect(d.HasScope("apps:post")).To(BeTrue())
+	g.Expect(d.HasScope("tags:delete")).To(BeTrue())
+	g.Expect(d.HasScope("admin:decrypt")).To(BeTrue())
+
+	// Unknown scope.
+	g.Expect(d.HasScope("unknown:get")).To(BeFalse())
+
+	// Idempotent.
+	d.buildScopes()
+	g.Expect(d.Scopes()).To(HaveLen(18))
+}
+
+// TestBuildRoleScopes tests building scopes from a seed role definition.
+func TestBuildRoleScopes(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	d := NewTenant(nil, nil)
+	d.Register("applications")
+	d.Register("tags")
+	d.buildScopes()
+
+	// Exact verbs.
+	role := seed.Role{
+		Name: "reader",
+		Resources: []struct {
+			Name  string   `yaml:"name"`
+			Verbs []string `yaml:"verbs"`
+		}{
+			{Name: "applications", Verbs: []string{"get"}},
+			{Name: "tags", Verbs: []string{"get", "post"}},
+		},
+	}
+	scopes := d.buildRoleScopes(role)
+	g.Expect(scopes).To(ContainElement("applications:get"))
+	g.Expect(scopes).To(ContainElement("tags:get"))
+	g.Expect(scopes).To(ContainElement("tags:post"))
+	g.Expect(scopes).To(HaveLen(3))
+
+	// Wildcard verb expands to all verbs for that resource.
+	role = seed.Role{
+		Name: "app-admin",
+		Resources: []struct {
+			Name  string   `yaml:"name"`
+			Verbs []string `yaml:"verbs"`
+		}{
+			{Name: "applications", Verbs: []string{"*"}},
+		},
+	}
+	scopes = d.buildRoleScopes(role)
+	g.Expect(scopes).To(HaveLen(6))
+	g.Expect(scopes).To(ContainElement("applications:get"))
+	g.Expect(scopes).To(ContainElement("applications:delete"))
+	g.Expect(scopes).To(ContainElement("applications:decrypt"))
+
+	// Wildcard resource expands to all resources.
+	role = seed.Role{
+		Name: "global-reader",
+		Resources: []struct {
+			Name  string   `yaml:"name"`
+			Verbs []string `yaml:"verbs"`
+		}{
+			{Name: "*", Verbs: []string{"get"}},
+		},
+	}
+	scopes = d.buildRoleScopes(role)
+	g.Expect(scopes).To(ContainElement("applications:get"))
+	g.Expect(scopes).To(ContainElement("tags:get"))
+	g.Expect(scopes).To(ContainElement("admin:get"))
+
+	// Unknown resource is skipped (logged, not included).
+	role = seed.Role{
+		Name: "unknown",
+		Resources: []struct {
+			Name  string   `yaml:"name"`
+			Verbs []string `yaml:"verbs"`
+		}{
+			{Name: "nonexistent", Verbs: []string{"get"}},
+			{Name: "applications", Verbs: []string{"get"}},
+		},
+	}
+	scopes = d.buildRoleScopes(role)
+	g.Expect(scopes).To(ContainElement("applications:get"))
+	g.Expect(scopes).NotTo(ContainElement("nonexistent:get"))
+}
+
+// TestBuildUserRoles tests building role list from a seed user definition.
+func TestBuildUserRoles(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	d := NewTenant(nil, nil)
+	d.roleByName["admin"] = 1
+	d.roleByName["viewer"] = 2
+
+	// Known roles.
+	user := seed.User{
+		Login: "testuser",
+		Roles: []string{"admin", "viewer"},
+	}
+	roles, err := d.buildUserRoles(user)
+	g.Expect(err).To(BeNil())
+	g.Expect(roles).To(HaveLen(2))
+	ids := make(map[uint]bool)
+	for _, r := range roles {
+		ids[r.ID] = true
+	}
+	g.Expect(ids).To(HaveKey(uint(1)))
+	g.Expect(ids).To(HaveKey(uint(2)))
+
+	// Unknown role is skipped (not an error).
+	user = seed.User{
+		Login: "testuser2",
+		Roles: []string{"admin", "nonexistent"},
+	}
+	roles, err = d.buildUserRoles(user)
+	g.Expect(err).To(BeNil())
+	g.Expect(roles).To(HaveLen(1))
+	g.Expect(roles[0].ID).To(Equal(uint(1)))
+
+	// Duplicate role names produce a single entry.
+	user = seed.User{
+		Login: "testuser3",
+		Roles: []string{"admin", "admin"},
+	}
+	roles, err = d.buildUserRoles(user)
+	g.Expect(err).To(BeNil())
+	g.Expect(roles).To(HaveLen(1))
+
+	// Empty roles.
+	user = seed.User{Login: "noroles"}
+	roles, err = d.buildUserRoles(user)
+	g.Expect(err).To(BeNil())
+	g.Expect(roles).To(BeEmpty())
+}
+
+// TestRolePatch tests the role reconciliation patch computation.
+func TestRolePatch(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	d := NewTenant(nil, nil)
+	d.Register("apps")
+	d.buildScopes()
+
+	// Create: no existing roles, wanted roles should all be created.
+	existing := map[string]Role{}
+	wanted := []seed.Role{
+		{
+			ID:   1,
+			Name: "admin",
+			Resources: []struct {
+				Name  string   `yaml:"name"`
+				Verbs []string `yaml:"verbs"`
+			}{
+				{Name: "apps", Verbs: []string{"get"}},
+			},
+		},
+	}
+	patch := d.rolePatch(existing, wanted)
+	g.Expect(patch.toCreate).To(HaveLen(1))
+	g.Expect(patch.toCreate[0].Name).To(Equal("admin"))
+	g.Expect(patch.toCreate[0].ID).To(Equal(uint(1)))
+	g.Expect(patch.toCreate[0].Scopes).To(ContainElement("apps:get"))
+	g.Expect(patch.toUpdate).To(BeEmpty())
+	g.Expect(patch.toDelete).To(BeEmpty())
+
+	// Update: existing role is updated with new scopes.
+	existing = map[string]Role{
+		"admin": {
+			Model:  model.Model{ID: 1},
+			Name:   "admin",
+			Scopes: []string{"apps:get"},
+		},
+	}
+	wanted[0].Resources[0].Verbs = []string{"get", "post"}
+	patch = d.rolePatch(existing, wanted)
+	g.Expect(patch.toCreate).To(BeEmpty())
+	g.Expect(patch.toUpdate).To(HaveLen(1))
+	g.Expect(patch.toUpdate[0].ID).To(Equal(uint(1)))
+	g.Expect(patch.toUpdate[0].Scopes).To(ContainElement("apps:post"))
+	g.Expect(patch.toDelete).To(BeEmpty())
+
+	// Delete orphaned seeded role (ID < LastId).
+	existing = map[string]Role{
+		"admin": {
+			Model: model.Model{ID: 1},
+			Name:  "admin",
+		},
+		"orphaned": {
+			Model: model.Model{ID: 500},
+			Name:  "orphaned",
+		},
+	}
+	wanted = []seed.Role{
+		{ID: 1, Name: "admin"},
+	}
+	patch = d.rolePatch(existing, wanted)
+	g.Expect(patch.toDelete).To(ContainElement(uint(500)))
+
+	// Preserve user-created role (ID >= LastId).
+	existing = map[string]Role{
+		"custom": {
+			Model: model.Model{ID: 1500},
+			Name:  "custom",
+		},
+	}
+	wanted = []seed.Role{}
+	patch = d.rolePatch(existing, wanted)
+	g.Expect(patch.toDelete).To(BeEmpty())
+}
+
+// TestUserPatch tests the user reconciliation patch computation.
+func TestUserPatch(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	d := NewTenant(nil, nil)
+	d.roleByName["admin"] = 1
+
+	// Create: new user.
+	existing := map[string]User{}
+	wanted := []seed.User{
+		{ID: 1, Login: "admin", Password: "admin", Roles: []string{"admin"}},
+	}
+	patch := d.userPatch(existing, wanted)
+	g.Expect(patch.toCreate).To(HaveLen(1))
+	g.Expect(patch.toCreate[0].user.Login).To(Equal("admin"))
+	g.Expect(patch.toCreate[0].user.ID).To(Equal(uint(1)))
+	g.Expect(patch.toCreate[0].roles).To(HaveLen(1))
+	g.Expect(patch.toUpdate).To(BeEmpty())
+	g.Expect(patch.toDelete).To(BeEmpty())
+
+	// Update: existing user gets roles updated.
+	existing = map[string]User{
+		"admin": {
+			Model:   model.Model{ID: 1},
+			Subject: "existing-subject",
+			Login:   "admin",
+		},
+	}
+	patch = d.userPatch(existing, wanted)
+	g.Expect(patch.toCreate).To(BeEmpty())
+	g.Expect(patch.toUpdate).To(HaveLen(1))
+	g.Expect(patch.toUpdate[0].user.ID).To(Equal(uint(1)))
+	g.Expect(patch.toUpdate[0].roles).To(HaveLen(1))
+	g.Expect(patch.toDelete).To(BeEmpty())
+
+	// Delete orphaned seeded user (ID < LastId).
+	existing = map[string]User{
+		"admin": {
+			Model: model.Model{ID: 1},
+			Login: "admin",
+		},
+		"orphaned": {
+			Model: model.Model{ID: 500},
+			Login: "orphaned",
+		},
+	}
+	wanted = []seed.User{
+		{ID: 1, Login: "admin", Roles: []string{"admin"}},
+	}
+	patch = d.userPatch(existing, wanted)
+	g.Expect(patch.toDelete).To(ContainElement(uint(500)))
+
+	// Preserve user-created user (ID >= LastId).
+	existing = map[string]User{
+		"custom": {
+			Model: model.Model{ID: 1500},
+			Login: "custom",
+		},
+	}
+	wanted = []seed.User{}
+	patch = d.userPatch(existing, wanted)
+	g.Expect(patch.toDelete).To(BeEmpty())
+}
+
+// TestClientPatch tests the client reconciliation patch computation.
+func TestClientPatch(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	d := NewTenant(nil, nil)
+
+	// Create: new client.
+	existing := map[string]IdpClient{}
+	wanted := []IdpClient{
+		{
+			Model:           model.Model{ID: 1},
+			ClientId:        "web-ui",
+			ApplicationType: "web",
+		},
+	}
+	patch := d.clientPatch(existing, wanted)
+	g.Expect(patch.toCreate).To(HaveLen(1))
+	g.Expect(patch.toCreate[0].ClientId).To(Equal("web-ui"))
+	g.Expect(patch.toCreate[0].Subject).NotTo(BeEmpty())
+	g.Expect(patch.toUpdate).To(BeEmpty())
+	g.Expect(patch.toDelete).To(BeEmpty())
+
+	// Update: existing client is updated.
+	existing = map[string]IdpClient{
+		"web-ui": {
+			Model:           model.Model{ID: 1},
+			Subject:         "existing-subject",
+			ClientId:        "web-ui",
+			ApplicationType: "web",
+			Grants:          []string{"old-grant"},
+		},
+	}
+	wanted = []IdpClient{
+		{
+			Model:           model.Model{ID: 1},
+			ClientId:        "web-ui",
+			ApplicationType: "web",
+			Grants:          []string{"authorization_code"},
+		},
+	}
+	patch = d.clientPatch(existing, wanted)
+	g.Expect(patch.toCreate).To(BeEmpty())
+	g.Expect(patch.toUpdate).To(HaveLen(1))
+	g.Expect(patch.toUpdate[0].ID).To(Equal(uint(1)))
+	g.Expect(patch.toUpdate[0].Subject).To(Equal("existing-subject"))
+	g.Expect(patch.toDelete).To(BeEmpty())
+
+	// Delete orphaned seeded client (ID < LastId).
+	existing = map[string]IdpClient{
+		"orphaned": {
+			Model:    model.Model{ID: 500},
+			ClientId: "orphaned",
+		},
+	}
+	wanted = []IdpClient{}
+	patch = d.clientPatch(existing, wanted)
+	g.Expect(patch.toDelete).To(ContainElement(uint(500)))
+
+	// Preserve user-created client (ID >= LastId).
+	existing = map[string]IdpClient{
+		"custom": {
+			Model:    model.Model{ID: 1500},
+			ClientId: "custom",
+		},
+	}
+	wanted = []IdpClient{}
+	patch = d.clientPatch(existing, wanted)
+	g.Expect(patch.toDelete).To(BeEmpty())
+}
+
+// TestSeedRolesFromYAML tests seeding roles from embedded YAML definitions.
+func TestSeedRolesFromYAML(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	originalDisconnected := Settings.Disconnected
+	defer func() {
+		Settings.Disconnected = originalDisconnected
+	}()
+	Settings.Disconnected = true
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+	client, err := k8s.NewClient()
+	g.Expect(err).To(BeNil())
+
+	domain := NewTenant(db, client)
+	domain.Register("applications")
+	domain.Register("tags")
+	err = domain.Load()
+	g.Expect(err).To(BeNil())
+	domain.buildScopes()
+
+	err = domain.seedRoles(db)
+	g.Expect(err).To(BeNil())
+
+	// Verify seeded roles exist.
+	var roles []Role
+	err = db.Find(&roles).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(len(roles)).To(BeNumerically(">=", 4))
+
+	// Verify specific roles.
+	var admin Role
+	err = db.First(&admin, "Name = ?", "admin").Error
+	g.Expect(err).To(BeNil())
+	g.Expect(admin.ID).To(Equal(uint(1)))
+	g.Expect(admin.Scopes).NotTo(BeEmpty())
+
+	var architect Role
+	err = db.First(&architect, "Name = ?", "architect").Error
+	g.Expect(err).To(BeNil())
+	g.Expect(architect.ID).To(Equal(uint(2)))
+
+	var migrator Role
+	err = db.First(&migrator, "Name = ?", "migrator").Error
+	g.Expect(err).To(BeNil())
+	g.Expect(migrator.ID).To(Equal(uint(3)))
+
+	var pm Role
+	err = db.First(&pm, "Name = ?", "project-manager").Error
+	g.Expect(err).To(BeNil())
+	g.Expect(pm.ID).To(Equal(uint(4)))
+}
+
+// TestSeedRolesUpdate tests that re-seeding updates existing roles.
+func TestSeedRolesUpdate(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	originalDisconnected := Settings.Disconnected
+	defer func() {
+		Settings.Disconnected = originalDisconnected
+	}()
+	Settings.Disconnected = true
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+	client, err := k8s.NewClient()
+	g.Expect(err).To(BeNil())
+
+	domain := NewTenant(db, client)
+	domain.Register("applications")
+	err = domain.Load()
+	g.Expect(err).To(BeNil())
+	domain.buildScopes()
+
+	// Pre-create a role with stale scopes.
+	stale := &Role{
+		Model:  model.Model{ID: 1},
+		Name:   "admin",
+		Scopes: []string{"old-scope"},
+	}
+	err = db.Create(stale).Error
+	g.Expect(err).To(BeNil())
+
+	// Seed should update the role.
+	err = domain.seedRoles(db)
+	g.Expect(err).To(BeNil())
+
+	var updated Role
+	err = db.First(&updated, 1).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(updated.Scopes).NotTo(ContainElement("old-scope"))
+	g.Expect(updated.Scopes).NotTo(BeEmpty())
+}
+
+// TestSeedRolesDeleteOrphaned tests deletion of orphaned seeded roles.
+func TestSeedRolesDeleteOrphaned(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	originalDisconnected := Settings.Disconnected
+	defer func() {
+		Settings.Disconnected = originalDisconnected
+	}()
+	Settings.Disconnected = true
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+	client, err := k8s.NewClient()
+	g.Expect(err).To(BeNil())
+
+	// Create orphaned seeded role (ID < LastId, not in YAML).
+	orphaned := &Role{
+		Model: model.Model{ID: 900},
+		Name:  "orphaned-role",
+	}
+	err = db.Create(orphaned).Error
+	g.Expect(err).To(BeNil())
+
+	// Create user-created role (ID >= LastId, should be preserved).
+	custom := &Role{
+		Model: model.Model{ID: 1500},
+		Name:  "custom-role",
+	}
+	err = db.Create(custom).Error
+	g.Expect(err).To(BeNil())
+
+	domain := NewTenant(db, client)
+	domain.Register("applications")
+	err = domain.Load()
+	g.Expect(err).To(BeNil())
+	domain.buildScopes()
+
+	err = domain.seedRoles(db)
+	g.Expect(err).To(BeNil())
+
+	// Orphaned seeded role should be deleted.
+	var check Role
+	err = db.First(&check, 900).Error
+	g.Expect(err).NotTo(BeNil())
+
+	// User-created role should be preserved.
+	err = db.First(&check, 1500).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(check.Name).To(Equal("custom-role"))
+}
+
+// TestSeedRolesIDPreservation tests that IDs are stable across re-seeds.
+func TestSeedRolesIDPreservation(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	originalDisconnected := Settings.Disconnected
+	defer func() {
+		Settings.Disconnected = originalDisconnected
+	}()
+	Settings.Disconnected = true
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+	client, err := k8s.NewClient()
+	g.Expect(err).To(BeNil())
+
+	domain := NewTenant(db, client)
+	domain.Register("applications")
+	err = domain.Load()
+	g.Expect(err).To(BeNil())
+	domain.buildScopes()
+
+	// First seed.
+	err = domain.seedRoles(db)
+	g.Expect(err).To(BeNil())
+
+	var count1 int64
+	db.Model(&Role{}).Count(&count1)
+
+	// Second seed.
+	err = domain.seedRoles(db)
+	g.Expect(err).To(BeNil())
+
+	var count2 int64
+	db.Model(&Role{}).Count(&count2)
+	g.Expect(count2).To(Equal(count1))
+
+	// Verify IDs are stable.
+	var admin Role
+	err = db.First(&admin, "Name = ?", "admin").Error
+	g.Expect(err).To(BeNil())
+	g.Expect(admin.ID).To(Equal(uint(1)))
+
+	var architect Role
+	err = db.First(&architect, "Name = ?", "architect").Error
+	g.Expect(err).To(BeNil())
+	g.Expect(architect.ID).To(Equal(uint(2)))
+}
+
+// TestSeedUsersFromYAML tests seeding users from embedded YAML definitions.
+func TestSeedUsersFromYAML(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	originalDisconnected := Settings.Disconnected
+	defer func() {
+		Settings.Disconnected = originalDisconnected
+	}()
+	Settings.Disconnected = true
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+	client, err := k8s.NewClient()
+	g.Expect(err).To(BeNil())
+
+	domain := NewTenant(db, client)
+	domain.Register("applications")
+	err = domain.Load()
+	g.Expect(err).To(BeNil())
+	domain.buildScopes()
+
+	// Seed roles first (users reference roles).
+	err = domain.seedRoles(db)
+	g.Expect(err).To(BeNil())
+	err = domain.buildRoleMap(db)
+	g.Expect(err).To(BeNil())
+
+	// Seed users.
+	err = domain.seedUsers(db)
+	g.Expect(err).To(BeNil())
+
+	// Verify admin user was created.
+	var admin User
+	err = db.First(&admin, "Login = ?", "admin").Error
+	g.Expect(err).To(BeNil())
+	g.Expect(admin.ID).To(Equal(uint(1)))
+	g.Expect(admin.Subject).NotTo(BeEmpty())
+	g.Expect(admin.Login).To(Equal("admin"))
+
+	// Verify user has roles (via association).
+	var roles []model.Role
+	err = db.Model(&admin).Association("Roles").Find(&roles)
+	g.Expect(err).To(BeNil())
+	g.Expect(roles).NotTo(BeEmpty())
+}
+
+// TestSeedUsersDeleteOrphaned tests deletion of orphaned seeded users.
+func TestSeedUsersDeleteOrphaned(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	originalDisconnected := Settings.Disconnected
+	defer func() {
+		Settings.Disconnected = originalDisconnected
+	}()
+	Settings.Disconnected = true
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+	client, err := k8s.NewClient()
+	g.Expect(err).To(BeNil())
+
+	// Create orphaned seeded user (ID < LastId, not in YAML).
+	orphaned := &User{
+		Model:   model.Model{ID: 900},
+		Subject: "orphaned-subject",
+		Login:   "orphaned-user",
+	}
+	err = db.Create(orphaned).Error
+	g.Expect(err).To(BeNil())
+
+	// Create user-created user (ID >= LastId, should be preserved).
+	custom := &User{
+		Model:   model.Model{ID: 1500},
+		Subject: "custom-subject",
+		Login:   "custom-user",
+	}
+	err = db.Create(custom).Error
+	g.Expect(err).To(BeNil())
+
+	domain := NewTenant(db, client)
+	domain.Register("applications")
+	err = domain.Load()
+	g.Expect(err).To(BeNil())
+	domain.buildScopes()
+	err = domain.seedRoles(db)
+	g.Expect(err).To(BeNil())
+	err = domain.buildRoleMap(db)
+	g.Expect(err).To(BeNil())
+
+	err = domain.seedUsers(db)
+	g.Expect(err).To(BeNil())
+
+	// Orphaned seeded user should be deleted.
+	var check User
+	err = db.First(&check, 900).Error
+	g.Expect(err).NotTo(BeNil())
+
+	// User-created user should be preserved.
+	err = db.First(&check, 1500).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(check.Login).To(Equal("custom-user"))
+}
+
+// TestSeedUsersIDPreservation tests that user IDs are stable across re-seeds.
+func TestSeedUsersIDPreservation(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	originalDisconnected := Settings.Disconnected
+	defer func() {
+		Settings.Disconnected = originalDisconnected
+	}()
+	Settings.Disconnected = true
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+	client, err := k8s.NewClient()
+	g.Expect(err).To(BeNil())
+
+	domain := NewTenant(db, client)
+	domain.Register("applications")
+	err = domain.Load()
+	g.Expect(err).To(BeNil())
+	domain.buildScopes()
+	err = domain.seedRoles(db)
+	g.Expect(err).To(BeNil())
+	err = domain.buildRoleMap(db)
+	g.Expect(err).To(BeNil())
+
+	// First seed.
+	err = domain.seedUsers(db)
+	g.Expect(err).To(BeNil())
+
+	var admin1 User
+	err = db.First(&admin1, "Login = ?", "admin").Error
+	g.Expect(err).To(BeNil())
+	subject1 := admin1.Subject
+
+	var count1 int64
+	db.Model(&User{}).Count(&count1)
+
+	// Second seed.
+	err = domain.seedUsers(db)
+	g.Expect(err).To(BeNil())
+
+	var count2 int64
+	db.Model(&User{}).Count(&count2)
+	g.Expect(count2).To(Equal(count1))
+
+	var admin2 User
+	err = db.First(&admin2, "Login = ?", "admin").Error
+	g.Expect(err).To(BeNil())
+	g.Expect(admin2.ID).To(Equal(uint(1)))
+	g.Expect(admin2.Subject).To(Equal(subject1))
+}
+
+// TestPruneScopes tests that unknown scopes are removed from user-created roles.
+func TestPruneScopes(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	d := NewTenant(db, nil)
+	d.Register("applications")
+	d.buildScopes()
+
+	// Create a user-created role (ID > LastId) with a mix of valid and invalid scopes.
+	customRole := &Role{
+		Model:  model.Model{ID: 1500},
+		Name:   "custom-role",
+		Scopes: []string{"applications:get", "nonexistent:post", "applications:delete"},
+	}
+	err = db.Create(customRole).Error
+	g.Expect(err).To(BeNil())
+
+	// Create a seeded role (ID < LastId) — pruneScopes should ignore it.
+	seededRole := &Role{
+		Model:  model.Model{ID: 10},
+		Name:   "seeded-role",
+		Scopes: []string{"applications:get", "bogus:delete"},
+	}
+	err = db.Create(seededRole).Error
+	g.Expect(err).To(BeNil())
+
+	err = d.pruneScopes(db)
+	g.Expect(err).To(BeNil())
+
+	// User-created role should have the invalid scope removed.
+	var updated Role
+	err = db.First(&updated, 1500).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(updated.Scopes).To(ContainElement("applications:get"))
+	g.Expect(updated.Scopes).To(ContainElement("applications:delete"))
+	g.Expect(updated.Scopes).NotTo(ContainElement("nonexistent:post"))
+
+	// Seeded role is untouched (not pruned).
+	var seeded Role
+	err = db.First(&seeded, 10).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(seeded.Scopes).To(ContainElement("bogus:delete"))
+}
+
+// TestPruneScopesAllValid tests that roles with only valid scopes are unchanged.
+func TestPruneScopesAllValid(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	d := NewTenant(db, nil)
+	d.Register("applications")
+	d.buildScopes()
+
+	validRole := &Role{
+		Model:  model.Model{ID: 1501},
+		Name:   "valid-role",
+		Scopes: []string{"applications:get", "applications:post"},
+	}
+	err = db.Create(validRole).Error
+	g.Expect(err).To(BeNil())
+
+	err = d.pruneScopes(db)
+	g.Expect(err).To(BeNil())
+
+	var unchanged Role
+	err = db.First(&unchanged, 1501).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(unchanged.Scopes).To(HaveLen(2))
+	g.Expect(unchanged.Scopes).To(ContainElement("applications:get"))
+	g.Expect(unchanged.Scopes).To(ContainElement("applications:post"))
+}
+
+// TestPruneScopesAllInvalid tests that all scopes are removed when none are valid.
+func TestPruneScopesAllInvalid(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	d := NewTenant(db, nil)
+	d.Register("applications")
+	d.buildScopes()
+
+	invalidRole := &Role{
+		Model:  model.Model{ID: 1502},
+		Name:   "invalid-role",
+		Scopes: []string{"bogus:get", "nonexistent:post"},
+	}
+	err = db.Create(invalidRole).Error
+	g.Expect(err).To(BeNil())
+
+	err = d.pruneScopes(db)
+	g.Expect(err).To(BeNil())
+
+	var pruned Role
+	err = db.First(&pruned, 1502).Error
+	g.Expect(err).To(BeNil())
+	g.Expect(pruned.Scopes).To(BeEmpty())
 }

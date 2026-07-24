@@ -34,7 +34,7 @@ func (r *TokenReaper) Run() {
 					err = liberr.Wrap(err)
 					return
 				}
-				auth.IdP.Cache().TokenDeleted(token.ID)
+				auth.Idp().Cache().TokenDeleted(token.ID)
 				Log.Info(
 					"Expired API key token deleted.",
 					"id",
@@ -73,7 +73,7 @@ func (r *GrantReaper) Run() {
 					err = liberr.Wrap(err)
 					return
 				}
-				auth.IdP.Cache().GrantDeleted(grant.ID)
+				auth.Idp().Cache().GrantDeleted(grant.ID)
 				Log.Info(
 					"Expired grant deleted.",
 					"id",

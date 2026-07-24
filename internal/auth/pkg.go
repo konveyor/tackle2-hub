@@ -2,16 +2,18 @@ package auth
 
 import (
 	"net/http"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jortel/go-utils/logr"
 	"github.com/konveyor/tackle2-hub/internal/auth/cache"
 	"github.com/konveyor/tackle2-hub/internal/auth/seed"
-	as "github.com/konveyor/tackle2-hub/internal/auth/settings"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/konveyor/tackle2-hub/shared/settings"
 	"gorm.io/gorm"
+	k8sClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -38,19 +40,76 @@ const (
 )
 
 var (
-	Settings  = &settings.Settings
-	Log       = logr.New("auth", Settings.Log.Auth)
-	federated = &as.Federated{}
-	IdP       Provider
+	Settings        = &settings.Settings
+	Log             = logr.New("auth", Settings.Log.Auth)
+	reloadMutex     sync.Mutex
+	currentProvider atomic.Value
+	currentDomain   atomic.Value
 )
 
-// New returns an auth provider.
-func New(db *gorm.DB) (p Provider, err error) {
-	err = federated.Load(Settings.Namespace)
+// Idp returns the current auth provider.
+func Idp() (p Provider) {
+	v := currentProvider.Load()
+	if v != nil {
+		p = v.(Provider)
+	}
+	return
+}
+
+// SetIdp sets the auth provider.
+func SetIdp(p Provider) {
+	if p != nil {
+		Log.Info("Provider updated")
+		currentProvider.Store(p)
+	}
+}
+
+// Domain returns the current tenant.
+func Domain() (d *Tenant) {
+	v := currentDomain.Load()
+	if v != nil {
+		d = v.(*Tenant)
+	}
+	return
+}
+
+// SetDomain sets the tenant.
+func SetDomain(d *Tenant) {
+	if d != nil {
+		Log.Info("Domain updated:\n" + d.String())
+		currentDomain.Store(d)
+	}
+}
+
+// Reload reloads the domain and auth provider.
+// Preserves registered resources from the current domain.
+func Reload(db *gorm.DB, client k8sClient.Client) (err error) {
+	reloadMutex.Lock()
+	defer reloadMutex.Unlock()
+	d := Domain()
+	tenant := NewTenant(db, client)
+	tenant.resources = d.resources
+	err = tenant.Load()
 	if err != nil {
 		return
 	}
-	builtin, err := NewBuiltin(db)
+	err = tenant.Seed()
+	if err != nil {
+		return
+	}
+	p, err := New(db, tenant)
+	if err != nil {
+		return
+	}
+	SetDomain(tenant)
+	SetIdp(p)
+	Log.Info("Reloaded.")
+	return
+}
+
+// New returns an auth provider.
+func New(db *gorm.DB, domain *Tenant) (p Provider, err error) {
+	builtin, err := NewBuiltin(db, domain)
 	if err != nil {
 		return
 	}

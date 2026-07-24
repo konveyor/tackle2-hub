@@ -526,10 +526,11 @@ func TestManager_Iterate(t *testing.T) {
 	g.Expect(err).To(gomega.BeNil())
 
 	// Setup auth provider for TokenReaper
-	savedIdP := auth.IdP
-	defer func() { auth.IdP = savedIdP }()
-	auth.IdP, err = setupIdp(db)
+	savedIdP := auth.Idp()
+	defer auth.SetIdp(savedIdP)
+	idp, err := setupIdp(db)
 	g.Expect(err).To(gomega.BeNil())
+	auth.SetIdp(idp)
 
 	// Create orphan bucket
 	bucket := &model.Bucket{Path: "/tmp/test-bucket"}
@@ -1076,10 +1077,11 @@ func TestTokenReaper_NotExpired(t *testing.T) {
 	g.Expect(err).To(gomega.BeNil())
 
 	// Setup auth provider for reaper
-	savedIdP := auth.IdP
-	defer func() { auth.IdP = savedIdP }()
-	auth.IdP, err = setupIdp(db)
+	savedIdP := auth.Idp()
+	defer auth.SetIdp(savedIdP)
+	idp, err := setupIdp(db)
 	g.Expect(err).To(gomega.BeNil())
+	auth.SetIdp(idp)
 
 	// Create token that expires in the future
 	futureTime := time.Now().Add(2 * time.Hour)
@@ -1111,10 +1113,11 @@ func TestTokenReaper_WithinGracePeriod(t *testing.T) {
 	g.Expect(err).To(gomega.BeNil())
 
 	// Setup auth provider for reaper
-	savedIdP := auth.IdP
-	defer func() { auth.IdP = savedIdP }()
-	auth.IdP, err = setupIdp(db)
+	savedIdP := auth.Idp()
+	defer auth.SetIdp(savedIdP)
+	idp, err := setupIdp(db)
 	g.Expect(err).To(gomega.BeNil())
+	auth.SetIdp(idp)
 
 	// Create token expired 30 seconds ago (within 1-minute grace period)
 	expiredTime := time.Now().Add(-30 * time.Second)
@@ -1146,10 +1149,11 @@ func TestTokenReaper_ExpiredPastGracePeriod(t *testing.T) {
 	g.Expect(err).To(gomega.BeNil())
 
 	// Setup auth provider for reaper
-	savedIdP := auth.IdP
-	defer func() { auth.IdP = savedIdP }()
-	auth.IdP, err = setupIdp(db)
+	savedIdP := auth.Idp()
+	defer auth.SetIdp(savedIdP)
+	idp, err := setupIdp(db)
 	g.Expect(err).To(gomega.BeNil())
+	auth.SetIdp(idp)
 
 	// Create token expired 2 hours ago (past grace period)
 	expiredTime := time.Now().Add(-2 * time.Hour)
@@ -1181,10 +1185,11 @@ func TestTokenReaper_MultipleTokens(t *testing.T) {
 	g.Expect(err).To(gomega.BeNil())
 
 	// Setup auth provider for reaper
-	savedIdP := auth.IdP
-	defer func() { auth.IdP = savedIdP }()
-	auth.IdP, err = setupIdp(db)
+	savedIdP := auth.Idp()
+	defer auth.SetIdp(savedIdP)
+	idp, err := setupIdp(db)
 	g.Expect(err).To(gomega.BeNil())
+	auth.SetIdp(idp)
 
 	// Create multiple tokens with different expiration times
 	now := time.Now()
@@ -1288,10 +1293,11 @@ func TestGrantReaper_NotExpired(t *testing.T) {
 	g.Expect(err).To(gomega.BeNil())
 
 	// Setup auth provider for reaper
-	savedIdP := auth.IdP
-	defer func() { auth.IdP = savedIdP }()
-	auth.IdP, err = setupIdp(db)
+	savedIdP := auth.Idp()
+	defer auth.SetIdp(savedIdP)
+	idp, err := setupIdp(db)
 	g.Expect(err).To(gomega.BeNil())
+	auth.SetIdp(idp)
 
 	// Create grant that expires in the future
 	futureTime := time.Now().Add(2 * time.Hour)
@@ -1322,10 +1328,11 @@ func TestGrantReaper_WithinGracePeriod(t *testing.T) {
 	g.Expect(err).To(gomega.BeNil())
 
 	// Setup auth provider for reaper
-	savedIdP := auth.IdP
-	defer func() { auth.IdP = savedIdP }()
-	auth.IdP, err = setupIdp(db)
+	savedIdP := auth.Idp()
+	defer auth.SetIdp(savedIdP)
+	idp, err := setupIdp(db)
 	g.Expect(err).To(gomega.BeNil())
+	auth.SetIdp(idp)
 
 	// Create grant expired 30 minutes ago (within 1-hour grace period)
 	expiredTime := time.Now().Add(-30 * time.Minute)
@@ -1356,10 +1363,11 @@ func TestGrantReaper_ExpiredPastGracePeriod(t *testing.T) {
 	g.Expect(err).To(gomega.BeNil())
 
 	// Setup auth provider for reaper
-	savedIdP := auth.IdP
-	defer func() { auth.IdP = savedIdP }()
-	auth.IdP, err = setupIdp(db)
+	savedIdP := auth.Idp()
+	defer auth.SetIdp(savedIdP)
+	idp, err := setupIdp(db)
 	g.Expect(err).To(gomega.BeNil())
+	auth.SetIdp(idp)
 
 	// Create grant expired 2 hours ago (past grace period)
 	expiredTime := time.Now().Add(-2 * time.Hour)
@@ -1391,10 +1399,11 @@ func TestGrantReaper_MultipleGrants(t *testing.T) {
 	g.Expect(err).To(gomega.BeNil())
 
 	// Setup auth provider for reaper
-	savedIdP := auth.IdP
-	defer func() { auth.IdP = savedIdP }()
-	auth.IdP, err = setupIdp(db)
+	savedIdP := auth.Idp()
+	defer auth.SetIdp(savedIdP)
+	idp, err := setupIdp(db)
 	g.Expect(err).To(gomega.BeNil())
+	auth.SetIdp(idp)
 
 	// Create multiple grants with different expiration times
 	now := time.Now()
@@ -1458,7 +1467,7 @@ func TestGrantReaper_MultipleGrants(t *testing.T) {
 
 // setupIdp creates an auth provider for testing without federated IdP configuration.
 func setupIdp(db *gorm.DB) (p auth.Provider, err error) {
-	builtin, err := auth.NewBuiltin(db)
+	builtin, err := auth.NewBuiltin(db, &auth.Tenant{})
 	if err != nil {
 		return
 	}
