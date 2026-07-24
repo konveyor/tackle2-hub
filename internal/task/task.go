@@ -684,10 +684,7 @@ func (r *Task) propagateEnv(addon, extension *core.Container) {
 
 // secret builds the pod secret.
 func (r *Task) secret() (secret core.Secret, err error) {
-	owner := &auth.Task{
-		ID: r.ID,
-	}
-	token, err := auth.Idp().TaskGrant(owner)
+	token, err := auth.Idp().TaskGrant(r.ID)
 	if err != nil {
 		return
 	}

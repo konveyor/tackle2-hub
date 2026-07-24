@@ -65,6 +65,7 @@ func (r *Tx) SaSaved(m *ServiceAccount) {
 	r.changes = append(
 		r.changes, func(d *Data) {
 			d.saById[m.ID] = m
+			d.saByName[m.Subject] = m
 			d.saBySubject[m.Subject] = m
 		})
 }
@@ -76,6 +77,7 @@ func (r *Tx) SaDeleted(id uint) {
 			m, found := d.saById[id]
 			if found {
 				delete(d.saBySubject, m.Subject)
+				delete(d.saByName, m.Name)
 				delete(d.saById, id)
 			}
 			for _, token := range d.tokenById {

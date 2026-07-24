@@ -252,13 +252,6 @@ func (r *Cache) FindSubject(subject string) (s *Subject, err error) {
 		s.WithClient(client)
 		return
 	}
-	task := &Task{}
-	matched := task.With(subject)
-	if matched {
-		s = &Subject{}
-		s.WithTask(task)
-		return
-	}
 	err = &NotFound{
 		Resource: "subject",
 		Id:       subject,
@@ -308,6 +301,20 @@ func (r *Cache) FindRoleByName(name string) (m *Role, err error) {
 	return
 }
 
+// FindUserById returns a user by id.
+func (r *Cache) FindUserById(id uint) (m *User, err error) {
+	defer r.ensureRefreshed()
+	d := r.data.Load()
+	m, found := d.userById[id]
+	if !found {
+		err = &NotFound{
+			Resource: "user",
+			Id:       strconv.FormatUint(uint64(id), 10),
+		}
+	}
+	return
+}
+
 // FindUserByLogin returns a user by login.
 func (r *Cache) FindUserByLogin(login string) (m *User, err error) {
 	defer r.ensureRefreshed()
@@ -317,6 +324,34 @@ func (r *Cache) FindUserByLogin(login string) (m *User, err error) {
 		err = &NotFound{
 			Resource: "user",
 			Id:       login,
+		}
+	}
+	return
+}
+
+// FindSaById returns a service account by id.
+func (r *Cache) FindSaById(id uint) (m *ServiceAccount, err error) {
+	defer r.ensureRefreshed()
+	d := r.data.Load()
+	m, found := d.saById[id]
+	if !found {
+		err = &NotFound{
+			Resource: "SA",
+			Id:       strconv.FormatUint(uint64(id), 10),
+		}
+	}
+	return
+}
+
+// FindSaByName returns a service account by name.
+func (r *Cache) FindSaByName(name string) (m *ServiceAccount, err error) {
+	defer r.ensureRefreshed()
+	d := r.data.Load()
+	m, found := d.saByName[name]
+	if !found {
+		err = &NotFound{
+			Resource: "SA",
+			Id:       name,
 		}
 	}
 	return
@@ -432,6 +467,7 @@ type Data struct {
 	userByLogin      map[string]*User
 	saById           map[uint]*ServiceAccount
 	saBySubject      map[string]*ServiceAccount
+	saByName         map[string]*ServiceAccount
 	identById        map[uint]*Identity
 	identBySubject   map[string]*Identity
 	identByLogin     map[string]*Identity
@@ -452,6 +488,7 @@ func (d *Data) reset() {
 	d.userByLogin = make(map[string]*User)
 	d.saById = make(map[uint]*ServiceAccount)
 	d.saBySubject = make(map[string]*ServiceAccount)
+	d.saByName = make(map[string]*ServiceAccount)
 	d.scopesBySubject = make(map[string][]string)
 	d.identById = make(map[uint]*Identity)
 	d.identBySubject = make(map[string]*Identity)
@@ -477,6 +514,7 @@ func (d *Data) clone() *Data {
 		userByLogin:      cloneMap(d.userByLogin),
 		saById:           cloneMap(d.saById),
 		saBySubject:      cloneMap(d.saBySubject),
+		saByName:         cloneMap(d.saByName),
 		scopesBySubject:  cloneMap(d.scopesBySubject),
 		identById:        cloneMap(d.identById),
 		identBySubject:   cloneMap(d.identBySubject),
@@ -568,6 +606,7 @@ func (d *Data) getServiceAccounts(db *gorm.DB) (err error) {
 	}
 	for _, m := range list {
 		d.saById[m.ID] = m
+		d.saByName[m.Name] = m
 		d.saBySubject[m.Subject] = m
 	}
 	return
@@ -652,9 +691,17 @@ func (d *Data) addTokenScopes(m *Token) {
 		m.Scopes = scopes
 		return
 	}
-	// task binding.
-	if m.TaskID != nil {
-		m.Scopes = AddonScopes
+	// SA binding.
+	if m.ServiceAccountID != nil {
+		scopes, found := d.scopesBySubject[m.Subject]
+		if !found {
+			err = &NotFound{
+				Resource: "SA.scopes",
+				Id:       strconv.Itoa(int(*m.UserID)),
+			}
+			return
+		}
+		m.Scopes = scopes
 		return
 	}
 	// IdP identity binding.

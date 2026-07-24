@@ -125,19 +125,13 @@ func TestTaskGrant(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	// Create test task in Running state (required for cache to load it)
-	task := &Task{
-		ID: 445,
-	}
-	err = db.Create(task).Error
-	g.Expect(err).To(BeNil())
-
 	// Create provider
 	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Test creating task token
-	token, err := provider.TaskGrant(task)
+	taskId := uint(18)
+	token, err := provider.TaskGrant(taskId)
 	g.Expect(err).To(BeNil())
 	g.Expect(token.Secret).NotTo(BeEmpty())
 	g.Expect(token.TaskID).NotTo(BeNil())
@@ -150,15 +144,17 @@ func TestTaskGrant(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(jwToken).NotTo(BeNil())
 
-	// Verify token claims contain task subject (hex format)
+	sa, err := provider.Cache().FindSaByName("addon")
+	g.Expect(err).To(BeNil())
+
+	// Verify token claims contain addon subject
 	claims := jwToken.Claims.(jwt.MapClaims)
 	subject := claims[ClaimSub].(string)
-	expectedSubject := Task{ID: 445}.Subject()
-	g.Expect(subject).To(Equal(expectedSubject))
+	g.Expect(subject).To(Equal(sa.Subject))
 
 	// Verify User() returns task login (decimal format)
 	user := provider.User(jwToken)
-	g.Expect(user).To(Equal(Task{ID: 445}.Login()))
+	g.Expect(user).To(Equal(sa.Name))
 
 	// Verify scopes are AddonScopes
 	scopes := provider.Scopes(jwToken)
@@ -178,101 +174,6 @@ func TestTaskGrant(t *testing.T) {
 	g.Expect(*dbToken.TaskID).To(Equal(uint(445)))
 }
 
-// TestTaskSubjectFormat tests that task subjects are formatted correctly.
-func TestTaskSubjectFormat(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	db, err := setupTestDB()
-	g.Expect(err).To(BeNil())
-
-	// Create tasks with different IDs
-	task1 := &Task{ID: 1}
-	task2 := &Task{ID: 999}
-	task3 := &Task{ID: 12345}
-
-	err = db.Create(task1).Error
-	g.Expect(err).To(BeNil())
-	err = db.Create(task2).Error
-	g.Expect(err).To(BeNil())
-	err = db.Create(task3).Error
-	g.Expect(err).To(BeNil())
-
-	provider, err := NewBuiltin(db, &Tenant{})
-	g.Expect(err).To(BeNil())
-
-	// Test task.1 - Subject() returns hex format, User() returns login (decimal)
-	token1, err := provider.TaskGrant(task1)
-	g.Expect(err).To(BeNil())
-	request := newTestRequest()
-	request.With("Bearer " + token1.Secret)
-	jwToken1, err := provider.Authenticate(request)
-	g.Expect(err).To(BeNil())
-	claims := jwToken1.Claims.(jwt.MapClaims)
-	expectedSubject1 := Task{ID: 1}.Subject()
-	g.Expect(claims[ClaimSub]).To(Equal(expectedSubject1))
-	g.Expect(provider.User(jwToken1)).To(Equal(Task{ID: 1}.Login()))
-
-	// Test task.999
-	token2, err := provider.TaskGrant(task2)
-	g.Expect(err).To(BeNil())
-	request = newTestRequest()
-	request.With("Bearer " + token2.Secret)
-	jwToken2, err := provider.Authenticate(request)
-	g.Expect(err).To(BeNil())
-	claims = jwToken2.Claims.(jwt.MapClaims)
-	expectedSubject2 := Task{ID: 999}.Subject()
-	g.Expect(claims[ClaimSub]).To(Equal(expectedSubject2))
-	g.Expect(provider.User(jwToken2)).To(Equal(Task{ID: 999}.Login()))
-
-	// Test task.12345
-	token3, err := provider.TaskGrant(task3)
-	g.Expect(err).To(BeNil())
-	request = newTestRequest()
-	request.With("Bearer " + token3.Secret)
-	jwToken3, err := provider.Authenticate(request)
-	g.Expect(err).To(BeNil())
-	claims = jwToken3.Claims.(jwt.MapClaims)
-	expectedSubject3 := Task{ID: 12345}.Subject()
-	g.Expect(claims[ClaimSub]).To(Equal(expectedSubject3))
-	g.Expect(provider.User(jwToken3)).To(Equal(Task{ID: 12345}.Login()))
-}
-
-// TestTaskSubjectParsing tests that task subjects are parsed on-demand.
-func TestTaskSubjectParsing(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	db, err := setupTestDB()
-	g.Expect(err).To(BeNil())
-
-	provider, err := NewBuiltin(db, &Tenant{})
-	g.Expect(err).To(BeNil())
-
-	// Create task
-	task := &Task{ID: 100}
-	err = db.Create(task).Error
-	g.Expect(err).To(BeNil())
-
-	// Grant token
-	token, err := provider.TaskGrant(task)
-	g.Expect(err).To(BeNil())
-
-	// Verify task subject is parsed on-demand (not cached)
-	expectedSubject := task.Subject()
-	subject, err := provider.cache.FindSubject(expectedSubject)
-	g.Expect(err).To(BeNil())
-	g.Expect(subject).NotTo(BeNil())
-	g.Expect(subject.IsTask()).To(BeTrue())
-	g.Expect(subject.Task).NotTo(BeNil())
-	g.Expect(subject.Task.ID).To(Equal(uint(100)))
-	g.Expect(subject.Login()).To(Equal(task.Login()))
-
-	// Verify authentication works
-	request := newTestRequest()
-	request.With("Bearer " + token.Secret)
-	_, err = provider.Authenticate(request)
-	g.Expect(err).To(BeNil())
-}
-
 // TestTaskSubjectScopes tests that task subjects get AddonScopes.
 func TestTaskSubjectScopes(t *testing.T) {
 	g := NewGomegaWithT(t)
@@ -280,14 +181,12 @@ func TestTaskSubjectScopes(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	task := &Task{ID: 200}
-	err = db.Create(task).Error
-	g.Expect(err).To(BeNil())
+	taskId := uint(200)
 
 	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
-	token, err := provider.TaskGrant(task)
+	token, err := provider.TaskGrant(taskId)
 	g.Expect(err).To(BeNil())
 
 	request := newTestRequest()
@@ -296,6 +195,7 @@ func TestTaskSubjectScopes(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Verify scopes match AddonScopes
+
 	scopes := provider.Scopes(jwToken)
 	scopeStrings := make([]string, len(scopes))
 	for i, s := range scopes {
@@ -323,19 +223,13 @@ func TestTaskTokenLifecycle(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create task
-	task := &Task{ID: 300}
+	task := &model.Task{}
+	task.ID = 300
 	err = db.Create(task).Error
 	g.Expect(err).To(BeNil())
 
-	// Task subject is always parseable (not cached)
-	expectedSubject := task.Subject()
-	subject, err := provider.cache.FindSubject(expectedSubject)
-	g.Expect(err).To(BeNil())
-	g.Expect(subject.IsTask()).To(BeTrue())
-	g.Expect(subject.Task.ID).To(Equal(uint(300)))
-
 	// Grant token
-	token, err := provider.TaskGrant(task)
+	token, err := provider.TaskGrant(task.ID)
 	g.Expect(err).To(BeNil())
 
 	// Authentication works with token
@@ -347,91 +241,11 @@ func TestTaskTokenLifecycle(t *testing.T) {
 	// Revoke task - removes tokens (but subject still parseable)
 	provider.TaskRevoke(300)
 
-	// Subject still parseable
-	subject, err = provider.cache.FindSubject(expectedSubject)
-	g.Expect(err).To(BeNil())
-	g.Expect(subject.IsTask()).To(BeTrue())
-
 	// Authentication fails (token removed)
 	request = newTestRequest()
 	request.With("Bearer " + token.Secret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
-}
-
-// TestMultipleTasksWithTokens tests multiple tasks can have tokens simultaneously.
-func TestMultipleTasksWithTokens(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	db, err := setupTestDB()
-	g.Expect(err).To(BeNil())
-
-	provider, err := NewBuiltin(db, &Tenant{})
-	g.Expect(err).To(BeNil())
-
-	// Create multiple tasks
-	tasks := []*Task{
-		{ID: 1},
-		{ID: 2},
-		{ID: 3},
-	}
-	for _, task := range tasks {
-		err = db.Create(task).Error
-		g.Expect(err).To(BeNil())
-	}
-
-	// Grant tokens for all tasks
-	tokens := make([]Token, len(tasks))
-	for i, task := range tasks {
-		tokens[i], err = provider.TaskGrant(task)
-		g.Expect(err).To(BeNil())
-	}
-
-	// All task subjects are parseable and authenticate with tokens
-	for i, task := range tasks {
-		expectedSubject := task.Subject()
-
-		// Subject is always parseable (not cached)
-		subject, err := provider.cache.FindSubject(expectedSubject)
-		g.Expect(err).To(BeNil())
-		g.Expect(subject.IsTask()).To(BeTrue())
-		g.Expect(subject.Login()).To(Equal(task.Login()))
-
-		// Check authentication
-		request := newTestRequest()
-		request.With("Bearer " + tokens[i].Secret)
-		jwToken, err := provider.Authenticate(request)
-		g.Expect(err).To(BeNil())
-		claims := jwToken.Claims.(jwt.MapClaims)
-		g.Expect(claims[ClaimSub]).To(Equal(expectedSubject))
-		g.Expect(provider.User(jwToken)).To(Equal(task.Login()))
-	}
-
-	// Revoke one task - others still work
-	provider.TaskRevoke(2)
-
-	// Task 2 subject still parseable
-	task2Subject := Task{ID: 2}.Subject()
-	subject, err := provider.cache.FindSubject(task2Subject)
-	g.Expect(err).To(BeNil())
-	g.Expect(subject.IsTask()).To(BeTrue())
-
-	// Task 2 token authentication fails (token removed)
-	request := newTestRequest()
-	request.With("Bearer " + tokens[1].Secret)
-	_, err = provider.Authenticate(request)
-	g.Expect(err).NotTo(BeNil())
-
-	// Task 1 and 3 still work
-	request = newTestRequest()
-	request.With("Bearer " + tokens[0].Secret)
-	_, err = provider.Authenticate(request)
-	g.Expect(err).To(BeNil())
-
-	request = newTestRequest()
-	request.With("Bearer " + tokens[2].Secret)
-	_, err = provider.Authenticate(request)
-	g.Expect(err).To(BeNil())
 }
 
 // TestJWTAuthentication tests authenticating with JWT tokens using HMAC signing.
@@ -747,61 +561,6 @@ func TestBaseScopeParsing(t *testing.T) {
 	g.Expect(scope.String()).To(Equal("tags:write"))
 }
 
-// TestKeyCacheWithTaskStates tests that keys for terminal tasks are rejected.
-func TestKeyCacheWithTaskStates(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	db, err := setupTestDB()
-	g.Expect(err).To(BeNil())
-
-	// Create test task in running state
-	task := &model.Task{
-		Name:  "test-task",
-		State: "Running",
-	}
-	err = db.Create(task).Error
-	g.Expect(err).To(BeNil())
-
-	provider, err := NewBuiltin(db, &Tenant{})
-	g.Expect(err).To(BeNil())
-
-	// Create token for running task - should work
-	taskRef := &Task{ID: task.ID}
-	key, err := provider.TaskGrant(taskRef)
-	g.Expect(err).To(BeNil())
-
-	// Authenticate with key - should work
-	request := newTestRequest()
-	request.With("Bearer " + key.Secret)
-	_, err = provider.Authenticate(request)
-	g.Expect(err).To(BeNil())
-
-	// Update task to Succeeded - key should now be rejected
-	provider.cache.Reset()
-	db.Model(task).Update("State", "Succeeded")
-	request = newTestRequest()
-	request.With("Bearer " + key.Secret)
-	_, err = provider.Authenticate(request)
-	g.Expect(err).NotTo(BeNil())
-	g.Expect(err.Error()).To(ContainSubstring("not-authenticated"))
-
-	// Test with Failed state
-	provider.cache.Reset()
-	db.Model(task).Update("State", "Failed")
-	request = newTestRequest()
-	request.With("Bearer " + key.Secret)
-	_, err = provider.Authenticate(request)
-	g.Expect(err).NotTo(BeNil())
-
-	// Test with Canceled state
-	provider.cache.Reset()
-	db.Model(task).Update("State", "Canceled")
-	request = newTestRequest()
-	request.With("Bearer " + key.Secret)
-	_, err = provider.Authenticate(request)
-	g.Expect(err).NotTo(BeNil())
-}
-
 // TestNoAuthProvider tests the NoAuth provider fallback behavior.
 func TestNoAuthProvider(t *testing.T) {
 	g := NewGomegaWithT(t)
@@ -858,8 +617,7 @@ func TestNoAuthProvider(t *testing.T) {
 		db.Delete(task)
 	})
 
-	taskRef := &Task{ID: task.ID}
-	key, err = provider.TaskGrant(taskRef)
+	key, err = provider.TaskGrant(task.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(key.Secret).ToNot(BeEmpty())
 }
@@ -962,8 +720,7 @@ func TestTaskRevoke(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create task token
-	taskRef := &Task{ID: task.ID}
-	token, err := provider.TaskGrant(taskRef)
+	token, err := provider.TaskGrant(task.ID)
 	g.Expect(err).To(BeNil())
 
 	// Verify token works
@@ -1011,22 +768,11 @@ func TestTaskRevokeMultipleTokens(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create first token
-	taskRef := &Task{ID: task.ID}
-	token1, err := provider.TaskGrant(taskRef)
+	token1, err := provider.TaskGrant(task.ID)
 	g.Expect(err).To(BeNil())
 
-	// Manually create second token for same task (shouldn't normally happen)
-	token2Secret := "second-task-token"
-	taskCache := &Task{ID: task.ID}
-	token2 := &model.Token{
-		Kind:       KindAPIKey,
-		Subject:    taskCache.Subject(),
-		AuthId:     "second-auth-id",
-		Digest:     secret.Hash(token2Secret),
-		Expiration: time.Now().Add(24 * time.Hour),
-		TaskID:     &task.ID,
-	}
-	err = db.Create(token2).Error
+	// Create second token
+	token2, err := provider.TaskGrant(task.ID)
 	g.Expect(err).To(BeNil())
 
 	// Refresh cache to pick up both tokens
@@ -1040,7 +786,7 @@ func TestTaskRevokeMultipleTokens(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	request = newTestRequest()
-	request.With("Bearer " + token2Secret)
+	request.With("Bearer " + token2.Subject)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
 
@@ -1059,7 +805,7 @@ func TestTaskRevokeMultipleTokens(t *testing.T) {
 	g.Expect(err).NotTo(BeNil())
 
 	request = newTestRequest()
-	request.With("Bearer " + token2Secret)
+	request.With("Bearer " + token2.Subject)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
 }
@@ -1161,8 +907,7 @@ func TestCascadeDeleteTask(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	// Create token for task
-	taskRef := &Task{ID: task.ID}
-	token, err := provider.TaskGrant(taskRef)
+	token, err := provider.TaskGrant(task.ID)
 	g.Expect(err).To(BeNil())
 
 	// Verify token exists
@@ -2019,33 +1764,6 @@ func TestTokenBindingEdgeCases(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(m.Subject).To(BeEmpty())
 	g.Expect(m.Scopes).To(BeEmpty())
-
-	// Test 2: Pending task token
-	pendingTask := &model.Task{
-		Name:  "pending-task",
-		State: "Pending",
-	}
-	err = db.Create(pendingTask).Error
-	g.Expect(err).To(BeNil())
-
-	// Refresh cache to load pending task
-	err = cache.Refresh()
-	g.Expect(err).To(BeNil())
-
-	taskRef := &Task{ID: pendingTask.ID}
-	token, err := provider.TaskGrant(taskRef)
-	g.Expect(err).To(BeNil())
-
-	request := newTestRequest()
-	request.With("Bearer " + token.Secret)
-	jwToken, err := provider.Authenticate(request)
-	g.Expect(err).To(BeNil())
-	g.Expect(jwToken).NotTo(BeNil())
-
-	// Verify task subject format
-	claims := jwToken.Claims.(jwt.MapClaims)
-	subject := claims[ClaimSub].(string)
-	g.Expect(subject).To(Equal(taskRef.Subject()))
 }
 
 // TestCacheFindSubject tests finding subjects (users and identities) by subject string.
@@ -3462,7 +3180,6 @@ func TestCreateAccessToken_UpdatesExistingToken(t *testing.T) {
 	db.AutoMigrate(
 		&IdpClient{},
 		&User{},
-		&Task{},
 		&model.Bucket{},
 		&Role{},
 		&Token{},
@@ -3539,7 +3256,6 @@ func TestCreateAccessToken_CascadeDeleteOnGrantDeletion(t *testing.T) {
 	db.AutoMigrate(
 		&IdpClient{},
 		&User{},
-		&Task{},
 		&model.Bucket{},
 		&Role{},
 		&Token{},
@@ -3605,7 +3321,6 @@ func TestAuthRequest_CreatesGrantAndLinksToken(t *testing.T) {
 	db.AutoMigrate(
 		&IdpClient{},
 		&User{},
-		&Task{},
 		&model.Bucket{},
 		&Role{},
 		&Token{},
@@ -3668,7 +3383,6 @@ func TestClientRequest_NoGrantCreated(t *testing.T) {
 	db.AutoMigrate(
 		&IdpClient{},
 		&User{},
-		&Task{},
 		&model.Bucket{},
 		&Role{},
 		&Token{},
@@ -3748,7 +3462,6 @@ func TestCreateAccessAndRefreshTokens_FullFlow(t *testing.T) {
 	db.AutoMigrate(
 		&IdpClient{},
 		&User{},
-		&Task{},
 		&model.Bucket{},
 		&Role{},
 		&Token{},

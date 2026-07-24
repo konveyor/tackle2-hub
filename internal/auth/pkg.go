@@ -131,7 +131,7 @@ type Provider interface {
 	// NewToken creates a new personal access token.
 	NewToken(subject string, lifespan time.Duration) (token Token, err error)
 	// TaskGrant creates a new api-key.
-	TaskGrant(task *Task) (token Token, err error)
+	TaskGrant(taskId uint) (token Token, err error)
 	// TaskRevoke revokes task tokens.
 	TaskRevoke(taskId uint)
 	// Revoke a token.
@@ -174,7 +174,6 @@ type Role = cache.Role
 type Token = cache.Token
 type Identity = cache.Identity
 type Subject = cache.Subject
-type Task = cache.Task
 type Grant = cache.Grant
 type ServiceAccount = cache.ServiceAccount
 

@@ -56,16 +56,17 @@ func NewTenant(db *gorm.DB, client k8sClient.Client) *Tenant {
 
 // Tenant the RBAC domain.
 type Tenant struct {
-	DB          *gorm.DB
-	client      k8sClient.Client
-	resources   map[string]bool
-	roleByName  map[string]uint
-	scopeByName map[string]Scope
-	clients     []IdpClient
-	roles       []seed.Role
-	users       []seed.User
-	Idp         IdentityProvider
-	Ldap        LdapProvider
+	DB              *gorm.DB
+	client          k8sClient.Client
+	resources       map[string]bool
+	roleByName      map[string]uint
+	scopeByName     map[string]Scope
+	clients         []IdpClient
+	roles           []seed.Role
+	users           []seed.User
+	serviceAccounts []seed.ServiceAccount
+	Idp             IdentityProvider
+	Ldap            LdapProvider
 }
 
 // Register registers a scope resource.
@@ -121,6 +122,10 @@ func (d *Tenant) Load() (err error) {
 	if err != nil {
 		return
 	}
+	d.serviceAccounts, err = d.readServiceAccounts()
+	if err != nil {
+		return
+	}
 	return
 }
 
@@ -155,6 +160,10 @@ func (d *Tenant) Seed() (err error) {
 				return
 			}
 			err = d.seedUsers(tx)
+			if err != nil {
+				return
+			}
+			err = d.seedServiceAccounts(tx)
 			return
 		})
 	if err != nil {
@@ -253,6 +262,25 @@ func (d *Tenant) buildUserRoles(user seed.User) (roles []Role, err error) {
 	return
 }
 
+// buildSaRoles builds role list from a service account definition.
+func (d *Tenant) buildSaRoles(sa seed.ServiceAccount) (roles []Role) {
+	roleMap := make(map[uint]bool)
+	for _, roleName := range sa.Roles {
+		roleID, found := d.roleByName[roleName]
+		if !found {
+			Log.Info("Role not-found: " + roleName)
+			continue
+		}
+		roleMap[roleID] = true
+	}
+	for roleID := range roleMap {
+		roles = append(roles, Role{
+			Model: Model{ID: roleID},
+		})
+	}
+	return
+}
+
 // clientPatch computes the client reconciliation patch from CRD clients.
 func (d *Tenant) clientPatch(existing map[string]IdpClient, wanted []IdpClient) (patch *IdpClientPatch) {
 	patch = &IdpClientPatch{
@@ -329,6 +357,21 @@ func (d *Tenant) fetchUsers(db *gorm.DB) (users map[string]User, err error) {
 	return
 }
 
+// fetchServiceAccounts fetches existing service accounts from database.
+func (d *Tenant) fetchServiceAccounts(db *gorm.DB) (accounts map[string]ServiceAccount, err error) {
+	var list []ServiceAccount
+	err = db.Find(&list).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	accounts = make(map[string]ServiceAccount)
+	for _, sa := range list {
+		accounts[sa.Name] = sa
+	}
+	return
+}
+
 // pruneScopes removes unknown scopes from user-created roles.
 // Runs during seeding after scope generation to ensure custom roles
 // don't reference obsolete or unregistered scopes.
@@ -388,6 +431,20 @@ func (d *Tenant) readUsers() (users []seed.User, err error) {
 		return
 	}
 	err = yaml.Unmarshal(b, &users)
+	if err != nil {
+		err = liberr.Wrap(err)
+	}
+	return
+}
+
+// readServiceAccounts reads service account definitions from serviceaccounts.yaml.
+func (d *Tenant) readServiceAccounts() (list []seed.ServiceAccount, err error) {
+	b, err := fs.ReadFile(seedDir, "serviceaccounts.yaml")
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	err = yaml.Unmarshal(b, &list)
 	if err != nil {
 		err = liberr.Wrap(err)
 	}
@@ -468,6 +525,18 @@ func (d *Tenant) seedUsers(db *gorm.DB) (err error) {
 	return
 }
 
+// seedServiceAccounts seeds service accounts and their role associations.
+// Must be called after buildRoleMap to ensure role map is populated.
+func (d *Tenant) seedServiceAccounts(db *gorm.DB) (err error) {
+	existing, err := d.fetchServiceAccounts(db)
+	if err != nil {
+		return
+	}
+	patch := d.saPatch(existing, d.serviceAccounts)
+	err = patch.Apply(db)
+	return
+}
+
 // userPatch computes the user reconciliation patch.
 func (d *Tenant) userPatch(existing map[string]User, wanted []seed.User) (patch *UserPatch) {
 	patch = &UserPatch{
@@ -503,6 +572,43 @@ func (d *Tenant) userPatch(existing map[string]User, wanted []seed.User) (patch 
 			_, _ = secret.Encode(&newUser)
 			patch.toCreate = append(patch.toCreate, userWithRoles{
 				user:  newUser,
+				roles: roles,
+			})
+		}
+	}
+	return
+}
+
+// saPatch computes the service account reconciliation patch.
+func (d *Tenant) saPatch(existing map[string]ServiceAccount, wanted []seed.ServiceAccount) (patch *SAPatch) {
+	patch = &SAPatch{
+		db: d.DB,
+	}
+	wantedMap := make(map[string]seed.ServiceAccount)
+	for _, sa := range wanted {
+		wantedMap[sa.Name] = sa
+	}
+	for name, sa := range existing {
+		if sa.ID < LastId {
+			if _, found := wantedMap[name]; !found {
+				patch.toDelete = append(patch.toDelete, sa.ID)
+			}
+		}
+	}
+	for _, sa := range wanted {
+		roles := d.buildSaRoles(sa)
+		if existingSA, found := existing[sa.Name]; found {
+			patch.toUpdate = append(patch.toUpdate, saWithRoles{
+				sa:    existingSA,
+				roles: roles,
+			})
+		} else {
+			newSA := ServiceAccount{}
+			newSA.ID = sa.ID
+			newSA.Name = sa.Name
+			newSA.Subject = uuid.New().String()
+			patch.toCreate = append(patch.toCreate, saWithRoles{
+				sa:    newSA,
 				roles: roles,
 			})
 		}
@@ -703,6 +809,61 @@ func (p *UserPatch) Apply(db *gorm.DB) (err error) {
 			roles[j] = model.Role(item.roles[j])
 		}
 		err = db.Model(&item.user).Association("Roles").Replace(roles)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+	}
+	return
+}
+
+// SAPatch represents changes to reconcile service accounts.
+type SAPatch struct {
+	db       *gorm.DB
+	toDelete []uint
+	toUpdate []saWithRoles
+	toCreate []saWithRoles
+}
+
+// saWithRoles pairs database service account with roles data.
+type saWithRoles struct {
+	sa    ServiceAccount
+	roles []Role
+}
+
+// Apply applies the service account patch to the database.
+func (p *SAPatch) Apply(db *gorm.DB) (err error) {
+	if len(p.toDelete) > 0 {
+		err = db.Delete(&ServiceAccount{}, "id IN ?", p.toDelete).Error
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+	}
+	for i := range p.toUpdate {
+		item := &p.toUpdate[i]
+		roles := make([]model.Role, len(item.roles))
+		for j := range item.roles {
+			roles[j] = model.Role(item.roles[j])
+		}
+		err = db.Model(&item.sa).Association("Roles").Replace(roles)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+	}
+	for i := range p.toCreate {
+		item := &p.toCreate[i]
+		err = db.Create(&item.sa).Error
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		roles := make([]model.Role, len(item.roles))
+		for j := range item.roles {
+			roles[j] = model.Role(item.roles[j])
+		}
+		err = db.Model(&item.sa).Association("Roles").Replace(roles)
 		if err != nil {
 			err = liberr.Wrap(err)
 			return

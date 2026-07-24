@@ -1400,18 +1400,6 @@ func (h AuthHandler) GetSelf(ctx *gin.Context) {
 			m := model.IdpClient(*subject.Client)
 			r.Client.With(&m)
 		}
-		if subject.IsTask() {
-			id := subject.Task.ID
-			db := h.DB(ctx)
-			m := &model.Task{}
-			err = db.First(m, id).Error
-			if err != nil {
-				_ = ctx.Error(err)
-				return
-			}
-			r.Task = &Task{}
-			r.Task.With(m)
-		}
 	} else {
 		if !errors.Is(err, &auth.NotFound{}) {
 			_ = ctx.Error(err)

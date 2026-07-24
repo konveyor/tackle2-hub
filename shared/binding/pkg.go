@@ -15,14 +15,14 @@ import (
 
 // Type aliases for subpackage types.
 type (
-	Analysis    = analysis.Analysis
-	Application = application.Application
-	Archetype   = archetype.Archetype
-	Bucket      = bucket.Bucket
-	Import      = _import.Import
-	Report      = report.Report
-	TagCategory = tagcategory.TagCategory
-	Task        = task.Task
+	Analysis       = analysis.Analysis
+	Application    = application.Application
+	Archetype      = archetype.Archetype
+	Bucket         = bucket.Bucket
+	Import         = _import.Import
+	Report         = report.Report
+	TagCategory    = tagcategory.TagCategory
+	Task           = task.Task
 	ServiceAccount = serviceaccount.ServiceAccount
 	TaskGroup      = taskgroup.TaskGroup
 )
