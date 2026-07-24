@@ -654,7 +654,7 @@ func (h AuthHandler) UserDelete(ctx *gin.Context) {
 // ServiceAccountGet godoc
 // @summary Get a service account by ID.
 // @description Get a service account by ID.
-// @tags users
+// @tags serviceaccounts
 // @produce json
 // @success 200 {object} ServiceAccount
 // @router /serviceaccounts/{id} [get]
@@ -675,11 +675,11 @@ func (h AuthHandler) ServiceAccountGet(ctx *gin.Context) {
 
 // ServiceAccountList godoc
 // @summary List all service accounts.
-// @description List all service accounts.
-// @tags users
+// @description Lists all service accounts.
+// @tags serviceaccounts
 // @produce json
 // @success 200 {object} []ServiceAccount
-// @router /users [get]
+// @router /serviceaccounts [get]
 func (h AuthHandler) ServiceAccountList(ctx *gin.Context) {
 	var list []model.ServiceAccount
 	db := h.preLoad(h.DB(ctx), clause.Associations)
@@ -701,12 +701,12 @@ func (h AuthHandler) ServiceAccountList(ctx *gin.Context) {
 
 // ServiceAccountCreate godoc
 // @summary Create a service account.
-// @description Create a user.
-// @tags users
+// @description Create a service account.
+// @tags serviceaccounts
 // @accept json
 // @produce json
 // @success 201 {object} ServiceAccount
-// @router /users [post]
+// @router /serviceaccounts [post]
 // @param user body ServiceAccount true "ServiceAccount data"
 func (h AuthHandler) ServiceAccountCreate(ctx *gin.Context) {
 	r := &ServiceAccount{}
@@ -753,10 +753,10 @@ func (h AuthHandler) ServiceAccountCreate(ctx *gin.Context) {
 // ServiceAccountUpdate godoc
 // @summary Update a service account.
 // @description Update a service account.
-// @tags users
+// @tags serviceaccounts
 // @accept json
 // @success 204
-// @router /users/{id} [put]
+// @router /serviceaccounts/{id} [put]
 // @param id path int true "ServiceAccount ID"
 // @param user body ServiceAccount true "ServiceAccount data"
 func (h AuthHandler) ServiceAccountUpdate(ctx *gin.Context) {
@@ -806,9 +806,9 @@ func (h AuthHandler) ServiceAccountUpdate(ctx *gin.Context) {
 // ServiceAccountDelete godoc
 // @summary Delete a service account.
 // @description Delete a service account.
-// @tags users
+// @tags serviceaccounts
 // @success 204
-// @router /users/{id} [delete]
+// @router /serviceaccounts/{id} [delete]
 // @param id path int true "ServiceAccount ID"
 func (h AuthHandler) ServiceAccountDelete(ctx *gin.Context) {
 	id := h.pk(ctx)

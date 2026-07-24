@@ -26,9 +26,9 @@ func (r *Subject) WithUser(user *User, scopes []string) {
 	r.Scopes = scopes
 }
 
-// WithServiceAccount populates Subject from a WithServiceAccount model.
+// WithServiceAccount populates Subject from a ServiceAccount model.
 func (r *Subject) WithServiceAccount(sa *ServiceAccount, scopes []string) {
-	r.UserId = &sa.ID
+	r.ServiceAccountId = &sa.ID
 	r.Key = sa.Subject
 	r.ServiceAccount = sa
 	r.Scopes = scopes
@@ -64,6 +64,10 @@ func (r *Subject) Login() (login string) {
 		login = r.User.Login
 		return
 	}
+	if r.IsServiceAccount() {
+		login = r.ServiceAccount.Name
+		return
+	}
 	if r.IsIdentity() {
 		login = r.Identity.Login
 		return
@@ -83,7 +87,7 @@ func (r *Subject) IsUser() bool {
 	return r.UserId != nil
 }
 
-// IsServiceAccount returns true if this subject is a IsServiceAccount.
+// IsServiceAccount returns true if this subject is a ServiceAccount.
 func (r *Subject) IsServiceAccount() bool {
 	return r.ServiceAccountId != nil
 }

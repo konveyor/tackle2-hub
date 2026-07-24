@@ -63,6 +63,7 @@ func All() []any {
 		IdpIdentity{},
 		Role{},
 		User{},
+		ServiceAccount{},
 		Token{},
 		RsaKey{},
 		Grant{},

@@ -79,7 +79,7 @@ func (r *Tx) SaDeleted(id uint) {
 				delete(d.saById, id)
 			}
 			for _, token := range d.tokenById {
-				if token.UserID != nil && *token.UserID == id {
+				if token.ServiceAccountID != nil && *token.ServiceAccountID == id {
 					delete(d.tokenByDigest, token.Digest)
 					delete(d.tokenById, token.ID)
 				}
