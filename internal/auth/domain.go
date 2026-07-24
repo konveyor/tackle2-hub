@@ -549,22 +549,39 @@ func (d *Tenant) getIdp() (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
-	for _, m := range list.Items {
-		m2 := IdentityProvider{}
-		err = m2.with(&m)
+	if len(list.Items) == 0 {
+		return
+	}
+	if len(list.Items) > 1 {
+		sort.Slice(
+			list.Items,
+			func(i, j int) bool {
+				ti := list.Items[i].CreationTimestamp
+				tj := list.Items[j].CreationTimestamp
+				return ti.After(tj.Time)
+			})
+		Log.Info(
+			"WARNING: multiple IdentityProvider found."+
+				" The newest one will be used.",
+			"count",
+			len(list.Items),
+			"selected",
+			list.Items[0].Name)
+	}
+	m := &list.Items[0]
+	m2 := IdentityProvider{}
+	err = m2.with(m)
+	if err != nil {
+		return
+	}
+	ref := m.Spec.ClientSecret
+	if ref != nil {
+		m2.ClientSecret, err = d.getSecret(ref, "clientSecret")
 		if err != nil {
 			return
 		}
-		ref := m.Spec.ClientSecret
-		if ref != nil {
-			m2.ClientSecret, err = d.getSecret(ref, "clientSecret")
-			if err != nil {
-				return
-			}
-		}
-		d.Idp = m2
-		break
 	}
+	d.Idp = m2
 	return
 }
 
@@ -577,22 +594,39 @@ func (d *Tenant) getLdap() (err error) {
 		err = liberr.Wrap(err)
 		return
 	}
-	for _, m := range list.Items {
-		m2 := LdapProvider{}
-		err = m2.with(&m)
+	if len(list.Items) == 0 {
+		return
+	}
+	if len(list.Items) > 1 {
+		sort.Slice(
+			list.Items,
+			func(i, j int) bool {
+				ti := list.Items[i].CreationTimestamp
+				tj := list.Items[j].CreationTimestamp
+				return ti.After(tj.Time)
+			})
+		Log.Info(
+			"WARNING: multiple LdapProvider found."+
+				" The newest one will be used.",
+			"count",
+			len(list.Items),
+			"selected",
+			list.Items[0].Name)
+	}
+	m := &list.Items[0]
+	m2 := LdapProvider{}
+	err = m2.with(m)
+	if err != nil {
+		return
+	}
+	ref := m.Spec.Password
+	if ref != nil {
+		m2.Password, err = d.getSecret(ref, "password")
 		if err != nil {
 			return
 		}
-		ref := m.Spec.Password
-		if ref != nil {
-			m2.Password, err = d.getSecret(ref, "password")
-			if err != nil {
-				return
-			}
-		}
-		d.Ldap = m2
-		break
 	}
+	d.Ldap = m2
 	return
 }
 
