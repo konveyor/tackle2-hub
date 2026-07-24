@@ -65,7 +65,7 @@ func (r *Tx) SaSaved(m *ServiceAccount) {
 	r.changes = append(
 		r.changes, func(d *Data) {
 			d.saById[m.ID] = m
-			d.saByName[m.Subject] = m
+			d.saByName[m.Name] = m
 			d.saBySubject[m.Subject] = m
 		})
 }

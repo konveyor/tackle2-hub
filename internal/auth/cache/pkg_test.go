@@ -35,6 +35,27 @@ func setupTestDB() (db *gorm.DB, err error) {
 	return
 }
 
+// seedAddon creates the addon role and service account in the DB.
+func seedAddon(db *gorm.DB) (sa *ServiceAccount, err error) {
+	role := &Role{
+		Model:  Model{ID: 5},
+		Name:   "addon",
+		Scopes: []string{"addons:get", "applications:get"},
+	}
+	err = db.Create(role).Error
+	if err != nil {
+		return
+	}
+	sa = &ServiceAccount{
+		Model:   Model{ID: 1},
+		Subject: "addon-subject",
+		Name:    "addon",
+		Roles:   []Role{*role},
+	}
+	err = db.Create(sa).Error
+	return
+}
+
 // TestCacheEntityUpdates tests all Saved/Deleted methods.
 func TestCacheEntityUpdates(t *testing.T) {
 	g := NewGomegaWithT(t)
@@ -649,7 +670,7 @@ func TestSubjectLogin(t *testing.T) {
 	g.Expect(emptySubject.Login()).To(BeEmpty())
 }
 
-// TestCacheMixedSubjectTypes tests that different subject types (User, Identity, Client, Task) coexist.
+// TestCacheMixedSubjectTypes tests that different subject types (User, Identity, Client) coexist.
 func TestCacheMixedSubjectTypes(t *testing.T) {
 	g := NewGomegaWithT(t)
 
@@ -709,6 +730,9 @@ func TestFindTokenById(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
+	sa, err := seedAddon(db)
+	g.Expect(err).To(BeNil())
+
 	// Create a task in DB first
 	task := &model.Task{
 		Model: Model{ID: 1000},
@@ -718,13 +742,16 @@ func TestFindTokenById(t *testing.T) {
 
 	// Create a task token in DB
 	taskID := uint(1000)
+	saID := sa.ID
 	taskToken := &Token{
 		Token: model.Token{
-			Model:      Model{ID: 1000},
-			Kind:       KindAPIKey,
-			TaskID:     &taskID,
-			Digest:     secret.Hash("task-token-1000"),
-			Expiration: time.Now().Add(24 * time.Hour),
+			Model:            Model{ID: 1000},
+			Kind:             KindAPIKey,
+			Subject:          sa.Subject,
+			ServiceAccountID: &saID,
+			TaskID:           &taskID,
+			Digest:           secret.Hash("task-token-1000"),
+			Expiration:       time.Now().Add(24 * time.Hour),
 		},
 		Secret: "task-token-1000",
 	}
@@ -815,6 +842,9 @@ func TestFindTokenWithScopes(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
+	sa, err := seedAddon(db)
+	g.Expect(err).To(BeNil())
+
 	// Create a task in DB first
 	task := &model.Task{
 		Model: Model{ID: 3000},
@@ -824,13 +854,16 @@ func TestFindTokenWithScopes(t *testing.T) {
 
 	// Create a task token in DB
 	taskID := uint(3000)
+	saID := sa.ID
 	taskToken := &Token{
 		Token: model.Token{
-			Model:      Model{ID: 3000},
-			Kind:       KindAPIKey,
-			TaskID:     &taskID,
-			Digest:     secret.Hash("task-token-3000"),
-			Expiration: time.Now().Add(24 * time.Hour),
+			Model:            Model{ID: 3000},
+			Kind:             KindAPIKey,
+			Subject:          sa.Subject,
+			ServiceAccountID: &saID,
+			TaskID:           &taskID,
+			Digest:           secret.Hash("task-token-3000"),
+			Expiration:       time.Now().Add(24 * time.Hour),
 		},
 		Secret: "task-token-3000",
 	}
@@ -1624,4 +1657,450 @@ func TestClientByStrIdWithSpecialCharacters(t *testing.T) {
 	found, err := cache.FindClientByStrId("MixedCaseClient")
 	g.Expect(err).To(BeNil())
 	g.Expect(found.ID).To(Equal(uint(1005)))
+}
+
+// TestFindRoleByName tests FindRoleByName method.
+func TestFindRoleByName(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	role := &Role{
+		Model:  Model{ID: 100},
+		Name:   "developer",
+		Scopes: []string{"applications:get"},
+	}
+	cache.RoleSaved(role)
+
+	found, err := cache.FindRoleByName("developer")
+	g.Expect(err).To(BeNil())
+	g.Expect(found.ID).To(Equal(uint(100)))
+	g.Expect(found.Name).To(Equal("developer"))
+
+	_, err = cache.FindRoleByName("nonexistent")
+	g.Expect(err).NotTo(BeNil())
+	var notFound *NotFound
+	g.Expect(errors.As(err, &notFound)).To(BeTrue())
+}
+
+// TestFindUserById tests FindUserById method.
+func TestFindUserById(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	user := &User{
+		Model:   Model{ID: 200},
+		Subject: "user-subject-200",
+		Login:   "jsmith",
+	}
+	cache.UserSaved(user)
+
+	found, err := cache.FindUserById(200)
+	g.Expect(err).To(BeNil())
+	g.Expect(found.Login).To(Equal("jsmith"))
+
+	_, err = cache.FindUserById(9999)
+	g.Expect(err).NotTo(BeNil())
+	var notFound *NotFound
+	g.Expect(errors.As(err, &notFound)).To(BeTrue())
+}
+
+// TestFindSaById tests FindSaById method.
+func TestFindSaById(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	sa := &ServiceAccount{
+		Model:   Model{ID: 300},
+		Subject: "sa-subject-300",
+		Name:    "deploy-bot",
+	}
+	cache.SaSaved(sa)
+
+	found, err := cache.FindSaById(300)
+	g.Expect(err).To(BeNil())
+	g.Expect(found.Name).To(Equal("deploy-bot"))
+
+	_, err = cache.FindSaById(9999)
+	g.Expect(err).NotTo(BeNil())
+	var notFound *NotFound
+	g.Expect(errors.As(err, &notFound)).To(BeTrue())
+}
+
+// TestFindSaByName tests FindSaByName method.
+func TestFindSaByName(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	sa := &ServiceAccount{
+		Model:   Model{ID: 400},
+		Subject: "sa-subject-400",
+		Name:    "ci-bot",
+	}
+	cache.SaSaved(sa)
+
+	found, err := cache.FindSaByName("ci-bot")
+	g.Expect(err).To(BeNil())
+	g.Expect(found.ID).To(Equal(uint(400)))
+	g.Expect(found.Subject).To(Equal("sa-subject-400"))
+
+	// Subject != Name, so lookup by subject as name should fail.
+	_, err = cache.FindSaByName("sa-subject-400")
+	g.Expect(err).NotTo(BeNil())
+
+	_, err = cache.FindSaByName("nonexistent")
+	g.Expect(err).NotTo(BeNil())
+	var notFound *NotFound
+	g.Expect(errors.As(err, &notFound)).To(BeTrue())
+}
+
+// TestFindScopes tests FindScopes method directly.
+func TestFindScopes(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	role := &Role{
+		Model:  Model{ID: 1},
+		Name:   "admin",
+		Scopes: []string{"applications:get", "applications:post"},
+	}
+	err = db.Create(role).Error
+	g.Expect(err).To(BeNil())
+
+	user := &User{
+		Model:   Model{ID: 500},
+		Subject: "user-subject-500",
+		Login:   "scopeuser",
+		Roles:   []Role{*role},
+	}
+	err = db.Create(user).Error
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	scopes, err := cache.FindScopes("user-subject-500")
+	g.Expect(err).To(BeNil())
+	g.Expect(scopes).To(ContainElement("applications:get"))
+	g.Expect(scopes).To(ContainElement("applications:post"))
+
+	_, err = cache.FindScopes("nonexistent-subject")
+	g.Expect(err).NotTo(BeNil())
+	var notFound *NotFound
+	g.Expect(errors.As(err, &notFound)).To(BeTrue())
+}
+
+// TestTokenDeleted tests standalone TokenDeleted method.
+func TestTokenDeleted(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	token := &Token{
+		Token: model.Token{
+			Model:      Model{ID: 600},
+			Digest:     secret.Hash("standalone-token"),
+			Expiration: time.Now().Add(24 * time.Hour),
+		},
+		Secret: "standalone-token",
+	}
+	cache.TokenSaved(token)
+
+	_, err = cache.FindToken("standalone-token")
+	g.Expect(err).To(BeNil())
+	_, err = cache.FindTokenById(600)
+	g.Expect(err).To(BeNil())
+
+	cache.TokenDeleted(600)
+
+	_, err = cache.FindToken("standalone-token")
+	g.Expect(err).NotTo(BeNil())
+	_, err = cache.FindTokenById(600)
+	g.Expect(err).NotTo(BeNil())
+}
+
+// TestUserDeletedCascadesToTokens tests that UserDeleted removes associated tokens.
+func TestUserDeletedCascadesToTokens(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	user := &User{
+		Model:   Model{ID: 700},
+		Subject: "user-subject-700",
+		Login:   "cascadeuser",
+	}
+	cache.UserSaved(user)
+
+	userID := uint(700)
+	token1 := &Token{
+		Token: model.Token{
+			Model:      Model{ID: 701},
+			UserID:     &userID,
+			Digest:     secret.Hash("user-token-701"),
+			Expiration: time.Now().Add(24 * time.Hour),
+		},
+		Secret: "user-token-701",
+	}
+	token2 := &Token{
+		Token: model.Token{
+			Model:      Model{ID: 702},
+			UserID:     &userID,
+			Digest:     secret.Hash("user-token-702"),
+			Expiration: time.Now().Add(24 * time.Hour),
+		},
+		Secret: "user-token-702",
+	}
+	// Unrelated token should survive.
+	otherToken := &Token{
+		Token: model.Token{
+			Model:      Model{ID: 703},
+			Digest:     secret.Hash("other-token-703"),
+			Expiration: time.Now().Add(24 * time.Hour),
+		},
+		Secret: "other-token-703",
+	}
+	cache.TokenSaved(token1)
+	cache.TokenSaved(token2)
+	cache.TokenSaved(otherToken)
+
+	cache.UserDeleted(700)
+
+	_, err = cache.FindToken("user-token-701")
+	g.Expect(err).NotTo(BeNil())
+	_, err = cache.FindToken("user-token-702")
+	g.Expect(err).NotTo(BeNil())
+	_, err = cache.FindToken("other-token-703")
+	g.Expect(err).To(BeNil())
+}
+
+// TestIdentityDeletedCascadesToTokens tests that IdentityDeleted removes associated tokens.
+func TestIdentityDeletedCascadesToTokens(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	identity := &Identity{
+		Model:   Model{ID: 800},
+		Issuer:  "https://idp.example.com",
+		Subject: "identity-subject-800",
+		Login:   "idp-cascade",
+	}
+	cache.IdentitySaved(identity)
+
+	identityID := uint(800)
+	token := &Token{
+		Token: model.Token{
+			Model:         Model{ID: 801},
+			IdpIdentityID: &identityID,
+			Digest:        secret.Hash("identity-token-801"),
+			Expiration:    time.Now().Add(24 * time.Hour),
+		},
+		Secret: "identity-token-801",
+	}
+	cache.TokenSaved(token)
+
+	_, err = cache.FindToken("identity-token-801")
+	g.Expect(err).To(BeNil())
+
+	cache.IdentityDeleted(800)
+
+	_, err = cache.FindToken("identity-token-801")
+	g.Expect(err).NotTo(BeNil())
+	_, err = cache.FindIdentityByLogin("idp-cascade")
+	g.Expect(err).NotTo(BeNil())
+}
+
+// TestClientDeletedCascadesToTokens tests that ClientDeleted removes associated tokens.
+func TestClientDeletedCascadesToTokens(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	client := &IdpClient{
+		Model:           Model{ID: 900},
+		Subject:         "client-subject-900",
+		ClientId:        "cascade-client",
+		ApplicationType: "web",
+		Grants:          []string{"client_credentials"},
+		Scopes:          []string{"openid"},
+	}
+	cache.ClientSaved(client)
+
+	clientID := uint(900)
+	token := &Token{
+		Token: model.Token{
+			Model:       Model{ID: 901},
+			IdpClientID: &clientID,
+			Digest:      secret.Hash("client-token-901"),
+			Expiration:  time.Now().Add(24 * time.Hour),
+		},
+		Secret: "client-token-901",
+	}
+	cache.TokenSaved(token)
+
+	_, err = cache.FindToken("client-token-901")
+	g.Expect(err).To(BeNil())
+
+	cache.ClientDeleted(900)
+
+	_, err = cache.FindToken("client-token-901")
+	g.Expect(err).NotTo(BeNil())
+	_, err = cache.FindClientById(900)
+	g.Expect(err).NotTo(BeNil())
+}
+
+// TestRoleScopePropagation tests that scope recalculation propagates role changes.
+func TestRoleScopePropagation(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	role := &Role{
+		Model:  Model{ID: 1},
+		Name:   "dev",
+		Scopes: []string{"applications:get"},
+	}
+	err = db.Create(role).Error
+	g.Expect(err).To(BeNil())
+
+	user := &User{
+		Model:   Model{ID: 1000},
+		Subject: "user-subject-1000",
+		Login:   "propuser",
+		Roles:   []Role{*role},
+	}
+	err = db.Create(user).Error
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	scopes, err := cache.FindScopes("user-subject-1000")
+	g.Expect(err).To(BeNil())
+	g.Expect(scopes).To(Equal([]string{"applications:get"}))
+
+	// Update role scopes.
+	role.Scopes = []string{"applications:get", "applications:post"}
+	cache.RoleSaved(role)
+
+	scopes, err = cache.FindScopes("user-subject-1000")
+	g.Expect(err).To(BeNil())
+	g.Expect(scopes).To(ContainElement("applications:get"))
+	g.Expect(scopes).To(ContainElement("applications:post"))
+}
+
+// TestCacheReset tests that Reset clears all cached data.
+func TestCacheReset(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(BeNil())
+
+	cache := New(db)
+	err = cache.Refresh()
+	g.Expect(err).To(BeNil())
+
+	role := &Role{
+		Model:  Model{ID: 100},
+		Name:   "resetrole",
+		Scopes: []string{"applications:get"},
+	}
+	cache.RoleSaved(role)
+
+	user := &User{
+		Model:   Model{ID: 100},
+		Subject: "reset-user-subject",
+		Login:   "resetuser",
+	}
+	cache.UserSaved(user)
+
+	token := &Token{
+		Token: model.Token{
+			Model:      Model{ID: 100},
+			Digest:     secret.Hash("reset-token"),
+			Expiration: time.Now().Add(24 * time.Hour),
+		},
+		Secret: "reset-token",
+	}
+	cache.TokenSaved(token)
+
+	// Verify populated.
+	_, err = cache.FindRoleById(100)
+	g.Expect(err).To(BeNil())
+	_, err = cache.FindUserByLogin("resetuser")
+	g.Expect(err).To(BeNil())
+	_, err = cache.FindToken("reset-token")
+	g.Expect(err).To(BeNil())
+
+	cache.Reset()
+
+	// All lookups should fail.
+	_, err = cache.FindRoleById(100)
+	g.Expect(err).NotTo(BeNil())
+	_, err = cache.FindUserByLogin("resetuser")
+	g.Expect(err).NotTo(BeNil())
+	_, err = cache.FindToken("reset-token")
+	g.Expect(err).NotTo(BeNil())
+}
+
+// TestGetScopesDedup tests IdpClient.GetScopes deduplication and sorting.
+func TestGetScopesDedup(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	client := &IdpClient{
+		Model:  Model{ID: 1},
+		Scopes: []string{"profile", "openid", "profile", "email", "openid"},
+	}
+
+	scopes := client.GetScopes()
+	g.Expect(scopes).To(Equal([]string{"email", "openid", "profile"}))
 }

@@ -225,7 +225,7 @@ type User struct {
 type ServiceAccount struct {
 	Model
 	Subject string  `gorm:"<-:create;index;not null"`
-	Name    string  `gorm:""`
+	Name    string  `gorm:"<-:create;index;not null"`
 	Roles   []Role  `gorm:"many2many:ServiceAccountRole;constraint:OnDelete:CASCADE"`
 	Tokens  []Token `gorm:"constraint:OnDelete:CASCADE"`
 }

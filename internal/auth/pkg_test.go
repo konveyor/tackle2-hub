@@ -125,17 +125,21 @@ func TestTaskGrant(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
+	// Create task
+	task := &model.Task{}
+	err = db.Create(task).Error
+	g.Expect(err).To(BeNil())
+
 	// Create provider
 	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Test creating task token
-	taskId := uint(18)
-	token, err := provider.TaskGrant(taskId)
+	token, err := provider.TaskGrant(task.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(token.Secret).NotTo(BeEmpty())
 	g.Expect(token.TaskID).NotTo(BeNil())
-	g.Expect(*token.TaskID).To(Equal(uint(445)))
+	g.Expect(*token.TaskID).To(Equal(task.ID))
 
 	// Test authenticating with the task token
 	request := newTestRequest()
@@ -171,7 +175,7 @@ func TestTaskGrant(t *testing.T) {
 	err = db.First(&dbToken, token.ID).Error
 	g.Expect(err).To(BeNil())
 	g.Expect(dbToken.TaskID).NotTo(BeNil())
-	g.Expect(*dbToken.TaskID).To(Equal(uint(445)))
+	g.Expect(*dbToken.TaskID).To(Equal(task.ID))
 }
 
 // TestTaskSubjectScopes tests that task subjects get AddonScopes.
@@ -181,12 +185,14 @@ func TestTaskSubjectScopes(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	taskId := uint(200)
+	task := &model.Task{}
+	err = db.Create(task).Error
+	g.Expect(err).To(BeNil())
 
 	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
-	token, err := provider.TaskGrant(taskId)
+	token, err := provider.TaskGrant(task.ID)
 	g.Expect(err).To(BeNil())
 
 	request := newTestRequest()
@@ -786,7 +792,7 @@ func TestTaskRevokeMultipleTokens(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	request = newTestRequest()
-	request.With("Bearer " + token2.Subject)
+	request.With("Bearer " + token2.Secret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).To(BeNil())
 
@@ -805,7 +811,7 @@ func TestTaskRevokeMultipleTokens(t *testing.T) {
 	g.Expect(err).NotTo(BeNil())
 
 	request = newTestRequest()
-	request.With("Bearer " + token2.Subject)
+	request.With("Bearer " + token2.Secret)
 	_, err = provider.Authenticate(request)
 	g.Expect(err).NotTo(BeNil())
 }
@@ -2973,6 +2979,7 @@ func setupTestDB() (db *gorm.DB, err error) {
 	err = db.AutoMigrate(
 		&IdpClient{},
 		&User{},
+		&ServiceAccount{},
 		&model.Task{},
 		&model.Bucket{},
 		&Role{},
@@ -2981,6 +2988,31 @@ func setupTestDB() (db *gorm.DB, err error) {
 		&RsaKey{},
 		&Identity{},
 	)
+	if err != nil {
+		return
+	}
+	err = seedAddon(db)
+	return
+}
+
+// seedAddon seeds the addon service account (with role) needed by TaskGrant.
+func seedAddon(db *gorm.DB) (err error) {
+	role := Role{
+		Name:   "addon",
+		Scopes: AddonScopes,
+	}
+	role.ID = 5
+	err = db.Create(&role).Error
+	if err != nil {
+		return
+	}
+	sa := &ServiceAccount{
+		Subject: uuid.New().String(),
+		Name:    "addon",
+		Roles:   []Role{role},
+	}
+	sa.ID = 1
+	err = db.Create(sa).Error
 	return
 }
 
