@@ -558,7 +558,7 @@ func (d *Tenant) getIdp() (err error) {
 			func(i, j int) bool {
 				ti := list.Items[i].CreationTimestamp
 				tj := list.Items[j].CreationTimestamp
-				return ti.After(tj.Time)
+				return ti.Time.After(tj.Time)
 			})
 		Log.Info(
 			"WARNING: multiple IdentityProvider found."+
@@ -603,7 +603,7 @@ func (d *Tenant) getLdap() (err error) {
 			func(i, j int) bool {
 				ti := list.Items[i].CreationTimestamp
 				tj := list.Items[j].CreationTimestamp
-				return ti.After(tj.Time)
+				return ti.Time.After(tj.Time)
 			})
 		Log.Info(
 			"WARNING: multiple LdapProvider found."+
