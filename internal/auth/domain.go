@@ -129,6 +129,7 @@ func (d *Tenant) Seed() (err error) {
 	database.PK.Begin(d.DB, Role{}, LastId)
 	database.PK.Begin(d.DB, IdpClient{}, LastId)
 	database.PK.Begin(d.DB, User{}, LastId)
+	database.PK.Begin(d.DB, ServiceAccount{}, LastId)
 	var resources []string
 	for r := range d.resources {
 		resources = append(resources, r)

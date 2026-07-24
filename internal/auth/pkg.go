@@ -176,6 +176,7 @@ type Identity = cache.Identity
 type Subject = cache.Subject
 type Task = cache.Task
 type Grant = cache.Grant
+type ServiceAccount = cache.ServiceAccount
 
 // asTime returns a time.Time for unix time.
 func asTime(n int) (t time.Time) {

@@ -62,6 +62,9 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(api.ServiceAccountRoute, h.ServiceAccountGet)
 	routeGroup.PUT(api.ServiceAccountRoute, h.ServiceAccountUpdate)
 	routeGroup.DELETE(api.ServiceAccountRoute, h.ServiceAccountDelete)
+	// SA token routes.
+	routeGroup = e.Group("/")
+	routeGroup.Use(Required("serviceaccounts"))
 	routeGroup.POST(api.ServiceAccountTokensRoute, h.ServiceAccountTokenCreate)
 	// Role routes.
 	routeGroup = e.Group("/")
