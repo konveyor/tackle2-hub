@@ -101,6 +101,22 @@ func (r *Cache) UserDeleted(id uint) {
 	})
 }
 
+// SaSaved updates the cache when a service account is saved.
+func (r *Cache) SaSaved(m *ServiceAccount) {
+	_ = r.Transaction(func(tx *Tx) (_ error) {
+		tx.SaSaved(m)
+		return
+	})
+}
+
+// SaDeleted removes a service account from the cache.
+func (r *Cache) SaDeleted(id uint) {
+	_ = r.Transaction(func(tx *Tx) (_ error) {
+		tx.SaDeleted(id)
+		return
+	})
+}
+
 // TaskRevoked removes a task from the cache.
 func (r *Cache) TaskRevoked(id uint) {
 	_ = r.Transaction(func(tx *Tx) (_ error) {
@@ -211,6 +227,17 @@ func (r *Cache) FindSubject(subject string) (s *Subject, err error) {
 			return
 		}
 		s.WithUser(user, scopes)
+		return
+	}
+	sa, found := d.saBySubject[subject]
+	if found {
+		s = &Subject{}
+		var scopes []string
+		scopes, err = r.FindScopes(sa.Subject)
+		if err != nil {
+			return
+		}
+		s.WithServiceAccount(sa, scopes)
 		return
 	}
 	identity, found := d.identBySubject[subject]
@@ -403,6 +430,8 @@ type Data struct {
 	userById         map[uint]*User
 	userBySubject    map[string]*User
 	userByLogin      map[string]*User
+	saById           map[uint]*ServiceAccount
+	saBySubject      map[string]*ServiceAccount
 	identById        map[uint]*Identity
 	identBySubject   map[string]*Identity
 	identByLogin     map[string]*Identity
@@ -421,6 +450,8 @@ func (d *Data) reset() {
 	d.userById = make(map[uint]*User)
 	d.userBySubject = make(map[string]*User)
 	d.userByLogin = make(map[string]*User)
+	d.saById = make(map[uint]*ServiceAccount)
+	d.saBySubject = make(map[string]*ServiceAccount)
 	d.scopesBySubject = make(map[string][]string)
 	d.identById = make(map[uint]*Identity)
 	d.identBySubject = make(map[string]*Identity)
@@ -444,6 +475,8 @@ func (d *Data) clone() *Data {
 		userById:         cloneMap(d.userById),
 		userBySubject:    cloneMap(d.userBySubject),
 		userByLogin:      cloneMap(d.userByLogin),
+		saById:           cloneMap(d.saById),
+		saBySubject:      cloneMap(d.saBySubject),
 		scopesBySubject:  cloneMap(d.scopesBySubject),
 		identById:        cloneMap(d.identById),
 		identBySubject:   cloneMap(d.identBySubject),
@@ -464,6 +497,10 @@ func (d *Data) refresh(db *gorm.DB) (err error) {
 		return
 	}
 	err = d.getUsers(db)
+	if err != nil {
+		return
+	}
+	err = d.getServiceAccounts(db)
 	if err != nil {
 		return
 	}
@@ -516,6 +553,22 @@ func (d *Data) getUsers(db *gorm.DB) (err error) {
 		d.userById[m.ID] = m
 		d.userBySubject[m.Subject] = m
 		d.userByLogin[m.Login] = m
+	}
+	return
+}
+
+// getServiceAccounts fetches service accounts from the DB and populates.
+func (d *Data) getServiceAccounts(db *gorm.DB) (err error) {
+	list := make([]*ServiceAccount, 0)
+	db = db.Preload(clause.Associations)
+	err = db.Find(&list).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for _, m := range list {
+		d.saById[m.ID] = m
+		d.saBySubject[m.Subject] = m
 	}
 	return
 }
@@ -656,11 +709,34 @@ func (d *Data) addUserScopes(m *User) {
 	d.scopesBySubject[m.Subject] = scopes
 }
 
+// addSaScopes determine service account scopes and add to the data.
+func (d *Data) addSaScopes(m *ServiceAccount) {
+	scopes := []string{}
+	for _, r := range m.Roles {
+		r, found := d.roleById[r.ID]
+		if !found {
+			err := &NotFound{
+				Resource: "role",
+				Id:       strconv.Itoa(int(r.ID)),
+			}
+			Log.Info(err.Error())
+			continue
+		}
+		scopes = append(scopes, r.Scopes...)
+	}
+	scopes = uniqueStrings(scopes)
+	sort.Strings(scopes)
+	d.scopesBySubject[m.Subject] = scopes
+}
+
 // updateScopes update calculated scopes.
 func (d *Data) updateScopes() {
 	d.scopesBySubject = make(map[string][]string)
 	for _, m := range d.userById {
 		d.addUserScopes(m)
+	}
+	for _, m := range d.saById {
+		d.addSaScopes(m)
 	}
 	for _, m := range d.identById {
 		d.scopesBySubject[m.Subject] = m.Scopes

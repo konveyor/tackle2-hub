@@ -3,16 +3,18 @@ package cache
 // Subject represents a resolved subject (User, IdpIdentity, IdpClient).
 // The entity being authenticated.
 type Subject struct {
-	Key        string
-	Email      string
-	Scopes     []string
-	UserId     *uint
-	IdentityId *uint
-	ClientId   *uint
-	User       *User
-	Identity   *Identity
-	Client     *IdpClient
-	Task       *Task
+	Key              string
+	Email            string
+	Scopes           []string
+	UserId           *uint
+	ServiceAccountId *uint
+	IdentityId       *uint
+	ClientId         *uint
+	User             *User
+	ServiceAccount   *ServiceAccount
+	Identity         *Identity
+	Client           *IdpClient
+	Task             *Task
 }
 
 // WithUser populates Subject from a User model.
@@ -21,6 +23,14 @@ func (r *Subject) WithUser(user *User, scopes []string) {
 	r.Key = user.Subject
 	r.User = user
 	r.Email = user.Email
+	r.Scopes = scopes
+}
+
+// WithServiceAccount populates Subject from a WithServiceAccount model.
+func (r *Subject) WithServiceAccount(sa *ServiceAccount, scopes []string) {
+	r.UserId = &sa.ID
+	r.Key = sa.Subject
+	r.ServiceAccount = sa
 	r.Scopes = scopes
 }
 
@@ -71,6 +81,11 @@ func (r *Subject) Login() (login string) {
 // IsUser returns true if this subject is a User.
 func (r *Subject) IsUser() bool {
 	return r.UserId != nil
+}
+
+// IsServiceAccount returns true if this subject is a IsServiceAccount.
+func (r *Subject) IsServiceAccount() bool {
+	return r.ServiceAccountId != nil
 }
 
 // IsIdentity returns true if this subject is an IdpIdentity.

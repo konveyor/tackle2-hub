@@ -31,6 +31,9 @@ type Model = model.Model
 // User alias.
 type User = model.User
 
+// ServiceAccount alias.
+type ServiceAccount = model.ServiceAccount
+
 // Role alias.
 type Role = model.Role
 
