@@ -178,6 +178,9 @@ func (p *Builtin) NewToken(subject string, lifespan time.Duration) (m Token, err
 	if s.IsUser() {
 		m.UserID = s.UserId
 	}
+	if s.IsServiceAccount() {
+		m.ServiceAccountID = s.ServiceAccountId
+	}
 	if s.IsIdentity() {
 		m.IdpIdentityID = s.IdentityId
 	}

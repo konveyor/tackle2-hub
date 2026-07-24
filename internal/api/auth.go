@@ -62,6 +62,7 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(api.ServiceAccountRoute, h.ServiceAccountGet)
 	routeGroup.PUT(api.ServiceAccountRoute, h.ServiceAccountUpdate)
 	routeGroup.DELETE(api.ServiceAccountRoute, h.ServiceAccountDelete)
+	routeGroup.POST(api.ServiceAccountTokensRoute, h.ServiceAccountTokenCreate)
 	// Role routes.
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("roles"), Transaction)
@@ -835,6 +836,49 @@ func (h AuthHandler) ServiceAccountDelete(ctx *gin.Context) {
 	h.Status(ctx, http.StatusNoContent)
 }
 
+// ServiceAccountTokenCreate godoc
+// @summary Create a token for a service account.
+// @description Create an api-key token for a service account.
+// @tags serviceaccounts
+// @accept json
+// @produce json
+// @success 201 {object} api.PAT
+// @router /serviceaccounts/{id}/tokens [post]
+// @param id path int true "ServiceAccount ID"
+// @param pat body api.PAT true "Token data"
+func (h AuthHandler) ServiceAccountTokenCreate(ctx *gin.Context) {
+	id := h.pk(ctx)
+	m := &model.ServiceAccount{}
+	err := h.DB(ctx).First(m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	r := &PAT{}
+	err = h.Bind(ctx, r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	if r.Lifespan == 0 {
+		r.Lifespan = int(Settings.APIKey.Lifespan.Hours())
+	}
+	if r.Expiration.IsZero() {
+		r.Expiration = time.Now().Add(time.Duration(r.Lifespan) * time.Hour)
+	}
+	lifespan := time.Until(r.Expiration)
+	token, err := auth.Idp().NewToken(m.Subject, lifespan)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	r.ID = token.ID
+	r.Token = token.Secret
+
+	h.Respond(ctx, http.StatusCreated, r)
+}
+
 //
 // Role handlers
 //
@@ -1338,6 +1382,11 @@ func (h AuthHandler) GetSelf(ctx *gin.Context) {
 			m := model.User(*subject.User)
 			r.User.With(&m)
 		}
+		if subject.IsServiceAccount() {
+			r.ServiceAccount = &ServiceAccount{}
+			m := model.ServiceAccount(*subject.ServiceAccount)
+			r.ServiceAccount.With(&m)
+		}
 		if subject.IsIdentity() {
 			r.Identity = &IdpIdentity{}
 			m := subject.Identity
@@ -1440,13 +1489,14 @@ type PAT api.PAT
 
 // AuthSelf REST resource.
 type AuthSelf struct {
-	Login    string       `json:"login"`
-	Subject  string       `json:"subject"`
-	Scopes   []string     `json:"scopes"`
-	User     *User        `json:"user,omitempty" yaml:",omitempty"`
-	Identity *IdpIdentity `json:"identity,omitempty" yaml:",omitempty"`
-	Client   *IdpClient   `json:"client,omitempty" yaml:",omitempty"`
-	Task     *Task        `json:"task,omitempty" yaml:",omitempty"`
+	Login          string          `json:"login"`
+	Subject        string          `json:"subject"`
+	Scopes         []string        `json:"scopes"`
+	User           *User           `json:"user,omitempty" yaml:",omitempty"`
+	ServiceAccount *ServiceAccount `json:"serviceAccount,omitempty" yaml:",omitempty"`
+	Identity       *IdpIdentity    `json:"identity,omitempty" yaml:",omitempty"`
+	Client         *IdpClient      `json:"client,omitempty" yaml:",omitempty"`
+	Task           *Task           `json:"task,omitempty" yaml:",omitempty"`
 }
 
 // Authenticate the user.

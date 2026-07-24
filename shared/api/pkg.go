@@ -191,12 +191,13 @@ const (
 
 // Routes - RBAC
 const (
-	UsersRoute           = "/users"
-	UserRoute            = UsersRoute + "/:" + ID
-	ServiceAccountsRoute = "/serviceaccounts"
-	ServiceAccountRoute  = ServiceAccountsRoute + "/:" + ID
-	RolesRoute           = "/roles"
-	RoleRoute            = RolesRoute + "/:" + ID
+	UsersRoute                = "/users"
+	UserRoute                 = UsersRoute + "/:" + ID
+	ServiceAccountsRoute      = "/serviceaccounts"
+	ServiceAccountRoute       = ServiceAccountsRoute + "/:" + ID
+	ServiceAccountTokensRoute = ServiceAccountRoute + "/tokens"
+	RolesRoute                = "/roles"
+	RoleRoute                 = RolesRoute + "/:" + ID
 )
 
 // Routes - Auth
