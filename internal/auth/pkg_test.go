@@ -196,7 +196,7 @@ func TestTaskGrant(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(jwToken).NotTo(BeNil())
 
-	sa, err := provider.Cache().FindSaByName("addon")
+	sa, err := provider.Cache().FindSaById(1)
 	g.Expect(err).To(BeNil())
 
 	// Verify token claims contain addon subject

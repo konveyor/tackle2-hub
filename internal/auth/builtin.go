@@ -199,7 +199,7 @@ func (p *Builtin) NewToken(subject string, lifespan time.Duration) (m Token, err
 
 // TaskGrant creates a new task api-key.
 func (p *Builtin) TaskGrant(taskId uint) (m Token, err error) {
-	sa, err := p.cache.FindSaByName("addon")
+	sa, err := p.cache.FindSaById(1) // SA id=1 addon
 	if err != nil {
 		return
 	}
