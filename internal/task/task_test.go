@@ -6,9 +6,13 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/google/uuid"
+	"github.com/konveyor/tackle2-hub/internal/auth"
 	crd "github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
+	"github.com/konveyor/tackle2-hub/internal/database"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/onsi/gomega"
+	"gorm.io/gorm"
 )
 
 func TestPriorityEscalate(t *testing.T) {
@@ -493,4 +497,233 @@ type _TestPredicate struct {
 func (p _TestPredicate) Match(ref string) (matched bool, err error) {
 	matched, _ = strconv.ParseBool(ref)
 	return
+}
+
+// setupTestDB creates an in-memory SQLite database for testing.
+func setupTestDB() (db *gorm.DB, err error) {
+	db, err = database.OpenTest()
+	if err != nil {
+		return
+	}
+	err = db.AutoMigrate(
+		&model.User{},
+		&model.ServiceAccount{},
+		&model.Task{},
+		&model.Role{},
+		&model.Token{},
+		&model.Grant{},
+		&model.RsaKey{},
+		&model.IdpIdentity{},
+		&model.IdpClient{},
+	)
+	if err != nil {
+		return
+	}
+	err = seedAddon(db)
+	return
+}
+
+// seedAddon creates the addon role and service account in the DB.
+func seedAddon(db *gorm.DB) (err error) {
+	role := model.Role{
+		Name: "addon",
+		Scopes: []string{
+			"addons:get",
+			"applications:get",
+			"tasks:get",
+		},
+	}
+	role.ID = 5
+	err = db.Create(&role).Error
+	if err != nil {
+		return
+	}
+	sa := &model.ServiceAccount{
+		Subject: uuid.New().String(),
+		Name:    "addon",
+		Roles:   []model.Role{role},
+	}
+	sa.ID = 1
+	err = db.Create(sa).Error
+	return
+}
+
+// setupProvider creates a Builtin auth provider and sets it as the IDP.
+func setupProvider(db *gorm.DB) (provider *auth.Builtin, err error) {
+	provider, err = auth.NewBuiltin(db, &auth.Tenant{})
+	if err != nil {
+		return
+	}
+	auth.SetIdp(provider)
+	return
+}
+
+// TestNewToken tests creating a task api-key.
+func TestNewToken(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(gomega.BeNil())
+
+	_, err = setupProvider(db)
+	g.Expect(err).To(gomega.BeNil())
+
+	task := &model.Task{}
+	err = db.Create(task).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	m := &Manager{DB: db}
+	token, err := m.newToken(NewTask(task))
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(token).NotTo(gomega.BeNil())
+	g.Expect(token.Secret).NotTo(gomega.BeEmpty())
+	g.Expect(token.TaskID).NotTo(gomega.BeNil())
+	g.Expect(*token.TaskID).To(gomega.Equal(task.ID))
+	g.Expect(token.ServiceAccountID).NotTo(gomega.BeNil())
+
+	// Verify token persisted in database.
+	var dbToken model.Token
+	err = db.First(&dbToken, token.ID).Error
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(dbToken.TaskID).NotTo(gomega.BeNil())
+	g.Expect(*dbToken.TaskID).To(gomega.Equal(task.ID))
+
+	// Verify token in cache.
+	cache := auth.Idp().Cache()
+	cached, err := cache.FindTokenById(token.ID)
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(cached.TaskID).NotTo(gomega.BeNil())
+	g.Expect(*cached.TaskID).To(gomega.Equal(task.ID))
+}
+
+// TestRevokeTokens tests revoking tokens granted to a task.
+func TestRevokeTokens(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(gomega.BeNil())
+
+	_, err = setupProvider(db)
+	g.Expect(err).To(gomega.BeNil())
+
+	task := &model.Task{}
+	err = db.Create(task).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	m := &Manager{DB: db}
+	token, err := m.newToken(NewTask(task))
+	g.Expect(err).To(gomega.BeNil())
+
+	// Token is findable in cache.
+	cache := auth.Idp().Cache()
+	_, err = cache.FindTokenById(token.ID)
+	g.Expect(err).To(gomega.BeNil())
+
+	err = m.revokeTokens(NewTask(task))
+	g.Expect(err).To(gomega.BeNil())
+
+	// Token removed from database.
+	var count int64
+	db.Model(&model.Token{}).Where("TaskID = ?", task.ID).Count(&count)
+	g.Expect(count).To(gomega.Equal(int64(0)))
+
+	// Token removed from cache.
+	_, err = cache.FindTokenById(token.ID)
+	g.Expect(err).NotTo(gomega.BeNil())
+}
+
+// TestRevokeTokensMultiple tests revoking when a task has multiple tokens.
+func TestRevokeTokensMultiple(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(gomega.BeNil())
+
+	_, err = setupProvider(db)
+	g.Expect(err).To(gomega.BeNil())
+
+	task := &model.Task{}
+	err = db.Create(task).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	m := &Manager{DB: db}
+	token1, err := m.newToken(NewTask(task))
+	g.Expect(err).To(gomega.BeNil())
+	token2, err := m.newToken(NewTask(task))
+	g.Expect(err).To(gomega.BeNil())
+
+	err = m.revokeTokens(NewTask(task))
+	g.Expect(err).To(gomega.BeNil())
+
+	// Both tokens removed from database.
+	var count int64
+	db.Model(&model.Token{}).Where("TaskID = ?", task.ID).Count(&count)
+	g.Expect(count).To(gomega.Equal(int64(0)))
+
+	// Both tokens removed from cache.
+	cache := auth.Idp().Cache()
+	_, err = cache.FindTokenById(token1.ID)
+	g.Expect(err).NotTo(gomega.BeNil())
+	_, err = cache.FindTokenById(token2.ID)
+	g.Expect(err).NotTo(gomega.BeNil())
+}
+
+// TestRevokeTokensNone tests revoking when a task has no tokens.
+func TestRevokeTokensNone(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(gomega.BeNil())
+
+	_, err = setupProvider(db)
+	g.Expect(err).To(gomega.BeNil())
+
+	task := &model.Task{}
+	err = db.Create(task).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	m := &Manager{DB: db}
+	err = m.revokeTokens(NewTask(task))
+	g.Expect(err).To(gomega.BeNil())
+}
+
+// TestRevokeTokensIsolated tests that revoking only affects the specified task.
+func TestRevokeTokensIsolated(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	db, err := setupTestDB()
+	g.Expect(err).To(gomega.BeNil())
+
+	_, err = setupProvider(db)
+	g.Expect(err).To(gomega.BeNil())
+
+	task1 := &model.Task{}
+	err = db.Create(task1).Error
+	g.Expect(err).To(gomega.BeNil())
+	task2 := &model.Task{}
+	err = db.Create(task2).Error
+	g.Expect(err).To(gomega.BeNil())
+
+	m := &Manager{DB: db}
+	_, err = m.newToken(NewTask(task1))
+	g.Expect(err).To(gomega.BeNil())
+	token2, err := m.newToken(NewTask(task2))
+	g.Expect(err).To(gomega.BeNil())
+
+	// Revoke task1 tokens only.
+	err = m.revokeTokens(NewTask(task1))
+	g.Expect(err).To(gomega.BeNil())
+
+	// Task1 tokens removed.
+	var count int64
+	db.Model(&model.Token{}).Where("TaskID = ?", task1.ID).Count(&count)
+	g.Expect(count).To(gomega.Equal(int64(0)))
+
+	// Task2 token still present.
+	db.Model(&model.Token{}).Where("TaskID = ?", task2.ID).Count(&count)
+	g.Expect(count).To(gomega.Equal(int64(1)))
+
+	cache := auth.Idp().Cache()
+	_, err = cache.FindTokenById(token2.ID)
+	g.Expect(err).To(gomega.BeNil())
 }
