@@ -367,7 +367,10 @@ func (m *Manager) Cancel(db *gorm.DB, id uint) (err error) {
 					snErr,
 					"Snapshot not created.")
 			}
-			auth.Idp().TaskRevoke(task.ID)
+			err = m.revokeTokens(task)
+			if err != nil {
+				return
+			}
 			err = task.Cancel(m.Client)
 			if err != nil {
 				return
@@ -773,7 +776,12 @@ func (m *Manager) createPods(list []*Task, quota *Quota) (err error) {
 		}
 		ready := task
 		started := false
-		started, err = ready.Run(&m.cluster, quota)
+		var token *auth.Token
+		token, err = m.newToken(ready)
+		if err != nil {
+			return
+		}
+		started, err = ready.Run(&m.cluster, quota, token)
 		if err != nil {
 			Log.Error(err, "")
 			return
@@ -869,7 +877,11 @@ func (m *Manager) updateRunning(ctx context.Context) {
 					"Task completed.",
 					"id",
 					task.ID)
-				auth.Idp().TaskRevoke(task.ID)
+				err = m.revokeTokens(task)
+				if err != nil {
+					Log.Error(err, "")
+					continue
+				}
 				err = m.podSnapshot(task, pod)
 				if err != nil {
 					Log.Error(err, "")
@@ -1299,6 +1311,47 @@ func (m *Manager) batchUpdate(tasks []*Task) (err error) {
 				err = liberr.Wrap(err)
 				break
 			}
+		}
+	}
+	return
+}
+
+// newToken creates a new task api-key.
+func (m *Manager) newToken(task *Task) (token *auth.Token, err error) {
+	idp := auth.Idp()
+	cache := idp.Cache()
+	sa, err := cache.FindSaById(1) // SA id=1 addon
+	if err != nil {
+		return
+	}
+	newToken, err := idp.NewToken(sa.Subject, 0)
+	if err != nil {
+		return
+	}
+	token = &newToken
+	token.TaskID = &task.ID
+	err = m.DB.Save(token).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	cache.TokenSaved(token)
+	return
+}
+
+// revokeTokens revokes tokens granted to the task.
+func (m *Manager) revokeTokens(task *Task) (err error) {
+	idp := auth.Idp()
+	var tokens []*auth.Token
+	err = m.DB.Find(&tokens, "TaskID", task.ID).Error
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	for _, token := range tokens {
+		err = idp.Revoke(token.ID)
+		if err != nil {
+			return
 		}
 	}
 	return

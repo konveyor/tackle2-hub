@@ -197,37 +197,6 @@ func (p *Builtin) NewToken(subject string, lifespan time.Duration) (m Token, err
 	return
 }
 
-// TaskGrant creates a new task api-key.
-func (p *Builtin) TaskGrant(taskId uint) (m Token, err error) {
-	sa, err := p.cache.FindSaById(1) // SA id=1 addon
-	if err != nil {
-		return
-	}
-	m = p.newToken(sa.Subject, 0)
-	m.ServiceAccountID = &sa.ID
-	m.TaskID = &taskId
-	err = p.db.Create(&m).Error
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	p.cache.TokenSaved(&m)
-	return
-}
-
-// TaskRevoke revokes a task token.
-func (p *Builtin) TaskRevoke(taskId uint) {
-	p.cache.TaskRevoked(taskId)
-	err := p.db.Where("TaskID", taskId).Delete(&Token{}).Error
-	if err != nil {
-		Log.Error(err,
-			"Task revoke failed.",
-			"taskId",
-			taskId)
-	}
-	return
-}
-
 // Authenticate authenticates the user making the web request.
 func (p *Builtin) Authenticate(req *Request) (jwToken *jwt.Token, err error) {
 	defer func() {

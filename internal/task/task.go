@@ -127,7 +127,7 @@ func (r *Task) FindEvent(kind string) (matched []*model.TaskEvent) {
 }
 
 // Run the specified task.
-func (r *Task) Run(cluster *Cluster, quota *Quota) (started bool, err error) {
+func (r *Task) Run(cluster *Cluster, quota *Quota, token *auth.Token) (started bool, err error) {
 	mark := time.Now()
 	client := cluster.Client
 	defer func() {
@@ -177,7 +177,7 @@ func (r *Task) Run(cluster *Cluster, quota *Quota) (started bool, err error) {
 			return
 		}
 	}
-	secret, err := r.secret()
+	secret, err := r.secret(token)
 	if err != nil {
 		return
 	}
@@ -683,11 +683,7 @@ func (r *Task) propagateEnv(addon, extension *core.Container) {
 }
 
 // secret builds the pod secret.
-func (r *Task) secret() (secret core.Secret, err error) {
-	token, err := auth.Idp().TaskGrant(r.ID)
-	if err != nil {
-		return
-	}
+func (r *Task) secret(token *auth.Token) (secret core.Secret, err error) {
 	secret = core.Secret{
 		ObjectMeta: meta.ObjectMeta{
 			Namespace:    Settings.Hub.Namespace,

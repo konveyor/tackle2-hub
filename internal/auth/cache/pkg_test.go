@@ -94,12 +94,10 @@ func TestCacheEntityUpdates(t *testing.T) {
 	_, err = cache.FindUserByLogin("testuser")
 	g.Expect(err).NotTo(BeNil())
 
-	// Test TokenSaved/TaskRevoked
-	taskID := uint(300)
+	// Test TokenSaved/TokenDeleted
 	taskToken := &Token{
 		Token: model.Token{
 			Model:      Model{ID: 300},
-			TaskID:     &taskID,
 			Digest:     secret.Hash("task-token-300"),
 			Expiration: time.Now().Add(24 * time.Hour),
 		},
@@ -109,7 +107,7 @@ func TestCacheEntityUpdates(t *testing.T) {
 	_, err = cache.FindToken("task-token-300")
 	g.Expect(err).To(BeNil())
 
-	cache.TaskRevoked(taskID)
+	cache.TokenDeleted(300)
 	_, err = cache.FindToken("task-token-300")
 	g.Expect(err).NotTo(BeNil())
 
@@ -473,177 +471,6 @@ func TestCacheTransaction(t *testing.T) {
 	d = cache.data.Load()
 	_, foundUser2 := d.userById[202]
 	g.Expect(foundUser2).To(BeFalse())
-}
-
-// TestTaskRevokedRemovesTokens tests that TaskRevoked removes tokens from token cache.
-func TestTaskRevokedRemovesTokens(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	db, err := setupTestDB()
-	g.Expect(err).To(BeNil())
-
-	cache := New(db)
-	err = cache.Refresh()
-	g.Expect(err).To(BeNil())
-
-	// Add task tokens
-	taskID := uint(500)
-	token1 := &Token{
-		Token: model.Token{
-			Model:      Model{ID: 501},
-			TaskID:     &taskID,
-			Digest:     secret.Hash("task-token-501"),
-			Expiration: time.Now().Add(24 * time.Hour),
-		},
-		Secret: "task-token-501",
-	}
-	token2 := &Token{
-		Token: model.Token{
-			Model:      Model{ID: 502},
-			TaskID:     &taskID,
-			Digest:     secret.Hash("task-token-502"),
-			Expiration: time.Now().Add(24 * time.Hour),
-		},
-		Secret: "task-token-502",
-	}
-
-	cache.TokenSaved(token1)
-	cache.TokenSaved(token2)
-
-	// Verify tokens are in cache
-	_, err = cache.FindToken("task-token-501")
-	g.Expect(err).To(BeNil())
-	_, err = cache.FindToken("task-token-502")
-	g.Expect(err).To(BeNil())
-
-	// Revoke task - should remove both tokens
-	cache.TaskRevoked(taskID)
-
-	// Verify tokens are removed
-	_, err = cache.FindToken("task-token-501")
-	g.Expect(err).NotTo(BeNil())
-	_, err = cache.FindToken("task-token-502")
-	g.Expect(err).NotTo(BeNil())
-}
-
-// TestTaskRevokedMultipleTokens tests that TaskRevoked removes only tokens for specified task.
-func TestTaskRevokedMultipleTokens(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	db, err := setupTestDB()
-	g.Expect(err).To(BeNil())
-
-	cache := New(db)
-	err = cache.Refresh()
-	g.Expect(err).To(BeNil())
-
-	// Add tokens for two different tasks
-	task1ID := uint(600)
-	task2ID := uint(601)
-
-	token1 := &Token{
-		Token: model.Token{
-			Model:      Model{ID: 600},
-			TaskID:     &task1ID,
-			Digest:     secret.Hash("task1-token"),
-			Expiration: time.Now().Add(24 * time.Hour),
-		},
-		Secret: "task1-token",
-	}
-	token2 := &Token{
-		Token: model.Token{
-			Model:      Model{ID: 601},
-			TaskID:     &task2ID,
-			Digest:     secret.Hash("task2-token"),
-			Expiration: time.Now().Add(24 * time.Hour),
-		},
-		Secret: "task2-token",
-	}
-
-	cache.TokenSaved(token1)
-	cache.TokenSaved(token2)
-
-	// Verify both tokens are in cache
-	_, err = cache.FindToken("task1-token")
-	g.Expect(err).To(BeNil())
-	_, err = cache.FindToken("task2-token")
-	g.Expect(err).To(BeNil())
-
-	// Revoke task1 only
-	cache.TaskRevoked(task1ID)
-
-	// Task1 token removed, task2 token still present
-	_, err = cache.FindToken("task1-token")
-	g.Expect(err).NotTo(BeNil())
-	_, err = cache.FindToken("task2-token")
-	g.Expect(err).To(BeNil())
-}
-
-// TestTaskRevokedTransaction tests TaskRevoked within a transaction.
-func TestTaskRevokedTransaction(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	db, err := setupTestDB()
-	g.Expect(err).To(BeNil())
-
-	cache := New(db)
-	err = cache.Refresh()
-	g.Expect(err).To(BeNil())
-
-	// Add task token
-	taskID := uint(700)
-	token := &Token{
-		Token: model.Token{
-			Model:      Model{ID: 700},
-			TaskID:     &taskID,
-			Digest:     secret.Hash("tx-task-token"),
-			Expiration: time.Now().Add(24 * time.Hour),
-		},
-		Secret: "tx-task-token",
-	}
-	cache.TokenSaved(token)
-
-	// Verify token is in cache
-	_, err = cache.FindToken("tx-task-token")
-	g.Expect(err).To(BeNil())
-
-	// Revoke in transaction
-	err = cache.Transaction(func(tx *Tx) error {
-		tx.TaskRevoked(taskID)
-		return nil
-	})
-	g.Expect(err).To(BeNil())
-
-	// Verify token is removed
-	_, err = cache.FindToken("tx-task-token")
-	g.Expect(err).NotTo(BeNil())
-
-	// Test rollback - add token back, then rollback revoke
-	cache.TokenSaved(token)
-	_, err = cache.FindToken("tx-task-token")
-	g.Expect(err).To(BeNil())
-
-	task2ID := uint(701)
-	token2 := &Token{
-		Token: model.Token{
-			Model:      Model{ID: 701},
-			TaskID:     &task2ID,
-			Digest:     secret.Hash("tx-task-token-2"),
-			Expiration: time.Now().Add(24 * time.Hour),
-		},
-		Secret: "tx-task-token-2",
-	}
-	cache.TokenSaved(token2)
-
-	err = cache.Transaction(func(tx *Tx) error {
-		tx.TaskRevoked(task2ID)
-		return fmt.Errorf("rollback")
-	})
-	g.Expect(err).NotTo(BeNil())
-
-	// Token2 should still be in cache (rolled back)
-	_, err = cache.FindToken("tx-task-token-2")
-	g.Expect(err).To(BeNil())
 }
 
 // TestSubjectLogin tests Subject.Login() for different subject types.
@@ -1049,14 +876,14 @@ func TestCacheConcurrentMixedOperations(t *testing.T) {
 		}(i)
 	}
 
-	// Concurrent TaskRevoked
+	// Concurrent TokenDeleted
 	for i := 0; i < 10; i++ {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
 			for j := 0; j < iterations; j++ {
-				taskID := uint(id*1000 + j)
-				cache.TaskRevoked(taskID)
+				tokenID := uint(id*1000 + j)
+				cache.TokenDeleted(tokenID)
 			}
 		}(i)
 	}

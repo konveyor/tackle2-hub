@@ -89,19 +89,6 @@ func (r *Tx) SaDeleted(id uint) {
 		})
 }
 
-// TaskRevoked task token revoked.
-func (r *Tx) TaskRevoked(id uint) {
-	r.changes = append(
-		r.changes, func(d *Data) {
-			for _, m := range d.tokenById {
-				if m.TaskID != nil && *m.TaskID == id {
-					delete(d.tokenByDigest, m.Digest)
-					delete(d.tokenById, m.ID)
-				}
-			}
-		})
-}
-
 // IdentitySaved updates the cache when an identity is saved.
 func (r *Tx) IdentitySaved(m *Identity) {
 	r.changes = append(

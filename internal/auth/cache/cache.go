@@ -117,14 +117,6 @@ func (r *Cache) SaDeleted(id uint) {
 	})
 }
 
-// TaskRevoked removes a task from the cache.
-func (r *Cache) TaskRevoked(id uint) {
-	_ = r.Transaction(func(tx *Tx) (_ error) {
-		tx.TaskRevoked(id)
-		return
-	})
-}
-
 // IdentitySaved updates the cache when an identity is saved.
 func (r *Cache) IdentitySaved(m *Identity) {
 	_ = r.Transaction(func(tx *Tx) (_ error) {
