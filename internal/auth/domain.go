@@ -244,7 +244,7 @@ func (d *Tenant) buildRoleScopes(role seed.Role) (scopes []string) {
 }
 
 // buildUserRoles builds role list from a user definition.
-func (d *Tenant) buildUserRoles(user seed.User) (roles []Role, err error) {
+func (d *Tenant) buildUserRoles(user seed.User) (roles []Role) {
 	roleMap := make(map[uint]bool)
 	for _, roleName := range user.Roles {
 		roleID, found := d.roleByName[roleName]
@@ -554,10 +554,7 @@ func (d *Tenant) userPatch(existing map[string]User, wanted []seed.User) (patch 
 		}
 	}
 	for _, user := range wanted {
-		roles, err := d.buildUserRoles(user)
-		if err != nil {
-			continue
-		}
+		roles := d.buildUserRoles(user)
 		if existingUser, found := existing[user.Login]; found {
 			patch.toUpdate = append(patch.toUpdate, userWithRoles{
 				user:  existingUser,

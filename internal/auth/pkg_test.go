@@ -4556,8 +4556,7 @@ func TestBuildUserRoles(t *testing.T) {
 		Login: "testuser",
 		Roles: []string{"admin", "viewer"},
 	}
-	roles, err := d.buildUserRoles(user)
-	g.Expect(err).To(BeNil())
+	roles := d.buildUserRoles(user)
 	g.Expect(roles).To(HaveLen(2))
 	ids := make(map[uint]bool)
 	for _, r := range roles {
@@ -4571,8 +4570,7 @@ func TestBuildUserRoles(t *testing.T) {
 		Login: "testuser2",
 		Roles: []string{"admin", "nonexistent"},
 	}
-	roles, err = d.buildUserRoles(user)
-	g.Expect(err).To(BeNil())
+	roles = d.buildUserRoles(user)
 	g.Expect(roles).To(HaveLen(1))
 	g.Expect(roles[0].ID).To(Equal(uint(1)))
 
@@ -4581,14 +4579,12 @@ func TestBuildUserRoles(t *testing.T) {
 		Login: "testuser3",
 		Roles: []string{"admin", "admin"},
 	}
-	roles, err = d.buildUserRoles(user)
-	g.Expect(err).To(BeNil())
+	roles = d.buildUserRoles(user)
 	g.Expect(roles).To(HaveLen(1))
 
 	// Empty roles.
 	user = seed.User{Login: "noroles"}
-	roles, err = d.buildUserRoles(user)
-	g.Expect(err).To(BeNil())
+	roles = d.buildUserRoles(user)
 	g.Expect(roles).To(BeEmpty())
 }
 
