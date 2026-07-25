@@ -532,7 +532,7 @@
         - get
         - delete
 - role: addon
-  id: 5
+  id: 100
   resources:
     - name: addons
       verbs:
