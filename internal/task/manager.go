@@ -367,10 +367,7 @@ func (m *Manager) Cancel(db *gorm.DB, id uint) (err error) {
 					snErr,
 					"Snapshot not created.")
 			}
-			err = m.revokeTokens(task)
-			if err != nil {
-				return
-			}
+			m.revokeTokens(task)
 			err = task.Cancel(m.Client)
 			if err != nil {
 				return
@@ -783,6 +780,7 @@ func (m *Manager) createPods(list []*Task, quota *Quota) (err error) {
 		}
 		started, err = ready.Run(&m.cluster, quota, token)
 		if err != nil {
+			m.revokeTokens(ready)
 			Log.Error(err, "")
 			return
 		}
@@ -877,11 +875,7 @@ func (m *Manager) updateRunning(ctx context.Context) {
 					"Task completed.",
 					"id",
 					task.ID)
-				err = m.revokeTokens(task)
-				if err != nil {
-					Log.Error(err, "")
-					continue
-				}
+				m.revokeTokens(task)
 				err = m.podSnapshot(task, pod)
 				if err != nil {
 					Log.Error(err, "")
@@ -1320,7 +1314,7 @@ func (m *Manager) batchUpdate(tasks []*Task) (err error) {
 func (m *Manager) newToken(task *Task) (token *auth.Token, err error) {
 	idp := auth.Idp()
 	cache := idp.Cache()
-	sa, err := cache.FindSaById(1) // SA id=1 addon
+	sa, err := cache.FindSaByName("addon")
 	if err != nil {
 		return
 	}
@@ -1340,12 +1334,18 @@ func (m *Manager) newToken(task *Task) (token *auth.Token, err error) {
 }
 
 // revokeTokens revokes tokens granted to the task.
-func (m *Manager) revokeTokens(task *Task) (err error) {
+func (m *Manager) revokeTokens(task *Task) {
+	var err error
+	defer func() {
+		if err != nil {
+			Log.Error(err, "Token revoke failed.",
+				"taskId", task.ID)
+		}
+	}()
 	idp := auth.Idp()
 	var tokens []*auth.Token
 	err = m.DB.Find(&tokens, "TaskID", task.ID).Error
 	if err != nil {
-		err = liberr.Wrap(err)
 		return
 	}
 	for _, token := range tokens {

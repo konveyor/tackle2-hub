@@ -213,7 +213,7 @@ type Identity struct {
 
 type User struct {
 	Model
-	Subject  string  `gorm:"<-:create;index;not null"`
+	Subject  string  `gorm:"<-:create;uniqueIndex;not null"`
 	Login    string  `gorm:"<-:create;uniqueIndex;not null"`
 	Name     string  `gorm:""`
 	Password string  `gorm:"not null" secret:"hashed"`
@@ -224,15 +224,15 @@ type User struct {
 
 type ServiceAccount struct {
 	Model
-	Subject string  `gorm:"<-:create;index;not null"`
-	Name    string  `gorm:"<-:create;index;not null"`
+	Subject string  `gorm:"<-:create;uniqueIndex;not null"`
+	Name    string  `gorm:"<-:create;uniqueIndex;not null"`
 	Roles   []Role  `gorm:"many2many:ServiceAccountRole;constraint:OnDelete:CASCADE"`
 	Tokens  []Token `gorm:"constraint:OnDelete:CASCADE"`
 }
 
 type Role struct {
 	Model
-	Name   string   `gorm:"index;not null"`
+	Name   string   `gorm:"uniqueIndex;not null"`
 	Scopes []string `gorm:"type:json;serializer:json"`
 }
 
@@ -242,7 +242,7 @@ type Role struct {
 
 type IdpClient struct {
 	Model
-	Subject         string   `gorm:"<-:create;index;not null"`
+	Subject         string   `gorm:"<-:create;uniqueIndex;not null"`
 	ClientId        string   `gorm:"<-:create;uniqueIndex;not null"`
 	Secret          string   `gorm:"" secret:"hashed"`
 	ApplicationType string   `gorm:"not null"`

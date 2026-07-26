@@ -1487,7 +1487,6 @@ type AuthSelf struct {
 	ServiceAccount *ServiceAccount `json:"serviceAccount,omitempty" yaml:",omitempty"`
 	Identity       *IdpIdentity    `json:"identity,omitempty" yaml:",omitempty"`
 	Client         *IdpClient      `json:"client,omitempty" yaml:",omitempty"`
-	Task           *Task           `json:"task,omitempty" yaml:",omitempty"`
 }
 
 // Authenticate the user.
