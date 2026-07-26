@@ -8,8 +8,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/konveyor/tackle2-hub/internal/auth"
-	crd "github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/internal/database"
+	crd "github.com/konveyor/tackle2-hub/internal/k8s/api/tackle/v1alpha1"
 	"github.com/konveyor/tackle2-hub/internal/model"
 	"github.com/onsi/gomega"
 	"gorm.io/gorm"
@@ -619,8 +619,7 @@ func TestRevokeTokens(t *testing.T) {
 	_, err = cache.FindTokenById(token.ID)
 	g.Expect(err).To(gomega.BeNil())
 
-	err = m.revokeTokens(NewTask(task))
-	g.Expect(err).To(gomega.BeNil())
+	m.revokeTokens(NewTask(task))
 
 	// Token removed from database.
 	var count int64
@@ -652,8 +651,7 @@ func TestRevokeTokensMultiple(t *testing.T) {
 	token2, err := m.newToken(NewTask(task))
 	g.Expect(err).To(gomega.BeNil())
 
-	err = m.revokeTokens(NewTask(task))
-	g.Expect(err).To(gomega.BeNil())
+	m.revokeTokens(NewTask(task))
 
 	// Both tokens removed from database.
 	var count int64
@@ -683,8 +681,7 @@ func TestRevokeTokensNone(t *testing.T) {
 	g.Expect(err).To(gomega.BeNil())
 
 	m := &Manager{DB: db}
-	err = m.revokeTokens(NewTask(task))
-	g.Expect(err).To(gomega.BeNil())
+	m.revokeTokens(NewTask(task))
 }
 
 // TestRevokeTokensIsolated tests that revoking only affects the specified task.
@@ -711,8 +708,7 @@ func TestRevokeTokensIsolated(t *testing.T) {
 	g.Expect(err).To(gomega.BeNil())
 
 	// Revoke task1 tokens only.
-	err = m.revokeTokens(NewTask(task1))
-	g.Expect(err).To(gomega.BeNil())
+	m.revokeTokens(NewTask(task1))
 
 	// Task1 tokens removed.
 	var count int64

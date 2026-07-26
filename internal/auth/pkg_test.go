@@ -2136,6 +2136,7 @@ func TestSeedClientsDeleteOrphaned(t *testing.T) {
 	// Create orphaned seeded client (ID < 1000, not in CRDs)
 	orphaned := &IdpClient{
 		ClientId:        "orphaned-client",
+		Subject:         uuid.NewString(),
 		ApplicationType: "web",
 		Grants:          []string{"authorization_code"},
 		Scopes:          []string{"openid"},
@@ -2147,6 +2148,7 @@ func TestSeedClientsDeleteOrphaned(t *testing.T) {
 	// Create non-seeded client (ID >= 1000, should be preserved)
 	nonSeeded := &IdpClient{
 		ClientId:        "custom-client",
+		Subject:         uuid.NewString(),
 		ApplicationType: "native",
 		Grants:          []string{"client_credentials"},
 		Scopes:          []string{"api"},
