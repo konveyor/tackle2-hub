@@ -1314,7 +1314,7 @@ func (m *Manager) batchUpdate(tasks []*Task) (err error) {
 func (m *Manager) newToken(task *Task) (token *auth.Token, err error) {
 	idp := auth.Idp()
 	cache := idp.Cache()
-	sa, err := cache.FindSaByName("addon")
+	sa, err := cache.FindSaByName("task.addon")
 	if err != nil {
 		return
 	}
