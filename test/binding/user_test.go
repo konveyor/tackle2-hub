@@ -20,7 +20,7 @@ func TestUser(t *testing.T) {
 
 	// Create roles for the user to reference
 	role1 := &api.Role{
-		Name: "admin",
+		Name: "other",
 		Scopes: []string{
 			scopes[0].Name,
 			scopes[1].Name,

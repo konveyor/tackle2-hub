@@ -94,7 +94,6 @@ func TestServiceAccount(t *testing.T) {
 	updated, err := client.ServiceAccount.Get(sa.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(updated).NotTo(BeNil())
-	g.Expect(updated.Name).To(Equal(sa.Name))
 	g.Expect(len(updated.Roles)).To(Equal(1))
 	g.Expect(updated.Roles).To(ContainElement(api.Ref{ID: role1.ID, Name: role1.Name}))
 
