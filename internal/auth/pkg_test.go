@@ -31,6 +31,10 @@ import (
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	TaskServiceAccount = "task.addon"
+)
+
 // testIssuer returns the issuer URL for test requests.
 func testIssuer() string {
 	return "http://localhost:8080/oidc"
@@ -1619,7 +1623,7 @@ func TestCacheFindSubject(t *testing.T) {
 	g.Expect(subject.IsServiceAccount()).To(BeTrue())
 	g.Expect(subject.IsUser()).To(BeFalse())
 	g.Expect(subject.Key).To(Equal(sa.Subject))
-	g.Expect(subject.ServiceAccount.Name).To(Equal("addon"))
+	g.Expect(subject.ServiceAccount.Name).To(Equal(TaskServiceAccount))
 	g.Expect(subject.Scopes).NotTo(BeEmpty())
 }
 
@@ -2800,7 +2804,7 @@ func seedAddon(db *gorm.DB) (err error) {
 	}
 	sa := &ServiceAccount{
 		Subject: uuid.New().String(),
-		Name:    "addon",
+		Name:    TaskServiceAccount,
 		Roles:   []Role{role},
 	}
 	sa.ID = 1
@@ -5022,11 +5026,11 @@ func TestSeedServiceAccountsFromYAML(t *testing.T) {
 
 	// Verify addon SA was created.
 	var sa ServiceAccount
-	err = db.First(&sa, "Name = ?", "addon").Error
+	err = db.First(&sa, "Name = ?", TaskServiceAccount).Error
 	g.Expect(err).To(BeNil())
 	g.Expect(sa.ID).To(Equal(uint(1)))
 	g.Expect(sa.Subject).NotTo(BeEmpty())
-	g.Expect(sa.Name).To(Equal("addon"))
+	g.Expect(sa.Name).To(Equal(TaskServiceAccount))
 
 	// Verify SA has roles.
 	var roles []model.Role
@@ -5127,7 +5131,7 @@ func TestSeedServiceAccountsIDPreservation(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	var sa1 ServiceAccount
-	err = db.First(&sa1, "Name = ?", "addon").Error
+	err = db.First(&sa1, "Name = ?", TaskServiceAccount).Error
 	g.Expect(err).To(BeNil())
 	subject1 := sa1.Subject
 
@@ -5143,7 +5147,7 @@ func TestSeedServiceAccountsIDPreservation(t *testing.T) {
 	g.Expect(count2).To(Equal(count1))
 
 	var sa2 ServiceAccount
-	err = db.First(&sa2, "Name = ?", "addon").Error
+	err = db.First(&sa2, "Name = ?", TaskServiceAccount).Error
 	g.Expect(err).To(BeNil())
 	g.Expect(sa2.ID).To(Equal(uint(1)))
 	g.Expect(sa2.Subject).To(Equal(subject1))

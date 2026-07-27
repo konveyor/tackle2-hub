@@ -540,7 +540,7 @@ func seedAddon(db *gorm.DB) (err error) {
 	}
 	sa := &model.ServiceAccount{
 		Subject: uuid.New().String(),
-		Name:    "addon",
+		Name:    ServiceAccount,
 		Roles:   []model.Role{role},
 	}
 	sa.ID = 1

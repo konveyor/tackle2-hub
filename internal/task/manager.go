@@ -88,6 +88,10 @@ const (
 	Cache  = "cache"
 )
 
+const (
+	ServiceAccount = "task.addon"
+)
+
 var (
 	IsRegex = regexp.MustCompile("[^0-9A-Za-z_-]")
 )
@@ -1314,7 +1318,7 @@ func (m *Manager) batchUpdate(tasks []*Task) (err error) {
 func (m *Manager) newToken(task *Task) (token *auth.Token, err error) {
 	idp := auth.Idp()
 	cache := idp.Cache()
-	sa, err := cache.FindSaByName("task.addon")
+	sa, err := cache.FindSaByName(ServiceAccount)
 	if err != nil {
 		return
 	}
