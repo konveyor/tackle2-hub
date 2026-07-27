@@ -31,10 +31,6 @@ import (
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	TaskServiceAccount = "task.addon"
-)
-
 // testIssuer returns the issuer URL for test requests.
 func testIssuer() string {
 	return "http://localhost:8080/oidc"
@@ -129,12 +125,24 @@ func TestNewTokenWithServiceAccount(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	provider, err := NewBuiltin(db, &Tenant{})
+	// Create test role and SA.
+	role := &Role{
+		Name:   "test-sa-role",
+		Scopes: []string{"things:get", "things:post"},
+	}
+	err = db.Create(role).Error
 	g.Expect(err).To(BeNil())
 
-	// Load the seeded addon SA.
-	var sa ServiceAccount
-	err = db.First(&sa, 1).Error
+	sa := &ServiceAccount{
+		Subject: uuid.New().String(),
+		Name:    "test",
+		Roles:   []Role{*role},
+	}
+	sa.ID = 200
+	err = db.Create(sa).Error
+	g.Expect(err).To(BeNil())
+
+	provider, err := NewBuiltin(db, &Tenant{})
 	g.Expect(err).To(BeNil())
 
 	// Create a PAT for the SA subject.
@@ -166,7 +174,8 @@ func TestNewTokenWithServiceAccount(t *testing.T) {
 	for i, s := range scopes {
 		scopeStrings[i] = s.String()
 	}
-	g.Expect(scopeStrings).To(ContainElement("addons:get"))
+	g.Expect(scopeStrings).To(ContainElement("things:get"))
+	g.Expect(scopeStrings).To(ContainElement("things:post"))
 }
 
 // TestJWTAuthentication tests authenticating with JWT tokens using HMAC signing.
@@ -1613,8 +1622,23 @@ func TestCacheFindSubject(t *testing.T) {
 	g.Expect(subject.Scopes).To(BeEmpty())
 
 	// Test finding service account by subject
-	var sa ServiceAccount
-	err = db.First(&sa, 1).Error
+	saRole := &model.Role{
+		Name:   "find-subject-sa-role",
+		Scopes: []string{"things:get"},
+	}
+	err = db.Create(saRole).Error
+	g.Expect(err).To(BeNil())
+
+	sa := &ServiceAccount{
+		Subject: uuid.New().String(),
+		Name:    "test",
+		Roles:   []Role{*saRole},
+	}
+	sa.ID = 201
+	err = db.Create(sa).Error
+	g.Expect(err).To(BeNil())
+
+	err = provider.cache.Refresh()
 	g.Expect(err).To(BeNil())
 
 	subject, err = provider.cache.FindSubject(sa.Subject)
@@ -1623,7 +1647,7 @@ func TestCacheFindSubject(t *testing.T) {
 	g.Expect(subject.IsServiceAccount()).To(BeTrue())
 	g.Expect(subject.IsUser()).To(BeFalse())
 	g.Expect(subject.Key).To(Equal(sa.Subject))
-	g.Expect(subject.ServiceAccount.Name).To(Equal(TaskServiceAccount))
+	g.Expect(subject.ServiceAccount.Name).To(Equal("test"))
 	g.Expect(subject.Scopes).NotTo(BeEmpty())
 }
 
@@ -2776,41 +2800,9 @@ func setupTestDB() (db *gorm.DB, err error) {
 		&RsaKey{},
 		&Identity{},
 	)
-	if err != nil {
-		return
-	}
-	err = seedAddon(db)
 	return
 }
 
-// seedAddon seeds the addon service account (with role) needed by TaskGrant.
-func seedAddon(db *gorm.DB) (err error) {
-	role := Role{
-		Name: "addon",
-		Scopes: []string{
-			"addons:get",
-			"applications:get",
-			"applications:post",
-			"applications:put",
-			"applications.facts:*",
-			"identities:get",
-			"tasks:get",
-		},
-	}
-	role.ID = 5
-	err = db.Create(&role).Error
-	if err != nil {
-		return
-	}
-	sa := &ServiceAccount{
-		Subject: uuid.New().String(),
-		Name:    TaskServiceAccount,
-		Roles:   []Role{role},
-	}
-	sa.ID = 1
-	err = db.Create(sa).Error
-	return
-}
 
 // mockRelyingParty implements rp.RelyingParty for testing.
 type mockRelyingParty struct {
@@ -5004,9 +4996,6 @@ func TestSeedServiceAccountsFromYAML(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	// Delete the SA created by setupTestDB so we can test seeding from scratch.
-	db.Delete(&ServiceAccount{}, 1)
-
 	client, err := k8s.NewClient()
 	g.Expect(err).To(BeNil())
 
@@ -5026,11 +5015,11 @@ func TestSeedServiceAccountsFromYAML(t *testing.T) {
 
 	// Verify addon SA was created.
 	var sa ServiceAccount
-	err = db.First(&sa, "Name = ?", TaskServiceAccount).Error
+	err = db.First(&sa, "Name = ?", "task.addon").Error
 	g.Expect(err).To(BeNil())
 	g.Expect(sa.ID).To(Equal(uint(1)))
 	g.Expect(sa.Subject).NotTo(BeEmpty())
-	g.Expect(sa.Name).To(Equal(TaskServiceAccount))
+	g.Expect(sa.Name).To(Equal("task.addon"))
 
 	// Verify SA has roles.
 	var roles []model.Role
@@ -5110,9 +5099,6 @@ func TestSeedServiceAccountsIDPreservation(t *testing.T) {
 	db, err := setupTestDB()
 	g.Expect(err).To(BeNil())
 
-	// Delete the SA created by setupTestDB so we can test seeding from scratch.
-	db.Delete(&ServiceAccount{}, 1)
-
 	client, err := k8s.NewClient()
 	g.Expect(err).To(BeNil())
 
@@ -5131,7 +5117,7 @@ func TestSeedServiceAccountsIDPreservation(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	var sa1 ServiceAccount
-	err = db.First(&sa1, "Name = ?", TaskServiceAccount).Error
+	err = db.First(&sa1, "Name = ?", "task.addon").Error
 	g.Expect(err).To(BeNil())
 	subject1 := sa1.Subject
 
@@ -5147,7 +5133,7 @@ func TestSeedServiceAccountsIDPreservation(t *testing.T) {
 	g.Expect(count2).To(Equal(count1))
 
 	var sa2 ServiceAccount
-	err = db.First(&sa2, "Name = ?", TaskServiceAccount).Error
+	err = db.First(&sa2, "Name = ?", "task.addon").Error
 	g.Expect(err).To(BeNil())
 	g.Expect(sa2.ID).To(Equal(uint(1)))
 	g.Expect(sa2.Subject).To(Equal(subject1))
