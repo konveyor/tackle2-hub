@@ -99,6 +99,10 @@ func main() {
 	ctx := context.Background()
 	var err error
 	defer func() {
+		r := recover()
+		if r != nil {
+			err = liberr.Recovered(r)
+		}
 		if err != nil {
 			Log.Error(err, "")
 		}
