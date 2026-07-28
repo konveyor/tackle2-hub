@@ -128,13 +128,6 @@ func main() {
 	if err != nil {
 		return
 	}
-	go func() {
-		err = addonManager.Start(context.Background())
-		if err != nil {
-			err = liberr.Wrap(err)
-			return
-		}
-	}()
 	//
 	// k8s client.
 	client, err := k8s.NewClient()
@@ -230,5 +223,13 @@ func main() {
 	if err != nil {
 		return
 	}
+	// Start the controller manager after auth setup is complete.
+	// Controllers call auth.Reload() on reconcile which replaces
+	// the domain. Starting before Seed() causes a race.
+	go func() {
+		if mErr := addonManager.Start(context.Background()); mErr != nil {
+			Log.Error(liberr.Wrap(mErr), "controller manager")
+		}
+	}()
 	err = Run(router)
 }
