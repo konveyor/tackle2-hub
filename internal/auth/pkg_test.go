@@ -2803,7 +2803,6 @@ func setupTestDB() (db *gorm.DB, err error) {
 	return
 }
 
-
 // mockRelyingParty implements rp.RelyingParty for testing.
 type mockRelyingParty struct {
 	endSessionEndpoint string

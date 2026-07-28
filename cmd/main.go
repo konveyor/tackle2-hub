@@ -213,12 +213,12 @@ func main() {
 	if err != nil {
 		return
 	}
-	// Manager
+	// Run Managers.
 	k8sManager.Run(ctx)
 	taskManager.Run(ctx)
 	reaperManager.Run(ctx)
 	importManager.Run(ctx)
 	trackerManager.Run(ctx)
-	// Router
+	// Run Router.
 	err = Run(router)
 }
