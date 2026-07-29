@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/konveyor/tackle2-hub/shared/api"
+	"github.com/konveyor/tackle2-hub/test/cmp"
 	. "github.com/onsi/gomega"
 )
 
@@ -74,12 +75,13 @@ func TestServiceAccount(t *testing.T) {
 	g.Expect(err).To(BeNil())
 	g.Expect(retrieved).NotTo(BeNil())
 	g.Expect(retrieved.Subject).NotTo(BeEmpty())
-	g.Expect(retrieved.Name).To(Equal(sa.Name))
-
-	// Verify roles are associated
-	g.Expect(len(retrieved.Roles)).To(Equal(2))
-	g.Expect(retrieved.Roles).To(ContainElement(api.Ref{ID: role1.ID, Name: role1.Name}))
-	g.Expect(retrieved.Roles).To(ContainElement(api.Ref{ID: role2.ID, Name: role2.Name}))
+	sa.Subject = retrieved.Subject
+	sa.Roles = []api.Ref{
+		{ID: role1.ID, Name: role1.Name},
+		{ID: role2.ID, Name: role2.Name},
+	}
+	eq, report := cmp.Eq(sa, retrieved)
+	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the service account
 	sa.Name = "updated-sa"
@@ -94,8 +96,13 @@ func TestServiceAccount(t *testing.T) {
 	updated, err := client.ServiceAccount.Get(sa.ID)
 	g.Expect(err).To(BeNil())
 	g.Expect(updated).NotTo(BeNil())
-	g.Expect(len(updated.Roles)).To(Equal(1))
-	g.Expect(updated.Roles).To(ContainElement(api.Ref{ID: role1.ID, Name: role1.Name}))
+	// Name is immutable.
+	sa.Name = "test-sa"
+	sa.Roles = []api.Ref{
+		{ID: role1.ID, Name: role1.Name},
+	}
+	eq, report = cmp.Eq(sa, updated, "UpdateUser", "UpdateTime")
+	g.Expect(eq).To(BeTrue(), report)
 
 	// DELETE: Remove the service account
 	err = client.ServiceAccount.Delete(sa.ID)
@@ -162,8 +169,12 @@ func TestServiceAccountToken(t *testing.T) {
 	// GET: Retrieve the SA and verify token is listed
 	retrieved, err := client.ServiceAccount.Get(sa.ID)
 	g.Expect(err).To(BeNil())
-	g.Expect(len(retrieved.Tokens)).To(Equal(1))
-	g.Expect(retrieved.Tokens[0].ID).To(Equal(pat.ID))
+	sa.Subject = retrieved.Subject
+	sa.Tokens = []api.Ref{
+		{ID: pat.ID},
+	}
+	eq, report := cmp.Eq(sa, retrieved)
+	g.Expect(eq).To(BeTrue(), report)
 
 	// DELETE: Revoke the token
 	err = client.Token.Revoke(pat.ID)
