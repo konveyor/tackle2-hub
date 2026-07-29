@@ -86,14 +86,14 @@ run-addon:
 	go run ./hack/cmd/addon/main.go
 
 # Generate manifests e.g. CRD, Webhooks
-manifests: go.work $(CONTROLLERGEN)
+manifests: $(CONTROLLERGEN)
 	$(CONTROLLERGEN) $(CRD_OPTIONS) \
 		crd rbac:roleName=manager-role \
-		paths="./..." output:crd:artifacts:config=internal/generated/crd/bases output:crd:dir=internal/generated/crd
+		paths="./internal/k8s/..." output:crd:artifacts:config=internal/generated/crd/bases output:crd:dir=internal/generated/crd
 
 # Generate code
-generate: go.work $(CONTROLLERGEN)
-	$(CONTROLLERGEN) object:headerFile="./internal/generated/boilerplate" paths="./..."
+generate: $(CONTROLLERGEN)
+	$(CONTROLLERGEN) object:headerFile="./internal/generated/boilerplate" paths="./internal/k8s/..."
 
 # Ensure controller-gen installed.
 $(CONTROLLERGEN):
