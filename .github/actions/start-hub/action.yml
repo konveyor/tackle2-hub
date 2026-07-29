@@ -29,6 +29,10 @@ runs:
       if: inputs.db-path != ''
       shell: bash
 
+    - name: Build Hub
+      shell: bash
+      run: make hub
+
     - name: Start Hub in background
       shell: bash
       env:
@@ -36,7 +40,7 @@ runs:
         DISCONNECTED: ${{ inputs.disconnected }}
         DB_PATH: ${{ inputs.db-path }}
       run: |
-        make run > /tmp/hub.log 2>&1 &
+        ./bin/hub > /tmp/hub.log 2>&1 &
         echo $! > /tmp/hub.pid
 
     - name: Wait for Hub API (curl polling)
