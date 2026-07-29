@@ -47,14 +47,14 @@ runs:
       shell: bash
       run: |
         echo "Waiting for Hub to become ready..."
-        for i in {1..120}; do
+        for i in {1..30}; do
           if curl -s -f http://localhost:8080/schema > /dev/null 2>&1; then
             echo "✅ Hub API is ready after $i seconds"
             exit 0
           fi
           sleep 1
         done
-        echo "❌ Hub failed to start within 120 seconds"
+        echo "❌ Hub failed to start within 30 seconds"
         cat /tmp/hub.log
         exit 1
 
