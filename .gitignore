@@ -8,3 +8,5 @@ hack/tool/tackle-config.yml
 **/content/dist/
 !**/content/.dist-built
 .run/
+go.work
+go.work.sum
