@@ -298,6 +298,7 @@ func (r *Hub) Load() (err error) {
 			err = liberr.Wrap(err)
 			return
 		}
+		n = max(1, n)
 		r.Task.TokenLifespan = time.Duration(n) * time.Hour
 	} else {
 		r.Task.TokenLifespan = time.Hour * 72 // 3 days.
