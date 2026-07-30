@@ -5032,7 +5032,7 @@ func TestSeedServiceAccountsFromYAML(t *testing.T) {
 	err = db.First(&sa, "Name = ?", "task.addon").Error
 	g.Expect(err).To(BeNil())
 	g.Expect(sa.ID).To(Equal(uint(1)))
-	g.Expect(sa.Description).To(Equal("Used by the task manager."))
+	g.Expect(sa.Description).To(Equal("Task manager SA."))
 	g.Expect(sa.Subject).NotTo(BeEmpty())
 	g.Expect(sa.Name).To(Equal("task.addon"))
 

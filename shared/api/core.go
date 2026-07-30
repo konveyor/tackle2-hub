@@ -185,8 +185,8 @@ type ServiceAccount struct {
 	Description string `json:"description,omitempty" yaml:",omitempty"`
 	Subject     string `json:"subject"`
 	Name        string `json:"name" binding:"required"`
-	Roles    []Ref  `json:"roles"`
-	Tokens   []Ref  `json:"tokens"`
+	Roles       []Ref  `json:"roles"`
+	Tokens      []Ref  `json:"tokens"`
 }
 
 // Role REST resource.
