@@ -6,6 +6,8 @@ import (
 	"os/user"
 	"strconv"
 	"time"
+
+	liberr "github.com/jortel/go-utils/error"
 )
 
 const (
@@ -28,6 +30,7 @@ const (
 	EnvTaskSA                  = "TASK_SA"
 	EnvTaskRetries             = "TASK_RETRIES"
 	EnvTaskUid                 = "TASK_UID"
+	EnvTaskTokenLifespan       = "TASK_TOKEN_LIFESPAN"
 	EnvFrequencyTask           = "FREQUENCY_TASK"
 	EnvFrequencyReaper         = "FREQUENCY_REAPER"
 	EnvFrequencyHeap           = "FREQUENCY_HEAP"
@@ -87,9 +90,10 @@ type Hub struct {
 	}
 	// Task
 	Task struct {
-		SA      string
-		Retries int
-		Reaper  struct {
+		SA            string
+		Retries       int
+		TokenLifespan time.Duration
+		Reaper        struct {
 			Created   time.Duration
 			Succeeded time.Duration
 			Failed    time.Duration
@@ -285,6 +289,18 @@ func (r *Hub) Load() (err error) {
 			return
 		}
 		r.Task.UID = uid
+	}
+	s, found = os.LookupEnv(EnvTaskTokenLifespan)
+	if found {
+		var n int
+		n, err = strconv.Atoi(s)
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
+		r.Task.TokenLifespan = time.Duration(n) * time.Hour
+	} else {
+		r.Task.TokenLifespan = time.Hour * 48
 	}
 	s, found = os.LookupEnv(EnvDisconnected)
 	if found {

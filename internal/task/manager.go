@@ -1322,13 +1322,15 @@ func (m *Manager) newToken(task *Task) (token *auth.Token, err error) {
 	if err != nil {
 		return
 	}
-	newToken, err := idp.NewToken(sa.Subject, 0)
+	lifespan := Settings.Hub.Task.TokenLifespan
+	newToken, err := idp.NewToken(sa.Subject, lifespan)
 	if err != nil {
 		return
 	}
 	token = &newToken
 	token.TaskID = &task.ID
-	err = m.DB.Save(token).Error
+	db := m.DB.Select("TaskID")
+	err = db.Updates(token).Error
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -1338,24 +1340,23 @@ func (m *Manager) newToken(task *Task) (token *auth.Token, err error) {
 }
 
 // revokeTokens revokes tokens granted to the task.
+// This is a best-effort.
 func (m *Manager) revokeTokens(task *Task) {
-	var err error
-	defer func() {
-		if err != nil {
-			Log.Error(err, "Token revoke failed.",
-				"taskId", task.ID)
-		}
-	}()
 	idp := auth.Idp()
 	var tokens []*auth.Token
-	err = m.DB.Find(&tokens, "TaskID", task.ID).Error
+	err := m.DB.Find(&tokens, "TaskID", task.ID).Error
 	if err != nil {
+		Log.Error(err, "Token query failed.")
 		return
 	}
 	for _, token := range tokens {
 		err = idp.Revoke(token.ID)
 		if err != nil {
-			return
+			Log.Error(
+				err,
+				"Token revoke failed.",
+				"taskId",
+				task.ID)
 		}
 	}
 	return
