@@ -300,7 +300,7 @@ func (r *Hub) Load() (err error) {
 		}
 		r.Task.TokenLifespan = time.Duration(n) * time.Hour
 	} else {
-		r.Task.TokenLifespan = time.Hour * 48
+		r.Task.TokenLifespan = time.Hour * 72 // 3 days.
 	}
 	s, found = os.LookupEnv(EnvDisconnected)
 	if found {
