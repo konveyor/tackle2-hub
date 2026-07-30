@@ -531,3 +531,78 @@
         - post
         - get
         - delete
+- role: addon
+  id: 100
+  resources:
+    - name: addons
+      verbs:
+        - get
+    - name: analysis.profiles
+      verbs:
+        - get
+    - name: applications
+      verbs:
+        - get
+        - post
+        - put
+    - name: applications.facts
+      verbs:
+        - '*'
+    - name: applications.bucket
+      verbs:
+        - '*'
+    - name: applications.analyses
+      verbs:
+        - '*'
+    - name: applications.manifests
+      verbs:
+        - '*'
+    - name: archetypes
+      verbs:
+        - get
+    - name: generators
+      verbs:
+        - get
+    - name: identities
+      verbs:
+        - get
+        - decrypt
+    - name: manifests
+      verbs:
+        - '*'
+    - name: platforms
+      verbs:
+        - get
+    - name: proxies
+      verbs:
+        - get
+    - name: schemas
+      verbs:
+        - get
+    - name: settings
+      verbs:
+        - get
+    - name: tags
+      verbs:
+        - '*'
+    - name: tagcategories
+      verbs:
+        - '*'
+    - name: tasks
+      verbs:
+        - get
+    - name: tasks.report
+      verbs:
+        - '*'
+    - name: tasks.bucket
+      verbs:
+        - get
+    - name: files
+      verbs:
+        - '*'
+    - name: rulesets
+      verbs:
+        - get
+    - name: targets
+      verbs:
+        - get

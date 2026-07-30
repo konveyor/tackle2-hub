@@ -60,14 +60,30 @@ func (r *Tx) UserDeleted(id uint) {
 		})
 }
 
-// TaskRevoked task token revoked.
-func (r *Tx) TaskRevoked(id uint) {
+// SaSaved updates the cache when a service account is saved.
+func (r *Tx) SaSaved(m *ServiceAccount) {
 	r.changes = append(
 		r.changes, func(d *Data) {
-			for _, m := range d.tokenById {
-				if m.TaskID != nil && *m.TaskID == id {
-					delete(d.tokenByDigest, m.Digest)
-					delete(d.tokenById, m.ID)
+			d.saById[m.ID] = m
+			d.saByName[m.Name] = m
+			d.saBySubject[m.Subject] = m
+		})
+}
+
+// SaDeleted removes a service account and all associated tokens from the cache.
+func (r *Tx) SaDeleted(id uint) {
+	r.changes = append(
+		r.changes, func(d *Data) {
+			m, found := d.saById[id]
+			if found {
+				delete(d.saBySubject, m.Subject)
+				delete(d.saByName, m.Name)
+				delete(d.saById, id)
+			}
+			for _, token := range d.tokenById {
+				if token.ServiceAccountID != nil && *token.ServiceAccountID == id {
+					delete(d.tokenByDigest, token.Digest)
+					delete(d.tokenById, token.ID)
 				}
 			}
 		})

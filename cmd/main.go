@@ -96,8 +96,13 @@ func Run(e *gin.Engine) (err error) {
 // Note: The initialization order is very important.
 func main() {
 	Log.Info("Started:\n" + Settings.String())
+	ctx := context.Background()
 	var err error
 	defer func() {
+		r := recover()
+		if r != nil {
+			err = liberr.Recovered(r)
+		}
 		if err != nil {
 			Log.Error(err, "")
 		}
@@ -105,7 +110,6 @@ func main() {
 	syscall.Umask(0)
 	debug.SetGCPercent(20)
 	heap.Monitor()
-	//
 	// Model
 	db, err := Setup()
 	if err != nil {
@@ -119,12 +123,12 @@ func main() {
 	}
 	//
 	// Add controller manager.
-	addonManager, aErr := k8s.NewManager()
+	k8sManager, aErr := k8s.NewManager()
 	if aErr != nil {
 		err = aErr
 		return
 	}
-	err = controller.Add(addonManager, db)
+	err = controller.Add(k8sManager, db)
 	if err != nil {
 		return
 	}
@@ -135,7 +139,7 @@ func main() {
 		err = liberr.Wrap(err)
 		return
 	}
-	// Auth
+	// Build Auth
 	domain := auth.NewTenant(db, client)
 	err = domain.Load()
 	if err != nil {
@@ -157,30 +161,20 @@ func main() {
 		return
 	}
 	//
-	// Task
+	// Build Managers.
 	taskManager := task.New(db, client)
-	taskManager.Run(context.Background())
-	//
-	// Reaper
 	reaperManager := reaper.Manager{
 		Client: client,
 		DB:     db,
 	}
-	reaperManager.Run(context.Background())
-	//
-	// Application import.
 	importManager := importer.Manager{
 		DB:          db,
 		TaskManager: taskManager,
 		Client:      client,
 	}
-	importManager.Run(context.Background())
-	//
-	// Ticket trackers.
 	trackerManager := tracker.Manager{
 		DB: db,
 	}
-	trackerManager.Run(context.Background())
 	//
 	// Metrics
 	if Settings.Metrics.Enabled {
@@ -192,7 +186,7 @@ func main() {
 		metricsManager := metrics.Manager{
 			DB: db,
 		}
-		metricsManager.Run(context.Background())
+		metricsManager.Run(ctx)
 	}
 	// Web
 	router := gin.Default()
@@ -223,13 +217,12 @@ func main() {
 	if err != nil {
 		return
 	}
-	// Start the controller manager after auth setup is complete.
-	// Controllers call auth.Reload() on reconcile which replaces
-	// the domain. Starting before Seed() causes a race.
-	go func() {
-		if mErr := addonManager.Start(context.Background()); mErr != nil {
-			Log.Error(liberr.Wrap(mErr), "controller manager")
-		}
-	}()
+	// Run Managers.
+	k8sManager.Run(ctx)
+	taskManager.Run(ctx)
+	reaperManager.Run(ctx)
+	importManager.Run(ctx)
+	trackerManager.Run(ctx)
+	// Run Router.
 	err = Run(router)
 }

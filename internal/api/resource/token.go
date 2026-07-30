@@ -14,6 +14,7 @@ type Token api.Token
 func (r *Token) With(m *model.Token) {
 	baseWith(&r.Resource, &m.Model)
 	r.ID = m.ID
+	r.Description = m.Description
 	r.Kind = m.Kind
 	r.AuthId = m.AuthId
 	r.Subject = m.Subject
@@ -24,6 +25,7 @@ func (r *Token) With(m *model.Token) {
 	r.Grant = refPtr(m.GrantID, m.Grant)
 	r.Task = refPtr(m.TaskID, m.Task)
 	r.User = refPtr(m.UserID, m.User)
+	r.ServiceAccount = refPtr(m.ServiceAccountID, m.ServiceAccount)
 	r.IdpIdentity = refPtr(m.IdpIdentityID, m.IdpIdentity)
 	r.IdpClient = refPtr(m.IdpClientID, m.IdpClient)
 }

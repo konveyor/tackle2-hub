@@ -7,6 +7,7 @@ import (
 	"github.com/konveyor/tackle2-hub/shared/binding/bucket"
 	_import "github.com/konveyor/tackle2-hub/shared/binding/import"
 	"github.com/konveyor/tackle2-hub/shared/binding/report"
+	"github.com/konveyor/tackle2-hub/shared/binding/serviceaccount"
 	"github.com/konveyor/tackle2-hub/shared/binding/tagcategory"
 	"github.com/konveyor/tackle2-hub/shared/binding/task"
 	"github.com/konveyor/tackle2-hub/shared/binding/taskgroup"
@@ -14,13 +15,14 @@ import (
 
 // Type aliases for subpackage types.
 type (
-	Analysis    = analysis.Analysis
-	Application = application.Application
-	Archetype   = archetype.Archetype
-	Bucket      = bucket.Bucket
-	Import      = _import.Import
-	Report      = report.Report
-	TagCategory = tagcategory.TagCategory
-	Task        = task.Task
-	TaskGroup   = taskgroup.TaskGroup
+	Analysis       = analysis.Analysis
+	Application    = application.Application
+	Archetype      = archetype.Archetype
+	Bucket         = bucket.Bucket
+	Import         = _import.Import
+	Report         = report.Report
+	TagCategory    = tagcategory.TagCategory
+	Task           = task.Task
+	ServiceAccount = serviceaccount.ServiceAccount
+	TaskGroup      = taskgroup.TaskGroup
 )

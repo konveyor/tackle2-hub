@@ -9,6 +9,7 @@ import (
 	"github.com/konveyor/tackle2-hub/shared/binding/client"
 	_import "github.com/konveyor/tackle2-hub/shared/binding/import"
 	"github.com/konveyor/tackle2-hub/shared/binding/report"
+	"github.com/konveyor/tackle2-hub/shared/binding/serviceaccount"
 	"github.com/konveyor/tackle2-hub/shared/binding/tagcategory"
 	"github.com/konveyor/tackle2-hub/shared/binding/task"
 	"github.com/konveyor/tackle2-hub/shared/binding/taskgroup"
@@ -70,6 +71,7 @@ type RichClient struct {
 	User             User
 	Role             Role
 	Scope            Scope
+	ServiceAccount   serviceaccount.ServiceAccount
 }
 
 // Use sets the client.
@@ -125,4 +127,5 @@ func (r *RichClient) build(client RestClient) {
 	r.User = User{client: client}
 	r.Role = Role{client: client}
 	r.Scope = Scope{client: client}
+	r.ServiceAccount = serviceaccount.New(client)
 }

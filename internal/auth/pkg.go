@@ -129,11 +129,7 @@ type Provider interface {
 	// Login begin OIDC auth.
 	Login(w http.ResponseWriter, r *http.Request, reqId string) (err error)
 	// NewToken creates a new personal access token.
-	NewToken(subject string, lifespan time.Duration) (token Token, err error)
-	// TaskGrant creates a new api-key.
-	TaskGrant(task *Task) (token Token, err error)
-	// TaskRevoke revokes task tokens.
-	TaskRevoke(taskId uint)
+	NewToken(subject string, lifespan time.Duration, mod ...Mod) (token Token, err error)
 	// Revoke a token.
 	Revoke(tokenId uint) (err error)
 	// Authenticate the request.
@@ -174,8 +170,11 @@ type Role = cache.Role
 type Token = cache.Token
 type Identity = cache.Identity
 type Subject = cache.Subject
-type Task = cache.Task
 type Grant = cache.Grant
+type ServiceAccount = cache.ServiceAccount
+
+// Mod token modifier.
+type Mod func(m *Token)
 
 // asTime returns a time.Time for unix time.
 func asTime(n int) (t time.Time) {

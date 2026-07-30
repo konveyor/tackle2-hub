@@ -2,7 +2,7 @@ package model
 
 import (
 	"github.com/konveyor/tackle2-hub/internal/migration/json"
-	"github.com/konveyor/tackle2-hub/internal/migration/v22/model"
+	"github.com/konveyor/tackle2-hub/internal/migration/v23/model"
 )
 
 // Field (data) types.
@@ -55,6 +55,7 @@ type TaskReport = model.TaskReport
 type Ticket = model.Ticket
 type Tracker = model.Tracker
 type User = model.User
+type ServiceAccount = model.ServiceAccount
 type Role = model.Role
 type IdpClient = model.IdpClient
 type RsaKey = model.RsaKey

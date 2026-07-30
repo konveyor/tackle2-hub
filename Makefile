@@ -20,16 +20,20 @@ BUILD = --tags json1 -o bin/hub github.com/konveyor/tackle2-hub/cmd
 cmd: hub shared/addon
 
 # Format the code.
-fmt: $(GOIMPORTS)
+fmt: go.work $(GOIMPORTS)
 	$(GOIMPORTS) -w $(PKGDIR)
 
 # Run go vet against code
-vet: frontend-stub
+vet: go.work frontend-stub
 	go vet $(PKG)
 
 # Build hub
 hub: frontend generate fmt vet
 	go build $(BUILD)
+
+# Ensure go.work exists in the workspace.
+go.work:
+	go work init . ./shared
 
 # Build image
 docker-build:
@@ -85,11 +89,11 @@ run-addon:
 manifests: $(CONTROLLERGEN)
 	$(CONTROLLERGEN) $(CRD_OPTIONS) \
 		crd rbac:roleName=manager-role \
-		paths="./..." output:crd:artifacts:config=internal/generated/crd/bases output:crd:dir=internal/generated/crd
+		paths="./internal/k8s/..." output:crd:artifacts:config=internal/generated/crd/bases output:crd:dir=internal/generated/crd
 
 # Generate code
 generate: $(CONTROLLERGEN)
-	$(CONTROLLERGEN) object:headerFile="./internal/generated/boilerplate" paths="./..."
+	$(CONTROLLERGEN) object:headerFile="./internal/generated/boilerplate" paths="./internal/k8s/..."
 
 # Ensure controller-gen installed.
 $(CONTROLLERGEN):
@@ -155,7 +159,7 @@ endif
 .PHONY: test test-api test-integration migration test-binding test-auth test-all
 
 # Run unit tests (all tests outside /test directory).
-test: frontend-stub
+test: go.work frontend-stub
 	go test -count=1 -v $(shell go list ./... | grep -v "hub/test")
 
 test-db: frontend-stub

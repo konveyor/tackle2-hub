@@ -53,6 +53,19 @@ func (h AuthHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(api.UserRoute, h.UserGet)
 	routeGroup.PUT(api.UserRoute, h.UserUpdate)
 	routeGroup.DELETE(api.UserRoute, h.UserDelete)
+	// SA routes.
+	routeGroup = e.Group("/")
+	routeGroup.Use(Required("serviceaccounts"), Transaction)
+	routeGroup.GET(api.ServiceAccountsRoute, h.ServiceAccountList)
+	routeGroup.GET(api.ServiceAccountsRoute+"/", h.ServiceAccountList)
+	routeGroup.POST(api.ServiceAccountsRoute, h.ServiceAccountCreate)
+	routeGroup.GET(api.ServiceAccountRoute, h.ServiceAccountGet)
+	routeGroup.PUT(api.ServiceAccountRoute, h.ServiceAccountUpdate)
+	routeGroup.DELETE(api.ServiceAccountRoute, h.ServiceAccountDelete)
+	// SA token routes.
+	routeGroup = e.Group("/")
+	routeGroup.Use(Required("serviceaccounts.tokens"))
+	routeGroup.POST(api.ServiceAccountTokensRoute, h.ServiceAccountTokenCreate)
 	// Role routes.
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("roles"), Transaction)
@@ -642,6 +655,238 @@ func (h AuthHandler) UserDelete(ctx *gin.Context) {
 	h.Status(ctx, http.StatusNoContent)
 }
 
+// ServiceAccountGet godoc
+// @summary Get a service account by ID.
+// @description Get a service account by ID.
+// @tags serviceaccounts
+// @produce json
+// @success 200 {object} ServiceAccount
+// @router /serviceaccounts/{id} [get]
+// @param id path int true "ServiceAccount ID"
+func (h AuthHandler) ServiceAccountGet(ctx *gin.Context) {
+	id := h.pk(ctx)
+	m := &model.ServiceAccount{}
+	db := h.preLoad(h.DB(ctx), clause.Associations)
+	err := db.First(m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	r := ServiceAccount{}
+	r.With(m)
+	h.Respond(ctx, http.StatusOK, r)
+}
+
+// ServiceAccountList godoc
+// @summary List all service accounts.
+// @description Lists all service accounts.
+// @tags serviceaccounts
+// @produce json
+// @success 200 {object} []ServiceAccount
+// @router /serviceaccounts [get]
+func (h AuthHandler) ServiceAccountList(ctx *gin.Context) {
+	var list []model.ServiceAccount
+	db := h.preLoad(h.DB(ctx), clause.Associations)
+	err := db.Find(&list).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	resources := []ServiceAccount{}
+	for i := range list {
+		m := &list[i]
+		r := ServiceAccount{}
+		r.With(m)
+		resources = append(resources, r)
+	}
+
+	h.Respond(ctx, http.StatusOK, resources)
+}
+
+// ServiceAccountCreate godoc
+// @summary Create a service account.
+// @description Create a service account.
+// @tags serviceaccounts
+// @accept json
+// @produce json
+// @success 201 {object} ServiceAccount
+// @router /serviceaccounts [post]
+// @param user body ServiceAccount true "ServiceAccount data"
+func (h AuthHandler) ServiceAccountCreate(ctx *gin.Context) {
+	r := &ServiceAccount{}
+	err := h.Bind(ctx, r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	if r.ID > 0 && r.ID < auth.LastId {
+		_ = ctx.Error(&BadRequestError{
+			Reason: "id reserved",
+		})
+		return
+	}
+	m := r.Model()
+	m.Subject = uuid.New().String()
+	m.CreateUser = h.CurrentUser(ctx)
+	db := h.DB(ctx).Model(m)
+	db = db.Omit(clause.Associations)
+	err = db.Create(m).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	err = h.DB(ctx).Model(m).Association("Roles").Replace(m.Roles)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	db = h.preLoad(h.DB(ctx), clause.Associations)
+	err = db.First(m).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	auth.Idp().Cache().SaSaved(m)
+
+	r.With(m)
+
+	h.Respond(ctx, http.StatusCreated, r)
+}
+
+// ServiceAccountUpdate godoc
+// @summary Update a service account.
+// @description Update a service account.
+// @tags serviceaccounts
+// @accept json
+// @success 204
+// @router /serviceaccounts/{id} [put]
+// @param id path int true "ServiceAccount ID"
+// @param user body ServiceAccount true "ServiceAccount data"
+func (h AuthHandler) ServiceAccountUpdate(ctx *gin.Context) {
+	id := h.pk(ctx)
+	r := &ServiceAccount{}
+	err := h.Bind(ctx, r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	current := &model.ServiceAccount{}
+	err = h.DB(ctx).First(current, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	updated := r.Model()
+	updated.ID = id
+	updated.UpdateUser = h.CurrentUser(ctx)
+	db := h.DB(ctx).Model(updated)
+	db = db.Omit(clause.Associations)
+	err = db.Save(updated).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	if id > auth.LastId {
+		err = h.DB(ctx).Model(updated).Association("Roles").Replace(updated.Roles)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
+	}
+
+	db = h.preLoad(h.DB(ctx), clause.Associations)
+	err = db.First(updated, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	auth.Idp().Cache().SaSaved(updated)
+
+	h.Status(ctx, http.StatusNoContent)
+}
+
+// ServiceAccountDelete godoc
+// @summary Delete a service account.
+// @description Delete a service account.
+// @tags serviceaccounts
+// @success 204
+// @router /serviceaccounts/{id} [delete]
+// @param id path int true "ServiceAccount ID"
+func (h AuthHandler) ServiceAccountDelete(ctx *gin.Context) {
+	id := h.pk(ctx)
+	if id < auth.LastId {
+		_ = ctx.Error(&BadRequestError{
+			Reason: "id reserved",
+		})
+		return
+	}
+	m := &model.ServiceAccount{}
+	err := h.DB(ctx).First(m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	err = h.DB(ctx).Delete(m).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	auth.Idp().Cache().SaDeleted(id)
+
+	h.Status(ctx, http.StatusNoContent)
+}
+
+// ServiceAccountTokenCreate godoc
+// @summary Create a token for a service account.
+// @description Create an api-key token for a service account.
+// @tags serviceaccounts
+// @accept json
+// @produce json
+// @success 201 {object} api.PAT
+// @router /serviceaccounts/{id}/tokens [post]
+// @param id path int true "ServiceAccount ID"
+// @param pat body api.PAT true "Token data"
+func (h AuthHandler) ServiceAccountTokenCreate(ctx *gin.Context) {
+	id := h.pk(ctx)
+	m := &model.ServiceAccount{}
+	err := h.DB(ctx).First(m, id).Error
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	r := &PAT{}
+	err = h.Bind(ctx, r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	if r.Lifespan == 0 {
+		r.Lifespan = int(Settings.APIKey.Lifespan.Hours())
+	}
+	if r.Expiration.IsZero() {
+		r.Expiration = time.Now().Add(time.Duration(r.Lifespan) * time.Hour)
+	}
+	lifespan := time.Until(r.Expiration)
+	token, err := auth.Idp().NewToken(
+		m.Subject,
+		lifespan,
+		func(m *auth.Token) {
+			m.Description = r.Description
+		})
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	r.ID = token.ID
+	r.Token = token.Secret
+
+	h.Respond(ctx, http.StatusCreated, r)
+}
+
 //
 // Role handlers
 //
@@ -960,7 +1205,12 @@ func (h AuthHandler) TokenCreate(ctx *gin.Context) {
 	}
 	subject := h.CurrentSubject(ctx)
 	lifespan := time.Until(r.Expiration)
-	token, err := auth.Idp().NewToken(subject, lifespan)
+	token, err := auth.Idp().NewToken(
+		subject,
+		lifespan,
+		func(m *auth.Token) {
+			m.Description = r.Description
+		})
 	if err != nil {
 		h.Respond(ctx,
 			http.StatusUnauthorized,
@@ -1145,6 +1395,11 @@ func (h AuthHandler) GetSelf(ctx *gin.Context) {
 			m := model.User(*subject.User)
 			r.User.With(&m)
 		}
+		if subject.IsServiceAccount() {
+			r.ServiceAccount = &ServiceAccount{}
+			m := model.ServiceAccount(*subject.ServiceAccount)
+			r.ServiceAccount.With(&m)
+		}
 		if subject.IsIdentity() {
 			r.Identity = &IdpIdentity{}
 			m := subject.Identity
@@ -1154,18 +1409,6 @@ func (h AuthHandler) GetSelf(ctx *gin.Context) {
 			r.Client = &IdpClient{}
 			m := model.IdpClient(*subject.Client)
 			r.Client.With(&m)
-		}
-		if subject.IsTask() {
-			id := subject.Task.ID
-			db := h.DB(ctx)
-			m := &model.Task{}
-			err = db.First(m, id).Error
-			if err != nil {
-				_ = ctx.Error(err)
-				return
-			}
-			r.Task = &Task{}
-			r.Task.With(m)
 		}
 	} else {
 		if !errors.Is(err, &auth.NotFound{}) {
@@ -1237,6 +1480,7 @@ func (h *AuthHandler) addScopes(m *Token) (err error) {
 // Auth REST Resources.
 type IdpIdentity = resource.IdpIdentity
 type IdpClient = resource.IdpClient
+type ServiceAccount = resource.ServiceAccount
 type User = resource.User
 type Role = resource.Role
 type Scope = resource.Scope
@@ -1246,13 +1490,13 @@ type PAT api.PAT
 
 // AuthSelf REST resource.
 type AuthSelf struct {
-	Login    string       `json:"login"`
-	Subject  string       `json:"subject"`
-	Scopes   []string     `json:"scopes"`
-	User     *User        `json:"user,omitempty" yaml:",omitempty"`
-	Identity *IdpIdentity `json:"identity,omitempty" yaml:",omitempty"`
-	Client   *IdpClient   `json:"client,omitempty" yaml:",omitempty"`
-	Task     *Task        `json:"task,omitempty" yaml:",omitempty"`
+	Login          string          `json:"login"`
+	Subject        string          `json:"subject"`
+	Scopes         []string        `json:"scopes"`
+	User           *User           `json:"user,omitempty" yaml:",omitempty"`
+	ServiceAccount *ServiceAccount `json:"serviceAccount,omitempty" yaml:",omitempty"`
+	Identity       *IdpIdentity    `json:"identity,omitempty" yaml:",omitempty"`
+	Client         *IdpClient      `json:"client,omitempty" yaml:",omitempty"`
 }
 
 // Authenticate the user.

@@ -169,8 +169,9 @@ func (p *Builtin) Login(
 }
 
 // NewToken creates a new personal access token.
-func (p *Builtin) NewToken(subject string, lifespan time.Duration) (m Token, err error) {
+func (p *Builtin) NewToken(subject string, lifespan time.Duration, mod ...Mod) (m Token, err error) {
 	m = p.newToken(subject, lifespan)
+	//
 	s, err := p.cache.FindSubject(subject)
 	if err != nil {
 		return
@@ -178,45 +179,31 @@ func (p *Builtin) NewToken(subject string, lifespan time.Duration) (m Token, err
 	if s.IsUser() {
 		m.UserID = s.UserId
 	}
+	if s.IsServiceAccount() {
+		m.ServiceAccountID = s.ServiceAccountId
+	}
 	if s.IsIdentity() {
 		m.IdpIdentityID = s.IdentityId
 	}
 	if s.IsClient() {
 		m.IdpClientID = s.ClientId
 	}
+	//
+	updated := m
+	for i := range mod {
+		mod[i](&updated)
+	}
+	m.Description = updated.Description
+	m.TaskID = updated.TaskID
+	//
 	err = p.db.Save(&m).Error
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
 	p.cache.TokenSaved(&m)
+	//
 	p.warnTokenEmptyScopes(s.Login(), m.ID)
-	return
-}
-
-// TaskGrant creates a new task api-key.
-func (p *Builtin) TaskGrant(task *Task) (m Token, err error) {
-	m = p.newToken(task.Subject(), 0)
-	m.TaskID = &task.ID
-	err = p.db.Create(&m).Error
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	p.cache.TokenSaved(&m)
-	return
-}
-
-// TaskRevoke revokes a task token.
-func (p *Builtin) TaskRevoke(taskId uint) {
-	p.cache.TaskRevoked(taskId)
-	err := p.db.Where("TaskID", taskId).Delete(&Token{}).Error
-	if err != nil {
-		Log.Error(err,
-			"Task revoke failed.",
-			"taskId",
-			taskId)
-	}
 	return
 }
 

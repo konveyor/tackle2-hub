@@ -21,3 +21,11 @@ type User struct {
 	Password string   `yaml:"password"`
 	Roles    []string `yaml:"roles"`
 }
+
+// ServiceAccount used to read serviceaccounts.yaml.
+type ServiceAccount struct {
+	ID          uint     `yaml:"id"`
+	Description string   `yaml:"description"`
+	Name        string   `yaml:"name"`
+	Roles       []string `yaml:"roles"`
+}
