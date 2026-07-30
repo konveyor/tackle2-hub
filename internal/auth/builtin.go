@@ -193,6 +193,7 @@ func (p *Builtin) NewToken(subject string, lifespan time.Duration, mod ...Mod) (
 	for i := range mod {
 		mod[i](&updated)
 	}
+	m.Description = updated.Description
 	m.TaskID = updated.TaskID
 	//
 	err = p.db.Save(&m).Error

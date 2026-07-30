@@ -870,7 +870,12 @@ func (h AuthHandler) ServiceAccountTokenCreate(ctx *gin.Context) {
 		r.Expiration = time.Now().Add(time.Duration(r.Lifespan) * time.Hour)
 	}
 	lifespan := time.Until(r.Expiration)
-	token, err := auth.Idp().NewToken(m.Subject, lifespan)
+	token, err := auth.Idp().NewToken(
+		m.Subject,
+		lifespan,
+		func(m *auth.Token) {
+			m.Description = r.Description
+		})
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -1200,7 +1205,12 @@ func (h AuthHandler) TokenCreate(ctx *gin.Context) {
 	}
 	subject := h.CurrentSubject(ctx)
 	lifespan := time.Until(r.Expiration)
-	token, err := auth.Idp().NewToken(subject, lifespan)
+	token, err := auth.Idp().NewToken(
+		subject,
+		lifespan,
+		func(m *auth.Token) {
+			m.Description = r.Description
+		})
 	if err != nil {
 		h.Respond(ctx,
 			http.StatusUnauthorized,

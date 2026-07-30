@@ -293,6 +293,7 @@ type Grant struct {
 
 type Token struct {
 	Model
+	Description      string
 	Kind             string          `gorm:"<-:create;not null"`
 	AuthId           string          `gorm:"<-:create;uniqueIndex;not null"`
 	Subject          string          `gorm:"<-:create;index"`

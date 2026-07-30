@@ -12,7 +12,9 @@ func TestToken(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	// CREATE: Create a PAT token
-	req := &api.PAT{}
+	req := &api.PAT{
+		Description: "test token",
+	}
 	err := client.Token.Create(req)
 	g.Expect(err).To(BeNil())
 	g.Expect(req.ID).NotTo(BeZero())
@@ -34,6 +36,7 @@ func TestToken(t *testing.T) {
 	g.Expect(retrieved).NotTo(BeNil())
 	g.Expect(retrieved.ID).To(Equal(req.ID))
 	g.Expect(retrieved.Kind).To(Equal(api.TokenKindAPIKey))
+	g.Expect(retrieved.Description).To(Equal(req.Description))
 
 	// DELETE: Remove the token
 	err = client.Token.Delete(req.ID)

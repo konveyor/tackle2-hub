@@ -1327,6 +1327,7 @@ func (m *Manager) newToken(task *Task) (token *auth.Token, err error) {
 		sa.Subject,
 		lifespan,
 		func(m *auth.Token) {
+			m.Description = fmt.Sprintf("task.%d", task.ID)
 			m.TaskID = &task.ID
 		})
 	if err != nil {

@@ -220,6 +220,7 @@ type Grant struct {
 // Token REST resource.
 type Token struct {
 	Resource       `yaml:",inline"`
+	Description    string    `json:"description,omitempty" yaml:",omitempty"`
 	Kind           string    `json:"kind"`
 	AuthId         string    `json:"authId,omitempty" yaml:"authId,omitempty"`
 	Subject        string    `json:"subject,omitempty" yaml:",omitempty"`
@@ -237,10 +238,11 @@ type Token struct {
 
 // PAT REST resource.
 type PAT struct {
-	ID         uint      `json:"id,omitempty" yaml:",omitempty"`
-	Lifespan   int       `json:"lifespan,omitempty" yaml:",omitempty"`
-	Expiration time.Time `json:"expiration,omitempty" yaml:",omitempty"`
-	Token      string    `json:"token,omitempty" yaml:",omitempty"`
+	ID          uint      `json:"id,omitempty" yaml:",omitempty"`
+	Description string    `json:"description,omitempty" yaml:",omitempty"`
+	Lifespan    int       `json:"lifespan,omitempty" yaml:",omitempty"`
+	Expiration  time.Time `json:"expiration,omitempty" yaml:",omitempty"`
+	Token       string    `json:"token,omitempty" yaml:",omitempty"`
 }
 
 // String returns the token.
