@@ -3481,8 +3481,9 @@ func TestServiceAccount_With(t *testing.T) {
 			ID:         1,
 			CreateUser: "admin",
 		},
-		Subject: "sa-uuid-1234",
-		Name:    "ci-bot",
+		Description: "CI automation bot",
+		Subject:     "sa-uuid-1234",
+		Name:        "ci-bot",
 		Roles: []model.Role{
 			{Model: model.Model{ID: 10}, Name: "admin"},
 			{Model: model.Model{ID: 11}, Name: "developer"},
@@ -3497,6 +3498,7 @@ func TestServiceAccount_With(t *testing.T) {
 	r.With(m)
 
 	g.Expect(r.ID).To(gomega.Equal(uint(1)))
+	g.Expect(r.Description).To(gomega.Equal("CI automation bot"))
 	g.Expect(r.Subject).To(gomega.Equal("sa-uuid-1234"))
 	g.Expect(r.Name).To(gomega.Equal("ci-bot"))
 	g.Expect(len(r.Roles)).To(gomega.Equal(2))
@@ -3514,9 +3516,10 @@ func TestServiceAccount_Model(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
 	r := &ServiceAccount{
-		Resource: Resource{ID: 1},
-		Subject:  "sa-uuid-1234",
-		Name:     "ci-bot",
+		Resource:    Resource{ID: 1},
+		Description: "CI automation bot",
+		Subject:     "sa-uuid-1234",
+		Name:        "ci-bot",
 		Roles: []Ref{
 			{ID: 10, Name: "admin"},
 			{ID: 11, Name: "developer"},
@@ -3526,6 +3529,7 @@ func TestServiceAccount_Model(t *testing.T) {
 	m := r.Model()
 
 	g.Expect(m.ID).To(gomega.Equal(uint(1)))
+	g.Expect(m.Description).To(gomega.Equal("CI automation bot"))
 	g.Expect(m.Subject).To(gomega.Equal("sa-uuid-1234"))
 	g.Expect(m.Name).To(gomega.Equal("ci-bot"))
 	g.Expect(len(m.Roles)).To(gomega.Equal(2))
@@ -3808,8 +3812,9 @@ func TestToken_With(t *testing.T) {
 			UpdateUser: "user2",
 			CreateTime: time.Now(),
 		},
-		Kind:       "access_token",
-		Subject:    "user-subject",
+		Description: "test token",
+		Kind:        "access_token",
+		Subject:     "user-subject",
 		Scopes:     []string{"openid", "profile", "email"},
 		Issued:     issued,
 		Expiration: expiration,
@@ -3826,6 +3831,7 @@ func TestToken_With(t *testing.T) {
 	g.Expect(r.ID).To(gomega.Equal(uint(1)))
 	g.Expect(r.CreateUser).To(gomega.Equal("user1"))
 	g.Expect(r.UpdateUser).To(gomega.Equal("user2"))
+	g.Expect(r.Description).To(gomega.Equal("test token"))
 	g.Expect(r.Kind).To(gomega.Equal("access_token"))
 	g.Expect(r.Subject).To(gomega.Equal("user-subject"))
 	g.Expect(r.Scopes).To(gomega.Equal([]string{"openid", "profile", "email"}))

@@ -49,7 +49,8 @@ func TestServiceAccount(t *testing.T) {
 
 	// Define the service account to create
 	sa := &api.ServiceAccount{
-		Name: "test-sa",
+		Description: "test service account",
+		Name:        "test-sa",
 		Roles: []api.Ref{
 			{ID: role1.ID},
 			{ID: role2.ID},
@@ -84,6 +85,7 @@ func TestServiceAccount(t *testing.T) {
 	g.Expect(eq).To(BeTrue(), report)
 
 	// UPDATE: Modify the service account
+	sa.Description = "updated service account"
 	sa.Name = "updated-sa"
 	sa.Roles = []api.Ref{
 		{ID: role1.ID},

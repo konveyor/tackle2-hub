@@ -4939,18 +4939,19 @@ func TestSaPatch(t *testing.T) {
 	// Create: new SA.
 	existing := map[string]ServiceAccount{}
 	wanted := []seed.ServiceAccount{
-		{ID: 1, Name: "addon", Roles: []string{"addon"}},
+		{ID: 1, Description: "addon SA", Name: "addon", Roles: []string{"addon"}},
 	}
 	patch := d.saPatch(existing, wanted)
 	g.Expect(patch.toCreate).To(HaveLen(1))
 	g.Expect(patch.toCreate[0].sa.Name).To(Equal("addon"))
+	g.Expect(patch.toCreate[0].sa.Description).To(Equal("addon SA"))
 	g.Expect(patch.toCreate[0].sa.ID).To(Equal(uint(1)))
 	g.Expect(patch.toCreate[0].sa.Subject).NotTo(BeEmpty())
 	g.Expect(patch.toCreate[0].roles).To(HaveLen(1))
 	g.Expect(patch.toUpdate).To(BeEmpty())
 	g.Expect(patch.toDelete).To(BeEmpty())
 
-	// Update: existing SA gets roles updated.
+	// Update: existing SA gets description and roles updated.
 	existing = map[string]ServiceAccount{
 		"addon": {
 			Model:   model.Model{ID: 1},
@@ -4962,6 +4963,7 @@ func TestSaPatch(t *testing.T) {
 	g.Expect(patch.toCreate).To(BeEmpty())
 	g.Expect(patch.toUpdate).To(HaveLen(1))
 	g.Expect(patch.toUpdate[0].sa.ID).To(Equal(uint(1)))
+	g.Expect(patch.toUpdate[0].sa.Description).To(Equal("addon SA"))
 	g.Expect(patch.toUpdate[0].sa.Subject).To(Equal("existing-subject"))
 	g.Expect(patch.toUpdate[0].roles).To(HaveLen(1))
 	g.Expect(patch.toDelete).To(BeEmpty())
@@ -5030,6 +5032,7 @@ func TestSeedServiceAccountsFromYAML(t *testing.T) {
 	err = db.First(&sa, "Name = ?", "task.addon").Error
 	g.Expect(err).To(BeNil())
 	g.Expect(sa.ID).To(Equal(uint(1)))
+	g.Expect(sa.Description).To(Equal("Used by the task manager."))
 	g.Expect(sa.Subject).NotTo(BeEmpty())
 	g.Expect(sa.Name).To(Equal("task.addon"))
 

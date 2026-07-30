@@ -181,9 +181,10 @@ type User struct {
 
 // ServiceAccount REST resource.
 type ServiceAccount struct {
-	Resource `yaml:",inline"`
-	Subject  string `json:"subject"`
-	Name     string `json:"name" binding:"required"`
+	Resource    `yaml:",inline"`
+	Description string `json:"description,omitempty" yaml:",omitempty"`
+	Subject     string `json:"subject"`
+	Name        string `json:"name" binding:"required"`
 	Roles    []Ref  `json:"roles"`
 	Tokens   []Ref  `json:"tokens"`
 }

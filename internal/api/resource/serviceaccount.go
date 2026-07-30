@@ -12,6 +12,7 @@ type ServiceAccount api.ServiceAccount
 func (r *ServiceAccount) With(m *model.ServiceAccount) {
 	baseWith(&r.Resource, &m.Model)
 	m = mustRedact(m)
+	r.Description = m.Description
 	r.Subject = m.Subject
 	r.Name = m.Name
 	r.Roles = []Ref{}
@@ -27,8 +28,9 @@ func (r *ServiceAccount) With(m *model.ServiceAccount) {
 // Model converts REST resource to model.
 func (r *ServiceAccount) Model() (m *model.ServiceAccount) {
 	m = &model.ServiceAccount{
-		Subject: r.Subject,
-		Name:    r.Name,
+		Description: r.Description,
+		Subject:     r.Subject,
+		Name:        r.Name,
 	}
 	m.ID = r.ID
 	for _, ref := range r.Roles {

@@ -24,7 +24,8 @@ type User struct {
 
 // ServiceAccount used to read serviceaccounts.yaml.
 type ServiceAccount struct {
-	ID    uint     `yaml:"id"`
-	Name  string   `yaml:"name"`
-	Roles []string `yaml:"roles"`
+	ID          uint     `yaml:"id"`
+	Description string   `yaml:"description"`
+	Name        string   `yaml:"name"`
+	Roles       []string `yaml:"roles"`
 }

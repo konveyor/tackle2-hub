@@ -595,6 +595,7 @@ func (d *Tenant) saPatch(existing map[string]ServiceAccount, wanted []seed.Servi
 	for _, sa := range wanted {
 		roles := d.buildSaRoles(sa)
 		if existingSA, found := existing[sa.Name]; found {
+			existingSA.Description = sa.Description
 			patch.toUpdate = append(patch.toUpdate, saWithRoles{
 				sa:    existingSA,
 				roles: roles,
@@ -602,6 +603,7 @@ func (d *Tenant) saPatch(existing map[string]ServiceAccount, wanted []seed.Servi
 		} else {
 			newSA := ServiceAccount{}
 			newSA.ID = sa.ID
+			newSA.Description = sa.Description
 			newSA.Name = sa.Name
 			newSA.Subject = uuid.New().String()
 			patch.toCreate = append(patch.toCreate, saWithRoles{
@@ -839,6 +841,11 @@ func (p *SAPatch) Apply(db *gorm.DB) (err error) {
 	}
 	for i := range p.toUpdate {
 		item := &p.toUpdate[i]
+		err = db.Model(&item.sa).Select("Description").Updates(&item.sa).Error
+		if err != nil {
+			err = liberr.Wrap(err)
+			return
+		}
 		roles := make([]model.Role, len(item.roles))
 		for j := range item.roles {
 			roles[j] = model.Role(item.roles[j])
