@@ -129,7 +129,7 @@ type Provider interface {
 	// Login begin OIDC auth.
 	Login(w http.ResponseWriter, r *http.Request, reqId string) (err error)
 	// NewToken creates a new personal access token.
-	NewToken(subject string, lifespan time.Duration) (token Token, err error)
+	NewToken(subject string, lifespan time.Duration, mod ...Mod) (token Token, err error)
 	// Revoke a token.
 	Revoke(tokenId uint) (err error)
 	// Authenticate the request.
@@ -172,6 +172,9 @@ type Identity = cache.Identity
 type Subject = cache.Subject
 type Grant = cache.Grant
 type ServiceAccount = cache.ServiceAccount
+
+// Mod token modifier.
+type Mod func(m *Token)
 
 // asTime returns a time.Time for unix time.
 func asTime(n int) (t time.Time) {

@@ -1323,19 +1323,16 @@ func (m *Manager) newToken(task *Task) (token *auth.Token, err error) {
 		return
 	}
 	lifespan := Settings.Hub.Task.TokenLifespan
-	newToken, err := idp.NewToken(sa.Subject, lifespan)
+	newToken, err := idp.NewToken(
+		sa.Subject,
+		lifespan,
+		func(m *auth.Token) {
+			m.TaskID = &task.ID
+		})
 	if err != nil {
 		return
 	}
 	token = &newToken
-	token.TaskID = &task.ID
-	db := m.DB.Select("TaskID")
-	err = db.Updates(token).Error
-	if err != nil {
-		err = liberr.Wrap(err)
-		return
-	}
-	cache.TokenSaved(token)
 	return
 }
 

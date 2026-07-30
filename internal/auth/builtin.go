@@ -169,8 +169,9 @@ func (p *Builtin) Login(
 }
 
 // NewToken creates a new personal access token.
-func (p *Builtin) NewToken(subject string, lifespan time.Duration) (m Token, err error) {
+func (p *Builtin) NewToken(subject string, lifespan time.Duration, mod ...Mod) (m Token, err error) {
 	m = p.newToken(subject, lifespan)
+	//
 	s, err := p.cache.FindSubject(subject)
 	if err != nil {
 		return
@@ -187,12 +188,20 @@ func (p *Builtin) NewToken(subject string, lifespan time.Duration) (m Token, err
 	if s.IsClient() {
 		m.IdpClientID = s.ClientId
 	}
+	//
+	updated := m
+	for i := range mod {
+		mod[i](&updated)
+	}
+	m.TaskID = updated.TaskID
+	//
 	err = p.db.Save(&m).Error
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
 	p.cache.TokenSaved(&m)
+	//
 	p.warnTokenEmptyScopes(s.Login(), m.ID)
 	return
 }

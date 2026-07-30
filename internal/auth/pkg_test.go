@@ -4046,7 +4046,20 @@ func TestReload(t *testing.T) {
 	g.Expect(Domain().HasScope("tags:delete")).To(BeTrue())
 
 	// Verify provider works (can issue a token).
-	token, err := Idp().NewToken("test-subject", time.Hour)
+	user := &model.User{
+		Subject:  "reload-test-subject",
+		Login:    "reload-testuser",
+		Password: secret.HashPassword("password"),
+		Email:    "reload@example.com",
+	}
+	err = db.Create(user).Error
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		db.Delete(user)
+	})
+	Idp().Cache().UserSaved((*User)(user))
+
+	token, err := Idp().NewToken(user.Subject, time.Hour)
 	g.Expect(err).To(BeNil())
 	g.Expect(token.Secret).NotTo(BeEmpty())
 }
