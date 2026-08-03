@@ -40,15 +40,17 @@ definitions:
     properties:
       files:
         items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
         type: array
+      identity:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
       labels:
         $ref: '#/definitions/api.InExList'
       repository:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Repository'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Repository'
       targets:
         items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+          $ref: '#/definitions/api.ApTargetRef'
         type: array
     type: object
   api.ApScope:
@@ -57,6 +59,36 @@ definitions:
         $ref: '#/definitions/api.InExList'
       withKnownLibs:
         type: boolean
+    type: object
+  api.ApTargetRef:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      selection:
+        type: string
+    required:
+    - id
+    type: object
+  api.AuthSelf:
+    properties:
+      client:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.IdpClient'
+      identity:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.IdpIdentity'
+      login:
+        type: string
+      scopes:
+        items:
+          type: string
+        type: array
+      serviceAccount:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.ServiceAccount'
+      subject:
+        type: string
+      user:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.User'
     type: object
   api.CategorizedTag:
     properties:
@@ -68,7 +100,7 @@ definitions:
   api.Document:
     properties:
       content:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Map'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Map'
       schema:
         type: string
     required:
@@ -132,15 +164,6 @@ definitions:
         minItems: 1
         type: array
     type: object
-  api.Stakeholders:
-    properties:
-      contributors:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Ref'
-        type: array
-      owner:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Ref'
-    type: object
   api.TargetLabel:
     properties:
       label:
@@ -160,1287 +183,11 @@ definitions:
   api.Version:
     properties:
       definition:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Map'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Map'
       id:
         type: integer
       migration:
         type: string
-    type: object
-  github_com_konveyor_tackle2-hub_api.Addon:
-    properties:
-      container:
-        $ref: '#/definitions/k8s.Container'
-      extensions:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Extension'
-        type: array
-      metadata: {}
-      name:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_api.Analysis:
-    properties:
-      application:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      archived:
-        type: boolean
-      commit:
-        type: string
-      createTime:
-        type: string
-      createUser:
-        type: string
-      dependencies:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TechDependency'
-        type: array
-      effort:
-        type: integer
-      id:
-        type: integer
-      insights:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Insight'
-        type: array
-      summary:
-        type: object
-      updateUser:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_api.Application:
-    properties:
-      archetypes:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-        type: array
-      assessed:
-        type: boolean
-      assessments:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-        type: array
-      assets:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Repository'
-      binary:
-        type: string
-      bucket:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      businessService:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      comments:
-        type: string
-      confidence:
-        type: integer
-      contributors:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-        type: array
-      coordinates:
-        $ref: '#/definitions/api.Document'
-      createTime:
-        type: string
-      createUser:
-        type: string
-      description:
-        type: string
-      effort:
-        type: integer
-      id:
-        type: integer
-      identities:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.IdentityRef'
-        type: array
-      manifests:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-        type: array
-      migrationWave:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      name:
-        type: string
-      owner:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      platform:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      repository:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Repository'
-      review:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      risk:
-        type: string
-      tags:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TagRef'
-        type: array
-      updateUser:
-        type: string
-    required:
-    - name
-    type: object
-  github_com_konveyor_tackle2-hub_api.Archetype:
-    properties:
-      applications:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-        type: array
-      assessed:
-        type: boolean
-      assessments:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-        type: array
-      comments:
-        type: string
-      confidence:
-        type: integer
-      createTime:
-        type: string
-      createUser:
-        type: string
-      criteria:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TagRef'
-        type: array
-      description:
-        type: string
-      id:
-        type: integer
-      name:
-        type: string
-      profiles:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TargetProfile'
-        type: array
-      review:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      risk:
-        type: string
-      stakeholderGroups:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-        type: array
-      stakeholders:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-        type: array
-      tags:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TagRef'
-        type: array
-      updateUser:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_api.Assessment:
-    properties:
-      application:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      archetype:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      confidence:
-        type: integer
-      createTime:
-        type: string
-      createUser:
-        type: string
-      id:
-        type: integer
-      questionnaire:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      required:
-        type: boolean
-      risk:
-        type: string
-      riskMessages:
-        $ref: '#/definitions/api.RiskMessages'
-      sections:
-        items:
-          $ref: '#/definitions/api.Section'
-        type: array
-      stakeholderGroups:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-        type: array
-      stakeholders:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-        type: array
-      status:
-        type: string
-      thresholds:
-        $ref: '#/definitions/api.Thresholds'
-      updateUser:
-        type: string
-    required:
-    - questionnaire
-    type: object
-  github_com_konveyor_tackle2-hub_api.Attachment:
-    properties:
-      activity:
-        type: integer
-      id:
-        type: integer
-      name:
-        type: string
-    required:
-    - id
-    type: object
-  github_com_konveyor_tackle2-hub_api.Bucket:
-    properties:
-      createTime:
-        type: string
-      createUser:
-        type: string
-      expiration:
-        type: string
-      id:
-        type: integer
-      path:
-        type: string
-      updateUser:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_api.BusinessService:
-    properties:
-      createTime:
-        type: string
-      createUser:
-        type: string
-      description:
-        type: string
-      id:
-        type: integer
-      name:
-        type: string
-      owner:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      updateUser:
-        type: string
-    required:
-    - name
-    type: object
-  github_com_konveyor_tackle2-hub_api.Cache:
-    properties:
-      capacity:
-        type: string
-      exists:
-        type: boolean
-      path:
-        type: string
-      used:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_api.ConfigMap:
-    properties:
-      data: {}
-      name:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_api.CopyRequest:
-    properties:
-      sourceReview:
-        type: integer
-      targetApplications:
-        items:
-          type: integer
-        type: array
-    required:
-    - sourceReview
-    - targetApplications
-    type: object
-  github_com_konveyor_tackle2-hub_api.DepAppReport:
-    properties:
-      businessService:
-        type: string
-      dependency:
-        properties:
-          id:
-            type: integer
-          indirect:
-            type: boolean
-          labels:
-            items:
-              type: string
-            type: array
-          name:
-            type: string
-          provider:
-            type: string
-          sha:
-            type: string
-          version:
-            type: string
-        type: object
-      description:
-        type: string
-      id:
-        type: integer
-      name:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_api.Dependency:
-    properties:
-      createTime:
-        type: string
-      createUser:
-        type: string
-      from:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      id:
-        type: integer
-      to:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      updateUser:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_api.Extension:
-    properties:
-      addon:
-        type: string
-      capabilities:
-        items:
-          type: string
-        type: array
-      container:
-        $ref: '#/definitions/k8s.Container'
-      metadata: {}
-      name:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_api.Fact:
-    properties:
-      key:
-        type: string
-      source:
-        type: string
-      value: {}
-    type: object
-  github_com_konveyor_tackle2-hub_api.File:
-    properties:
-      createTime:
-        type: string
-      createUser:
-        type: string
-      encoding:
-        type: string
-      expiration:
-        type: string
-      id:
-        type: integer
-      name:
-        type: string
-      path:
-        type: string
-      updateUser:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_api.FileReport:
-    properties:
-      effort:
-        type: integer
-      file:
-        type: string
-      incidents:
-        type: integer
-      insightId:
-        type: integer
-    type: object
-  github_com_konveyor_tackle2-hub_api.IdentityRef:
-    properties:
-      id:
-        type: integer
-      name:
-        type: string
-      role:
-        type: string
-    required:
-    - id
-    - role
-    type: object
-  github_com_konveyor_tackle2-hub_api.Import:
-    additionalProperties: {}
-    type: object
-  github_com_konveyor_tackle2-hub_api.ImportSummary:
-    properties:
-      createEntities:
-        type: boolean
-      createTime:
-        type: string
-      createUser:
-        type: string
-      filename:
-        type: string
-      id:
-        type: integer
-      importStatus:
-        type: string
-      importTime:
-        type: string
-      invalidCount:
-        type: integer
-      updateUser:
-        type: string
-      validCount:
-        type: integer
-    type: object
-  github_com_konveyor_tackle2-hub_api.Incident:
-    properties:
-      codeSnip:
-        type: string
-      createTime:
-        type: string
-      createUser:
-        type: string
-      facts:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Map'
-      file:
-        type: string
-      id:
-        type: integer
-      insight:
-        type: integer
-      line:
-        type: integer
-      message:
-        type: string
-      updateUser:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_api.Insight:
-    properties:
-      analysis:
-        type: integer
-      category:
-        type: string
-      createTime:
-        type: string
-      createUser:
-        type: string
-      description:
-        type: string
-      effort:
-        type: integer
-      facts:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Map'
-      id:
-        type: integer
-      incidents:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Incident'
-        type: array
-      labels:
-        items:
-          type: string
-        type: array
-      links:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Link'
-        type: array
-      name:
-        type: string
-      rule:
-        type: string
-      ruleset:
-        type: string
-      updateUser:
-        type: string
-    required:
-    - name
-    - rule
-    - ruleset
-    type: object
-  github_com_konveyor_tackle2-hub_api.InsightAppReport:
-    properties:
-      businessService:
-        type: string
-      description:
-        type: string
-      effort:
-        type: integer
-      files:
-        type: integer
-      id:
-        type: integer
-      incidents:
-        type: integer
-      insight:
-        properties:
-          description:
-            type: string
-          id:
-            type: integer
-          name:
-            type: string
-          rule:
-            type: string
-          ruleset:
-            type: string
-        type: object
-      name:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_api.InsightReport:
-    properties:
-      category:
-        type: string
-      description:
-        type: string
-      effort:
-        type: integer
-      files:
-        type: integer
-      id:
-        type: integer
-      labels:
-        items:
-          type: string
-        type: array
-      links:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Link'
-        type: array
-      name:
-        type: string
-      rule:
-        type: string
-      ruleset:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_api.IssueType:
-    properties:
-      id:
-        type: string
-      name:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_api.JobFunction:
-    properties:
-      createTime:
-        type: string
-      createUser:
-        type: string
-      id:
-        type: integer
-      name:
-        type: string
-      stakeholders:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-        type: array
-      updateUser:
-        type: string
-    required:
-    - name
-    type: object
-  github_com_konveyor_tackle2-hub_api.Link:
-    properties:
-      title:
-        type: string
-      url:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_api.Login:
-    properties:
-      expiry:
-        type: integer
-      password:
-        type: string
-      refresh:
-        type: string
-      token:
-        type: string
-      user:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_api.Map:
-    additionalProperties: {}
-    type: object
-  github_com_konveyor_tackle2-hub_api.MigrationWave:
-    properties:
-      applications:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-        type: array
-      createTime:
-        type: string
-      createUser:
-        type: string
-      endDate:
-        type: string
-      id:
-        type: integer
-      name:
-        type: string
-      stakeholderGroups:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-        type: array
-      stakeholders:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-        type: array
-      startDate:
-        type: string
-      updateUser:
-        type: string
-    required:
-    - endDate
-    - startDate
-    type: object
-  github_com_konveyor_tackle2-hub_api.Project:
-    properties:
-      id:
-        type: string
-      name:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_api.Questionnaire:
-    properties:
-      builtin:
-        type: boolean
-      createTime:
-        type: string
-      createUser:
-        type: string
-      description:
-        type: string
-      id:
-        type: integer
-      name:
-        type: string
-      required:
-        type: boolean
-      riskMessages:
-        $ref: '#/definitions/api.RiskMessages'
-      sections:
-        items:
-          $ref: '#/definitions/api.Section'
-        minItems: 1
-        type: array
-      thresholds:
-        $ref: '#/definitions/api.Thresholds'
-      updateUser:
-        type: string
-    required:
-    - name
-    - riskMessages
-    - sections
-    - thresholds
-    type: object
-  github_com_konveyor_tackle2-hub_api.Ref:
-    properties:
-      id:
-        type: integer
-      name:
-        type: string
-    required:
-    - id
-    type: object
-  github_com_konveyor_tackle2-hub_api.Repository:
-    properties:
-      branch:
-        type: string
-      kind:
-        type: string
-      path:
-        type: string
-      tag:
-        type: string
-      url:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_api.Review:
-    properties:
-      application:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      archetype:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      businessCriticality:
-        type: integer
-      comments:
-        type: string
-      createTime:
-        type: string
-      createUser:
-        type: string
-      effortEstimate:
-        type: string
-      id:
-        type: integer
-      proposedAction:
-        type: string
-      updateUser:
-        type: string
-      workPriority:
-        type: integer
-    type: object
-  github_com_konveyor_tackle2-hub_api.Rule:
-    properties:
-      createTime:
-        type: string
-      createUser:
-        type: string
-      description:
-        type: string
-      file:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      id:
-        type: integer
-      labels:
-        items:
-          type: string
-        type: array
-      name:
-        type: string
-      updateUser:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_api.RuleReport:
-    properties:
-      applications:
-        type: integer
-      category:
-        type: string
-      description:
-        type: string
-      effort:
-        type: integer
-      labels:
-        items:
-          type: string
-        type: array
-      links:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Link'
-        type: array
-      name:
-        type: string
-      rule:
-        type: string
-      ruleset:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_api.RuleSet:
-    properties:
-      createTime:
-        type: string
-      createUser:
-        type: string
-      dependsOn:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-        type: array
-      description:
-        type: string
-      id:
-        type: integer
-      identity:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      kind:
-        type: string
-      name:
-        type: string
-      repository:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Repository'
-      rules:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Rule'
-        type: array
-      updateUser:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_api.Service:
-    properties:
-      name:
-        type: string
-      route:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_api.Setting:
-    properties:
-      key:
-        type: string
-      value: {}
-    type: object
-  github_com_konveyor_tackle2-hub_api.Stakeholder:
-    properties:
-      businessServices:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-        type: array
-      contributes:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-        type: array
-      createTime:
-        type: string
-      createUser:
-        type: string
-      email:
-        type: string
-      id:
-        type: integer
-      jobFunction:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      migrationWaves:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-        type: array
-      name:
-        type: string
-      owns:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-        type: array
-      stakeholderGroups:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-        type: array
-      updateUser:
-        type: string
-    required:
-    - email
-    - name
-    type: object
-  github_com_konveyor_tackle2-hub_api.StakeholderGroup:
-    properties:
-      createTime:
-        type: string
-      createUser:
-        type: string
-      description:
-        type: string
-      id:
-        type: integer
-      migrationWaves:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-        type: array
-      name:
-        type: string
-      stakeholders:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-        type: array
-      updateUser:
-        type: string
-    required:
-    - name
-    type: object
-  github_com_konveyor_tackle2-hub_api.TTL:
-    properties:
-      created:
-        type: integer
-      failed:
-        type: integer
-      pending:
-        type: integer
-      running:
-        type: integer
-      succeeded:
-        type: integer
-    type: object
-  github_com_konveyor_tackle2-hub_api.Tag:
-    properties:
-      category:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      createTime:
-        type: string
-      createUser:
-        type: string
-      id:
-        type: integer
-      name:
-        type: string
-      updateUser:
-        type: string
-    required:
-    - category
-    - name
-    type: object
-  github_com_konveyor_tackle2-hub_api.TagCategory:
-    properties:
-      colour:
-        type: string
-      createTime:
-        type: string
-      createUser:
-        type: string
-      id:
-        type: integer
-      name:
-        type: string
-      rank:
-        description: Deprecated
-        type: integer
-      tags:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-        type: array
-      updateUser:
-        type: string
-      username:
-        description: Deprecated
-        type: string
-    required:
-    - name
-    type: object
-  github_com_konveyor_tackle2-hub_api.TagRef:
-    properties:
-      id:
-        type: integer
-      name:
-        type: string
-      source:
-        type: string
-      virtual:
-        type: boolean
-    required:
-    - id
-    type: object
-  github_com_konveyor_tackle2-hub_api.TargetProfile:
-    properties:
-      analysisProfile:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      createTime:
-        type: string
-      createUser:
-        type: string
-      generators:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-        type: array
-      id:
-        type: integer
-      name:
-        type: string
-      updateUser:
-        type: string
-    required:
-    - name
-    type: object
-  github_com_konveyor_tackle2-hub_api.Task:
-    properties:
-      activity:
-        items:
-          type: string
-        type: array
-      addon:
-        type: string
-      application:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      attached:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Attachment'
-        type: array
-      bucket:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      createTime:
-        type: string
-      createUser:
-        type: string
-      data: {}
-      errors:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskError'
-        type: array
-      events:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskEvent'
-        type: array
-      extensions:
-        items:
-          type: string
-        type: array
-      id:
-        type: integer
-      kind:
-        type: string
-      locator:
-        type: string
-      name:
-        type: string
-      platform:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      pod:
-        type: string
-      policy:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskPolicy'
-      priority:
-        type: integer
-      retries:
-        type: integer
-      started:
-        type: string
-      state:
-        type: string
-      terminated:
-        type: string
-      ttl:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TTL'
-      updateUser:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_api.TaskDashboard:
-    properties:
-      addon:
-        type: string
-      application:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      createTime:
-        type: string
-      createUser:
-        type: string
-      errors:
-        type: integer
-      id:
-        type: integer
-      kind:
-        type: string
-      locator:
-        type: string
-      name:
-        type: string
-      platform:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      started:
-        type: string
-      state:
-        type: string
-      terminated:
-        type: string
-      updateUser:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_api.TaskError:
-    properties:
-      description:
-        type: string
-      severity:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_api.TaskEvent:
-    properties:
-      count:
-        type: integer
-      kind:
-        type: string
-      last:
-        type: string
-      reason:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_api.TaskGroup:
-    properties:
-      addon:
-        type: string
-      bucket:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      createTime:
-        type: string
-      createUser:
-        type: string
-      data:
-        type: object
-      extensions:
-        items:
-          type: string
-        type: array
-      id:
-        type: integer
-      kind:
-        type: string
-      name:
-        type: string
-      policy:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskPolicy'
-      priority:
-        type: integer
-      state:
-        type: string
-      tasks:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Task'
-        type: array
-      updateUser:
-        type: string
-    required:
-    - data
-    type: object
-  github_com_konveyor_tackle2-hub_api.TaskPolicy:
-    properties:
-      isolated:
-        type: boolean
-      preemptEnabled:
-        type: boolean
-      preemptExempt:
-        type: boolean
-    type: object
-  github_com_konveyor_tackle2-hub_api.TaskQueue:
-    properties:
-      pending:
-        type: integer
-      postponed:
-        type: integer
-      quotaBlocked:
-        type: integer
-      ready:
-        type: integer
-      running:
-        type: integer
-      total:
-        type: integer
-    type: object
-  github_com_konveyor_tackle2-hub_api.TaskReport:
-    properties:
-      activity:
-        items:
-          type: string
-        type: array
-      attached:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Attachment'
-        type: array
-      completed:
-        type: integer
-      createTime:
-        type: string
-      createUser:
-        type: string
-      errors:
-        items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskError'
-        type: array
-      id:
-        type: integer
-      result: {}
-      status:
-        type: string
-      task:
-        type: integer
-      total:
-        type: integer
-      updateUser:
-        type: string
-    type: object
-  github_com_konveyor_tackle2-hub_api.TechDependency:
-    properties:
-      analysis:
-        type: integer
-      createTime:
-        type: string
-      createUser:
-        type: string
-      id:
-        type: integer
-      indirect:
-        type: boolean
-      labels:
-        items:
-          type: string
-        type: array
-      name:
-        type: string
-      provider:
-        type: string
-      sha:
-        type: string
-      updateUser:
-        type: string
-      version:
-        type: string
-    required:
-    - name
-    type: object
-  github_com_konveyor_tackle2-hub_api.Ticket:
-    properties:
-      application:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      createTime:
-        type: string
-      createUser:
-        type: string
-      error:
-        type: boolean
-      fields:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Map'
-      id:
-        type: integer
-      kind:
-        type: string
-      lastUpdated:
-        type: string
-      link:
-        type: string
-      message:
-        type: string
-      parent:
-        type: string
-      reference:
-        type: string
-      status:
-        type: string
-      tracker:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      updateUser:
-        type: string
-    required:
-    - application
-    - kind
-    - parent
-    - tracker
-    type: object
-  github_com_konveyor_tackle2-hub_api.Tracker:
-    properties:
-      connected:
-        type: boolean
-      createTime:
-        type: string
-      createUser:
-        type: string
-      id:
-        type: integer
-      identity:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
-      insecure:
-        type: boolean
-      kind:
-        enum:
-        - jira-cloud
-        - jira-onprem
-        type: string
-      lastUpdated:
-        type: string
-      message:
-        type: string
-      name:
-        type: string
-      updateUser:
-        type: string
-      url:
-        type: string
-    required:
-    - identity
-    - kind
-    - name
-    - url
-    type: object
-  github_com_konveyor_tackle2-hub_api.Vertex:
-    properties:
-      applicationId:
-        type: integer
-      applicationName:
-        type: string
-      decision:
-        type: string
-      effort:
-        type: integer
-      effortEstimate:
-        type: string
-      positionX:
-        type: integer
-      positionY:
-        type: integer
     type: object
   github_com_konveyor_tackle2-hub_internal_api.AnalysisProfile:
     properties:
@@ -1460,6 +207,8 @@ definitions:
         $ref: '#/definitions/api.ApRules'
       scope:
         $ref: '#/definitions/api.ApScope'
+      updateTime:
+        type: string
       updateUser:
         type: string
     type: object
@@ -1470,11 +219,13 @@ definitions:
       createUser:
         type: string
       from:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
       id:
         type: integer
       to:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      updateTime:
+        type: string
       updateUser:
         type: string
     type: object
@@ -1489,23 +240,25 @@ definitions:
       id:
         type: integer
       identity:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
       kind:
         type: string
       name:
         type: string
       params:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Map'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Map'
       profiles:
         items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
         type: array
       repository:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Repository'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Repository'
+      updateTime:
+        type: string
       updateUser:
         type: string
       values:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Map'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Map'
     required:
     - kind
     type: object
@@ -1531,6 +284,8 @@ definitions:
         type: string
       settings:
         type: string
+      updateTime:
+        type: string
       updateUser:
         type: string
       user:
@@ -1539,19 +294,96 @@ definitions:
     - kind
     - name
     type: object
+  github_com_konveyor_tackle2-hub_internal_api.IdpClient:
+    properties:
+      applicationType:
+        type: string
+      clientId:
+        type: string
+      createTime:
+        type: string
+      createUser:
+        type: string
+      grants:
+        items:
+          type: string
+        type: array
+      id:
+        type: integer
+      redirectURIs:
+        items:
+          type: string
+        type: array
+      scopes:
+        items:
+          type: string
+        type: array
+      secret:
+        type: string
+      tokens:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    required:
+    - applicationType
+    - clientId
+    - grants
+    - scopes
+    type: object
+  github_com_konveyor_tackle2-hub_internal_api.IdpIdentity:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      issuer:
+        type: string
+      kind:
+        type: string
+      login:
+        type: string
+      name:
+        type: string
+      scopes:
+        items:
+          type: string
+        type: array
+      subject:
+        type: string
+      tokens:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    required:
+    - issuer
+    - kind
+    - subject
+    type: object
   github_com_konveyor_tackle2-hub_internal_api.LatestSchema:
     properties:
       definition:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Map'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Map'
       name:
         type: string
     type: object
   github_com_konveyor_tackle2-hub_internal_api.Manifest:
     properties:
       application:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
       content:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Map'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Map'
       createTime:
         type: string
       createUser:
@@ -1559,7 +391,9 @@ definitions:
       id:
         type: integer
       secret:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Map'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Map'
+      updateTime:
+        type: string
       updateUser:
         type: string
     type: object
@@ -1567,7 +401,7 @@ definitions:
     properties:
       applications:
         items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
         type: array
       createTime:
         type: string
@@ -1576,10 +410,12 @@ definitions:
       id:
         type: integer
       identity:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
       kind:
         type: string
       name:
+        type: string
+      updateTime:
         type: string
       updateUser:
         type: string
@@ -1605,7 +441,7 @@ definitions:
       id:
         type: integer
       identity:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
       kind:
         enum:
         - http
@@ -1613,6 +449,8 @@ definitions:
         type: string
       port:
         type: integer
+      updateTime:
+        type: string
       updateUser:
         type: string
     type: object
@@ -1642,24 +480,26 @@ definitions:
         type: string
       dependsOn:
         items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
         type: array
       description:
         type: string
       id:
         type: integer
       identity:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
       kind:
         type: string
       name:
         type: string
       repository:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Repository'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Repository'
       rules:
         items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Rule'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Rule'
         type: array
+      updateTime:
+        type: string
       updateUser:
         type: string
     type: object
@@ -1678,10 +518,39 @@ definitions:
           $ref: '#/definitions/api.Version'
         type: array
     type: object
+  github_com_konveyor_tackle2-hub_internal_api.ServiceAccount:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      roles:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      subject:
+        type: string
+      tokens:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    required:
+    - name
+    type: object
   github_com_konveyor_tackle2-hub_internal_api.Tag:
     properties:
       category:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
       createTime:
         type: string
       createUser:
@@ -1689,6 +558,8 @@ definitions:
       id:
         type: integer
       name:
+        type: string
+      updateTime:
         type: string
       updateUser:
         type: string
@@ -1724,7 +595,7 @@ definitions:
       id:
         type: integer
       image:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
       labels:
         items:
           $ref: '#/definitions/api.TargetLabel'
@@ -1734,7 +605,9 @@ definitions:
       provider:
         type: string
       ruleset:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.RuleSet'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.RuleSet'
+      updateTime:
+        type: string
       updateUser:
         type: string
     type: object
@@ -1747,13 +620,13 @@ definitions:
       addon:
         type: string
       application:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
       attached:
         items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Attachment'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Attachment'
         type: array
       bucket:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
       createTime:
         type: string
       createUser:
@@ -1761,11 +634,11 @@ definitions:
       data: {}
       errors:
         items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskError'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskError'
         type: array
       events:
         items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskEvent'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskEvent'
         type: array
       extensions:
         items:
@@ -1780,11 +653,11 @@ definitions:
       name:
         type: string
       platform:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
       pod:
         type: string
       policy:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskPolicy'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskPolicy'
       priority:
         type: integer
       retries:
@@ -1795,8 +668,14 @@ definitions:
         type: string
       terminated:
         type: string
+      tokens:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
       ttl:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TTL'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TTL'
+      updateTime:
+        type: string
       updateUser:
         type: string
     type: object
@@ -1805,7 +684,7 @@ definitions:
       addon:
         type: string
       bucket:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
       createTime:
         type: string
       createUser:
@@ -1823,19 +702,1627 @@ definitions:
       name:
         type: string
       policy:
-        $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskPolicy'
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskPolicy'
       priority:
         type: integer
       state:
         type: string
       tasks:
         items:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Task'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Task'
         type: array
+      updateTime:
+        type: string
       updateUser:
         type: string
     required:
     - data
+    type: object
+  github_com_konveyor_tackle2-hub_internal_api.User:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      login:
+        type: string
+      name:
+        type: string
+      password:
+        maxLength: 72
+        type: string
+      roles:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      subject:
+        type: string
+      tokens:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    required:
+    - email
+    - login
+    - password
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Addon:
+    properties:
+      container:
+        $ref: '#/definitions/k8s.Container'
+      extensions:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Extension'
+        type: array
+      metadata: {}
+      name:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Analysis:
+    properties:
+      application:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      archived:
+        type: boolean
+      commit:
+        type: string
+      createTime:
+        type: string
+      createUser:
+        type: string
+      dependencies:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TechDependency'
+        type: array
+      effort:
+        type: integer
+      id:
+        type: integer
+      insights:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Insight'
+        type: array
+      summary:
+        type: object
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Application:
+    properties:
+      archetypes:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      assessed:
+        type: boolean
+      assessments:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      assets:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Repository'
+      binary:
+        type: string
+      bucket:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      businessService:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      comments:
+        type: string
+      confidence:
+        type: integer
+      contributors:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      coordinates:
+        $ref: '#/definitions/api.Document'
+      createTime:
+        type: string
+      createUser:
+        type: string
+      description:
+        type: string
+      effort:
+        type: integer
+      id:
+        type: integer
+      identities:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.IdentityRef'
+        type: array
+      manifests:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      migrationWave:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      name:
+        type: string
+      owner:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      platform:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      repository:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Repository'
+      review:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      risk:
+        type: string
+      tags:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TagRef'
+        type: array
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    required:
+    - name
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Archetype:
+    properties:
+      applications:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      assessed:
+        type: boolean
+      assessments:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      comments:
+        type: string
+      confidence:
+        type: integer
+      createTime:
+        type: string
+      createUser:
+        type: string
+      criteria:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TagRef'
+        type: array
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      profiles:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TargetProfile'
+        type: array
+      review:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      risk:
+        type: string
+      stakeholderGroups:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      stakeholders:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      tags:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TagRef'
+        type: array
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Assessment:
+    properties:
+      application:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      archetype:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      confidence:
+        type: integer
+      createTime:
+        type: string
+      createUser:
+        type: string
+      id:
+        type: integer
+      questionnaire:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      required:
+        type: boolean
+      risk:
+        type: string
+      riskMessages:
+        $ref: '#/definitions/api.RiskMessages'
+      sections:
+        items:
+          $ref: '#/definitions/api.Section'
+        type: array
+      stakeholderGroups:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      stakeholders:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      status:
+        type: string
+      thresholds:
+        $ref: '#/definitions/api.Thresholds'
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    required:
+    - questionnaire
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Attachment:
+    properties:
+      activity:
+        type: integer
+      id:
+        type: integer
+      name:
+        type: string
+    required:
+    - id
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Bucket:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      expiration:
+        type: string
+      id:
+        type: integer
+      path:
+        type: string
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.BusinessService:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      owner:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    required:
+    - name
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Cache:
+    properties:
+      capacity:
+        type: string
+      exists:
+        type: boolean
+      path:
+        type: string
+      used:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.ConfigMap:
+    properties:
+      data: {}
+      name:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.CopyRequest:
+    properties:
+      sourceReview:
+        type: integer
+      targetApplications:
+        items:
+          type: integer
+        type: array
+    required:
+    - sourceReview
+    - targetApplications
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.DepAppReport:
+    properties:
+      businessService:
+        type: string
+      dependency:
+        properties:
+          id:
+            type: integer
+          indirect:
+            type: boolean
+          labels:
+            items:
+              type: string
+            type: array
+          name:
+            type: string
+          provider:
+            type: string
+          sha:
+            type: string
+          version:
+            type: string
+        type: object
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Dependency:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      from:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      id:
+        type: integer
+      to:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Extension:
+    properties:
+      addon:
+        type: string
+      capabilities:
+        items:
+          type: string
+        type: array
+      container:
+        $ref: '#/definitions/k8s.Container'
+      metadata: {}
+      name:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Fact:
+    properties:
+      key:
+        type: string
+      source:
+        type: string
+      value: {}
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.File:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      encoding:
+        type: string
+      expiration:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      path:
+        type: string
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.FileReport:
+    properties:
+      effort:
+        type: integer
+      file:
+        type: string
+      incidents:
+        type: integer
+      insightId:
+        type: integer
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Grant:
+    properties:
+      authId:
+        type: string
+      createTime:
+        type: string
+      createUser:
+        type: string
+      expiration:
+        type: string
+      id:
+        type: integer
+      idpClient:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      idpIdentity:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      issued:
+        type: string
+      kind:
+        type: string
+      scopes:
+        items:
+          type: string
+        type: array
+      subject:
+        type: string
+      tokens:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+      user:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.IdentityRef:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      role:
+        type: string
+    required:
+    - id
+    - role
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.IdpClient:
+    properties:
+      applicationType:
+        type: string
+      clientId:
+        type: string
+      createTime:
+        type: string
+      createUser:
+        type: string
+      grants:
+        items:
+          type: string
+        type: array
+      id:
+        type: integer
+      redirectURIs:
+        items:
+          type: string
+        type: array
+      scopes:
+        items:
+          type: string
+        type: array
+      secret:
+        type: string
+      tokens:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    required:
+    - applicationType
+    - clientId
+    - grants
+    - scopes
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.IdpIdentity:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      issuer:
+        type: string
+      kind:
+        type: string
+      login:
+        type: string
+      name:
+        type: string
+      scopes:
+        items:
+          type: string
+        type: array
+      subject:
+        type: string
+      tokens:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    required:
+    - issuer
+    - kind
+    - subject
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Import:
+    additionalProperties: {}
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.ImportSummary:
+    properties:
+      createEntities:
+        type: boolean
+      createTime:
+        type: string
+      createUser:
+        type: string
+      filename:
+        type: string
+      id:
+        type: integer
+      importStatus:
+        type: string
+      importTime:
+        type: string
+      invalidCount:
+        type: integer
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+      validCount:
+        type: integer
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Incident:
+    properties:
+      codeSnip:
+        type: string
+      createTime:
+        type: string
+      createUser:
+        type: string
+      facts:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Map'
+      file:
+        type: string
+      id:
+        type: integer
+      insight:
+        type: integer
+      line:
+        type: integer
+      message:
+        type: string
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Insight:
+    properties:
+      analysis:
+        type: integer
+      category:
+        type: string
+      createTime:
+        type: string
+      createUser:
+        type: string
+      description:
+        type: string
+      effort:
+        type: integer
+      facts:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Map'
+      id:
+        type: integer
+      incidents:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Incident'
+        type: array
+      labels:
+        items:
+          type: string
+        type: array
+      links:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Link'
+        type: array
+      name:
+        type: string
+      rule:
+        type: string
+      ruleset:
+        type: string
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    required:
+    - name
+    - rule
+    - ruleset
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.InsightAppReport:
+    properties:
+      businessService:
+        type: string
+      description:
+        type: string
+      effort:
+        type: integer
+      files:
+        type: integer
+      id:
+        type: integer
+      incidents:
+        type: integer
+      insight:
+        properties:
+          description:
+            type: string
+          id:
+            type: integer
+          name:
+            type: string
+          rule:
+            type: string
+          ruleset:
+            type: string
+        type: object
+      name:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.InsightReport:
+    properties:
+      category:
+        type: string
+      description:
+        type: string
+      effort:
+        type: integer
+      files:
+        type: integer
+      id:
+        type: integer
+      labels:
+        items:
+          type: string
+        type: array
+      links:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Link'
+        type: array
+      name:
+        type: string
+      rule:
+        type: string
+      ruleset:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.IssueType:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.JobFunction:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      stakeholders:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    required:
+    - name
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Link:
+    properties:
+      title:
+        type: string
+      url:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Map:
+    additionalProperties: {}
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.MigrationWave:
+    properties:
+      applications:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      createTime:
+        type: string
+      createUser:
+        type: string
+      endDate:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      stakeholderGroups:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      stakeholders:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      startDate:
+        type: string
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    required:
+    - endDate
+    - startDate
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.PAT:
+    properties:
+      description:
+        type: string
+      expiration:
+        type: string
+      id:
+        type: integer
+      lifespan:
+        type: integer
+      token:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Project:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Questionnaire:
+    properties:
+      builtin:
+        type: boolean
+      createTime:
+        type: string
+      createUser:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      required:
+        type: boolean
+      riskMessages:
+        $ref: '#/definitions/api.RiskMessages'
+      sections:
+        items:
+          $ref: '#/definitions/api.Section'
+        minItems: 1
+        type: array
+      thresholds:
+        $ref: '#/definitions/api.Thresholds'
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    required:
+    - name
+    - riskMessages
+    - sections
+    - thresholds
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Ref:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+    required:
+    - id
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Repository:
+    properties:
+      branch:
+        type: string
+      kind:
+        type: string
+      path:
+        type: string
+      tag:
+        type: string
+      url:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Review:
+    properties:
+      application:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      archetype:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      businessCriticality:
+        type: integer
+      comments:
+        type: string
+      createTime:
+        type: string
+      createUser:
+        type: string
+      effortEstimate:
+        type: string
+      id:
+        type: integer
+      proposedAction:
+        type: string
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+      workPriority:
+        type: integer
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Role:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      scopes:
+        items:
+          type: string
+        type: array
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    required:
+    - name
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Rule:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      description:
+        type: string
+      file:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      id:
+        type: integer
+      labels:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.RuleReport:
+    properties:
+      applications:
+        type: integer
+      category:
+        type: string
+      description:
+        type: string
+      effort:
+        type: integer
+      labels:
+        items:
+          type: string
+        type: array
+      links:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Link'
+        type: array
+      name:
+        type: string
+      rule:
+        type: string
+      ruleset:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.RuleSet:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      dependsOn:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      description:
+        type: string
+      id:
+        type: integer
+      identity:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      kind:
+        type: string
+      name:
+        type: string
+      repository:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Repository'
+      rules:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Rule'
+        type: array
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Scope:
+    properties:
+      name:
+        type: string
+      resource:
+        type: string
+      verb:
+        type: string
+    required:
+    - name
+    - resource
+    - verb
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Service:
+    properties:
+      name:
+        type: string
+      route:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Setting:
+    properties:
+      key:
+        type: string
+      value: {}
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Stakeholder:
+    properties:
+      businessServices:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      contributes:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      createTime:
+        type: string
+      createUser:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      jobFunction:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      migrationWaves:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      name:
+        type: string
+      owns:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      stakeholderGroups:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    required:
+    - email
+    - name
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.StakeholderGroup:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      migrationWaves:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      name:
+        type: string
+      stakeholders:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    required:
+    - name
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Stakeholders:
+    properties:
+      contributors:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      owner:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.TTL:
+    properties:
+      created:
+        type: integer
+      failed:
+        type: integer
+      pending:
+        type: integer
+      running:
+        type: integer
+      succeeded:
+        type: integer
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Tag:
+    properties:
+      category:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      createTime:
+        type: string
+      createUser:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    required:
+    - category
+    - name
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.TagCategory:
+    properties:
+      colour:
+        type: string
+      createTime:
+        type: string
+      createUser:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      rank:
+        description: Deprecated
+        type: integer
+      tags:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+      username:
+        description: Deprecated
+        type: string
+    required:
+    - name
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.TagRef:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      source:
+        type: string
+      virtual:
+        type: boolean
+    required:
+    - id
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.TargetProfile:
+    properties:
+      analysisProfile:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      createTime:
+        type: string
+      createUser:
+        type: string
+      generators:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      id:
+        type: integer
+      name:
+        type: string
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    required:
+    - name
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Task:
+    properties:
+      activity:
+        items:
+          type: string
+        type: array
+      addon:
+        type: string
+      application:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      attached:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Attachment'
+        type: array
+      bucket:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      createTime:
+        type: string
+      createUser:
+        type: string
+      data: {}
+      errors:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskError'
+        type: array
+      events:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskEvent'
+        type: array
+      extensions:
+        items:
+          type: string
+        type: array
+      id:
+        type: integer
+      kind:
+        type: string
+      locator:
+        type: string
+      name:
+        type: string
+      platform:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      pod:
+        type: string
+      policy:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskPolicy'
+      priority:
+        type: integer
+      retries:
+        type: integer
+      started:
+        type: string
+      state:
+        type: string
+      terminated:
+        type: string
+      tokens:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      ttl:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TTL'
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.TaskDashboard:
+    properties:
+      addon:
+        type: string
+      application:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      createTime:
+        type: string
+      createUser:
+        type: string
+      errors:
+        type: integer
+      id:
+        type: integer
+      kind:
+        type: string
+      locator:
+        type: string
+      name:
+        type: string
+      platform:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      started:
+        type: string
+      state:
+        type: string
+      terminated:
+        type: string
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.TaskError:
+    properties:
+      description:
+        type: string
+      severity:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.TaskEvent:
+    properties:
+      count:
+        type: integer
+      kind:
+        type: string
+      last:
+        type: string
+      reason:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.TaskGroup:
+    properties:
+      addon:
+        type: string
+      bucket:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      createTime:
+        type: string
+      createUser:
+        type: string
+      data:
+        type: object
+      extensions:
+        items:
+          type: string
+        type: array
+      id:
+        type: integer
+      kind:
+        type: string
+      name:
+        type: string
+      policy:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskPolicy'
+      priority:
+        type: integer
+      state:
+        type: string
+      tasks:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Task'
+        type: array
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    required:
+    - data
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.TaskPolicy:
+    properties:
+      isolated:
+        type: boolean
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.TaskQueue:
+    properties:
+      pending:
+        type: integer
+      postponed:
+        type: integer
+      quotaBlocked:
+        type: integer
+      ready:
+        type: integer
+      running:
+        type: integer
+      total:
+        type: integer
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.TaskReport:
+    properties:
+      activity:
+        items:
+          type: string
+        type: array
+      attached:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Attachment'
+        type: array
+      completed:
+        type: integer
+      createTime:
+        type: string
+      createUser:
+        type: string
+      errors:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskError'
+        type: array
+      id:
+        type: integer
+      result: {}
+      status:
+        type: string
+      task:
+        type: integer
+      total:
+        type: integer
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.TechDependency:
+    properties:
+      analysis:
+        type: integer
+      createTime:
+        type: string
+      createUser:
+        type: string
+      id:
+        type: integer
+      indirect:
+        type: boolean
+      labels:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      provider:
+        type: string
+      sha:
+        type: string
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+      version:
+        type: string
+    required:
+    - name
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Ticket:
+    properties:
+      application:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      createTime:
+        type: string
+      createUser:
+        type: string
+      error:
+        type: boolean
+      fields:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Map'
+      id:
+        type: integer
+      kind:
+        type: string
+      lastUpdated:
+        type: string
+      link:
+        type: string
+      message:
+        type: string
+      parent:
+        type: string
+      reference:
+        type: string
+      status:
+        type: string
+      tracker:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    required:
+    - application
+    - kind
+    - parent
+    - tracker
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Token:
+    properties:
+      authId:
+        type: string
+      createTime:
+        type: string
+      createUser:
+        type: string
+      description:
+        type: string
+      expiration:
+        type: string
+      grant:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      id:
+        type: integer
+      idpClient:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      idpIdentity:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      issued:
+        type: string
+      kind:
+        type: string
+      lifespan:
+        type: integer
+      scopes:
+        items:
+          type: string
+        type: array
+      serviceAccount:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      subject:
+        type: string
+      task:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+      user:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Tracker:
+    properties:
+      connected:
+        type: boolean
+      createTime:
+        type: string
+      createUser:
+        type: string
+      id:
+        type: integer
+      identity:
+        $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+      insecure:
+        type: boolean
+      kind:
+        enum:
+        - jira-cloud
+        - jira-onprem
+        type: string
+      lastUpdated:
+        type: string
+      message:
+        type: string
+      name:
+        type: string
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+      url:
+        type: string
+    required:
+    - identity
+    - kind
+    - name
+    - url
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.User:
+    properties:
+      createTime:
+        type: string
+      createUser:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      login:
+        type: string
+      name:
+        type: string
+      password:
+        maxLength: 72
+        type: string
+      roles:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      subject:
+        type: string
+      tokens:
+        items:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
+        type: array
+      updateTime:
+        type: string
+      updateUser:
+        type: string
+    required:
+    - email
+    - login
+    - password
+    type: object
+  github_com_konveyor_tackle2-hub_shared_api.Vertex:
+    properties:
+      applicationId:
+        type: integer
+      applicationName:
+        type: string
+      decision:
+        type: string
+      effort:
+        type: integer
+      effortEstimate:
+        type: string
+      positionX:
+        type: integer
+      positionY:
+        type: integer
     type: object
   k8s.Capabilities:
     properties:
@@ -2198,7 +2685,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Addon'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Addon'
             type: array
       summary: List all addons.
       tags:
@@ -2218,7 +2705,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Addon'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Addon'
       summary: Get an addon by name.
       tags:
       - addons
@@ -2242,7 +2729,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Vertex'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Vertex'
             type: array
       summary: Generate an application dependency graph arranged in topological order.
       tags:
@@ -2259,7 +2746,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Analysis'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Analysis'
             type: array
       summary: List analyses.
       tags:
@@ -2293,7 +2780,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Analysis'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Analysis'
       summary: Get an analysis (report) by ID.
       tags:
       - analyses
@@ -2337,7 +2824,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TechDependency'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TechDependency'
             type: array
       summary: List analysis dependencies.
       tags:
@@ -2366,7 +2853,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Insight'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Insight'
             type: array
       summary: List insights for an analysis.
       tags:
@@ -2398,7 +2885,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TechDependency'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TechDependency'
             type: array
       summary: List dependency reports.
       tags:
@@ -2417,7 +2904,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Incident'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Incident'
             type: array
       summary: List all incidents.
       tags:
@@ -2437,7 +2924,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Incident'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Incident'
       summary: Get an incident.
       tags:
       - incident
@@ -2462,7 +2949,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Insight'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Insight'
             type: array
       summary: List all insights.
       tags:
@@ -2482,7 +2969,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Insight'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Insight'
       summary: Get an insight.
       tags:
       - insight
@@ -2505,7 +2992,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Incident'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Incident'
             type: array
       summary: List incidents for an insight.
       tags:
@@ -2550,7 +3037,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.DepAppReport'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.DepAppReport'
             type: array
       summary: List application reports.
       tags:
@@ -2584,7 +3071,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.InsightReport'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.InsightReport'
             type: array
       summary: List application insight reports.
       tags:
@@ -2614,7 +3101,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.FileReport'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.FileReport'
             type: array
       summary: List incident file reports.
       tags:
@@ -2648,7 +3135,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.RuleReport'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.RuleReport'
             type: array
       summary: List rule reports.
       tags:
@@ -2794,7 +3281,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Analysis'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Analysis'
       summary: Create an analysis.
       tags:
       - analyses
@@ -2821,7 +3308,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TechDependency'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TechDependency'
             type: array
       summary: List application dependencies.
       tags:
@@ -2850,7 +3337,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Insight'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Insight'
             type: array
       summary: List application insights.
       tags:
@@ -2888,7 +3375,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Application'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Application'
             type: array
       summary: List all applications.
       tags:
@@ -2903,14 +3390,14 @@ paths:
         name: application
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Application'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Application'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Application'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Application'
       summary: Create an application.
       tags:
       - applications
@@ -2943,7 +3430,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Application'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Application'
       summary: Get an application by ID.
       tags:
       - applications
@@ -2962,7 +3449,7 @@ paths:
         name: application
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Application'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Application'
       responses:
         "204":
           description: No Content
@@ -2984,7 +3471,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Analysis'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Analysis'
       summary: Get the latest analysis.
       tags:
       - analyses
@@ -3041,7 +3528,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Assessment'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Assessment'
             type: array
       summary: List the assessments of an Application and any it inherits from its
         archetypes.
@@ -3062,14 +3549,14 @@ paths:
         name: assessment
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Assessment'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Assessment'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Assessment'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Assessment'
       summary: Create an application assessment.
       tags:
       - applications
@@ -3161,7 +3648,7 @@ paths:
         name: fact
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Fact'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Fact'
       produces:
       - application/json
       responses:
@@ -3270,7 +3757,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Map'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Map'
       summary: List facts.
       tags:
       - applications
@@ -3294,7 +3781,7 @@ paths:
         name: factmap
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Map'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Map'
       responses:
         "204":
           description: No Content
@@ -3398,7 +3885,7 @@ paths:
         name: application
         required: true
         schema:
-          $ref: '#/definitions/api.Stakeholders'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Stakeholders'
       responses:
         "204":
           description: No Content
@@ -3421,7 +3908,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
             type: array
       summary: List tag references.
       tags:
@@ -3476,7 +3963,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ref'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref'
       summary: Add tag association.
       tags:
       - applications
@@ -3510,7 +3997,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Archetype'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Archetype'
             type: array
       summary: List all archetypes.
       tags:
@@ -3525,14 +4012,14 @@ paths:
         name: archetype
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Archetype'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Archetype'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Archetype'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Archetype'
       summary: Create an archetype.
       tags:
       - archetypes
@@ -3565,7 +4052,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Archetype'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Archetype'
       summary: Get an archetype by ID.
       tags:
       - archetypes
@@ -3584,7 +4071,7 @@ paths:
         name: archetype
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Archetype'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Archetype'
       responses:
         "204":
           description: No Content
@@ -3605,7 +4092,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Assessment'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Assessment'
             type: array
       summary: List the assessments of an archetype.
       tags:
@@ -3620,7 +4107,7 @@ paths:
         name: assessment
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Assessment'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Assessment'
       - description: Archetype ID
         in: path
         name: id
@@ -3632,7 +4119,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Assessment'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Assessment'
       summary: Create an archetype assessment.
       tags:
       - archetypes
@@ -3646,7 +4133,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Assessment'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Assessment'
             type: array
       summary: List all assessments.
       tags:
@@ -3680,7 +4167,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Assessment'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Assessment'
       summary: Get an assessment by ID.
       tags:
       - questionnaires
@@ -3699,39 +4186,348 @@ paths:
         name: assessment
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Assessment'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Assessment'
       responses:
         "204":
           description: No Content
       summary: Update an assessment.
       tags:
       - assessments
-  /auth/login:
+  /auth/clients:
+    get:
+      description: List all OIDC clients.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.IdpClient'
+            type: array
+      summary: List all OIDC clients.
+      tags:
+      - oidc-clients
     post:
-      description: Login and obtain a bearer token.
+      consumes:
+      - application/json
+      description: Create an OIDC client.
+      parameters:
+      - description: Client data
+        in: body
+        name: client
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.IdpClient'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Login'
-      summary: Login and obtain a bearer token.
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.IdpClient'
+      summary: Create an OIDC client.
       tags:
-      - auth
-  /auth/refresh:
+      - oidc-clients
+  /auth/clients/{id}:
+    delete:
+      description: Delete an OIDC client.
+      parameters:
+      - description: Client ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      summary: Delete an OIDC client.
+      tags:
+      - oidc-clients
+    get:
+      description: Get an OIDC client by ID.
+      parameters:
+      - description: Client ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.IdpClient'
+      summary: Get an OIDC client by ID.
+      tags:
+      - oidc-clients
+    put:
+      consumes:
+      - application/json
+      description: Update an OIDC client.
+      parameters:
+      - description: Client ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Client data
+        in: body
+        name: client
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.IdpClient'
+      responses:
+        "204":
+          description: No Content
+      summary: Update an OIDC client.
+      tags:
+      - oidc-clients
+  /auth/grants:
+    get:
+      description: List all grants.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Grant'
+            type: array
+      summary: List all grants.
+      tags:
+      - grants
+  /auth/grants/{id}:
+    delete:
+      description: Delete a grant.
+      parameters:
+      - description: Grant ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      summary: Delete a grant.
+      tags:
+      - grants
+    get:
+      description: Get a grant by ID.
+      parameters:
+      - description: Grant ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Grant'
+      summary: Get a grant by ID.
+      tags:
+      - grants
+  /auth/identities:
+    get:
+      description: List all IDP identities.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.IdpIdentity'
+            type: array
+      summary: List all IDP identities.
+      tags:
+      - idpidentities
     post:
-      description: Refresh bearer token.
+      consumes:
+      - application/json
+      description: Create an IDP identity.
+      parameters:
+      - description: IdpIdentity data
+        in: body
+        name: idpidentity
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.IdpIdentity'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Login'
-      summary: Refresh bearer token.
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.IdpIdentity'
+      summary: Create an IDP identity.
+      tags:
+      - idpidentities
+  /auth/identities/{id}:
+    delete:
+      description: Delete an IDP identity.
+      parameters:
+      - description: IdpIdentity ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      summary: Delete an IDP identity.
+      tags:
+      - idpidentities
+    get:
+      description: Get an IDP identity by ID.
+      parameters:
+      - description: IdpIdentity ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.IdpIdentity'
+      summary: Get an IDP identity by ID.
+      tags:
+      - idpidentities
+    put:
+      consumes:
+      - application/json
+      description: Update an IDP identity.
+      parameters:
+      - description: IdpIdentity ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: IdpIdentity data
+        in: body
+        name: idpidentity
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.IdpIdentity'
+      responses:
+        "204":
+          description: No Content
+      summary: Update an IDP identity.
+      tags:
+      - idpidentities
+  /auth/scopes:
+    get:
+      description: List all scopes.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Scope'
+            type: array
+      summary: List all scopes.
+      tags:
+      - permissions
+  /auth/self:
+    get:
+      description: |-
+        Get information about the currently authenticated
+        user, identity, or client.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.AuthSelf'
+      summary: Get current authenticated subject.
       tags:
       - auth
+  /auth/tokens:
+    get:
+      description: List all tokens.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Token'
+            type: array
+      summary: List all tokens.
+      tags:
+      - tokens
+    post:
+      description: TokenCreate create an (apikey) token.
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Token'
+      summary: TokenCreate create a token.
+      tags:
+      - auth
+  /auth/tokens/{id}:
+    delete:
+      description: Delete a token.
+      parameters:
+      - description: Token ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      summary: Delete a token.
+      tags:
+      - tokens
+    get:
+      description: Get a token by ID.
+      parameters:
+      - description: Token ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Token'
+      summary: Get a token by ID.
+      tags:
+      - tokens
+  /auth/tokens/{id}/revoke:
+    post:
+      description: Revoke a token and its associated grant.
+      parameters:
+      - description: Token ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      summary: Revoke a token.
+      tags:
+      - tokens
   /batch/tags:
     post:
       description: Batch-create Tags.
@@ -3742,7 +4538,7 @@ paths:
         required: true
         schema:
           items:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Tag'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Tag'
           type: array
       produces:
       - application/json
@@ -3751,7 +4547,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Tag'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Tag'
             type: array
       summary: Batch-create Tags.
       tags:
@@ -3767,7 +4563,7 @@ paths:
         required: true
         schema:
           items:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ticket'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ticket'
           type: array
       produces:
       - application/json
@@ -3776,7 +4572,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ticket'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ticket'
             type: array
       summary: Batch-create Tickets.
       tags:
@@ -3792,7 +4588,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Bucket'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Bucket'
             type: array
       summary: List all buckets.
       tags:
@@ -3813,7 +4609,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Bucket'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Bucket'
       summary: Create a bucket.
       tags:
       - buckets
@@ -3850,7 +4646,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Bucket'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Bucket'
       summary: Get a bucket by ID.
       tags:
       - buckets
@@ -3937,7 +4733,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.BusinessService'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.BusinessService'
       summary: List all business services.
       tags:
       - businessservices
@@ -3951,14 +4747,14 @@ paths:
         name: business_service
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.BusinessService'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.BusinessService'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.BusinessService'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.BusinessService'
       summary: Create a business service.
       tags:
       - businessservices
@@ -3991,7 +4787,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.BusinessService'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.BusinessService'
       summary: Get a business service by ID.
       tags:
       - businessservices
@@ -4010,7 +4806,7 @@ paths:
         name: business_service
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.BusinessService'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.BusinessService'
       responses:
         "204":
           description: No Content
@@ -4043,7 +4839,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Cache'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Cache'
       summary: Get the cache.
       tags:
       - cache
@@ -4057,7 +4853,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.ConfigMap'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.ConfigMap'
             type: array
       summary: List all configmap names.
       tags:
@@ -4096,7 +4892,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Dependency'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Dependency'
             type: array
       summary: List all dependencies.
       tags:
@@ -4118,7 +4914,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Dependency'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Dependency'
       summary: Create a dependency.
       tags:
       - dependencies
@@ -4153,7 +4949,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Dependency'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Dependency'
       summary: Get a dependency by ID.
       tags:
       - dependencies
@@ -4167,7 +4963,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.File'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.File'
             type: array
       summary: List all files.
       tags:
@@ -4188,7 +4984,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.File'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.File'
       summary: Create a file.
       tags:
       - file
@@ -4222,7 +5018,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.File'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.File'
       summary: Get a file by ID.
       tags:
       - file
@@ -4450,7 +5246,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Import'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Import'
             type: array
       summary: List imports.
       tags:
@@ -4484,7 +5280,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Import'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Import'
       summary: Get an import by ID.
       tags:
       - imports
@@ -4498,7 +5294,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.ImportSummary'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.ImportSummary'
             type: array
       summary: List import summaries.
       tags:
@@ -4532,7 +5328,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.ImportSummary'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.ImportSummary'
       summary: Get an import summary by ID.
       tags:
       - imports
@@ -4564,7 +5360,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.ImportSummary'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.ImportSummary'
       summary: Upload a CSV containing applications and dependencies to import.
       tags:
       - imports
@@ -4578,7 +5374,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.JobFunction'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.JobFunction'
             type: array
       summary: List all job functions.
       tags:
@@ -4593,14 +5389,14 @@ paths:
         name: job_function
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.JobFunction'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.JobFunction'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.JobFunction'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.JobFunction'
       summary: Create a job function.
       tags:
       - jobfunctions
@@ -4633,7 +5429,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.JobFunction'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.JobFunction'
       summary: Get a job function by ID.
       tags:
       - jobfunctions
@@ -4652,7 +5448,7 @@ paths:
         name: job_function
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.JobFunction'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.JobFunction'
       responses:
         "204":
           description: No Content
@@ -4794,7 +5590,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.MigrationWave'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.MigrationWave'
             type: array
       summary: List all migration waves.
       tags:
@@ -4809,14 +5605,14 @@ paths:
         name: migrationwave
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.MigrationWave'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.MigrationWave'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.MigrationWave'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.MigrationWave'
       summary: Create a migration wave.
       tags:
       - migrationwaves
@@ -4849,7 +5645,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.MigrationWave'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.MigrationWave'
       summary: Get a migration wave by ID.
       tags:
       - migrationwaves
@@ -4868,7 +5664,7 @@ paths:
         name: migrationWave
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.MigrationWave'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.MigrationWave'
       responses:
         "204":
           description: No Content
@@ -5067,7 +5863,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Questionnaire'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Questionnaire'
             type: array
       summary: List all questionnaires.
       tags:
@@ -5082,14 +5878,14 @@ paths:
         name: questionnaire
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Questionnaire'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Questionnaire'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Questionnaire'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Questionnaire'
       summary: Create a questionnaire.
       tags:
       - questionnaires
@@ -5122,7 +5918,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Questionnaire'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Questionnaire'
       summary: Get a questionnaire by ID.
       tags:
       - questionnaires
@@ -5144,7 +5940,7 @@ paths:
         name: questionnaire
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Questionnaire'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Questionnaire'
       responses:
         "204":
           description: No Content
@@ -5161,7 +5957,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Review'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Review'
             type: array
       summary: List all reviews.
       tags:
@@ -5176,14 +5972,14 @@ paths:
         name: review
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Review'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Review'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Review'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Review'
       summary: Create a review.
       tags:
       - reviews
@@ -5216,7 +6012,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Review'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Review'
       summary: Get a review by ID.
       tags:
       - reviews
@@ -5235,7 +6031,7 @@ paths:
         name: review
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Review'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Review'
       responses:
         "204":
           description: No Content
@@ -5253,13 +6049,104 @@ paths:
         name: copy_request
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.CopyRequest'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.CopyRequest'
       responses:
         "204":
           description: No Content
       summary: Copy a review from one application to others.
       tags:
       - reviews
+  /roles:
+    get:
+      description: List all roles.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Role'
+            type: array
+      summary: List all roles.
+      tags:
+      - roles
+    post:
+      consumes:
+      - application/json
+      description: Create a role.
+      parameters:
+      - description: Role data
+        in: body
+        name: role
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Role'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Role'
+      summary: Create a role.
+      tags:
+      - roles
+  /roles/{id}:
+    delete:
+      description: Delete a role.
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      summary: Delete a role.
+      tags:
+      - roles
+    get:
+      description: Get a role by ID.
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Role'
+      summary: Get a role by ID.
+      tags:
+      - roles
+    put:
+      consumes:
+      - application/json
+      description: Update a role.
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Role data
+        in: body
+        name: role
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Role'
+      responses:
+        "204":
+          description: No Content
+      summary: Update a role.
+      tags:
+      - roles
   /rulesets:
     get:
       description: |-
@@ -5431,6 +6318,124 @@ paths:
       summary: Find a schema.
       tags:
       - schemas
+  /serviceaccounts:
+    get:
+      description: Lists all service accounts.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.ServiceAccount'
+            type: array
+      summary: List all service accounts.
+      tags:
+      - serviceaccounts
+    post:
+      consumes:
+      - application/json
+      description: Create a service account.
+      parameters:
+      - description: ServiceAccount data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.ServiceAccount'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.ServiceAccount'
+      summary: Create a service account.
+      tags:
+      - serviceaccounts
+  /serviceaccounts/{id}:
+    delete:
+      description: Delete a service account.
+      parameters:
+      - description: ServiceAccount ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      summary: Delete a service account.
+      tags:
+      - serviceaccounts
+    get:
+      description: Get a service account by ID.
+      parameters:
+      - description: ServiceAccount ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.ServiceAccount'
+      summary: Get a service account by ID.
+      tags:
+      - serviceaccounts
+    put:
+      consumes:
+      - application/json
+      description: Update a service account.
+      parameters:
+      - description: ServiceAccount ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: ServiceAccount data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.ServiceAccount'
+      responses:
+        "204":
+          description: No Content
+      summary: Update a service account.
+      tags:
+      - serviceaccounts
+  /serviceaccounts/{id}/tokens:
+    post:
+      consumes:
+      - application/json
+      description: Create an api-key token for a service account.
+      parameters:
+      - description: ServiceAccount ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Token data
+        in: body
+        name: pat
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.PAT'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.PAT'
+      summary: Create a token for a service account.
+      tags:
+      - serviceaccounts
   /services:
     get:
       description: List named service routes.
@@ -5440,7 +6445,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Service'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Service'
       summary: List named service routes.
       tags:
       - services
@@ -5454,7 +6459,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Setting'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Setting'
             type: array
       summary: List all settings.
       tags:
@@ -5469,14 +6474,14 @@ paths:
         name: setting
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Setting'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Setting'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Setting'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Setting'
       summary: Create a setting.
       tags:
       - settings
@@ -5509,7 +6514,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Setting'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Setting'
       summary: Get a setting by its key.
       tags:
       - settings
@@ -5528,7 +6533,7 @@ paths:
         name: setting
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Setting'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Setting'
       responses:
         "201":
           description: Created
@@ -5563,7 +6568,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.StakeholderGroup'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.StakeholderGroup'
             type: array
       summary: List all stakeholder groups.
       tags:
@@ -5578,14 +6583,14 @@ paths:
         name: stakeholder_group
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.StakeholderGroup'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.StakeholderGroup'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.StakeholderGroup'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.StakeholderGroup'
       summary: Create a stakeholder group.
       tags:
       - stakeholdergroups
@@ -5618,7 +6623,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.StakeholderGroup'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.StakeholderGroup'
       summary: Get a stakeholder group by ID.
       tags:
       - stakeholdergroups
@@ -5637,7 +6642,7 @@ paths:
         name: stakeholder_group
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.StakeholderGroup'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.StakeholderGroup'
       responses:
         "204":
           description: No Content
@@ -5654,7 +6659,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Stakeholder'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Stakeholder'
             type: array
       summary: List all stakeholders.
       tags:
@@ -5669,14 +6674,14 @@ paths:
         name: stakeholder
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Stakeholder'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Stakeholder'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Stakeholder'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Stakeholder'
       summary: Create a stakeholder.
       tags:
       - stakeholders
@@ -5709,7 +6714,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Stakeholder'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Stakeholder'
       summary: Get a stakeholder by ID.
       tags:
       - stakeholders
@@ -5728,7 +6733,7 @@ paths:
         name: stakeholder
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Stakeholder'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Stakeholder'
       responses:
         "204":
           description: No Content
@@ -5750,7 +6755,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TagCategory'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TagCategory'
             type: array
       summary: List all tag categories.
       tags:
@@ -5765,14 +6770,14 @@ paths:
         name: tag_type
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TagCategory'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TagCategory'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TagCategory'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TagCategory'
       summary: Create a tag category.
       tags:
       - tagcategories
@@ -5805,7 +6810,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TagCategory'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TagCategory'
       summary: Get a tag category by ID.
       tags:
       - tagcategories
@@ -5824,7 +6829,7 @@ paths:
         name: tag_type
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TagCategory'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TagCategory'
       responses:
         "204":
           description: No Content
@@ -5851,7 +6856,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Tag'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Tag'
             type: array
       summary: List the tags in the tag category.
       tags:
@@ -5866,7 +6871,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Tag'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Tag'
             type: array
       summary: List all tags.
       tags:
@@ -5888,7 +6893,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Tag'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Tag'
       summary: Create a tag.
       tags:
       - tags
@@ -5921,7 +6926,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Tag'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Tag'
       summary: Get a tag by ID.
       tags:
       - tags
@@ -5940,7 +6945,7 @@ paths:
         name: tag
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Tag'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Tag'
       responses:
         "204":
           description: No Content
@@ -6048,7 +7053,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskGroup'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskGroup'
             type: array
       summary: List all task groups.
       tags:
@@ -6056,21 +7061,24 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create a task group.
+      description: |-
+        Create a task group.
+        Note: The priority will be adjusted as needed
+        to ensure the priority higher than system reserved (0-9).
       parameters:
       - description: TaskGroup data
         in: body
         name: taskgroup
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskGroup'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskGroup'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskGroup'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskGroup'
       summary: Create a task group.
       tags:
       - taskgroups
@@ -6103,16 +7111,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskGroup'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskGroup'
       summary: Get a task group by ID.
       tags:
       - taskgroups
     put:
       consumes:
       - application/json
-      description: Update a task group.
+      description: |-
+        Update a task group.
+        Note: The priority will be adjusted as needed
+        to ensure the priority higher than system reserved (0-9).
       parameters:
-      - description: Task ID
+      - description: TaskGroup ID
         in: path
         name: id
         required: true
@@ -6123,9 +7134,13 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.TaskGroup'
+      produces:
+      - application/json
       responses:
-        "204":
-          description: No Content
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskGroup'
       summary: Update a task group.
       tags:
       - taskgroups
@@ -6245,7 +7260,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskDashboard'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskDashboard'
             type: array
       summary: List all task dashboard resources.
       tags:
@@ -6253,21 +7268,24 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create a task.
+      description: |-
+        Create a task.
+        Note: The priority will be adjusted as needed
+        to ensure the priority higher than system reserved (0-9).
       parameters:
       - description: Task data
         in: body
         name: task
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Task'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Task'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Task'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Task'
       summary: Create a task.
       tags:
       - tasks
@@ -6300,14 +7318,17 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Task'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Task'
       summary: Get a task by ID.
       tags:
       - tasks
     put:
       consumes:
       - application/json
-      description: Update a task.
+      description: |-
+        Update a task.
+        Note: The priority will be adjusted as needed
+        to ensure the priority higher than system reserved (0-9).
       parameters:
       - description: Task ID
         in: path
@@ -6320,9 +7341,13 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Task'
+      produces:
+      - application/json
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Task'
       summary: Update a task.
       tags:
       - tasks
@@ -6466,14 +7491,14 @@ paths:
         name: task
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskReport'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskReport'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskReport'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskReport'
       summary: Create a task report.
       tags:
       - tasks
@@ -6492,7 +7517,7 @@ paths:
         name: task
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.TaskReport'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskReport'
       produces:
       - application/json
       responses:
@@ -6518,8 +7543,8 @@ paths:
         schema:
           $ref: '#/definitions/github_com_konveyor_tackle2-hub_internal_api.Task'
       responses:
-        "200":
-          description: OK
+        "204":
+          description: No Content
       summary: Submit a task.
       tags:
       - tasks
@@ -6561,7 +7586,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ticket'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ticket'
             type: array
       summary: List all tickets.
       tags:
@@ -6576,14 +7601,14 @@ paths:
         name: ticket
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ticket'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ticket'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ticket'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ticket'
       summary: Create a ticket.
       tags:
       - tickets
@@ -6616,7 +7641,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Ticket'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ticket'
       summary: Get a ticket by ID.
       tags:
       - tickets
@@ -6630,7 +7655,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Tracker'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Tracker'
             type: array
       summary: List all trackers.
       tags:
@@ -6645,14 +7670,14 @@ paths:
         name: tracker
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Tracker'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Tracker'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Tracker'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Tracker'
       summary: Create a tracker.
       tags:
       - trackers
@@ -6685,7 +7710,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Tracker'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Tracker'
       summary: Get a tracker by ID.
       tags:
       - trackers
@@ -6704,7 +7729,7 @@ paths:
         name: application
         required: true
         schema:
-          $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Tracker'
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Tracker'
       responses:
         "204":
           description: No Content
@@ -6727,7 +7752,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Project'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Project'
             type: array
       summary: List a tracker's projects.
       tags:
@@ -6752,7 +7777,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.Project'
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.Project'
       summary: Get a tracker project by ID.
       tags:
       - trackers
@@ -6777,11 +7802,102 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_konveyor_tackle2-hub_api.IssueType'
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.IssueType'
             type: array
       summary: List a tracker project's issue types.
       tags:
       - trackers
+  /users:
+    get:
+      description: List all users.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.User'
+            type: array
+      summary: List all users.
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      description: Create a user.
+      parameters:
+      - description: User data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.User'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.User'
+      summary: Create a user.
+      tags:
+      - users
+  /users/{id}:
+    delete:
+      description: Delete a user.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      summary: Delete a user.
+      tags:
+      - users
+    get:
+      description: Get a user by ID.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.User'
+      summary: Get a user by ID.
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Update a user.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_konveyor_tackle2-hub_shared_api.User'
+      responses:
+        "204":
+          description: No Content
+      summary: Update a user.
+      tags:
+      - users
 produces:
 - application/json
 swagger: "2.0"
