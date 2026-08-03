@@ -170,7 +170,7 @@ func (s *Client) updatePod(ctx context.Context, pod *core.Pod) (err error) {
 		)
 		return
 	}
-	err = s.Update(ctx, pod)
+	err = s.Status().Update(ctx, pod)
 	return
 }
 
