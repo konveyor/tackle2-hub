@@ -11,9 +11,11 @@ import (
 	k8s "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 var (
@@ -88,8 +90,14 @@ func NewManager() (m *Manager, err error) {
 	m.Manager, err = manager.New(
 		cfg,
 		manager.Options{
-			MetricsBindAddress: "0",
-			Namespace:          Settings.Hub.Namespace,
+			Metrics: metricsserver.Options{
+				BindAddress: "0",
+			},
+			Cache: cache.Options{
+				DefaultNamespaces: map[string]cache.Config{
+					Settings.Hub.Namespace: {},
+				},
+			},
 		})
 	if err != nil {
 		err = liberr.Wrap(err)
