@@ -2412,6 +2412,8 @@ This section documents the permissions granted to each predefined role.
 - ❌ — Endpoint exists but role lacks permission
 - ➖ — No endpoint registered for this operation
 
+**Note:** `applications.tags` uses `Required("applications")` scope, so its permissions are governed by the role's `applications` verbs.
+
 ### 🛡 Role: admin
 
 Full administrative access to **all resources and all operations** via wildcard scopes (`*:*`).
@@ -2424,11 +2426,12 @@ This grants the admin role every permission in the system, including:
 
 | Resource | Create | Read | Update | Delete |
 |----------|--------|------|--------|--------|
-| addons | ✅ | ✅ | ✅ | ✅ |
+| addons | ➖ | ✅ | ➖ | ➖ |
 | adoptionplans | ✅ | ➖ | ➖ | ➖ |
-| analyses | ✅ | ✅ | ✅ | ✅ |
+| analyses | ✅ | ✅ | ➖ | ✅ |
+| analysis.profiles | ✅ | ✅ | ✅ | ✅ |
 | applications | ✅ | ✅ | ✅ | ✅ |
-| applications.analyses | ✅ | ✅ | ✅ | ✅ |
+| applications.analyses | ✅ | ✅ | ➖ | ➖ |
 | applications.assessments | ✅ | ✅ | ➖ | ➖ |
 | applications.bucket | ✅ | ✅ | ✅ | ✅ |
 | applications.facts | ✅ | ✅ | ✅ | ✅ |
@@ -2437,15 +2440,19 @@ This grants the admin role every permission in the system, including:
 | applications.tags | ✅ | ✅ | ✅ | ✅ |
 | archetypes | ✅ | ✅ | ✅ | ✅ |
 | archetypes.assessments | ✅ | ✅ | ➖ | ➖ |
-| assessments | ✅ | ✅ | ✅ | ✅ |
+| assessments | ➖ | ✅ | ✅ | ✅ |
 | buckets | ✅ | ✅ | ✅ | ✅ |
 | businessservices | ✅ | ✅ | ✅ | ✅ |
 | cache | ➖ | ✅ | ➖ | ✅ |
-| dependencies | ✅ | ✅ | ✅ | ✅ |
+| configmaps | ➖ | ✅ | ➖ | ➖ |
+| dependencies | ✅ | ✅ | ➖ | ✅ |
 | files | ✅ | ✅ | ✅ | ✅ |
 | generators | ✅ | ✅ | ✅ | ✅ |
+| grants | ➖ | ✅ | ➖ | ✅ |
 | identities | ✅ | ✅ | ✅ | ✅ |
-| imports | ✅ | ✅ | ✅ | ✅ |
+| idp.clients | ✅ | ✅ | ✅ | ✅ |
+| idp.identities | ✅ | ✅ | ✅ | ✅ |
+| imports | ✅ | ✅ | ➖ | ✅ |
 | jobfunctions | ✅ | ✅ | ✅ | ✅ |
 | manifests | ✅ | ✅ | ✅ | ✅ |
 | migrationwaves | ✅ | ✅ | ✅ | ✅ |
@@ -2453,8 +2460,12 @@ This grants the admin role every permission in the system, including:
 | proxies | ✅ | ✅ | ✅ | ✅ |
 | questionnaires | ✅ | ✅ | ✅ | ✅ |
 | reviews | ✅ | ✅ | ✅ | ✅ |
+| roles | ✅ | ✅ | ✅ | ✅ |
 | rulesets | ✅ | ✅ | ✅ | ✅ |
 | schemas | ➖ | ✅ | ➖ | ➖ |
+| scopes | ➖ | ✅ | ➖ | ➖ |
+| serviceaccounts | ✅ | ✅ | ✅ | ✅ |
+| serviceaccounts.tokens | ✅ | ➖ | ➖ | ➖ |
 | settings | ✅ | ✅ | ✅ | ✅ |
 | stakeholdergroups | ✅ | ✅ | ✅ | ✅ |
 | stakeholders | ✅ | ✅ | ✅ | ✅ |
@@ -2463,20 +2474,24 @@ This grants the admin role every permission in the system, including:
 | targets | ✅ | ✅ | ✅ | ✅ |
 | tasks | ✅ | ✅ | ✅ | ✅ |
 | tasks.bucket | ✅ | ✅ | ✅ | ✅ |
-| tickets | ✅ | ✅ | ✅ | ✅ |
+| tasks.report | ✅ | ✅ | ✅ | ✅ |
+| tickets | ✅ | ✅ | ➖ | ✅ |
+| tokens | ✅ | ✅ | ➖ | ✅ |
 | trackers | ✅ | ✅ | ✅ | ✅ |
+| users | ✅ | ✅ | ✅ | ✅ |
 
 ### 🛠 Role: architect
 
-Broad create/update/delete rights, restricted on sensitive resources (identities, proxies, settings, trackers).
+Broad create/update/delete rights, restricted on sensitive resources (identities, proxies, settings, trackers, auth management).
 
 | Resource | Create | Read | Update | Delete |
 |----------|--------|------|--------|--------|
-| addons | ✅ | ✅ | ✅ | ✅ |
+| addons | ➖ | ✅ | ➖ | ➖ |
 | adoptionplans | ✅ | ➖ | ➖ | ➖ |
-| analyses | ✅ | ✅ | ✅ | ✅ |
+| analyses | ✅ | ✅ | ➖ | ✅ |
+| analysis.profiles | ✅ | ✅ | ✅ | ✅ |
 | applications | ✅ | ✅ | ✅ | ✅ |
-| applications.analyses | ✅ | ✅ | ✅ | ✅ |
+| applications.analyses | ✅ | ✅ | ➖ | ➖ |
 | applications.assessments | ✅ | ✅ | ➖ | ➖ |
 | applications.bucket | ✅ | ✅ | ✅ | ✅ |
 | applications.facts | ✅ | ✅ | ✅ | ✅ |
@@ -2485,15 +2500,19 @@ Broad create/update/delete rights, restricted on sensitive resources (identities
 | applications.tags | ✅ | ✅ | ✅ | ✅ |
 | archetypes | ✅ | ✅ | ✅ | ✅ |
 | archetypes.assessments | ✅ | ✅ | ➖ | ➖ |
-| assessments | ✅ | ✅ | ✅ | ✅ |
+| assessments | ➖ | ✅ | ✅ | ✅ |
 | buckets | ✅ | ✅ | ✅ | ✅ |
 | businessservices | ✅ | ✅ | ✅ | ✅ |
 | cache | ➖ | ✅ | ➖ | ❌ |
-| dependencies | ✅ | ✅ | ✅ | ✅ |
+| configmaps | ➖ | ✅ | ➖ | ➖ |
+| dependencies | ✅ | ✅ | ➖ | ✅ |
 | files | ✅ | ✅ | ✅ | ✅ |
 | generators | ✅ | ✅ | ✅ | ✅ |
+| grants | ➖ | ❌ | ➖ | ❌ |
 | identities | ❌ | ✅ | ❌ | ❌ |
-| imports | ✅ | ✅ | ✅ | ✅ |
+| idp.clients | ❌ | ❌ | ❌ | ❌ |
+| idp.identities | ❌ | ❌ | ❌ | ❌ |
+| imports | ✅ | ✅ | ➖ | ✅ |
 | jobfunctions | ✅ | ✅ | ✅ | ✅ |
 | manifests | ✅ | ✅ | ✅ | ✅ |
 | migrationwaves | ✅ | ✅ | ✅ | ✅ |
@@ -2501,8 +2520,12 @@ Broad create/update/delete rights, restricted on sensitive resources (identities
 | proxies | ❌ | ✅ | ❌ | ❌ |
 | questionnaires | ❌ | ✅ | ❌ | ❌ |
 | reviews | ✅ | ✅ | ✅ | ✅ |
+| roles | ❌ | ✅ | ❌ | ❌ |
 | rulesets | ✅ | ✅ | ✅ | ✅ |
 | schemas | ➖ | ✅ | ➖ | ➖ |
+| scopes | ➖ | ✅ | ➖ | ➖ |
+| serviceaccounts | ❌ | ❌ | ❌ | ❌ |
+| serviceaccounts.tokens | ❌ | ➖ | ➖ | ➖ |
 | settings | ❌ | ✅ | ❌ | ❌ |
 | stakeholdergroups | ✅ | ✅ | ✅ | ✅ |
 | stakeholders | ✅ | ✅ | ✅ | ✅ |
@@ -2511,8 +2534,11 @@ Broad create/update/delete rights, restricted on sensitive resources (identities
 | targets | ✅ | ✅ | ✅ | ✅ |
 | tasks | ✅ | ✅ | ✅ | ✅ |
 | tasks.bucket | ✅ | ✅ | ✅ | ✅ |
-| tickets | ✅ | ✅ | ✅ | ✅ |
+| tasks.report | ❌ | ❌ | ❌ | ❌ |
+| tickets | ✅ | ✅ | ➖ | ✅ |
+| tokens | ✅ | ✅ | ➖ | ✅ |
 | trackers | ❌ | ✅ | ❌ | ❌ |
+| users | ❌ | ✅ | ✅ | ✅ |
 
 ### 🚚 Role: migrator
 
@@ -2520,27 +2546,33 @@ Mostly read-only, except full management of dependencies and tasks.
 
 | Resource | Create | Read | Update | Delete |
 |----------|--------|------|--------|--------|
-| addons | ❌ | ✅ | ❌ | ❌ |
+| addons | ➖ | ✅ | ➖ | ➖ |
 | adoptionplans | ✅ | ➖ | ➖ | ➖ |
-| analyses | ❌ | ✅ | ❌ | ❌ |
+| analyses | ❌ | ✅ | ➖ | ❌ |
+| analysis.profiles | ❌ | ✅ | ❌ | ❌ |
 | applications | ❌ | ✅ | ❌ | ❌ |
-| applications.analyses | ❌ | ✅ | ❌ | ❌ |
+| applications.analyses | ❌ | ✅ | ➖ | ➖ |
 | applications.assessments | ❌ | ✅ | ➖ | ➖ |
 | applications.bucket | ❌ | ✅ | ❌ | ❌ |
 | applications.facts | ❌ | ✅ | ❌ | ❌ |
 | applications.manifests | ❌ | ✅ | ➖ | ➖ |
+| applications.stakeholders | ➖ | ➖ | ❌ | ➖ |
 | applications.tags | ❌ | ✅ | ❌ | ❌ |
 | archetypes | ❌ | ✅ | ❌ | ❌ |
 | archetypes.assessments | ❌ | ✅ | ➖ | ➖ |
-| assessments | ❌ | ✅ | ❌ | ❌ |
+| assessments | ➖ | ✅ | ❌ | ❌ |
 | buckets | ❌ | ✅ | ❌ | ❌ |
 | businessservices | ❌ | ✅ | ❌ | ❌ |
 | cache | ➖ | ✅ | ➖ | ❌ |
-| dependencies | ✅ | ✅ | ✅ | ✅ |
+| configmaps | ➖ | ✅ | ➖ | ➖ |
+| dependencies | ✅ | ✅ | ➖ | ✅ |
 | files | ❌ | ✅ | ❌ | ❌ |
 | generators | ❌ | ✅ | ❌ | ❌ |
+| grants | ➖ | ❌ | ➖ | ❌ |
 | identities | ❌ | ✅ | ❌ | ❌ |
-| imports | ❌ | ✅ | ❌ | ❌ |
+| idp.clients | ❌ | ❌ | ❌ | ❌ |
+| idp.identities | ❌ | ❌ | ❌ | ❌ |
+| imports | ❌ | ✅ | ➖ | ❌ |
 | jobfunctions | ❌ | ✅ | ❌ | ❌ |
 | manifests | ❌ | ✅ | ❌ | ❌ |
 | migrationwaves | ❌ | ✅ | ❌ | ❌ |
@@ -2548,8 +2580,12 @@ Mostly read-only, except full management of dependencies and tasks.
 | proxies | ❌ | ✅ | ❌ | ❌ |
 | questionnaires | ❌ | ✅ | ❌ | ❌ |
 | reviews | ❌ | ✅ | ❌ | ❌ |
+| roles | ❌ | ✅ | ❌ | ❌ |
 | rulesets | ❌ | ✅ | ❌ | ❌ |
 | schemas | ➖ | ✅ | ➖ | ➖ |
+| scopes | ➖ | ✅ | ➖ | ➖ |
+| serviceaccounts | ❌ | ❌ | ❌ | ❌ |
+| serviceaccounts.tokens | ❌ | ➖ | ➖ | ➖ |
 | settings | ❌ | ✅ | ❌ | ❌ |
 | stakeholdergroups | ❌ | ✅ | ❌ | ❌ |
 | stakeholders | ❌ | ✅ | ❌ | ❌ |
@@ -2558,8 +2594,11 @@ Mostly read-only, except full management of dependencies and tasks.
 | targets | ❌ | ✅ | ❌ | ❌ |
 | tasks | ✅ | ✅ | ✅ | ✅ |
 | tasks.bucket | ✅ | ✅ | ✅ | ✅ |
-| tickets | ❌ | ✅ | ❌ | ❌ |
+| tasks.report | ❌ | ❌ | ❌ | ❌ |
+| tickets | ❌ | ✅ | ➖ | ❌ |
+| tokens | ✅ | ✅ | ➖ | ✅ |
 | trackers | ❌ | ✅ | ❌ | ❌ |
+| users | ❌ | ✅ | ✅ | ✅ |
 
 ### 📋 Role: project-manager
 
@@ -2567,10 +2606,12 @@ Read-only for most resources, can update application stakeholders and fully mana
 
 | Resource | Create | Read | Update | Delete |
 |----------|--------|------|--------|--------|
-| addons | ❌ | ✅ | ❌ | ❌ |
+| addons | ➖ | ✅ | ➖ | ➖ |
 | adoptionplans | ✅ | ➖ | ➖ | ➖ |
+| analyses | ❌ | ✅ | ➖ | ❌ |
+| analysis.profiles | ❌ | ✅ | ❌ | ❌ |
 | applications | ❌ | ✅ | ❌ | ❌ |
-| applications.analyses | ❌ | ✅ | ❌ | ❌ |
+| applications.analyses | ❌ | ✅ | ➖ | ➖ |
 | applications.assessments | ❌ | ✅ | ➖ | ➖ |
 | applications.bucket | ❌ | ✅ | ❌ | ❌ |
 | applications.facts | ❌ | ✅ | ❌ | ❌ |
@@ -2579,22 +2620,32 @@ Read-only for most resources, can update application stakeholders and fully mana
 | applications.tags | ❌ | ✅ | ❌ | ❌ |
 | archetypes | ❌ | ✅ | ❌ | ❌ |
 | archetypes.assessments | ❌ | ✅ | ➖ | ➖ |
-| assessments | ❌ | ✅ | ❌ | ❌ |
+| assessments | ➖ | ✅ | ❌ | ❌ |
 | buckets | ❌ | ✅ | ❌ | ❌ |
 | businessservices | ❌ | ✅ | ❌ | ❌ |
 | cache | ➖ | ✅ | ➖ | ❌ |
-| dependencies | ❌ | ✅ | ❌ | ❌ |
+| configmaps | ➖ | ✅ | ➖ | ➖ |
+| dependencies | ❌ | ✅ | ➖ | ❌ |
+| files | ❌ | ✅ | ❌ | ❌ |
 | generators | ❌ | ✅ | ❌ | ❌ |
+| grants | ➖ | ❌ | ➖ | ❌ |
 | identities | ❌ | ✅ | ❌ | ❌ |
-| imports | ❌ | ✅ | ❌ | ❌ |
+| idp.clients | ❌ | ❌ | ❌ | ❌ |
+| idp.identities | ❌ | ❌ | ❌ | ❌ |
+| imports | ❌ | ✅ | ➖ | ❌ |
 | jobfunctions | ❌ | ✅ | ❌ | ❌ |
+| manifests | ❌ | ❌ | ❌ | ❌ |
 | migrationwaves | ✅ | ✅ | ✅ | ✅ |
 | platforms | ❌ | ✅ | ❌ | ❌ |
 | proxies | ❌ | ✅ | ❌ | ❌ |
 | questionnaires | ❌ | ✅ | ❌ | ❌ |
 | reviews | ❌ | ✅ | ❌ | ❌ |
+| roles | ❌ | ❌ | ❌ | ❌ |
 | rulesets | ❌ | ✅ | ❌ | ❌ |
-| schemas | ➖ | ✅ | ➖ | ➖ |
+| schemas | ➖ | ❌ | ➖ | ➖ |
+| scopes | ➖ | ❌ | ➖ | ➖ |
+| serviceaccounts | ❌ | ❌ | ❌ | ❌ |
+| serviceaccounts.tokens | ❌ | ➖ | ➖ | ➖ |
 | settings | ❌ | ✅ | ❌ | ❌ |
 | stakeholdergroups | ❌ | ✅ | ❌ | ❌ |
 | stakeholders | ❌ | ✅ | ❌ | ❌ |
@@ -2603,5 +2654,9 @@ Read-only for most resources, can update application stakeholders and fully mana
 | targets | ❌ | ✅ | ❌ | ❌ |
 | tasks | ❌ | ✅ | ❌ | ❌ |
 | tasks.bucket | ❌ | ✅ | ❌ | ❌ |
-| tickets | ❌ | ✅ | ❌ | ❌ |
+| tasks.report | ❌ | ❌ | ❌ | ❌ |
+| tickets | ❌ | ✅ | ➖ | ❌ |
+| tokens | ✅ | ✅ | ➖ | ✅ |
 | trackers | ❌ | ✅ | ❌ | ❌ |
+| users | ❌ | ✅ | ✅ | ✅ |
+
