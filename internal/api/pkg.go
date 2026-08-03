@@ -98,6 +98,7 @@ func All() []Handler {
 		&RuleSetHandler{},
 		&SchemaHandler{},
 		&SettingHandler{},
+		&ServiceHandler{},
 		&StakeholderHandler{},
 		&StakeholderGroupHandler{},
 		&TagHandler{},
