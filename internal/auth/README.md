@@ -1056,15 +1056,15 @@ spec:
 
 | CRD Field | Purpose | Default (AD) | Default (LDAP) |
 |-----------|---------|--------------|----------------|
-| **kind** | Server type ("ACTIVEDIRECTORY", "AD", or blank) | ➖ | - |
-| **url** | External LDAP server URL | ➖ | - |
-| **baseDN** | Base DN for LDAP searches | ➖ | - |
-| **bindDN** | Service account bind DN | ➖ | - |
-| **password** | Reference to Secret containing service account password | ➖ | - |
+| **kind** | Server type ("ACTIVEDIRECTORY", "AD", or blank) | - | - |
+| **url** | External LDAP server URL | - | - |
+| **baseDN** | Base DN for LDAP searches | - | - |
+| **bindDN** | Service account bind DN | - | - |
+| **password** | Reference to Secret containing service account password | - | - |
 | **userFilter** | User search filter | `(sAMAccountName=%s)` | `(uid=%s)` |
 | **groupFilter** | Group search filter | `(&(objectClass=group)(member=%s))` | `(&(objectClass=*)(member=%s))` |
-| **hasMemberOf** | Use memberOf attribute for group membership | ➖ | - |
-| **roleMappings** | Map LDAP groups to hub roles | ➖ | - |
+| **hasMemberOf** | Use memberOf attribute for group membership | - | - |
+| **roleMappings** | Map LDAP groups to hub roles | - | - |
 
 ### LDAP Login as Subject
 
@@ -2425,18 +2425,18 @@ This grants the admin role every permission in the system, including:
 | Resource | Create | Read | Update | Delete |
 |----------|--------|------|--------|--------|
 | addons | ✅ | ✅ | ✅ | ✅ |
-| adoptionplans | ✅ | ➖ | - | ➖ |
+| adoptionplans | ✅ | ➖ | ➖ | ➖ |
 | analyses | ✅ | ✅ | ✅ | ✅ |
 | applications | ✅ | ✅ | ✅ | ✅ |
 | applications.analyses | ✅ | ✅ | ✅ | ✅ |
-| applications.assessments | ✅ | ✅ | ➖ | - |
+| applications.assessments | ✅ | ✅ | ➖ | ➖ |
 | applications.bucket | ✅ | ✅ | ✅ | ✅ |
 | applications.facts | ✅ | ✅ | ✅ | ✅ |
-| applications.manifests | ✅ | ✅ | ➖ | - |
-| applications.stakeholders | ➖ | - | ✅ | ➖ |
+| applications.manifests | ✅ | ✅ | ➖ | ➖ |
+| applications.stakeholders | ➖ | ➖ | ✅ | ➖ |
 | applications.tags | ✅ | ✅ | ✅ | ✅ |
 | archetypes | ✅ | ✅ | ✅ | ✅ |
-| archetypes.assessments | ✅ | ✅ | ➖ | - |
+| archetypes.assessments | ✅ | ✅ | ➖ | ➖ |
 | assessments | ✅ | ✅ | ✅ | ✅ |
 | buckets | ✅ | ✅ | ✅ | ✅ |
 | businessservices | ✅ | ✅ | ✅ | ✅ |
@@ -2454,7 +2454,7 @@ This grants the admin role every permission in the system, including:
 | questionnaires | ✅ | ✅ | ✅ | ✅ |
 | reviews | ✅ | ✅ | ✅ | ✅ |
 | rulesets | ✅ | ✅ | ✅ | ✅ |
-| schemas | ➖ | ✅ | ➖ | - |
+| schemas | ➖ | ✅ | ➖ | ➖ |
 | settings | ✅ | ✅ | ✅ | ✅ |
 | stakeholdergroups | ✅ | ✅ | ✅ | ✅ |
 | stakeholders | ✅ | ✅ | ✅ | ✅ |
@@ -2473,18 +2473,18 @@ Broad create/update/delete rights, restricted on sensitive resources (identities
 | Resource | Create | Read | Update | Delete |
 |----------|--------|------|--------|--------|
 | addons | ✅ | ✅ | ✅ | ✅ |
-| adoptionplans | ✅ | ➖ | - | ➖ |
+| adoptionplans | ✅ | ➖ | ➖ | ➖ |
 | analyses | ✅ | ✅ | ✅ | ✅ |
 | applications | ✅ | ✅ | ✅ | ✅ |
 | applications.analyses | ✅ | ✅ | ✅ | ✅ |
-| applications.assessments | ✅ | ✅ | ➖ | - |
+| applications.assessments | ✅ | ✅ | ➖ | ➖ |
 | applications.bucket | ✅ | ✅ | ✅ | ✅ |
 | applications.facts | ✅ | ✅ | ✅ | ✅ |
-| applications.manifests | ✅ | ✅ | ➖ | - |
-| applications.stakeholders | ➖ | - | ✅ | ➖ |
+| applications.manifests | ✅ | ✅ | ➖ | ➖ |
+| applications.stakeholders | ➖ | ➖ | ✅ | ➖ |
 | applications.tags | ✅ | ✅ | ✅ | ✅ |
 | archetypes | ✅ | ✅ | ✅ | ✅ |
-| archetypes.assessments | ✅ | ✅ | ➖ | - |
+| archetypes.assessments | ✅ | ✅ | ➖ | ➖ |
 | assessments | ✅ | ✅ | ✅ | ✅ |
 | buckets | ✅ | ✅ | ✅ | ✅ |
 | businessservices | ✅ | ✅ | ✅ | ✅ |
@@ -2502,7 +2502,7 @@ Broad create/update/delete rights, restricted on sensitive resources (identities
 | questionnaires | ❌ | ✅ | ❌ | ❌ |
 | reviews | ✅ | ✅ | ✅ | ✅ |
 | rulesets | ✅ | ✅ | ✅ | ✅ |
-| schemas | ➖ | ✅ | ➖ | - |
+| schemas | ➖ | ✅ | ➖ | ➖ |
 | settings | ❌ | ✅ | ❌ | ❌ |
 | stakeholdergroups | ✅ | ✅ | ✅ | ✅ |
 | stakeholders | ✅ | ✅ | ✅ | ✅ |
@@ -2521,17 +2521,17 @@ Mostly read-only, except full management of dependencies and tasks.
 | Resource | Create | Read | Update | Delete |
 |----------|--------|------|--------|--------|
 | addons | ❌ | ✅ | ❌ | ❌ |
-| adoptionplans | ✅ | ➖ | - | ➖ |
+| adoptionplans | ✅ | ➖ | ➖ | ➖ |
 | analyses | ❌ | ✅ | ❌ | ❌ |
 | applications | ❌ | ✅ | ❌ | ❌ |
 | applications.analyses | ❌ | ✅ | ❌ | ❌ |
-| applications.assessments | ❌ | ✅ | ➖ | - |
+| applications.assessments | ❌ | ✅ | ➖ | ➖ |
 | applications.bucket | ❌ | ✅ | ❌ | ❌ |
 | applications.facts | ❌ | ✅ | ❌ | ❌ |
-| applications.manifests | ❌ | ✅ | ➖ | - |
+| applications.manifests | ❌ | ✅ | ➖ | ➖ |
 | applications.tags | ❌ | ✅ | ❌ | ❌ |
 | archetypes | ❌ | ✅ | ❌ | ❌ |
-| archetypes.assessments | ❌ | ✅ | ➖ | - |
+| archetypes.assessments | ❌ | ✅ | ➖ | ➖ |
 | assessments | ❌ | ✅ | ❌ | ❌ |
 | buckets | ❌ | ✅ | ❌ | ❌ |
 | businessservices | ❌ | ✅ | ❌ | ❌ |
@@ -2549,7 +2549,7 @@ Mostly read-only, except full management of dependencies and tasks.
 | questionnaires | ❌ | ✅ | ❌ | ❌ |
 | reviews | ❌ | ✅ | ❌ | ❌ |
 | rulesets | ❌ | ✅ | ❌ | ❌ |
-| schemas | ➖ | ✅ | ➖ | - |
+| schemas | ➖ | ✅ | ➖ | ➖ |
 | settings | ❌ | ✅ | ❌ | ❌ |
 | stakeholdergroups | ❌ | ✅ | ❌ | ❌ |
 | stakeholders | ❌ | ✅ | ❌ | ❌ |
@@ -2568,17 +2568,17 @@ Read-only for most resources, can update application stakeholders and fully mana
 | Resource | Create | Read | Update | Delete |
 |----------|--------|------|--------|--------|
 | addons | ❌ | ✅ | ❌ | ❌ |
-| adoptionplans | ✅ | ➖ | - | ➖ |
+| adoptionplans | ✅ | ➖ | ➖ | ➖ |
 | applications | ❌ | ✅ | ❌ | ❌ |
 | applications.analyses | ❌ | ✅ | ❌ | ❌ |
-| applications.assessments | ❌ | ✅ | ➖ | - |
+| applications.assessments | ❌ | ✅ | ➖ | ➖ |
 | applications.bucket | ❌ | ✅ | ❌ | ❌ |
 | applications.facts | ❌ | ✅ | ❌ | ❌ |
-| applications.manifests | ❌ | ✅ | ➖ | - |
-| applications.stakeholders | ➖ | - | ✅ | ➖ |
+| applications.manifests | ❌ | ✅ | ➖ | ➖ |
+| applications.stakeholders | ➖ | ➖ | ✅ | ➖ |
 | applications.tags | ❌ | ✅ | ❌ | ❌ |
 | archetypes | ❌ | ✅ | ❌ | ❌ |
-| archetypes.assessments | ❌ | ✅ | ➖ | - |
+| archetypes.assessments | ❌ | ✅ | ➖ | ➖ |
 | assessments | ❌ | ✅ | ❌ | ❌ |
 | buckets | ❌ | ✅ | ❌ | ❌ |
 | businessservices | ❌ | ✅ | ❌ | ❌ |
@@ -2594,7 +2594,7 @@ Read-only for most resources, can update application stakeholders and fully mana
 | questionnaires | ❌ | ✅ | ❌ | ❌ |
 | reviews | ❌ | ✅ | ❌ | ❌ |
 | rulesets | ❌ | ✅ | ❌ | ❌ |
-| schemas | ➖ | ✅ | ➖ | - |
+| schemas | ➖ | ✅ | ➖ | ➖ |
 | settings | ❌ | ✅ | ❌ | ❌ |
 | stakeholdergroups | ❌ | ✅ | ❌ | ❌ |
 | stakeholders | ❌ | ✅ | ❌ | ❌ |
