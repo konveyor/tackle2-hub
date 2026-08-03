@@ -11,9 +11,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
+var (
+	Log = logr.WithName("controller")
+)
+
+func init() {
+	k8slgr.SetLogger(Log)
+}
+
 // Add the controllers.
 func Add(mgr manager.Manager, db *gorm.DB) (err error) {
-	k8slgr.SetLogger(logr.WithName("controller"))
 	err = addon.Add(mgr, db)
 	if err != nil {
 		return
