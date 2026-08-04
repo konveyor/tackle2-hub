@@ -1,70 +1,25 @@
-package addon // import "github.com/konveyor/tackle2-hub/addon"
-
+TEST addon adapter. This is an example of an addon adapter that lists files and
+creates an application bucket for each. Error handling is deliberately minimized
+to reduce code clutter.
 
 CONSTANTS
 
 const (
-	EnvSharedDir = settings.EnvSharedDir
-	EnvCacheDir  = settings.EnvCacheDir
-	EnvToken     = settings.EnvHubToken
-	EnvTask      = settings.EnvTask
+	BucketDir = "list"
+	TmpDir    = "/tmp/list"
 )
-    Environment.
-
 
 VARIABLES
 
 var (
-	Addon = adapter.Addon
-	Log   = adapter.Log
+	Log = hub.Log
 )
 
 TYPES
 
-type Application = adapter.Application
-    Handlers
-
-type Archetype = adapter.Archetype
-
-type Bucket = adapter.Bucket
-
-type BucketContent = adapter.BucketContent
-
-type Client = adapter.Client
-    Client
-
-type Conflict = adapter.Conflict
-
-type File = adapter.File
-
-type Generator = adapter.Generator
-
-type Identity = adapter.Identity
-
-type Manifest = adapter.Manifest
-
-type NotFound = adapter.NotFound
-
-type Param = adapter.Param
-
-type Params = adapter.Params
-
-type Path = adapter.Path
-
-type Platform = adapter.Platform
-
-type Proxy = adapter.Proxy
-
-type ResetError = adapter.RestError
-    Errors
-
-type RuleSet = adapter.RuleSet
-
-type Schema = adapter.Schema
-
-type Setting = adapter.Setting
-
-type Tag = adapter.Tag
-
-type TagCategory = adapter.TagCategory
+type Data struct {
+	// Path to be listed.
+	Path string `json:"path"`
+}
+    Data Addon input.
 

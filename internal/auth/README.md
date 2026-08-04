@@ -933,11 +933,40 @@ External IdP claims are mapped to hub identity:
 | **email** | Email | Email address |
 | **scope** (access token) | Scopes | Permission scopes extracted from access token |
 
-**Scope extraction:**
-- Hub extracts `scope` claim from IdP access token
-- Scopes are space-separated permission strings
-- Stored in IdpIdentity.Scopes field
-- Injected into hub-issued access tokens when refreshed
+**Scope extraction and expansion:**
+
+The hub extracts the `scope` claim from the IdP access token as a space-separated string, then applies two expansion phases before storing the resolved scopes on the IdpIdentity:
+
+**Phase 1 — Role reference expansion (`+role.<name>`):**
+
+Scopes matching the pattern `+role.<name>` are replaced with the named hub role's permission scopes. This allows IdP administrators to assign hub roles by name without enumerating individual `resource:verb` scopes in the IdP.
+
+| IdP Scope Value | Expansion | Result |
+|-----------------|-----------|--------|
+| `+role.architect` | Looked up in hub role cache by name `architect` | All scopes from the `architect` role |
+| `+role.admin` | Looked up by name `admin` | All scopes from the `admin` role |
+| `+role.unknown` | Role not found — silently skipped (logged) | Omitted from result |
+| `applications:get` | No `+role.` prefix — passed through unchanged | `applications:get` |
+
+**Example:** An external IdP access token with scope `openid profile +role.architect` expands to `openid profile applications:get applications:post applications:put ...` (all scopes defined on the `architect` role).
+
+**Phase 2 — Wildcard expansion:**
+
+After role references are resolved, any remaining wildcard scopes (`*:*`, `applications:*`, `*:get`) are expanded against the hub's registered resources. This is the same expansion used during role seeding (see [Scope Generation](#scope-generation)).
+
+**Combined example:**
+
+```
+IdP scope claim:  "openid +role.migrator applications:*"
+                         ↓                      ↓
+Phase 1 (roles):  "openid tasks:get tasks:post ... applications:*"
+                                                         ↓
+Phase 2 (wildcards): "openid tasks:get tasks:post ... applications:get applications:post ..."
+```
+
+The fully expanded scopes are stored in `IdpIdentity.Scopes` and injected into hub-issued access tokens.
+
+**Configuration:** Role references require no hub-side configuration beyond the standard role definitions in `roles.yaml`. The IdP administrator simply includes `+role.<name>` in the scopes assigned to the user or client at the external IdP.
 
 ### Security Considerations
 
@@ -2378,6 +2407,13 @@ This section documents the permissions granted to each predefined role.
 - `put` / `patch` → Update
 - `delete` → Delete
 
+**Symbol legend:**
+- ✅ — Role has permission for this operation
+- ❌ — Endpoint exists but role lacks permission
+- ➖ — No endpoint registered for this operation
+
+**Note:** `applications.tags` uses `Required("applications")` scope, so its permissions are governed by the role's `applications` verbs.
+
 ### 🛡 Role: admin
 
 Full administrative access to **all resources and all operations** via wildcard scopes (`*:*`).
@@ -2390,38 +2426,46 @@ This grants the admin role every permission in the system, including:
 
 | Resource | Create | Read | Update | Delete |
 |----------|--------|------|--------|--------|
-| addons | ✅ | ✅ | ✅ | ✅ |
-| adoptionplans | ✅ | ❌ | ❌ | ❌ |
-| analyses | ✅ | ✅ | ✅ | ✅ |
+| addons | ➖ | ✅ | ➖ | ➖ |
+| adoptionplans | ✅ | ➖ | ➖ | ➖ |
+| analyses | ✅ | ✅ | ➖ | ✅ |
+| analysis.profiles | ✅ | ✅ | ✅ | ✅ |
 | applications | ✅ | ✅ | ✅ | ✅ |
-| applications.analyses | ✅ | ✅ | ✅ | ✅ |
-| applications.assessments | ✅ | ✅ | ❌ | ❌ |
+| applications.analyses | ✅ | ✅ | ➖ | ➖ |
+| applications.assessments | ✅ | ✅ | ➖ | ➖ |
 | applications.bucket | ✅ | ✅ | ✅ | ✅ |
 | applications.facts | ✅ | ✅ | ✅ | ✅ |
-| applications.manifests | ✅ | ✅ | ❌ | ❌ |
-| applications.stakeholders | ❌ | ❌ | ✅ | ❌ |
+| applications.manifests | ✅ | ✅ | ➖ | ➖ |
+| applications.stakeholders | ➖ | ➖ | ✅ | ➖ |
 | applications.tags | ✅ | ✅ | ✅ | ✅ |
 | archetypes | ✅ | ✅ | ✅ | ✅ |
-| archetypes.assessments | ✅ | ✅ | ❌ | ❌ |
-| assessments | ✅ | ✅ | ✅ | ✅ |
+| archetypes.assessments | ✅ | ✅ | ➖ | ➖ |
+| assessments | ➖ | ✅ | ✅ | ✅ |
 | buckets | ✅ | ✅ | ✅ | ✅ |
 | businessservices | ✅ | ✅ | ✅ | ✅ |
-| cache | ❌ | ✅ | ❌ | ✅ |
-| dependencies | ✅ | ✅ | ✅ | ✅ |
+| cache | ➖ | ✅ | ➖ | ✅ |
+| configmaps | ➖ | ✅ | ➖ | ➖ |
+| dependencies | ✅ | ✅ | ➖ | ✅ |
 | files | ✅ | ✅ | ✅ | ✅ |
 | generators | ✅ | ✅ | ✅ | ✅ |
+| grants | ➖ | ✅ | ➖ | ✅ |
 | identities | ✅ | ✅ | ✅ | ✅ |
-| imports | ✅ | ✅ | ✅ | ✅ |
+| idp.clients | ✅ | ✅ | ✅ | ✅ |
+| idp.identities | ✅ | ✅ | ✅ | ✅ |
+| imports | ✅ | ✅ | ➖ | ✅ |
 | jobfunctions | ✅ | ✅ | ✅ | ✅ |
-| kai | ✅ | ✅ | ❌ | ❌ |
 | manifests | ✅ | ✅ | ✅ | ✅ |
 | migrationwaves | ✅ | ✅ | ✅ | ✅ |
 | platforms | ✅ | ✅ | ✅ | ✅ |
 | proxies | ✅ | ✅ | ✅ | ✅ |
 | questionnaires | ✅ | ✅ | ✅ | ✅ |
 | reviews | ✅ | ✅ | ✅ | ✅ |
+| roles | ✅ | ✅ | ✅ | ✅ |
 | rulesets | ✅ | ✅ | ✅ | ✅ |
-| schemas | ✅ | ✅ | ✅ | ✅ |
+| schemas | ➖ | ✅ | ➖ | ➖ |
+| scopes | ➖ | ✅ | ➖ | ➖ |
+| serviceaccounts | ✅ | ✅ | ✅ | ✅ |
+| serviceaccounts.tokens | ✅ | ➖ | ➖ | ➖ |
 | settings | ✅ | ✅ | ✅ | ✅ |
 | stakeholdergroups | ✅ | ✅ | ✅ | ✅ |
 | stakeholders | ✅ | ✅ | ✅ | ✅ |
@@ -2430,47 +2474,58 @@ This grants the admin role every permission in the system, including:
 | targets | ✅ | ✅ | ✅ | ✅ |
 | tasks | ✅ | ✅ | ✅ | ✅ |
 | tasks.bucket | ✅ | ✅ | ✅ | ✅ |
-| tickets | ✅ | ✅ | ✅ | ✅ |
+| tasks.report | ✅ | ✅ | ✅ | ✅ |
+| tickets | ✅ | ✅ | ➖ | ✅ |
+| tokens | ✅ | ✅ | ➖ | ✅ |
 | trackers | ✅ | ✅ | ✅ | ✅ |
+| users | ✅ | ✅ | ✅ | ✅ |
 
 ### 🛠 Role: architect
 
-Broad create/update/delete rights, restricted on sensitive resources (identities, proxies, settings, trackers).
+Broad create/update/delete rights, restricted on sensitive resources (identities, proxies, settings, trackers, auth management).
 
 | Resource | Create | Read | Update | Delete |
 |----------|--------|------|--------|--------|
-| addons | ✅ | ✅ | ✅ | ✅ |
-| adoptionplans | ✅ | ❌ | ❌ | ❌ |
-| analyses | ✅ | ✅ | ✅ | ✅ |
+| addons | ➖ | ✅ | ➖ | ➖ |
+| adoptionplans | ✅ | ➖ | ➖ | ➖ |
+| analyses | ✅ | ✅ | ➖ | ✅ |
+| analysis.profiles | ✅ | ✅ | ✅ | ✅ |
 | applications | ✅ | ✅ | ✅ | ✅ |
-| applications.analyses | ✅ | ✅ | ✅ | ✅ |
-| applications.assessments | ✅ | ✅ | ❌ | ❌ |
+| applications.analyses | ✅ | ✅ | ➖ | ➖ |
+| applications.assessments | ✅ | ✅ | ➖ | ➖ |
 | applications.bucket | ✅ | ✅ | ✅ | ✅ |
 | applications.facts | ✅ | ✅ | ✅ | ✅ |
-| applications.manifests | ✅ | ✅ | ❌ | ❌ |
-| applications.stakeholders | ❌ | ❌ | ✅ | ❌ |
+| applications.manifests | ✅ | ✅ | ➖ | ➖ |
+| applications.stakeholders | ➖ | ➖ | ✅ | ➖ |
 | applications.tags | ✅ | ✅ | ✅ | ✅ |
 | archetypes | ✅ | ✅ | ✅ | ✅ |
-| archetypes.assessments | ✅ | ✅ | ❌ | ❌ |
-| assessments | ✅ | ✅ | ✅ | ✅ |
+| archetypes.assessments | ✅ | ✅ | ➖ | ➖ |
+| assessments | ➖ | ✅ | ✅ | ✅ |
 | buckets | ✅ | ✅ | ✅ | ✅ |
 | businessservices | ✅ | ✅ | ✅ | ✅ |
-| cache | ❌ | ✅ | ❌ | ❌ |
-| dependencies | ✅ | ✅ | ✅ | ✅ |
+| cache | ➖ | ✅ | ➖ | ❌ |
+| configmaps | ➖ | ✅ | ➖ | ➖ |
+| dependencies | ✅ | ✅ | ➖ | ✅ |
 | files | ✅ | ✅ | ✅ | ✅ |
 | generators | ✅ | ✅ | ✅ | ✅ |
+| grants | ➖ | ❌ | ➖ | ❌ |
 | identities | ❌ | ✅ | ❌ | ❌ |
-| imports | ✅ | ✅ | ✅ | ✅ |
+| idp.clients | ❌ | ❌ | ❌ | ❌ |
+| idp.identities | ❌ | ❌ | ❌ | ❌ |
+| imports | ✅ | ✅ | ➖ | ✅ |
 | jobfunctions | ✅ | ✅ | ✅ | ✅ |
-| kai | ✅ | ✅ | ❌ | ❌ |
 | manifests | ✅ | ✅ | ✅ | ✅ |
 | migrationwaves | ✅ | ✅ | ✅ | ✅ |
 | platforms | ✅ | ✅ | ✅ | ✅ |
 | proxies | ❌ | ✅ | ❌ | ❌ |
 | questionnaires | ❌ | ✅ | ❌ | ❌ |
 | reviews | ✅ | ✅ | ✅ | ✅ |
+| roles | ❌ | ✅ | ❌ | ❌ |
 | rulesets | ✅ | ✅ | ✅ | ✅ |
-| schemas | ❌ | ✅ | ❌ | ❌ |
+| schemas | ➖ | ✅ | ➖ | ➖ |
+| scopes | ➖ | ✅ | ➖ | ➖ |
+| serviceaccounts | ❌ | ❌ | ❌ | ❌ |
+| serviceaccounts.tokens | ❌ | ➖ | ➖ | ➖ |
 | settings | ❌ | ✅ | ❌ | ❌ |
 | stakeholdergroups | ✅ | ✅ | ✅ | ✅ |
 | stakeholders | ✅ | ✅ | ✅ | ✅ |
@@ -2479,8 +2534,11 @@ Broad create/update/delete rights, restricted on sensitive resources (identities
 | targets | ✅ | ✅ | ✅ | ✅ |
 | tasks | ✅ | ✅ | ✅ | ✅ |
 | tasks.bucket | ✅ | ✅ | ✅ | ✅ |
-| tickets | ✅ | ✅ | ✅ | ✅ |
+| tasks.report | ❌ | ❌ | ❌ | ❌ |
+| tickets | ✅ | ✅ | ➖ | ✅ |
+| tokens | ✅ | ✅ | ➖ | ✅ |
 | trackers | ❌ | ✅ | ❌ | ❌ |
+| users | ❌ | ✅ | ✅ | ✅ |
 
 ### 🚚 Role: migrator
 
@@ -2488,37 +2546,46 @@ Mostly read-only, except full management of dependencies and tasks.
 
 | Resource | Create | Read | Update | Delete |
 |----------|--------|------|--------|--------|
-| addons | ❌ | ✅ | ❌ | ❌ |
-| adoptionplans | ✅ | ❌ | ❌ | ❌ |
-| analyses | ❌ | ✅ | ❌ | ❌ |
+| addons | ➖ | ✅ | ➖ | ➖ |
+| adoptionplans | ✅ | ➖ | ➖ | ➖ |
+| analyses | ❌ | ✅ | ➖ | ❌ |
+| analysis.profiles | ❌ | ✅ | ❌ | ❌ |
 | applications | ❌ | ✅ | ❌ | ❌ |
-| applications.analyses | ❌ | ✅ | ❌ | ❌ |
-| applications.assessments | ❌ | ✅ | ❌ | ❌ |
+| applications.analyses | ❌ | ✅ | ➖ | ➖ |
+| applications.assessments | ❌ | ✅ | ➖ | ➖ |
 | applications.bucket | ❌ | ✅ | ❌ | ❌ |
 | applications.facts | ❌ | ✅ | ❌ | ❌ |
-| applications.manifests | ❌ | ✅ | ❌ | ❌ |
+| applications.manifests | ❌ | ✅ | ➖ | ➖ |
+| applications.stakeholders | ➖ | ➖ | ❌ | ➖ |
 | applications.tags | ❌ | ✅ | ❌ | ❌ |
 | archetypes | ❌ | ✅ | ❌ | ❌ |
-| archetypes.assessments | ❌ | ✅ | ❌ | ❌ |
-| assessments | ❌ | ✅ | ❌ | ❌ |
+| archetypes.assessments | ❌ | ✅ | ➖ | ➖ |
+| assessments | ➖ | ✅ | ❌ | ❌ |
 | buckets | ❌ | ✅ | ❌ | ❌ |
 | businessservices | ❌ | ✅ | ❌ | ❌ |
-| cache | ❌ | ✅ | ❌ | ❌ |
-| dependencies | ✅ | ✅ | ✅ | ✅ |
+| cache | ➖ | ✅ | ➖ | ❌ |
+| configmaps | ➖ | ✅ | ➖ | ➖ |
+| dependencies | ✅ | ✅ | ➖ | ✅ |
 | files | ❌ | ✅ | ❌ | ❌ |
 | generators | ❌ | ✅ | ❌ | ❌ |
+| grants | ➖ | ❌ | ➖ | ❌ |
 | identities | ❌ | ✅ | ❌ | ❌ |
-| imports | ❌ | ✅ | ❌ | ❌ |
+| idp.clients | ❌ | ❌ | ❌ | ❌ |
+| idp.identities | ❌ | ❌ | ❌ | ❌ |
+| imports | ❌ | ✅ | ➖ | ❌ |
 | jobfunctions | ❌ | ✅ | ❌ | ❌ |
-| kai | ✅ | ✅ | ❌ | ❌ |
 | manifests | ❌ | ✅ | ❌ | ❌ |
 | migrationwaves | ❌ | ✅ | ❌ | ❌ |
 | platforms | ❌ | ✅ | ❌ | ❌ |
 | proxies | ❌ | ✅ | ❌ | ❌ |
 | questionnaires | ❌ | ✅ | ❌ | ❌ |
 | reviews | ❌ | ✅ | ❌ | ❌ |
+| roles | ❌ | ✅ | ❌ | ❌ |
 | rulesets | ❌ | ✅ | ❌ | ❌ |
-| schemas | ❌ | ✅ | ❌ | ❌ |
+| schemas | ➖ | ✅ | ➖ | ➖ |
+| scopes | ➖ | ✅ | ➖ | ➖ |
+| serviceaccounts | ❌ | ❌ | ❌ | ❌ |
+| serviceaccounts.tokens | ❌ | ➖ | ➖ | ➖ |
 | settings | ❌ | ✅ | ❌ | ❌ |
 | stakeholdergroups | ❌ | ✅ | ❌ | ❌ |
 | stakeholders | ❌ | ✅ | ❌ | ❌ |
@@ -2527,8 +2594,11 @@ Mostly read-only, except full management of dependencies and tasks.
 | targets | ❌ | ✅ | ❌ | ❌ |
 | tasks | ✅ | ✅ | ✅ | ✅ |
 | tasks.bucket | ✅ | ✅ | ✅ | ✅ |
-| tickets | ❌ | ✅ | ❌ | ❌ |
+| tasks.report | ❌ | ❌ | ❌ | ❌ |
+| tickets | ❌ | ✅ | ➖ | ❌ |
+| tokens | ✅ | ✅ | ➖ | ✅ |
 | trackers | ❌ | ✅ | ❌ | ❌ |
+| users | ❌ | ✅ | ✅ | ✅ |
 
 ### 📋 Role: project-manager
 
@@ -2536,35 +2606,46 @@ Read-only for most resources, can update application stakeholders and fully mana
 
 | Resource | Create | Read | Update | Delete |
 |----------|--------|------|--------|--------|
-| addons | ❌ | ✅ | ❌ | ❌ |
-| adoptionplans | ✅ | ❌ | ❌ | ❌ |
+| addons | ➖ | ✅ | ➖ | ➖ |
+| adoptionplans | ✅ | ➖ | ➖ | ➖ |
+| analyses | ❌ | ✅ | ➖ | ❌ |
+| analysis.profiles | ❌ | ✅ | ❌ | ❌ |
 | applications | ❌ | ✅ | ❌ | ❌ |
-| applications.analyses | ❌ | ✅ | ❌ | ❌ |
-| applications.assessments | ❌ | ✅ | ❌ | ❌ |
+| applications.analyses | ❌ | ✅ | ➖ | ➖ |
+| applications.assessments | ❌ | ✅ | ➖ | ➖ |
 | applications.bucket | ❌ | ✅ | ❌ | ❌ |
 | applications.facts | ❌ | ✅ | ❌ | ❌ |
-| applications.manifests | ❌ | ✅ | ❌ | ❌ |
-| applications.stakeholders | ❌ | ❌ | ✅ | ❌ |
+| applications.manifests | ❌ | ✅ | ➖ | ➖ |
+| applications.stakeholders | ➖ | ➖ | ✅ | ➖ |
 | applications.tags | ❌ | ✅ | ❌ | ❌ |
 | archetypes | ❌ | ✅ | ❌ | ❌ |
-| archetypes.assessments | ❌ | ✅ | ❌ | ❌ |
-| assessments | ❌ | ✅ | ❌ | ❌ |
+| archetypes.assessments | ❌ | ✅ | ➖ | ➖ |
+| assessments | ➖ | ✅ | ❌ | ❌ |
 | buckets | ❌ | ✅ | ❌ | ❌ |
 | businessservices | ❌ | ✅ | ❌ | ❌ |
-| cache | ❌ | ✅ | ❌ | ❌ |
-| dependencies | ❌ | ✅ | ❌ | ❌ |
+| cache | ➖ | ✅ | ➖ | ❌ |
+| configmaps | ➖ | ✅ | ➖ | ➖ |
+| dependencies | ❌ | ✅ | ➖ | ❌ |
+| files | ❌ | ✅ | ❌ | ❌ |
 | generators | ❌ | ✅ | ❌ | ❌ |
+| grants | ➖ | ❌ | ➖ | ❌ |
 | identities | ❌ | ✅ | ❌ | ❌ |
-| imports | ❌ | ✅ | ❌ | ❌ |
+| idp.clients | ❌ | ❌ | ❌ | ❌ |
+| idp.identities | ❌ | ❌ | ❌ | ❌ |
+| imports | ❌ | ✅ | ➖ | ❌ |
 | jobfunctions | ❌ | ✅ | ❌ | ❌ |
-| kai | ✅ | ✅ | ❌ | ❌ |
+| manifests | ❌ | ❌ | ❌ | ❌ |
 | migrationwaves | ✅ | ✅ | ✅ | ✅ |
 | platforms | ❌ | ✅ | ❌ | ❌ |
 | proxies | ❌ | ✅ | ❌ | ❌ |
 | questionnaires | ❌ | ✅ | ❌ | ❌ |
 | reviews | ❌ | ✅ | ❌ | ❌ |
+| roles | ❌ | ❌ | ❌ | ❌ |
 | rulesets | ❌ | ✅ | ❌ | ❌ |
-| schemas | ❌ | ✅ | ❌ | ❌ |
+| schemas | ➖ | ❌ | ➖ | ➖ |
+| scopes | ➖ | ❌ | ➖ | ➖ |
+| serviceaccounts | ❌ | ❌ | ❌ | ❌ |
+| serviceaccounts.tokens | ❌ | ➖ | ➖ | ➖ |
 | settings | ❌ | ✅ | ❌ | ❌ |
 | stakeholdergroups | ❌ | ✅ | ❌ | ❌ |
 | stakeholders | ❌ | ✅ | ❌ | ❌ |
@@ -2573,5 +2654,9 @@ Read-only for most resources, can update application stakeholders and fully mana
 | targets | ❌ | ✅ | ❌ | ❌ |
 | tasks | ❌ | ✅ | ❌ | ❌ |
 | tasks.bucket | ❌ | ✅ | ❌ | ❌ |
-| tickets | ❌ | ✅ | ❌ | ❌ |
+| tasks.report | ❌ | ❌ | ❌ | ❌ |
+| tickets | ❌ | ✅ | ➖ | ❌ |
+| tokens | ✅ | ✅ | ➖ | ✅ |
 | trackers | ❌ | ✅ | ❌ | ❌ |
+| users | ❌ | ✅ | ✅ | ✅ |
+

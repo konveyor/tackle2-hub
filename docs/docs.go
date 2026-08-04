@@ -41,7 +41,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Addon"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Addon"
                             }
                         }
                     }
@@ -71,7 +71,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Addon"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Addon"
                         }
                     }
                 }
@@ -107,7 +107,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Vertex"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Vertex"
                             }
                         }
                     }
@@ -130,7 +130,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Analysis"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Analysis"
                             }
                         }
                     }
@@ -153,7 +153,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TechDependency"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TechDependency"
                             }
                         }
                     }
@@ -176,7 +176,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Incident"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Incident"
                             }
                         }
                     }
@@ -206,7 +206,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Incident"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Incident"
                         }
                     }
                 }
@@ -228,7 +228,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Insight"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Insight"
                             }
                         }
                     }
@@ -258,7 +258,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Insight"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Insight"
                         }
                     }
                 }
@@ -289,7 +289,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Incident"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Incident"
                             }
                         }
                     }
@@ -312,7 +312,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.DepAppReport"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.DepAppReport"
                             }
                         }
                     }
@@ -344,7 +344,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.InsightReport"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.InsightReport"
                             }
                         }
                     }
@@ -376,7 +376,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.FileReport"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.FileReport"
                             }
                         }
                     }
@@ -399,7 +399,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.RuleReport"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.RuleReport"
                             }
                         }
                     }
@@ -429,7 +429,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Analysis"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Analysis"
                         }
                     }
                 }
@@ -507,7 +507,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TechDependency"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TechDependency"
                             }
                         }
                     }
@@ -539,7 +539,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Insight"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Insight"
                             }
                         }
                     }
@@ -736,7 +736,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Analysis"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Analysis"
                         }
                     }
                 }
@@ -767,7 +767,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TechDependency"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TechDependency"
                             }
                         }
                     }
@@ -799,7 +799,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Insight"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Insight"
                             }
                         }
                     }
@@ -822,7 +822,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Application"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Application"
                             }
                         }
                     }
@@ -847,7 +847,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Application"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Application"
                         }
                     }
                 ],
@@ -855,7 +855,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Application"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Application"
                         }
                     }
                 }
@@ -910,7 +910,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Application"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Application"
                         }
                     }
                 }
@@ -938,7 +938,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Application"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Application"
                         }
                     }
                 ],
@@ -993,7 +993,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Analysis"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Analysis"
                         }
                     }
                 }
@@ -1079,7 +1079,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Assessment"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Assessment"
                             }
                         }
                     }
@@ -1111,7 +1111,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Assessment"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Assessment"
                         }
                     }
                 ],
@@ -1119,7 +1119,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Assessment"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Assessment"
                         }
                     }
                 }
@@ -1253,7 +1253,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Fact"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Fact"
                         }
                     }
                 ],
@@ -1401,7 +1401,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Map"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Map"
                         }
                     }
                 }
@@ -1433,7 +1433,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Map"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Map"
                         }
                     }
                 ],
@@ -1585,7 +1585,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Stakeholders"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Stakeholders"
                         }
                     }
                 ],
@@ -1621,7 +1621,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
                             }
                         }
                     }
@@ -1661,7 +1661,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
                         }
                     }
                 }
@@ -1755,7 +1755,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Archetype"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Archetype"
                             }
                         }
                     }
@@ -1780,7 +1780,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Archetype"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Archetype"
                         }
                     }
                 ],
@@ -1788,7 +1788,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Archetype"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Archetype"
                         }
                     }
                 }
@@ -1817,7 +1817,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Archetype"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Archetype"
                         }
                     }
                 }
@@ -1845,7 +1845,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Archetype"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Archetype"
                         }
                     }
                 ],
@@ -1899,7 +1899,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Assessment"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Assessment"
                             }
                         }
                     }
@@ -1924,7 +1924,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Assessment"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Assessment"
                         }
                     },
                     {
@@ -1939,7 +1939,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Assessment"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Assessment"
                         }
                     }
                 }
@@ -1961,7 +1961,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Assessment"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Assessment"
                             }
                         }
                     }
@@ -1991,7 +1991,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Assessment"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Assessment"
                         }
                     }
                 }
@@ -2019,7 +2019,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Assessment"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Assessment"
                         }
                     }
                 ],
@@ -2051,42 +2051,508 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/login": {
-            "post": {
-                "description": "Login and obtain a bearer token.",
+        "/auth/clients": {
+            "get": {
+                "description": "List all OIDC clients.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "auth"
+                    "oidc-clients"
                 ],
-                "summary": "Login and obtain a bearer token.",
+                "summary": "List all OIDC clients.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.IdpClient"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create an OIDC client.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oidc-clients"
+                ],
+                "summary": "Create an OIDC client.",
+                "parameters": [
+                    {
+                        "description": "Client data",
+                        "name": "client",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.IdpClient"
+                        }
+                    }
+                ],
                 "responses": {
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Login"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.IdpClient"
                         }
                     }
                 }
             }
         },
-        "/auth/refresh": {
+        "/auth/clients/{id}": {
+            "get": {
+                "description": "Get an OIDC client by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oidc-clients"
+                ],
+                "summary": "Get an OIDC client by ID.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Client ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.IdpClient"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update an OIDC client.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oidc-clients"
+                ],
+                "summary": "Update an OIDC client.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Client ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Client data",
+                        "name": "client",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.IdpClient"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete an OIDC client.",
+                "tags": [
+                    "oidc-clients"
+                ],
+                "summary": "Delete an OIDC client.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Client ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/auth/grants": {
+            "get": {
+                "description": "List all grants.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "grants"
+                ],
+                "summary": "List all grants.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Grant"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/grants/{id}": {
+            "get": {
+                "description": "Get a grant by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "grants"
+                ],
+                "summary": "Get a grant by ID.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Grant ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Grant"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a grant.",
+                "tags": [
+                    "grants"
+                ],
+                "summary": "Delete a grant.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Grant ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/auth/identities": {
+            "get": {
+                "description": "List all IDP identities.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "idpidentities"
+                ],
+                "summary": "List all IDP identities.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.IdpIdentity"
+                            }
+                        }
+                    }
+                }
+            },
             "post": {
-                "description": "Refresh bearer token.",
+                "description": "Create an IDP identity.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "idpidentities"
+                ],
+                "summary": "Create an IDP identity.",
+                "parameters": [
+                    {
+                        "description": "IdpIdentity data",
+                        "name": "idpidentity",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.IdpIdentity"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.IdpIdentity"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/identities/{id}": {
+            "get": {
+                "description": "Get an IDP identity by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "idpidentities"
+                ],
+                "summary": "Get an IDP identity by ID.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "IdpIdentity ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.IdpIdentity"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update an IDP identity.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "idpidentities"
+                ],
+                "summary": "Update an IDP identity.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "IdpIdentity ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "IdpIdentity data",
+                        "name": "idpidentity",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.IdpIdentity"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete an IDP identity.",
+                "tags": [
+                    "idpidentities"
+                ],
+                "summary": "Delete an IDP identity.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "IdpIdentity ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/auth/scopes": {
+            "get": {
+                "description": "List all scopes.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "permissions"
+                ],
+                "summary": "List all scopes.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Scope"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/self": {
+            "get": {
+                "description": "Get information about the currently authenticated\nuser, identity, or client.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "auth"
                 ],
-                "summary": "Refresh bearer token.",
+                "summary": "Get current authenticated subject.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.AuthSelf"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/tokens": {
+            "get": {
+                "description": "List all tokens.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tokens"
+                ],
+                "summary": "List all tokens.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Token"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "TokenCreate create an (apikey) token.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "TokenCreate create a token.",
                 "responses": {
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Login"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Token"
                         }
+                    }
+                }
+            }
+        },
+        "/auth/tokens/{id}": {
+            "get": {
+                "description": "Get a token by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tokens"
+                ],
+                "summary": "Get a token by ID.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Token ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Token"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a token.",
+                "tags": [
+                    "tokens"
+                ],
+                "summary": "Delete a token.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Token ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/auth/tokens/{id}/revoke": {
+            "post": {
+                "description": "Revoke a token and its associated grant.",
+                "tags": [
+                    "tokens"
+                ],
+                "summary": "Revoke a token.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Token ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
                     }
                 }
             }
@@ -2111,7 +2577,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Tag"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Tag"
                             }
                         }
                     }
@@ -2122,7 +2588,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Tag"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Tag"
                             }
                         }
                     }
@@ -2149,7 +2615,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ticket"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ticket"
                             }
                         }
                     }
@@ -2160,7 +2626,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ticket"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ticket"
                             }
                         }
                     }
@@ -2183,7 +2649,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Bucket"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Bucket"
                             }
                         }
                     }
@@ -2214,7 +2680,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Bucket"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Bucket"
                         }
                     }
                 }
@@ -2243,7 +2709,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Bucket"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Bucket"
                         }
                     }
                 }
@@ -2385,7 +2851,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.BusinessService"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.BusinessService"
                         }
                     }
                 }
@@ -2409,7 +2875,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.BusinessService"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.BusinessService"
                         }
                     }
                 ],
@@ -2417,7 +2883,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.BusinessService"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.BusinessService"
                         }
                     }
                 }
@@ -2446,7 +2912,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.BusinessService"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.BusinessService"
                         }
                     }
                 }
@@ -2474,7 +2940,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.BusinessService"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.BusinessService"
                         }
                     }
                 ],
@@ -2546,7 +3012,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Cache"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Cache"
                         }
                     }
                 }
@@ -2568,7 +3034,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.ConfigMap"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.ConfigMap"
                             }
                         }
                     }
@@ -2627,7 +3093,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Dependency"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Dependency"
                             }
                         }
                     }
@@ -2660,7 +3126,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Dependency"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Dependency"
                         }
                     }
                 }
@@ -2689,7 +3155,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Dependency"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Dependency"
                         }
                     }
                 }
@@ -2735,7 +3201,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.File"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.File"
                             }
                         }
                     }
@@ -2766,7 +3232,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.File"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.File"
                         }
                     }
                 }
@@ -2795,7 +3261,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.File"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.File"
                         }
                     }
                 }
@@ -3155,7 +3621,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Import"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Import"
                             }
                         }
                     }
@@ -3185,7 +3651,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Import"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Import"
                         }
                     }
                 }
@@ -3228,7 +3694,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.ImportSummary"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.ImportSummary"
                             }
                         }
                     }
@@ -3278,7 +3744,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.ImportSummary"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.ImportSummary"
                         }
                     }
                 }
@@ -3307,7 +3773,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.ImportSummary"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.ImportSummary"
                         }
                     }
                 }
@@ -3350,7 +3816,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.JobFunction"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.JobFunction"
                             }
                         }
                     }
@@ -3375,7 +3841,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.JobFunction"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.JobFunction"
                         }
                     }
                 ],
@@ -3383,7 +3849,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.JobFunction"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.JobFunction"
                         }
                     }
                 }
@@ -3412,7 +3878,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.JobFunction"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.JobFunction"
                         }
                     }
                 }
@@ -3440,7 +3906,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.JobFunction"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.JobFunction"
                         }
                     }
                 ],
@@ -3669,7 +4135,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.MigrationWave"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.MigrationWave"
                             }
                         }
                     }
@@ -3694,7 +4160,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.MigrationWave"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.MigrationWave"
                         }
                     }
                 ],
@@ -3702,7 +4168,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.MigrationWave"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.MigrationWave"
                         }
                     }
                 }
@@ -3731,7 +4197,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.MigrationWave"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.MigrationWave"
                         }
                     }
                 }
@@ -3759,7 +4225,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.MigrationWave"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.MigrationWave"
                         }
                     }
                 ],
@@ -4083,7 +4549,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Questionnaire"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Questionnaire"
                             }
                         }
                     }
@@ -4108,7 +4574,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Questionnaire"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Questionnaire"
                         }
                     }
                 ],
@@ -4116,7 +4582,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Questionnaire"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Questionnaire"
                         }
                     }
                 }
@@ -4145,7 +4611,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Questionnaire"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Questionnaire"
                         }
                     }
                 }
@@ -4173,7 +4639,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Questionnaire"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Questionnaire"
                         }
                     }
                 ],
@@ -4221,7 +4687,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Review"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Review"
                             }
                         }
                     }
@@ -4246,7 +4712,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Review"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Review"
                         }
                     }
                 ],
@@ -4254,7 +4720,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Review"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Review"
                         }
                     }
                 }
@@ -4277,7 +4743,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.CopyRequest"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.CopyRequest"
                         }
                     }
                 ],
@@ -4311,7 +4777,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Review"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Review"
                         }
                     }
                 }
@@ -4339,7 +4805,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Review"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Review"
                         }
                     }
                 ],
@@ -4359,6 +4825,144 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Review ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/roles": {
+            "get": {
+                "description": "List all roles.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "roles"
+                ],
+                "summary": "List all roles.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Role"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a role.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "roles"
+                ],
+                "summary": "Create a role.",
+                "parameters": [
+                    {
+                        "description": "Role data",
+                        "name": "role",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Role"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Role"
+                        }
+                    }
+                }
+            }
+        },
+        "/roles/{id}": {
+            "get": {
+                "description": "Get a role by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "roles"
+                ],
+                "summary": "Get a role by ID.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Role ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Role"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a role.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "roles"
+                ],
+                "summary": "Update a role.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Role ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Role data",
+                        "name": "role",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Role"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a role.",
+                "tags": [
+                    "roles"
+                ],
+                "summary": "Delete a role.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Role ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -4624,6 +5228,185 @@ const docTemplate = `{
                 }
             }
         },
+        "/serviceaccounts": {
+            "get": {
+                "description": "Lists all service accounts.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "serviceaccounts"
+                ],
+                "summary": "List all service accounts.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.ServiceAccount"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a service account.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "serviceaccounts"
+                ],
+                "summary": "Create a service account.",
+                "parameters": [
+                    {
+                        "description": "ServiceAccount data",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.ServiceAccount"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.ServiceAccount"
+                        }
+                    }
+                }
+            }
+        },
+        "/serviceaccounts/{id}": {
+            "get": {
+                "description": "Get a service account by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "serviceaccounts"
+                ],
+                "summary": "Get a service account by ID.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ServiceAccount ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.ServiceAccount"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a service account.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "serviceaccounts"
+                ],
+                "summary": "Update a service account.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ServiceAccount ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "ServiceAccount data",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.ServiceAccount"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a service account.",
+                "tags": [
+                    "serviceaccounts"
+                ],
+                "summary": "Delete a service account.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ServiceAccount ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/serviceaccounts/{id}/tokens": {
+            "post": {
+                "description": "Create an api-key token for a service account.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "serviceaccounts"
+                ],
+                "summary": "Create a token for a service account.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ServiceAccount ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Token data",
+                        "name": "pat",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.PAT"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.PAT"
+                        }
+                    }
+                }
+            }
+        },
         "/services": {
             "get": {
                 "description": "List named service routes.",
@@ -4638,7 +5421,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Service"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Service"
                         }
                     }
                 }
@@ -4660,7 +5443,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Setting"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Setting"
                             }
                         }
                     }
@@ -4685,7 +5468,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Setting"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Setting"
                         }
                     }
                 ],
@@ -4693,7 +5476,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Setting"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Setting"
                         }
                     }
                 }
@@ -4722,7 +5505,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Setting"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Setting"
                         }
                     }
                 }
@@ -4777,7 +5560,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Setting"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Setting"
                         }
                     }
                 ],
@@ -4825,7 +5608,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.StakeholderGroup"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.StakeholderGroup"
                             }
                         }
                     }
@@ -4850,7 +5633,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.StakeholderGroup"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.StakeholderGroup"
                         }
                     }
                 ],
@@ -4858,7 +5641,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.StakeholderGroup"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.StakeholderGroup"
                         }
                     }
                 }
@@ -4887,7 +5670,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.StakeholderGroup"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.StakeholderGroup"
                         }
                     }
                 }
@@ -4915,7 +5698,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.StakeholderGroup"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.StakeholderGroup"
                         }
                     }
                 ],
@@ -4963,7 +5746,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Stakeholder"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Stakeholder"
                             }
                         }
                     }
@@ -4988,7 +5771,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Stakeholder"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Stakeholder"
                         }
                     }
                 ],
@@ -4996,7 +5779,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Stakeholder"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Stakeholder"
                         }
                     }
                 }
@@ -5025,7 +5808,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Stakeholder"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Stakeholder"
                         }
                     }
                 }
@@ -5053,7 +5836,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Stakeholder"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Stakeholder"
                         }
                     }
                 ],
@@ -5109,7 +5892,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TagCategory"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TagCategory"
                             }
                         }
                     }
@@ -5134,7 +5917,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TagCategory"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TagCategory"
                         }
                     }
                 ],
@@ -5142,7 +5925,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TagCategory"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TagCategory"
                         }
                     }
                 }
@@ -5171,7 +5954,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TagCategory"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TagCategory"
                         }
                     }
                 }
@@ -5199,7 +5982,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TagCategory"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TagCategory"
                         }
                     }
                 ],
@@ -5262,7 +6045,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Tag"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Tag"
                             }
                         }
                     }
@@ -5285,7 +6068,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Tag"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Tag"
                             }
                         }
                     }
@@ -5318,7 +6101,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Tag"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Tag"
                         }
                     }
                 }
@@ -5347,7 +6130,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Tag"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Tag"
                         }
                     }
                 }
@@ -5375,7 +6158,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Tag"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Tag"
                         }
                     }
                 ],
@@ -5561,14 +6344,14 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskGroup"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskGroup"
                             }
                         }
                     }
                 }
             },
             "post": {
-                "description": "Create a task group.",
+                "description": "Create a task group.\nNote: The priority will be adjusted as needed\nto ensure the priority higher than system reserved (0-9).",
                 "consumes": [
                     "application/json"
                 ],
@@ -5586,7 +6369,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskGroup"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskGroup"
                         }
                     }
                 ],
@@ -5594,7 +6377,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskGroup"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskGroup"
                         }
                     }
                 }
@@ -5623,14 +6406,17 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskGroup"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskGroup"
                         }
                     }
                 }
             },
             "put": {
-                "description": "Update a task group.",
+                "description": "Update a task group.\nNote: The priority will be adjusted as needed\nto ensure the priority higher than system reserved (0-9).",
                 "consumes": [
+                    "application/json"
+                ],
+                "produces": [
                     "application/json"
                 ],
                 "tags": [
@@ -5640,7 +6426,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Task ID",
+                        "description": "TaskGroup ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -5656,8 +6442,11 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "204": {
-                        "description": "No Content"
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskGroup"
+                        }
                     }
                 }
             },
@@ -5834,14 +6623,14 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskDashboard"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskDashboard"
                             }
                         }
                     }
                 }
             },
             "post": {
-                "description": "Create a task.",
+                "description": "Create a task.\nNote: The priority will be adjusted as needed\nto ensure the priority higher than system reserved (0-9).",
                 "consumes": [
                     "application/json"
                 ],
@@ -5859,7 +6648,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Task"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Task"
                         }
                     }
                 ],
@@ -5867,7 +6656,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Task"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Task"
                         }
                     }
                 }
@@ -5924,14 +6713,17 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Task"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Task"
                         }
                     }
                 }
             },
             "put": {
-                "description": "Update a task.",
+                "description": "Update a task.\nNote: The priority will be adjusted as needed\nto ensure the priority higher than system reserved (0-9).",
                 "consumes": [
+                    "application/json"
+                ],
+                "produces": [
                     "application/json"
                 ],
                 "tags": [
@@ -5958,7 +6750,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Task"
+                        }
                     }
                 }
             },
@@ -6161,7 +6956,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskReport"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskReport"
                         }
                     }
                 ],
@@ -6197,7 +6992,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskReport"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskReport"
                         }
                     }
                 ],
@@ -6205,7 +7000,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskReport"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskReport"
                         }
                     }
                 }
@@ -6266,8 +7061,8 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK"
+                    "204": {
+                        "description": "No Content"
                     }
                 }
             }
@@ -6288,7 +7083,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ticket"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ticket"
                             }
                         }
                     }
@@ -6313,7 +7108,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ticket"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ticket"
                         }
                     }
                 ],
@@ -6321,7 +7116,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ticket"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ticket"
                         }
                     }
                 }
@@ -6350,7 +7145,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ticket"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ticket"
                         }
                     }
                 }
@@ -6393,7 +7188,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Tracker"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Tracker"
                             }
                         }
                     }
@@ -6418,7 +7213,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Tracker"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Tracker"
                         }
                     }
                 ],
@@ -6426,7 +7221,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Tracker"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Tracker"
                         }
                     }
                 }
@@ -6455,7 +7250,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Tracker"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Tracker"
                         }
                     }
                 }
@@ -6483,7 +7278,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Tracker"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Tracker"
                         }
                     }
                 ],
@@ -6540,7 +7335,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Project"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Project"
                             }
                         }
                     }
@@ -6577,7 +7372,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Project"
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Project"
                         }
                     }
                 }
@@ -6615,9 +7410,147 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.IssueType"
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.IssueType"
                             }
                         }
+                    }
+                }
+            }
+        },
+        "/users": {
+            "get": {
+                "description": "List all users.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "List all users.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.User"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Create a user.",
+                "parameters": [
+                    {
+                        "description": "User data",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.User"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.User"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{id}": {
+            "get": {
+                "description": "Get a user by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get a user by ID.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.User"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Update a user.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "User data",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.User"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a user.",
+                "tags": [
+                    "users"
+                ],
+                "summary": "Delete a user.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
                     }
                 }
             }
@@ -6682,19 +7615,22 @@ const docTemplate = `{
                 "files": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
                     }
+                },
+                "identity": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
                 },
                 "labels": {
                     "$ref": "#/definitions/api.InExList"
                 },
                 "repository": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Repository"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Repository"
                 },
                 "targets": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                        "$ref": "#/definitions/api.ApTargetRef"
                     }
                 }
             }
@@ -6707,6 +7643,52 @@ const docTemplate = `{
                 },
                 "withKnownLibs": {
                     "type": "boolean"
+                }
+            }
+        },
+        "api.ApTargetRef": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "selection": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.AuthSelf": {
+            "type": "object",
+            "properties": {
+                "client": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.IdpClient"
+                },
+                "identity": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.IdpIdentity"
+                },
+                "login": {
+                    "type": "string"
+                },
+                "scopes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "serviceAccount": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.ServiceAccount"
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.User"
                 }
             }
         },
@@ -6728,7 +7710,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "content": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Map"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Map"
                 },
                 "schema": {
                     "type": "string"
@@ -6823,20 +7805,6 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Stakeholders": {
-            "type": "object",
-            "properties": {
-                "contributors": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Ref"
-                    }
-                },
-                "owner": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_internal_api.Ref"
-                }
-            }
-        },
         "api.TargetLabel": {
             "type": "object",
             "properties": {
@@ -6866,1936 +7834,13 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "definition": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Map"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Map"
                 },
                 "id": {
                     "type": "integer"
                 },
                 "migration": {
                     "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Addon": {
-            "type": "object",
-            "properties": {
-                "container": {
-                    "$ref": "#/definitions/k8s.Container"
-                },
-                "extensions": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Extension"
-                    }
-                },
-                "metadata": {},
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Analysis": {
-            "type": "object",
-            "properties": {
-                "application": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "archived": {
-                    "type": "boolean"
-                },
-                "commit": {
-                    "type": "string"
-                },
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "dependencies": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TechDependency"
-                    }
-                },
-                "effort": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "insights": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Insight"
-                    }
-                },
-                "summary": {
-                    "type": "object"
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Application": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "archetypes": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                    }
-                },
-                "assessed": {
-                    "type": "boolean"
-                },
-                "assessments": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                    }
-                },
-                "assets": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Repository"
-                },
-                "binary": {
-                    "type": "string"
-                },
-                "bucket": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "businessService": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "comments": {
-                    "type": "string"
-                },
-                "confidence": {
-                    "type": "integer"
-                },
-                "contributors": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                    }
-                },
-                "coordinates": {
-                    "$ref": "#/definitions/api.Document"
-                },
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "effort": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "identities": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.IdentityRef"
-                    }
-                },
-                "manifests": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                    }
-                },
-                "migrationWave": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "owner": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "platform": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "repository": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Repository"
-                },
-                "review": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "risk": {
-                    "type": "string"
-                },
-                "tags": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TagRef"
-                    }
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Archetype": {
-            "type": "object",
-            "properties": {
-                "applications": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                    }
-                },
-                "assessed": {
-                    "type": "boolean"
-                },
-                "assessments": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                    }
-                },
-                "comments": {
-                    "type": "string"
-                },
-                "confidence": {
-                    "type": "integer"
-                },
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "criteria": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TagRef"
-                    }
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "profiles": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TargetProfile"
-                    }
-                },
-                "review": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "risk": {
-                    "type": "string"
-                },
-                "stakeholderGroups": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                    }
-                },
-                "stakeholders": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                    }
-                },
-                "tags": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TagRef"
-                    }
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Assessment": {
-            "type": "object",
-            "required": [
-                "questionnaire"
-            ],
-            "properties": {
-                "application": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "archetype": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "confidence": {
-                    "type": "integer"
-                },
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "questionnaire": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "required": {
-                    "type": "boolean"
-                },
-                "risk": {
-                    "type": "string"
-                },
-                "riskMessages": {
-                    "$ref": "#/definitions/api.RiskMessages"
-                },
-                "sections": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api.Section"
-                    }
-                },
-                "stakeholderGroups": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                    }
-                },
-                "stakeholders": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                    }
-                },
-                "status": {
-                    "type": "string"
-                },
-                "thresholds": {
-                    "$ref": "#/definitions/api.Thresholds"
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Attachment": {
-            "type": "object",
-            "required": [
-                "id"
-            ],
-            "properties": {
-                "activity": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Bucket": {
-            "type": "object",
-            "properties": {
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "expiration": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "path": {
-                    "type": "string"
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.BusinessService": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "owner": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Cache": {
-            "type": "object",
-            "properties": {
-                "capacity": {
-                    "type": "string"
-                },
-                "exists": {
-                    "type": "boolean"
-                },
-                "path": {
-                    "type": "string"
-                },
-                "used": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.ConfigMap": {
-            "type": "object",
-            "properties": {
-                "data": {},
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.CopyRequest": {
-            "type": "object",
-            "required": [
-                "sourceReview",
-                "targetApplications"
-            ],
-            "properties": {
-                "sourceReview": {
-                    "type": "integer"
-                },
-                "targetApplications": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.DepAppReport": {
-            "type": "object",
-            "properties": {
-                "businessService": {
-                    "type": "string"
-                },
-                "dependency": {
-                    "type": "object",
-                    "properties": {
-                        "id": {
-                            "type": "integer"
-                        },
-                        "indirect": {
-                            "type": "boolean"
-                        },
-                        "labels": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
-                        },
-                        "name": {
-                            "type": "string"
-                        },
-                        "provider": {
-                            "type": "string"
-                        },
-                        "sha": {
-                            "type": "string"
-                        },
-                        "version": {
-                            "type": "string"
-                        }
-                    }
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Dependency": {
-            "type": "object",
-            "properties": {
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "from": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "to": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Extension": {
-            "type": "object",
-            "properties": {
-                "addon": {
-                    "type": "string"
-                },
-                "capabilities": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "container": {
-                    "$ref": "#/definitions/k8s.Container"
-                },
-                "metadata": {},
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Fact": {
-            "type": "object",
-            "properties": {
-                "key": {
-                    "type": "string"
-                },
-                "source": {
-                    "type": "string"
-                },
-                "value": {}
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.File": {
-            "type": "object",
-            "properties": {
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "encoding": {
-                    "type": "string"
-                },
-                "expiration": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "path": {
-                    "type": "string"
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.FileReport": {
-            "type": "object",
-            "properties": {
-                "effort": {
-                    "type": "integer"
-                },
-                "file": {
-                    "type": "string"
-                },
-                "incidents": {
-                    "type": "integer"
-                },
-                "insightId": {
-                    "type": "integer"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.IdentityRef": {
-            "type": "object",
-            "required": [
-                "id",
-                "role"
-            ],
-            "properties": {
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "role": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Import": {
-            "type": "object",
-            "additionalProperties": {}
-        },
-        "github_com_konveyor_tackle2-hub_api.ImportSummary": {
-            "type": "object",
-            "properties": {
-                "createEntities": {
-                    "type": "boolean"
-                },
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "filename": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "importStatus": {
-                    "type": "string"
-                },
-                "importTime": {
-                    "type": "string"
-                },
-                "invalidCount": {
-                    "type": "integer"
-                },
-                "updateUser": {
-                    "type": "string"
-                },
-                "validCount": {
-                    "type": "integer"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Incident": {
-            "type": "object",
-            "properties": {
-                "codeSnip": {
-                    "type": "string"
-                },
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "facts": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Map"
-                },
-                "file": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "insight": {
-                    "type": "integer"
-                },
-                "line": {
-                    "type": "integer"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Insight": {
-            "type": "object",
-            "required": [
-                "name",
-                "rule",
-                "ruleset"
-            ],
-            "properties": {
-                "analysis": {
-                    "type": "integer"
-                },
-                "category": {
-                    "type": "string"
-                },
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "effort": {
-                    "type": "integer"
-                },
-                "facts": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Map"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "incidents": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Incident"
-                    }
-                },
-                "labels": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "links": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Link"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "rule": {
-                    "type": "string"
-                },
-                "ruleset": {
-                    "type": "string"
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.InsightAppReport": {
-            "type": "object",
-            "properties": {
-                "businessService": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "effort": {
-                    "type": "integer"
-                },
-                "files": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "incidents": {
-                    "type": "integer"
-                },
-                "insight": {
-                    "type": "object",
-                    "properties": {
-                        "description": {
-                            "type": "string"
-                        },
-                        "id": {
-                            "type": "integer"
-                        },
-                        "name": {
-                            "type": "string"
-                        },
-                        "rule": {
-                            "type": "string"
-                        },
-                        "ruleset": {
-                            "type": "string"
-                        }
-                    }
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.InsightReport": {
-            "type": "object",
-            "properties": {
-                "category": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "effort": {
-                    "type": "integer"
-                },
-                "files": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "labels": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "links": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Link"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "rule": {
-                    "type": "string"
-                },
-                "ruleset": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.IssueType": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.JobFunction": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "stakeholders": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                    }
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Link": {
-            "type": "object",
-            "properties": {
-                "title": {
-                    "type": "string"
-                },
-                "url": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Login": {
-            "type": "object",
-            "properties": {
-                "expiry": {
-                    "type": "integer"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "refresh": {
-                    "type": "string"
-                },
-                "token": {
-                    "type": "string"
-                },
-                "user": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Map": {
-            "type": "object",
-            "additionalProperties": {}
-        },
-        "github_com_konveyor_tackle2-hub_api.MigrationWave": {
-            "type": "object",
-            "required": [
-                "endDate",
-                "startDate"
-            ],
-            "properties": {
-                "applications": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                    }
-                },
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "endDate": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "stakeholderGroups": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                    }
-                },
-                "stakeholders": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                    }
-                },
-                "startDate": {
-                    "type": "string"
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Project": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Questionnaire": {
-            "type": "object",
-            "required": [
-                "name",
-                "riskMessages",
-                "sections",
-                "thresholds"
-            ],
-            "properties": {
-                "builtin": {
-                    "type": "boolean"
-                },
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "required": {
-                    "type": "boolean"
-                },
-                "riskMessages": {
-                    "$ref": "#/definitions/api.RiskMessages"
-                },
-                "sections": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "$ref": "#/definitions/api.Section"
-                    }
-                },
-                "thresholds": {
-                    "$ref": "#/definitions/api.Thresholds"
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Ref": {
-            "type": "object",
-            "required": [
-                "id"
-            ],
-            "properties": {
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Repository": {
-            "type": "object",
-            "properties": {
-                "branch": {
-                    "type": "string"
-                },
-                "kind": {
-                    "type": "string"
-                },
-                "path": {
-                    "type": "string"
-                },
-                "tag": {
-                    "type": "string"
-                },
-                "url": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Review": {
-            "type": "object",
-            "properties": {
-                "application": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "archetype": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "businessCriticality": {
-                    "type": "integer"
-                },
-                "comments": {
-                    "type": "string"
-                },
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "effortEstimate": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "proposedAction": {
-                    "type": "string"
-                },
-                "updateUser": {
-                    "type": "string"
-                },
-                "workPriority": {
-                    "type": "integer"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Rule": {
-            "type": "object",
-            "properties": {
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "file": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "labels": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.RuleReport": {
-            "type": "object",
-            "properties": {
-                "applications": {
-                    "type": "integer"
-                },
-                "category": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "effort": {
-                    "type": "integer"
-                },
-                "labels": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "links": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Link"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "rule": {
-                    "type": "string"
-                },
-                "ruleset": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.RuleSet": {
-            "type": "object",
-            "properties": {
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "dependsOn": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                    }
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "identity": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "kind": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "repository": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Repository"
-                },
-                "rules": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Rule"
-                    }
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Service": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "route": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Setting": {
-            "type": "object",
-            "properties": {
-                "key": {
-                    "type": "string"
-                },
-                "value": {}
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Stakeholder": {
-            "type": "object",
-            "required": [
-                "email",
-                "name"
-            ],
-            "properties": {
-                "businessServices": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                    }
-                },
-                "contributes": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                    }
-                },
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "jobFunction": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "migrationWaves": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "owns": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                    }
-                },
-                "stakeholderGroups": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                    }
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.StakeholderGroup": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "migrationWaves": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "stakeholders": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                    }
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.TTL": {
-            "type": "object",
-            "properties": {
-                "created": {
-                    "type": "integer"
-                },
-                "failed": {
-                    "type": "integer"
-                },
-                "pending": {
-                    "type": "integer"
-                },
-                "running": {
-                    "type": "integer"
-                },
-                "succeeded": {
-                    "type": "integer"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Tag": {
-            "type": "object",
-            "required": [
-                "category",
-                "name"
-            ],
-            "properties": {
-                "category": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.TagCategory": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "colour": {
-                    "type": "string"
-                },
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "rank": {
-                    "description": "Deprecated",
-                    "type": "integer"
-                },
-                "tags": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                    }
-                },
-                "updateUser": {
-                    "type": "string"
-                },
-                "username": {
-                    "description": "Deprecated",
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.TagRef": {
-            "type": "object",
-            "required": [
-                "id"
-            ],
-            "properties": {
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "source": {
-                    "type": "string"
-                },
-                "virtual": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.TargetProfile": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "analysisProfile": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "generators": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                    }
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Task": {
-            "type": "object",
-            "properties": {
-                "activity": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "addon": {
-                    "type": "string"
-                },
-                "application": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "attached": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Attachment"
-                    }
-                },
-                "bucket": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "data": {},
-                "errors": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskError"
-                    }
-                },
-                "events": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskEvent"
-                    }
-                },
-                "extensions": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "kind": {
-                    "type": "string"
-                },
-                "locator": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "platform": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "pod": {
-                    "type": "string"
-                },
-                "policy": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskPolicy"
-                },
-                "priority": {
-                    "type": "integer"
-                },
-                "retries": {
-                    "type": "integer"
-                },
-                "started": {
-                    "type": "string"
-                },
-                "state": {
-                    "type": "string"
-                },
-                "terminated": {
-                    "type": "string"
-                },
-                "ttl": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TTL"
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.TaskDashboard": {
-            "type": "object",
-            "properties": {
-                "addon": {
-                    "type": "string"
-                },
-                "application": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "errors": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "kind": {
-                    "type": "string"
-                },
-                "locator": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "platform": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "started": {
-                    "type": "string"
-                },
-                "state": {
-                    "type": "string"
-                },
-                "terminated": {
-                    "type": "string"
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.TaskError": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "severity": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.TaskEvent": {
-            "type": "object",
-            "properties": {
-                "count": {
-                    "type": "integer"
-                },
-                "kind": {
-                    "type": "string"
-                },
-                "last": {
-                    "type": "string"
-                },
-                "reason": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.TaskGroup": {
-            "type": "object",
-            "required": [
-                "data"
-            ],
-            "properties": {
-                "addon": {
-                    "type": "string"
-                },
-                "bucket": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "data": {
-                    "type": "object"
-                },
-                "extensions": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "kind": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "policy": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskPolicy"
-                },
-                "priority": {
-                    "type": "integer"
-                },
-                "state": {
-                    "type": "string"
-                },
-                "tasks": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Task"
-                    }
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.TaskPolicy": {
-            "type": "object",
-            "properties": {
-                "isolated": {
-                    "type": "boolean"
-                },
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.TaskQueue": {
-            "type": "object",
-            "properties": {
-                "pending": {
-                    "type": "integer"
-                },
-                "postponed": {
-                    "type": "integer"
-                },
-                "quotaBlocked": {
-                    "type": "integer"
-                },
-                "ready": {
-                    "type": "integer"
-                },
-                "running": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.TaskReport": {
-            "type": "object",
-            "properties": {
-                "activity": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "attached": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Attachment"
-                    }
-                },
-                "completed": {
-                    "type": "integer"
-                },
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "errors": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskError"
-                    }
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "result": {},
-                "status": {
-                    "type": "string"
-                },
-                "task": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.TechDependency": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "analysis": {
-                    "type": "integer"
-                },
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "indirect": {
-                    "type": "boolean"
-                },
-                "labels": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "provider": {
-                    "type": "string"
-                },
-                "sha": {
-                    "type": "string"
-                },
-                "updateUser": {
-                    "type": "string"
-                },
-                "version": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Ticket": {
-            "type": "object",
-            "required": [
-                "application",
-                "kind",
-                "parent",
-                "tracker"
-            ],
-            "properties": {
-                "application": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "error": {
-                    "type": "boolean"
-                },
-                "fields": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Map"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "kind": {
-                    "type": "string"
-                },
-                "lastUpdated": {
-                    "type": "string"
-                },
-                "link": {
-                    "type": "string"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "parent": {
-                    "type": "string"
-                },
-                "reference": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "tracker": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "updateUser": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Tracker": {
-            "type": "object",
-            "required": [
-                "identity",
-                "kind",
-                "name",
-                "url"
-            ],
-            "properties": {
-                "connected": {
-                    "type": "boolean"
-                },
-                "createTime": {
-                    "type": "string"
-                },
-                "createUser": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "identity": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
-                },
-                "insecure": {
-                    "type": "boolean"
-                },
-                "kind": {
-                    "type": "string",
-                    "enum": [
-                        "jira-cloud",
-                        "jira-onprem"
-                    ]
-                },
-                "lastUpdated": {
-                    "type": "string"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "updateUser": {
-                    "type": "string"
-                },
-                "url": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_konveyor_tackle2-hub_api.Vertex": {
-            "type": "object",
-            "properties": {
-                "applicationId": {
-                    "type": "integer"
-                },
-                "applicationName": {
-                    "type": "string"
-                },
-                "decision": {
-                    "type": "string"
-                },
-                "effort": {
-                    "type": "integer"
-                },
-                "effortEstimate": {
-                    "type": "string"
-                },
-                "positionX": {
-                    "type": "integer"
-                },
-                "positionY": {
-                    "type": "integer"
                 }
             }
         },
@@ -8826,6 +7871,9 @@ const docTemplate = `{
                 "scope": {
                     "$ref": "#/definitions/api.ApScope"
                 },
+                "updateTime": {
+                    "type": "string"
+                },
                 "updateUser": {
                     "type": "string"
                 }
@@ -8841,13 +7889,16 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "from": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
                 },
                 "id": {
                     "type": "integer"
                 },
                 "to": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "updateTime": {
+                    "type": "string"
                 },
                 "updateUser": {
                     "type": "string"
@@ -8873,7 +7924,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "identity": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
                 },
                 "kind": {
                     "type": "string"
@@ -8882,22 +7933,25 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "params": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Map"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Map"
                 },
                 "profiles": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
                     }
                 },
                 "repository": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Repository"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Repository"
+                },
+                "updateTime": {
+                    "type": "string"
                 },
                 "updateUser": {
                     "type": "string"
                 },
                 "values": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Map"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Map"
                 }
             }
         },
@@ -8938,6 +7992,9 @@ const docTemplate = `{
                 "settings": {
                     "type": "string"
                 },
+                "updateTime": {
+                    "type": "string"
+                },
                 "updateUser": {
                     "type": "string"
                 },
@@ -8946,11 +8003,125 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_konveyor_tackle2-hub_internal_api.IdpClient": {
+            "type": "object",
+            "required": [
+                "applicationType",
+                "clientId",
+                "grants",
+                "scopes"
+            ],
+            "properties": {
+                "applicationType": {
+                    "type": "string"
+                },
+                "clientId": {
+                    "type": "string"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "grants": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "redirectURIs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "scopes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "secret": {
+                    "type": "string"
+                },
+                "tokens": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_internal_api.IdpIdentity": {
+            "type": "object",
+            "required": [
+                "issuer",
+                "kind",
+                "subject"
+            ],
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "issuer": {
+                    "type": "string"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "login": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "scopes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "tokens": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_konveyor_tackle2-hub_internal_api.LatestSchema": {
             "type": "object",
             "properties": {
                 "definition": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Map"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Map"
                 },
                 "name": {
                     "type": "string"
@@ -8961,10 +8132,10 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "application": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
                 },
                 "content": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Map"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Map"
                 },
                 "createTime": {
                     "type": "string"
@@ -8976,7 +8147,10 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "secret": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Map"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Map"
+                },
+                "updateTime": {
+                    "type": "string"
                 },
                 "updateUser": {
                     "type": "string"
@@ -8992,7 +8166,7 @@ const docTemplate = `{
                 "applications": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
                     }
                 },
                 "createTime": {
@@ -9005,12 +8179,15 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "identity": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
                 },
                 "kind": {
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "updateTime": {
                     "type": "string"
                 },
                 "updateUser": {
@@ -9046,7 +8223,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "identity": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
                 },
                 "kind": {
                     "type": "string",
@@ -9057,6 +8234,9 @@ const docTemplate = `{
                 },
                 "port": {
                     "type": "integer"
+                },
+                "updateTime": {
+                    "type": "string"
                 },
                 "updateUser": {
                     "type": "string"
@@ -9103,7 +8283,7 @@ const docTemplate = `{
                 "dependsOn": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
                     }
                 },
                 "description": {
@@ -9113,7 +8293,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "identity": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
                 },
                 "kind": {
                     "type": "string"
@@ -9122,13 +8302,16 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "repository": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Repository"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Repository"
                 },
                 "rules": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Rule"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Rule"
                     }
+                },
+                "updateTime": {
+                    "type": "string"
                 },
                 "updateUser": {
                     "type": "string"
@@ -9158,6 +8341,50 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_konveyor_tackle2-hub_internal_api.ServiceAccount": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "tokens": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_konveyor_tackle2-hub_internal_api.Tag": {
             "type": "object",
             "required": [
@@ -9166,7 +8393,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "category": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
                 },
                 "createTime": {
                     "type": "string"
@@ -9178,6 +8405,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "updateTime": {
                     "type": "string"
                 },
                 "updateUser": {
@@ -9227,7 +8457,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "image": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
                 },
                 "labels": {
                     "type": "array",
@@ -9242,7 +8472,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "ruleset": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.RuleSet"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.RuleSet"
+                },
+                "updateTime": {
+                    "type": "string"
                 },
                 "updateUser": {
                     "type": "string"
@@ -9262,16 +8495,16 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "application": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
                 },
                 "attached": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Attachment"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Attachment"
                     }
                 },
                 "bucket": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
                 },
                 "createTime": {
                     "type": "string"
@@ -9283,13 +8516,13 @@ const docTemplate = `{
                 "errors": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskError"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskError"
                     }
                 },
                 "events": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskEvent"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskEvent"
                     }
                 },
                 "extensions": {
@@ -9311,13 +8544,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "platform": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
                 },
                 "pod": {
                     "type": "string"
                 },
                 "policy": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskPolicy"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskPolicy"
                 },
                 "priority": {
                     "type": "integer"
@@ -9334,8 +8567,17 @@ const docTemplate = `{
                 "terminated": {
                     "type": "string"
                 },
+                "tokens": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
                 "ttl": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TTL"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TTL"
+                },
+                "updateTime": {
+                    "type": "string"
                 },
                 "updateUser": {
                     "type": "string"
@@ -9352,7 +8594,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "bucket": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Ref"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
                 },
                 "createTime": {
                     "type": "string"
@@ -9379,7 +8621,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "policy": {
-                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.TaskPolicy"
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskPolicy"
                 },
                 "priority": {
                     "type": "integer"
@@ -9390,11 +8632,2436 @@ const docTemplate = `{
                 "tasks": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_api.Task"
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Task"
                     }
+                },
+                "updateTime": {
+                    "type": "string"
                 },
                 "updateUser": {
                     "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_internal_api.User": {
+            "type": "object",
+            "required": [
+                "email",
+                "login",
+                "password"
+            ],
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "login": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 72
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "tokens": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Addon": {
+            "type": "object",
+            "properties": {
+                "container": {
+                    "$ref": "#/definitions/k8s.Container"
+                },
+                "extensions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Extension"
+                    }
+                },
+                "metadata": {},
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Analysis": {
+            "type": "object",
+            "properties": {
+                "application": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "archived": {
+                    "type": "boolean"
+                },
+                "commit": {
+                    "type": "string"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "dependencies": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TechDependency"
+                    }
+                },
+                "effort": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "insights": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Insight"
+                    }
+                },
+                "summary": {
+                    "type": "object"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Application": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "archetypes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "assessed": {
+                    "type": "boolean"
+                },
+                "assessments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "assets": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Repository"
+                },
+                "binary": {
+                    "type": "string"
+                },
+                "bucket": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "businessService": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "comments": {
+                    "type": "string"
+                },
+                "confidence": {
+                    "type": "integer"
+                },
+                "contributors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "coordinates": {
+                    "$ref": "#/definitions/api.Document"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "effort": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "identities": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.IdentityRef"
+                    }
+                },
+                "manifests": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "migrationWave": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "platform": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "repository": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Repository"
+                },
+                "review": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "risk": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TagRef"
+                    }
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Archetype": {
+            "type": "object",
+            "properties": {
+                "applications": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "assessed": {
+                    "type": "boolean"
+                },
+                "assessments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "comments": {
+                    "type": "string"
+                },
+                "confidence": {
+                    "type": "integer"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "criteria": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TagRef"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "profiles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TargetProfile"
+                    }
+                },
+                "review": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "risk": {
+                    "type": "string"
+                },
+                "stakeholderGroups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "stakeholders": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TagRef"
+                    }
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Assessment": {
+            "type": "object",
+            "required": [
+                "questionnaire"
+            ],
+            "properties": {
+                "application": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "archetype": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "confidence": {
+                    "type": "integer"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "questionnaire": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "required": {
+                    "type": "boolean"
+                },
+                "risk": {
+                    "type": "string"
+                },
+                "riskMessages": {
+                    "$ref": "#/definitions/api.RiskMessages"
+                },
+                "sections": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.Section"
+                    }
+                },
+                "stakeholderGroups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "stakeholders": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                },
+                "thresholds": {
+                    "$ref": "#/definitions/api.Thresholds"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Attachment": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "activity": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Bucket": {
+            "type": "object",
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "expiration": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.BusinessService": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Cache": {
+            "type": "object",
+            "properties": {
+                "capacity": {
+                    "type": "string"
+                },
+                "exists": {
+                    "type": "boolean"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "used": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.ConfigMap": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.CopyRequest": {
+            "type": "object",
+            "required": [
+                "sourceReview",
+                "targetApplications"
+            ],
+            "properties": {
+                "sourceReview": {
+                    "type": "integer"
+                },
+                "targetApplications": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.DepAppReport": {
+            "type": "object",
+            "properties": {
+                "businessService": {
+                    "type": "string"
+                },
+                "dependency": {
+                    "type": "object",
+                    "properties": {
+                        "id": {
+                            "type": "integer"
+                        },
+                        "indirect": {
+                            "type": "boolean"
+                        },
+                        "labels": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "name": {
+                            "type": "string"
+                        },
+                        "provider": {
+                            "type": "string"
+                        },
+                        "sha": {
+                            "type": "string"
+                        },
+                        "version": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Dependency": {
+            "type": "object",
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "from": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "to": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Extension": {
+            "type": "object",
+            "properties": {
+                "addon": {
+                    "type": "string"
+                },
+                "capabilities": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "container": {
+                    "$ref": "#/definitions/k8s.Container"
+                },
+                "metadata": {},
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Fact": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "value": {}
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.File": {
+            "type": "object",
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "encoding": {
+                    "type": "string"
+                },
+                "expiration": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.FileReport": {
+            "type": "object",
+            "properties": {
+                "effort": {
+                    "type": "integer"
+                },
+                "file": {
+                    "type": "string"
+                },
+                "incidents": {
+                    "type": "integer"
+                },
+                "insightId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Grant": {
+            "type": "object",
+            "properties": {
+                "authId": {
+                    "type": "string"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "expiration": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "idpClient": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "idpIdentity": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "issued": {
+                    "type": "string"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "scopes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "tokens": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.IdentityRef": {
+            "type": "object",
+            "required": [
+                "id",
+                "role"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.IdpClient": {
+            "type": "object",
+            "required": [
+                "applicationType",
+                "clientId",
+                "grants",
+                "scopes"
+            ],
+            "properties": {
+                "applicationType": {
+                    "type": "string"
+                },
+                "clientId": {
+                    "type": "string"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "grants": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "redirectURIs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "scopes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "secret": {
+                    "type": "string"
+                },
+                "tokens": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.IdpIdentity": {
+            "type": "object",
+            "required": [
+                "issuer",
+                "kind",
+                "subject"
+            ],
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "issuer": {
+                    "type": "string"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "login": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "scopes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "tokens": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Import": {
+            "type": "object",
+            "additionalProperties": {}
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.ImportSummary": {
+            "type": "object",
+            "properties": {
+                "createEntities": {
+                    "type": "boolean"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "filename": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "importStatus": {
+                    "type": "string"
+                },
+                "importTime": {
+                    "type": "string"
+                },
+                "invalidCount": {
+                    "type": "integer"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                },
+                "validCount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Incident": {
+            "type": "object",
+            "properties": {
+                "codeSnip": {
+                    "type": "string"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "facts": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Map"
+                },
+                "file": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "insight": {
+                    "type": "integer"
+                },
+                "line": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Insight": {
+            "type": "object",
+            "required": [
+                "name",
+                "rule",
+                "ruleset"
+            ],
+            "properties": {
+                "analysis": {
+                    "type": "integer"
+                },
+                "category": {
+                    "type": "string"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "effort": {
+                    "type": "integer"
+                },
+                "facts": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Map"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "incidents": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Incident"
+                    }
+                },
+                "labels": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Link"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "rule": {
+                    "type": "string"
+                },
+                "ruleset": {
+                    "type": "string"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.InsightAppReport": {
+            "type": "object",
+            "properties": {
+                "businessService": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "effort": {
+                    "type": "integer"
+                },
+                "files": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "incidents": {
+                    "type": "integer"
+                },
+                "insight": {
+                    "type": "object",
+                    "properties": {
+                        "description": {
+                            "type": "string"
+                        },
+                        "id": {
+                            "type": "integer"
+                        },
+                        "name": {
+                            "type": "string"
+                        },
+                        "rule": {
+                            "type": "string"
+                        },
+                        "ruleset": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.InsightReport": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "effort": {
+                    "type": "integer"
+                },
+                "files": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "labels": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Link"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "rule": {
+                    "type": "string"
+                },
+                "ruleset": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.IssueType": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.JobFunction": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "stakeholders": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Link": {
+            "type": "object",
+            "properties": {
+                "title": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Map": {
+            "type": "object",
+            "additionalProperties": {}
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.MigrationWave": {
+            "type": "object",
+            "required": [
+                "endDate",
+                "startDate"
+            ],
+            "properties": {
+                "applications": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "endDate": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "stakeholderGroups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "stakeholders": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "startDate": {
+                    "type": "string"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.PAT": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "expiration": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "lifespan": {
+                    "type": "integer"
+                },
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Project": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Questionnaire": {
+            "type": "object",
+            "required": [
+                "name",
+                "riskMessages",
+                "sections",
+                "thresholds"
+            ],
+            "properties": {
+                "builtin": {
+                    "type": "boolean"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "required": {
+                    "type": "boolean"
+                },
+                "riskMessages": {
+                    "$ref": "#/definitions/api.RiskMessages"
+                },
+                "sections": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/api.Section"
+                    }
+                },
+                "thresholds": {
+                    "$ref": "#/definitions/api.Thresholds"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Ref": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Repository": {
+            "type": "object",
+            "properties": {
+                "branch": {
+                    "type": "string"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "tag": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Review": {
+            "type": "object",
+            "properties": {
+                "application": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "archetype": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "businessCriticality": {
+                    "type": "integer"
+                },
+                "comments": {
+                    "type": "string"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "effortEstimate": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "proposedAction": {
+                    "type": "string"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                },
+                "workPriority": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Role": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "scopes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Rule": {
+            "type": "object",
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "file": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "labels": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.RuleReport": {
+            "type": "object",
+            "properties": {
+                "applications": {
+                    "type": "integer"
+                },
+                "category": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "effort": {
+                    "type": "integer"
+                },
+                "labels": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Link"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "rule": {
+                    "type": "string"
+                },
+                "ruleset": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.RuleSet": {
+            "type": "object",
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "dependsOn": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "identity": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "repository": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Repository"
+                },
+                "rules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Rule"
+                    }
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Scope": {
+            "type": "object",
+            "required": [
+                "name",
+                "resource",
+                "verb"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "resource": {
+                    "type": "string"
+                },
+                "verb": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Service": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "route": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Setting": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {}
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Stakeholder": {
+            "type": "object",
+            "required": [
+                "email",
+                "name"
+            ],
+            "properties": {
+                "businessServices": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "contributes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "jobFunction": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "migrationWaves": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owns": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "stakeholderGroups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.StakeholderGroup": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "migrationWaves": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "stakeholders": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Stakeholders": {
+            "type": "object",
+            "properties": {
+                "contributors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "owner": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.TTL": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "integer"
+                },
+                "failed": {
+                    "type": "integer"
+                },
+                "pending": {
+                    "type": "integer"
+                },
+                "running": {
+                    "type": "integer"
+                },
+                "succeeded": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Tag": {
+            "type": "object",
+            "required": [
+                "category",
+                "name"
+            ],
+            "properties": {
+                "category": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.TagCategory": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "colour": {
+                    "type": "string"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "rank": {
+                    "description": "Deprecated",
+                    "type": "integer"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                },
+                "username": {
+                    "description": "Deprecated",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.TagRef": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "virtual": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.TargetProfile": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "analysisProfile": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "generators": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Task": {
+            "type": "object",
+            "properties": {
+                "activity": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "addon": {
+                    "type": "string"
+                },
+                "application": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "attached": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Attachment"
+                    }
+                },
+                "bucket": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "data": {},
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskError"
+                    }
+                },
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskEvent"
+                    }
+                },
+                "extensions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "locator": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "platform": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "pod": {
+                    "type": "string"
+                },
+                "policy": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskPolicy"
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "retries": {
+                    "type": "integer"
+                },
+                "started": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "terminated": {
+                    "type": "string"
+                },
+                "tokens": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "ttl": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TTL"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.TaskDashboard": {
+            "type": "object",
+            "properties": {
+                "addon": {
+                    "type": "string"
+                },
+                "application": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "errors": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "locator": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "platform": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "started": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "terminated": {
+                    "type": "string"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.TaskError": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "severity": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.TaskEvent": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "last": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.TaskGroup": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "addon": {
+                    "type": "string"
+                },
+                "bucket": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "data": {
+                    "type": "object"
+                },
+                "extensions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "policy": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskPolicy"
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "tasks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Task"
+                    }
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.TaskPolicy": {
+            "type": "object",
+            "properties": {
+                "isolated": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.TaskQueue": {
+            "type": "object",
+            "properties": {
+                "pending": {
+                    "type": "integer"
+                },
+                "postponed": {
+                    "type": "integer"
+                },
+                "quotaBlocked": {
+                    "type": "integer"
+                },
+                "ready": {
+                    "type": "integer"
+                },
+                "running": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.TaskReport": {
+            "type": "object",
+            "properties": {
+                "activity": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "attached": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Attachment"
+                    }
+                },
+                "completed": {
+                    "type": "integer"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.TaskError"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "result": {},
+                "status": {
+                    "type": "string"
+                },
+                "task": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.TechDependency": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "analysis": {
+                    "type": "integer"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "indirect": {
+                    "type": "boolean"
+                },
+                "labels": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "sha": {
+                    "type": "string"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Ticket": {
+            "type": "object",
+            "required": [
+                "application",
+                "kind",
+                "parent",
+                "tracker"
+            ],
+            "properties": {
+                "application": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "error": {
+                    "type": "boolean"
+                },
+                "fields": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Map"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "lastUpdated": {
+                    "type": "string"
+                },
+                "link": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "parent": {
+                    "type": "string"
+                },
+                "reference": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "tracker": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Token": {
+            "type": "object",
+            "properties": {
+                "authId": {
+                    "type": "string"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "expiration": {
+                    "type": "string"
+                },
+                "grant": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "idpClient": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "idpIdentity": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "issued": {
+                    "type": "string"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "lifespan": {
+                    "type": "integer"
+                },
+                "scopes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "serviceAccount": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "task": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Tracker": {
+            "type": "object",
+            "required": [
+                "identity",
+                "kind",
+                "name",
+                "url"
+            ],
+            "properties": {
+                "connected": {
+                    "type": "boolean"
+                },
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "identity": {
+                    "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                },
+                "insecure": {
+                    "type": "boolean"
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "jira-cloud",
+                        "jira-onprem"
+                    ]
+                },
+                "lastUpdated": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.User": {
+            "type": "object",
+            "required": [
+                "email",
+                "login",
+                "password"
+            ],
+            "properties": {
+                "createTime": {
+                    "type": "string"
+                },
+                "createUser": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "login": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 72
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "tokens": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_konveyor_tackle2-hub_shared_api.Ref"
+                    }
+                },
+                "updateTime": {
+                    "type": "string"
+                },
+                "updateUser": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_konveyor_tackle2-hub_shared_api.Vertex": {
+            "type": "object",
+            "properties": {
+                "applicationId": {
+                    "type": "integer"
+                },
+                "applicationName": {
+                    "type": "string"
+                },
+                "decision": {
+                    "type": "string"
+                },
+                "effort": {
+                    "type": "integer"
+                },
+                "effortEstimate": {
+                    "type": "string"
+                },
+                "positionX": {
+                    "type": "integer"
+                },
+                "positionY": {
+                    "type": "integer"
                 }
             }
         },
