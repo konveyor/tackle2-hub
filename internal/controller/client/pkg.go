@@ -47,8 +47,10 @@ func Add(mgr manager.Manager, db *gorm.DB) (err error) {
 		return
 	}
 	err = cnt.Watch(
-		&source.Kind{Type: &IdpClient{}},
-		&handler.EnqueueRequestForObject{})
+		source.Kind(
+			mgr.GetCache(),
+			&IdpClient{},
+			&handler.TypedEnqueueRequestForObject[*IdpClient]{}))
 	if err != nil {
 		Log.Error(err, "")
 		return

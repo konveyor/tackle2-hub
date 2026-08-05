@@ -8,13 +8,15 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/events"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/config/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/conversion"
 )
 
 // Manager is a no-op manager for testing/disconnected mode.
@@ -64,7 +66,15 @@ func (m *Manager) GetCache() (c cache.Cache) {
 	return
 }
 
+func (m *Manager) GetHTTPClient() (c *http.Client) {
+	return
+}
+
 func (m *Manager) GetEventRecorderFor(name string) (recorder record.EventRecorder) {
+	return
+}
+
+func (m *Manager) GetEventRecorder(name string) (recorder events.EventRecorder) {
 	return
 }
 
@@ -83,7 +93,7 @@ func (m *Manager) Elected() (ch <-chan struct{}) {
 	return
 }
 
-func (m *Manager) AddMetricsExtraHandler(path string, handler http.Handler) (err error) {
+func (m *Manager) AddMetricsServerExtraHandler(path string, handler http.Handler) (err error) {
 	return
 }
 
@@ -95,7 +105,7 @@ func (m *Manager) AddReadyzCheck(name string, check healthz.Checker) (err error)
 	return
 }
 
-func (m *Manager) GetWebhookServer() (server *webhook.Server) {
+func (m *Manager) GetWebhookServer() (server webhook.Server) {
 	return
 }
 
@@ -104,10 +114,10 @@ func (m *Manager) GetLogger() (log logr.Logger) {
 	return
 }
 
-func (m *Manager) GetControllerOptions() (spec v1alpha1.ControllerConfigurationSpec) {
+func (m *Manager) GetControllerOptions() (spec config.Controller) {
 	return
 }
 
-func (m *Manager) SetFields(interface{}) (err error) {
+func (m *Manager) GetConverterRegistry() (registry conversion.Registry) {
 	return
 }
