@@ -109,16 +109,17 @@ func (r *Git) Commit(files []string, msg string) (err error) {
 	if err != nil {
 		return err
 	}
-	err = r.Push()
+	err = r.push()
 	return
 }
 
 // Push changes to the remote.
 func (r *Git) Push() (err error) {
-	cmd := r.git()
-	cmd.Dir = r.Path
-	cmd.Options.Add("push", "origin", "HEAD")
-	err = cmd.Run()
+	err = r.initHome()
+	if err != nil {
+		return
+	}
+	err = r.push()
 	return
 }
 
@@ -273,6 +274,15 @@ func (r *Git) addFiles(files []string) (err error) {
 	cmd := r.git()
 	cmd.Dir = r.Path
 	cmd.Options.Add("add", files...)
+	err = cmd.Run()
+	return
+}
+
+// push changes to the remote.
+func (r *Git) push() (err error) {
+	cmd := r.git()
+	cmd.Dir = r.Path
+	cmd.Options.Add("push", "origin", "HEAD")
 	err = cmd.Run()
 	return
 }
