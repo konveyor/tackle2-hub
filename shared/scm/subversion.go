@@ -116,6 +116,11 @@ func (r *Subversion) Commit(files []string, msg string) (err error) {
 	return
 }
 
+// Push changes to the remote.
+func (r *Subversion) Push() (err error) {
+	return
+}
+
 // Head returns the current revision.
 func (r *Subversion) Head() (commit string, err error) {
 	err = r.initHome()
