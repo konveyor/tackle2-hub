@@ -32,6 +32,7 @@ type SCM interface {
 	Update() (err error)
 	Branch(ref string) (err error)
 	Commit(files []string, msg string) (err error)
+	Push() (err error)
 	Head() (commit string, err error)
 	Clean() (err error)
 }
