@@ -1071,15 +1071,16 @@ func (r *AgentConn) Relay() {
 // wsURL returns the websocket URL.
 func (r *AgentConn) wsURL() (u string) {
 	ns := Settings.Hub.Namespace
-	proto := "ws"
-	switch strings.ToUpper(r.ctx.Request.URL.Scheme) {
-	case "HTTP":
-	case "HTTPS":
-		proto = "wss"
+	scheme := strings.ToLower(r.ctx.Request.URL.Scheme)
+	switch scheme {
+	case "https":
+		scheme = "wss"
+	default:
+		scheme = "ws"
 	}
 	u = fmt.Sprintf(
 		"%s://%s.%s.svc:%d/acp",
-		proto,
+		scheme,
 		r.sandbox,
 		ns,
 		ACPPort)
