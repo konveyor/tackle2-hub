@@ -70,6 +70,7 @@ const (
 	AgentGatewayRoute          = AgentGatewaysRoute + "/:" + Name
 	AgentRunsRoute             = "/agent/runs"
 	AgentRunRoute              = AgentRunsRoute + "/:" + Name
+	AgentRunACPRoute           = AgentRunRoute + "/acp"
 	AgentWorkflowsRoute        = "/agent/workflows"
 	AgentWorkflowRoute         = AgentWorkflowsRoute + "/:" + Name
 	AgentWorkflowRunsRoute     = "/agent/workflowruns"
