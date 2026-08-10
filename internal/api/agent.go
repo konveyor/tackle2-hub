@@ -30,9 +30,9 @@ type AgentHandler struct {
 
 // AddRoutes adds routes.
 func (h AgentHandler) AddRoutes(e *gin.Engine) {
-	routeGroup := e.Group("/")
-	routeGroup.Use(Authenticate())
 	// Agent
+	routeGroup := e.Group("/")
+	routeGroup.Use(Required("agent.agents"))
 	routeGroup.GET(api.AgentAgentsRoute, h.AgentList)
 	routeGroup.GET(api.AgentAgentsRoute+"/", h.AgentList)
 	routeGroup.POST(api.AgentAgentsRoute, h.AgentCreate)
@@ -40,6 +40,8 @@ func (h AgentHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.PUT(api.AgentAgentRoute, h.AgentUpdate)
 	routeGroup.DELETE(api.AgentAgentRoute, h.AgentDelete)
 	// SkillCard
+	routeGroup = e.Group("/")
+	routeGroup.Use(Required("agent.skills"))
 	routeGroup.GET(api.AgentSkillsRoute, h.SkillList)
 	routeGroup.GET(api.AgentSkillsRoute+"/", h.SkillList)
 	routeGroup.POST(api.AgentSkillsRoute, h.SkillCreate)
@@ -47,6 +49,8 @@ func (h AgentHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.PUT(api.AgentSkillRoute, h.SkillUpdate)
 	routeGroup.DELETE(api.AgentSkillRoute, h.SkillDelete)
 	// SkillCollection
+	routeGroup = e.Group("/")
+	routeGroup.Use(Required("agent.skillcollections"))
 	routeGroup.GET(api.AgentSkillCollectionsRoute, h.SkillCollectionList)
 	routeGroup.GET(api.AgentSkillCollectionsRoute+"/", h.SkillCollectionList)
 	routeGroup.POST(api.AgentSkillCollectionsRoute, h.SkillCollectionCreate)
@@ -54,6 +58,8 @@ func (h AgentHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.PUT(api.AgentSkillCollectionRoute, h.SkillCollectionUpdate)
 	routeGroup.DELETE(api.AgentSkillCollectionRoute, h.SkillCollectionDelete)
 	// Gateway
+	routeGroup = e.Group("/")
+	routeGroup.Use(Required("agent.gateways"))
 	routeGroup.GET(api.AgentGatewaysRoute, h.GatewayList)
 	routeGroup.GET(api.AgentGatewaysRoute+"/", h.GatewayList)
 	routeGroup.POST(api.AgentGatewaysRoute, h.GatewayCreate)
@@ -61,12 +67,19 @@ func (h AgentHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.PUT(api.AgentGatewayRoute, h.GatewayUpdate)
 	routeGroup.DELETE(api.AgentGatewayRoute, h.GatewayDelete)
 	// AgentRun
+	routeGroup = e.Group("/")
+	routeGroup.Use(Required("agent.runs"))
 	routeGroup.GET(api.AgentRunsRoute, h.RunList)
 	routeGroup.GET(api.AgentRunsRoute+"/", h.RunList)
 	routeGroup.POST(api.AgentRunsRoute, h.RunCreate)
 	routeGroup.GET(api.AgentRunRoute, h.RunGet)
+	// AgentRun ACP
+	routeGroup = e.Group("/")
+	routeGroup.Use(Required("agent.runs.acp"))
 	routeGroup.GET(api.AgentRunACPRoute, h.RunACP)
 	// AgentWorkflow
+	routeGroup = e.Group("/")
+	routeGroup.Use(Required("agent.workflows"))
 	routeGroup.GET(api.AgentWorkflowsRoute, h.WorkflowList)
 	routeGroup.GET(api.AgentWorkflowsRoute+"/", h.WorkflowList)
 	routeGroup.POST(api.AgentWorkflowsRoute, h.WorkflowCreate)
@@ -74,6 +87,8 @@ func (h AgentHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.PUT(api.AgentWorkflowRoute, h.WorkflowUpdate)
 	routeGroup.DELETE(api.AgentWorkflowRoute, h.WorkflowDelete)
 	// AgentWorkflowRun
+	routeGroup = e.Group("/")
+	routeGroup.Use(Required("agent.workflowruns"))
 	routeGroup.GET(api.AgentWorkflowRunsRoute, h.WorkflowRunList)
 	routeGroup.GET(api.AgentWorkflowRunsRoute+"/", h.WorkflowRunList)
 	routeGroup.POST(api.AgentWorkflowRunsRoute, h.WorkflowRunCreate)
