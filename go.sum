@@ -193,6 +193,8 @@ github.com/klauspost/compress v1.18.0/go.mod h1:2Pp+KzxcywXVXMr50+X0Q/Lsb43OQHYW
 github.com/klauspost/cpuid/v2 v2.0.9/go.mod h1:FInQzS24/EEf25PyTYn52gqo7WaD8xa0213Md/qVLRg=
 github.com/klauspost/cpuid/v2 v2.2.4 h1:acbojRNwl3o09bUq+yDCtZFc1aiwaAAxtcn8YkZXnvk=
 github.com/klauspost/cpuid/v2 v2.2.4/go.mod h1:RVVoqg1df56z8g3pUjL/3lE5UfnlrJX8tyFgg4nqhuY=
+github.com/konveyor/agentic-controller/api v0.0.0-20260810121904-72f126d1c913 h1:m2/N6A4rQ5BXFwKXsbDM9yU3bLQVUin62SNkIWtWIG8=
+github.com/konveyor/agentic-controller/api v0.0.0-20260810121904-72f126d1c913/go.mod h1:iOFokUdmkJfkSweF++lOFPunScGA2f5Omt9OzqnyxjI=
 github.com/konveyor/tackle2-seed v0.0.0-20250825214317-99de80681f88 h1:y0vcQB0C72ivlweiqtK+5KhGDE1rW+LfxdVaSVz62rw=
 github.com/konveyor/tackle2-seed v0.0.0-20250825214317-99de80681f88/go.mod h1:eOH51ZRWjwC3kCcpccDbMUn205thgDBBWLiAbJZn9E0=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=

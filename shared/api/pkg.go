@@ -58,6 +58,24 @@ const (
 	AddonRoute  = AddonsRoute + "/:" + Name
 )
 
+// Routes - Agent
+const (
+	AgentAgentsRoute           = "/agent/agents"
+	AgentAgentRoute            = AgentAgentsRoute + "/:" + Name
+	AgentSkillsRoute           = "/agent/skills"
+	AgentSkillRoute            = AgentSkillsRoute + "/:" + Name
+	AgentSkillCollectionsRoute = "/agent/skillcollections"
+	AgentSkillCollectionRoute  = AgentSkillCollectionsRoute + "/:" + Name
+	AgentGatewaysRoute         = "/agent/gateways"
+	AgentGatewayRoute          = AgentGatewaysRoute + "/:" + Name
+	AgentRunsRoute             = "/agent/runs"
+	AgentRunRoute              = AgentRunsRoute + "/:" + Name
+	AgentWorkflowsRoute        = "/agent/workflows"
+	AgentWorkflowRoute         = AgentWorkflowsRoute + "/:" + Name
+	AgentWorkflowRunsRoute     = "/agent/workflowruns"
+	AgentWorkflowRunRoute      = AgentWorkflowRunsRoute + "/:" + Name
+)
+
 // Routes - Adoption Plans
 const (
 	AdoptionPlansRoute = "/reports/adoptionplan"

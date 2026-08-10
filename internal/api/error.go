@@ -18,6 +18,7 @@ import (
 	"github.com/konveyor/tackle2-hub/shared/command"
 	"github.com/mattn/go-sqlite3"
 	"gorm.io/gorm"
+	k8serr "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // BadRequestError reports bad request errors.
@@ -133,7 +134,8 @@ func ErrorHandler() gin.HandlerFunc {
 		if errors.Is(err, gorm.ErrRecordNotFound) ||
 			errors.Is(err, &NotFound{}) ||
 			errors.Is(err, &auth.NotFound{}) ||
-			errors.Is(err, &jsd.NotFound{}) {
+			errors.Is(err, &jsd.NotFound{}) ||
+			k8serr.IsNotFound(err.Err) {
 			if ctx.Request.Method == http.MethodDelete {
 				rtx.Status(http.StatusNoContent)
 				return
