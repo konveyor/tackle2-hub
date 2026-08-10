@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -744,19 +745,15 @@ func (h AgentHandler) RunACP(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	secretKey, err := h.acpSecretKey(ctx, r.Status.SecretKeyRef.Name)
+	key, err := h.acpKey(ctx, r.Status.SecretKeyRef.Name)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 	agentCon := AgentConn{
-		ctx: ctx,
-		sandboxURL: fmt.Sprintf(
-			"ws://%s.%s.svc:%d/acp",
-			r.Status.SandboxName,
-			Settings.Hub.Namespace,
-			ACPPort),
-		secretKey: secretKey,
+		ctx:     ctx,
+		sandbox: r.Status.SandboxName,
+		key:     key,
 	}
 	agentCon.Relay()
 }
@@ -978,8 +975,8 @@ func (h AgentHandler) WorkflowRunCreate(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusCreated, r)
 }
 
-// acpSecretKey reads the ACP secret key from a Secret.
-func (h AgentHandler) acpSecretKey(ctx *gin.Context, name string) (key string, err error) {
+// acpKey reads the ACP secret key from a Secret.
+func (h AgentHandler) acpKey(ctx *gin.Context, name string) (key string, err error) {
 	secret := &core.Secret{}
 	err = h.Client(ctx).Get(
 		context.TODO(),
@@ -1023,13 +1020,14 @@ func (h AgentHandler) injectLabels(r k8s.Object) {
 
 // AgentConn provides a WebSocket upgrade and frame relay.
 type AgentConn struct {
-	ctx        *gin.Context
-	sandboxURL string
-	secretKey  string
+	ctx     *gin.Context
+	sandbox string
+	key     string
 }
 
 // Relay upgrades the client connection and relays frames.
 func (r *AgentConn) Relay() {
+	u := r.wsURL()
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(_ *http.Request) bool {
 			return true
@@ -1041,24 +1039,24 @@ func (r *AgentConn) Relay() {
 			err,
 			"WebSocket upgrade failed.",
 			"URL",
-			r.sandboxURL)
+			u)
 		return
 	}
 	defer func() {
 		_ = client.Close()
 	}()
 	header := http.Header{
-		"X-Secret-Key": {r.secretKey},
+		"X-Secret-Key": {r.key},
 	}
 	remote, _, err := websocket.DefaultDialer.Dial(
-		r.sandboxURL,
+		u,
 		header)
 	if err != nil {
 		log.Error(
 			err,
 			"ACP connection failed.",
 			"URL",
-			r.sandboxURL)
+			u)
 		return
 	}
 	defer func() {
@@ -1068,6 +1066,24 @@ func (r *AgentConn) Relay() {
 	go r.relay(done, remote, client)
 	go r.relay(done, client, remote)
 	<-done
+}
+
+// wsURL returns the websocket URL.
+func (r *AgentConn) wsURL() (u string) {
+	ns := Settings.Hub.Namespace
+	proto := "ws"
+	switch strings.ToUpper(r.ctx.Request.URL.Scheme) {
+	case "HTTP":
+	case "HTTPS":
+		proto = "wss"
+	}
+	u = fmt.Sprintf(
+		"%s://%s.%s.svc:%d/acp",
+		proto,
+		r.sandbox,
+		ns,
+		ACPPort)
+	return
 }
 
 // relay frames until either connection closed.
