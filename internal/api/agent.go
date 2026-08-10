@@ -732,10 +732,11 @@ func (h AgentHandler) RunACP(ctx *gin.Context) {
 		return
 	}
 	if r.Status.SandboxName == "" || r.Status.SecretKeyRef == nil {
-		h.Respond(
-			ctx,
-			http.StatusServiceUnavailable,
-			gin.H{"error": "ACP endpoint not ready."})
+		err = &NotAvailableError{
+			Name:   "ACP",
+			Reason: "Status not populated.",
+		}
+		_ = ctx.Error(err)
 		return
 	}
 	secretKey, err := h.acpSecretKey(ctx, r.Status.SecretKeyRef.Name)

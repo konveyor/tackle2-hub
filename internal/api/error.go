@@ -104,6 +104,22 @@ func (r *TrackerError) Is(err error) (matched bool) {
 	return
 }
 
+// NotAvailableError reports resource not available.
+type NotAvailableError struct {
+	Name   string
+	Reason string
+}
+
+func (r *NotAvailableError) Error() string {
+	return r.Reason
+}
+
+func (r *NotAvailableError) Is(err error) (matched bool) {
+	var target *NotAvailableError
+	matched = errors.As(err, &target)
+	return
+}
+
 // ErrorHandler handles error conditions from lower handlers.
 func ErrorHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
@@ -197,6 +213,15 @@ func ErrorHandler() gin.HandlerFunc {
 		if errors.Is(err, &Forbidden{}) {
 			rtx.Respond(
 				http.StatusForbidden,
+				gin.H{
+					"error": err.Error(),
+				})
+			return
+		}
+
+		if errors.Is(err, &NotAvailableError{}) {
+			rtx.Respond(
+				http.StatusServiceUnavailable,
 				gin.H{
 					"error": err.Error(),
 				})
