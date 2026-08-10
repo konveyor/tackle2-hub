@@ -16,6 +16,9 @@ import (
 // ACPPort is the ACP endpoint port on the sandbox service.
 const ACPPort = 4000
 
+// ManagedLabel is the label used to identify resources managed by the hub.
+const ManagedLabel = "konveyor.io/managed"
+
 // ACPSecretKeys are the Secret data keys tried when reading the ACP secret.
 var ACPSecretKeys = []string{"secret-key", "ACP_SECRET_KEY"}
 
@@ -676,8 +679,9 @@ func (h AgentHandler) RunList(ctx *gin.Context) {
 	err := h.Client(ctx).List(
 		context.TODO(),
 		list,
-		&k8s.ListOptions{
-			Namespace: Settings.Hub.Namespace,
+		k8s.InNamespace(Settings.Hub.Namespace),
+		k8s.MatchingLabels{
+			ManagedLabel: "true",
 		})
 	if err != nil {
 		_ = ctx.Error(err)
@@ -703,6 +707,7 @@ func (h AgentHandler) RunCreate(ctx *gin.Context) {
 		return
 	}
 	r.Namespace = Settings.Hub.Namespace
+	h.injectLabels(r)
 	err = h.Client(ctx).Create(context.TODO(), r)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -936,8 +941,9 @@ func (h AgentHandler) WorkflowRunList(ctx *gin.Context) {
 	err := h.Client(ctx).List(
 		context.TODO(),
 		list,
-		&k8s.ListOptions{
-			Namespace: Settings.Hub.Namespace,
+		k8s.InNamespace(Settings.Hub.Namespace),
+		k8s.MatchingLabels{
+			ManagedLabel: "true",
 		})
 	if err != nil {
 		_ = ctx.Error(err)
@@ -963,6 +969,7 @@ func (h AgentHandler) WorkflowRunCreate(ctx *gin.Context) {
 		return
 	}
 	r.Namespace = Settings.Hub.Namespace
+	h.injectLabels(r)
 	err = h.Client(ctx).Create(context.TODO(), r)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -998,6 +1005,16 @@ func (h AgentHandler) acpSecretKey(ctx *gin.Context, name string) (key string, e
 	}
 	err = &BadRequestError{Reason: "ACP secret key not found."}
 	return
+}
+
+// injectLabels inject labels.
+func (h AgentHandler) injectLabels(r k8s.Object) {
+	m := r.GetLabels()
+	if m == nil {
+		m = make(map[string]string)
+		r.SetLabels(m)
+	}
+	m[ManagedLabel] = "true"
 }
 
 //
