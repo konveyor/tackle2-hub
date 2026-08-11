@@ -27,8 +27,8 @@ func newClient(t *testing.T) (client *binding.RichClient) {
 	t.Helper()
 	hubURL := os.Getenv(EnvHubBaseURL)
 	token := os.Getenv(EnvToken)
-	if hubURL == "" || token == "" {
-		t.Skip("HUB_BASE_URL and TOKEN required.")
+	if hubURL == "" {
+		hubURL = "http://localhost:8080"
 	}
 	client = binding.New(hubURL)
 	client.Client.SetRetry(1)
