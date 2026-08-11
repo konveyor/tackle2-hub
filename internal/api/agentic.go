@@ -74,15 +74,15 @@ func (h *AgenticHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.DELETE(api.AgenticGatewayRoute, h.GatewayDelete)
 	// AgentRun
 	routeGroup = e.Group("/")
-	routeGroup.Use(Required("agentic.runs"))
+	routeGroup.Use(Required("agentic.agentruns"))
 	routeGroup.GET(api.AgenticAgentRunsRoute, h.AgentRunList)
 	routeGroup.GET(api.AgenticAgentRunsRoute+"/", h.AgentRunList)
 	routeGroup.POST(api.AgenticAgentRunsRoute, h.AgentRunCreate)
 	routeGroup.GET(api.AgenticAgentRunRoute, h.AgentRunGet)
 	// AgentRun ACP
 	routeGroup = e.Group("/")
-	routeGroup.Use(Required("agentic.runs.acp"))
-	routeGroup.POST(api.AgenticAgentRunConnRoute, h.AgentRunConnectNonce)
+	routeGroup.Use(Required("agentic.agentruns.acp"))
+	routeGroup.POST(api.AgenticAgentRunConnNonceRoute, h.AgentRunConnectNonce)
 	e.GET(api.AgenticAgentRunConnRoute, h.AgentRunConnect)
 	// AgentWorkflow
 	routeGroup = e.Group("/")

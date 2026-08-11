@@ -60,22 +60,23 @@ const (
 
 // Routes - Agentic
 const (
-	AgenticRoot                  = "/agentic"
-	AgenticAgentsRoute           = AgenticRoot + "/agents"
-	AgenticAgentRoute            = AgenticAgentsRoute + "/:" + Name
-	AgenticSkillsRoute           = AgenticRoot + "/skills"
-	AgenticSkillRoute            = AgenticSkillsRoute + "/:" + Name
-	AgenticSkillCollectionsRoute = AgenticRoot + "/skillcollections"
-	AgenticSkillCollectionRoute  = AgenticSkillCollectionsRoute + "/:" + Name
-	AgenticGatewaysRoute         = AgenticRoot + "/gateways"
-	AgenticGatewayRoute          = AgenticGatewaysRoute + "/:" + Name
-	AgenticAgentRunsRoute        = AgenticRoot + "/agentruns"
-	AgenticAgentRunRoute         = AgenticAgentRunsRoute + "/:" + Name
-	AgenticAgentRunConnRoute     = AgenticAgentRunRoute + "/acp"
-	AgenticWorkflowsRoute        = AgenticRoot + "/workflows"
-	AgenticWorkflowRoute         = AgenticWorkflowsRoute + "/:" + Name
-	AgenticWorkflowRunsRoute     = AgenticRoot + "/workflowruns"
-	AgenticWorkflowRunRoute      = AgenticWorkflowRunsRoute + "/:" + Name
+	AgenticRoot                   = "/agentic"
+	AgenticAgentsRoute            = AgenticRoot + "/agents"
+	AgenticAgentRoute             = AgenticAgentsRoute + "/:" + Name
+	AgenticSkillsRoute            = AgenticRoot + "/skills"
+	AgenticSkillRoute             = AgenticSkillsRoute + "/:" + Name
+	AgenticSkillCollectionsRoute  = AgenticRoot + "/skillcollections"
+	AgenticSkillCollectionRoute   = AgenticSkillCollectionsRoute + "/:" + Name
+	AgenticGatewaysRoute          = AgenticRoot + "/gateways"
+	AgenticGatewayRoute           = AgenticGatewaysRoute + "/:" + Name
+	AgenticAgentRunsRoute         = AgenticRoot + "/agentruns"
+	AgenticAgentRunRoute          = AgenticAgentRunsRoute + "/:" + Name
+	AgenticAgentRunConnRoute      = AgenticAgentRunRoute + "/acp"
+	AgenticAgentRunConnNonceRoute = AgenticAgentRunConnRoute + "/nonce"
+	AgenticWorkflowsRoute         = AgenticRoot + "/workflows"
+	AgenticWorkflowRoute          = AgenticWorkflowsRoute + "/:" + Name
+	AgenticWorkflowRunsRoute      = AgenticRoot + "/workflowruns"
+	AgenticWorkflowRunRoute       = AgenticWorkflowRunsRoute + "/:" + Name
 )
 
 // Routes - Adoption Plans
