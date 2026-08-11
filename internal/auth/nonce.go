@@ -40,8 +40,8 @@ func (n *NonceCache) Redeem(nonce string) (err error) {
 		}
 	}
 	err = &NotAuthenticated{
-		Token:  nonce,
 		Reason: "nonce not valid.",
+		Token:  nonce,
 	}
 	return
 }
