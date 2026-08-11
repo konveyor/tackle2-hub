@@ -73,14 +73,14 @@ func (h AgenticHandler) AddRoutes(e *gin.Engine) {
 	// AgentRun
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("agentic.runs"))
-	routeGroup.GET(api.AgenticAgentRunsRoute, h.RunList)
-	routeGroup.GET(api.AgenticAgentRunsRoute+"/", h.RunList)
-	routeGroup.POST(api.AgenticAgentRunsRoute, h.RunCreate)
-	routeGroup.GET(api.AgenticAgentRunRoute, h.RunGet)
+	routeGroup.GET(api.AgenticAgentRunsRoute, h.AgentRunList)
+	routeGroup.GET(api.AgenticAgentRunsRoute+"/", h.AgentRunList)
+	routeGroup.POST(api.AgenticAgentRunsRoute, h.AgentRunCreate)
+	routeGroup.GET(api.AgenticAgentRunRoute, h.AgentRunGet)
 	// AgentRun ACP
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("agentic.runs.acp"))
-	routeGroup.GET(api.AgenticAgentRunACPRoute, h.RunACP)
+	routeGroup.GET(api.AgenticAgentRunACPRoute, h.AgentRunACP)
 	// AgentWorkflow
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("agentic.workflows"))
@@ -663,7 +663,7 @@ func (h AgenticHandler) GatewayDelete(ctx *gin.Context) {
 // AgentRun
 //
 
-// RunGet godoc
+// AgentRunGet godoc
 // @summary Get an agent run by name.
 // @description Get an agent run by name.
 // @tags runs
@@ -671,7 +671,7 @@ func (h AgenticHandler) GatewayDelete(ctx *gin.Context) {
 // @success 200 {object} AgentRun
 // @router /agentic/runs/{name} [get]
 // @param name path string true "AgentRun name"
-func (h AgenticHandler) RunGet(ctx *gin.Context) {
+func (h AgenticHandler) AgentRunGet(ctx *gin.Context) {
 	r := &AgentRun{}
 	err := h.Client(ctx).Get(
 		context.TODO(),
@@ -687,14 +687,14 @@ func (h AgenticHandler) RunGet(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusOK, r)
 }
 
-// RunList godoc
+// AgentRunList godoc
 // @summary List all agent runs.
 // @description List all agent runs.
 // @tags runs
 // @produce json
 // @success 200 {object} []AgentRun
 // @router /agentic/runs [get]
-func (h AgenticHandler) RunList(ctx *gin.Context) {
+func (h AgenticHandler) AgentRunList(ctx *gin.Context) {
 	list := &AgentRunList{}
 	err := h.Client(ctx).List(
 		context.TODO(),
@@ -710,7 +710,7 @@ func (h AgenticHandler) RunList(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusOK, list.Items)
 }
 
-// RunCreate godoc
+// AgentRunCreate godoc
 // @summary Create an agent run.
 // @description Create an agent run.
 // @tags runs
@@ -719,7 +719,7 @@ func (h AgenticHandler) RunList(ctx *gin.Context) {
 // @success 201 {object} AgentRun
 // @router /agentic/runs [post]
 // @param run body AgentRun true "AgentRun data"
-func (h AgenticHandler) RunCreate(ctx *gin.Context) {
+func (h AgenticHandler) AgentRunCreate(ctx *gin.Context) {
 	r := &AgentRun{}
 	err := h.Bind(ctx, r)
 	if err != nil {
@@ -783,14 +783,14 @@ func (h AgenticHandler) RunCreate(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusCreated, r)
 }
 
-// RunACP godoc
+// AgentRunACP godoc
 // @summary WebSocket proxy to agent pod ACP endpoint.
 // @description Upgrades the connection to a WebSocket and proxies frames
 // @description bidirectionally to the agent pod's ACP endpoint.
 // @tags runs
 // @router /agentic/runs/{name}/acp [get]
 // @param name path string true "AgentRun name"
-func (h AgenticHandler) RunACP(ctx *gin.Context) {
+func (h AgenticHandler) AgentRunACP(ctx *gin.Context) {
 	r := &AgentRun{}
 	err := h.Client(ctx).Get(
 		context.TODO(),

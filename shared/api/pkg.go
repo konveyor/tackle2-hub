@@ -69,7 +69,7 @@ const (
 	AgenticSkillCollectionRoute  = AgenticSkillCollectionsRoute + "/:" + Name
 	AgenticGatewaysRoute         = AgenticRoot + "/gateways"
 	AgenticGatewayRoute          = AgenticGatewaysRoute + "/:" + Name
-	AgenticAgentRunsRoute        = AgenticRoot + "/runs"
+	AgenticAgentRunsRoute        = AgenticRoot + "/agentruns"
 	AgenticAgentRunRoute         = AgenticAgentRunsRoute + "/:" + Name
 	AgenticAgentRunACPRoute      = AgenticAgentRunRoute + "/acp"
 	AgenticWorkflowsRoute        = AgenticRoot + "/workflows"
