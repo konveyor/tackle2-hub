@@ -14,7 +14,7 @@ import (
 
 // CpDir copies (recursively) the directory.
 func CpDir(path, destination string) (err error) {
-	cmd := command.New("/usr/bin/cp")
+	cmd := command.New("cp")
 	cmd.Options.Add("-r", path, destination)
 	err = cmd.Run()
 	return
@@ -22,7 +22,7 @@ func CpDir(path, destination string) (err error) {
 
 // RmDir deletes the directory.
 func RmDir(path string) (err error) {
-	cmd := command.New("/usr/bin/rm")
+	cmd := command.New("rm")
 	cmd.Options.Add("-rf", path)
 	err = cmd.Run()
 	return
