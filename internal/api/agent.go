@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -754,6 +755,12 @@ func (h AgentHandler) RunCreate(ctx *gin.Context) {
 				},
 			},
 		})
+	r.Spec.Env = append(
+		r.Spec.Env,
+		core.EnvVar{
+			Name:  "HUB_BASE_URL",
+			Value: Settings.Addon.Hub.URL,
+		})
 	err = client.Create(context.TODO(), r)
 	if err != nil {
 		_ = ctx.Error(err)
@@ -766,7 +773,7 @@ func (h AgentHandler) RunCreate(ctx *gin.Context) {
 			UID:  r.UID,
 		},
 	}
-	err = client.Update(context.TODO(), r)
+	err = client.Update(context.TODO(), secret)
 	if err != nil {
 		_ = client.Delete(context.TODO(), r)
 		_ = ctx.Error(err)
@@ -1023,10 +1030,56 @@ func (h *AgentHandler) WorkflowRunCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	r.Namespace = Settings.Hub.Namespace
-	h.injectLabels(r)
-	err = h.Client(ctx).Create(context.TODO(), r)
+	client := h.Client(ctx)
+	secret, tokenId, err := h.tokenSecret(r)
 	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	err = client.Create(context.TODO(), secret)
+	if err != nil {
+		_ = auth.Idp().Revoke(tokenId)
+		_ = ctx.Error(err)
+		return
+	}
+	defer func() {
+		if err != nil {
+			_ = auth.Idp().Revoke(tokenId)
+			_ = client.Delete(context.TODO(), secret)
+		}
+	}()
+	h.injectLabels(r)
+	r.Namespace = Settings.Hub.Namespace
+	r.Spec.EnvFrom = append(
+		r.Spec.EnvFrom,
+		core.EnvFromSource{
+			SecretRef: &core.SecretEnvSource{
+				LocalObjectReference: core.LocalObjectReference{
+					Name: secret.Name,
+				},
+			},
+		})
+	r.Spec.Env = append(
+		r.Spec.Env,
+		core.EnvVar{
+			Name:  "HUB_BASE_URL",
+			Value: Settings.Addon.Hub.URL,
+		})
+	err = client.Create(context.TODO(), r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	secret.OwnerReferences = []v1.OwnerReference{
+		{
+			Kind: "AgentRun",
+			Name: r.Name,
+			UID:  r.UID,
+		},
+	}
+	err = client.Update(context.TODO(), secret)
+	if err != nil {
+		_ = client.Delete(context.TODO(), r)
 		_ = ctx.Error(err)
 		return
 	}
@@ -1097,7 +1150,8 @@ func (h *AgentHandler) tokenSecret(owner k8s.Object) (secret *core.Secret, token
 	secret.Namespace = Settings.Namespace
 	secret.GenerateName = "agent-run-"
 	secret.StringData = map[string]string{
-		"token": token.Secret,
+		"HUB_TOKEN_ID": strconv.FormatUint(uint64(token.ID), 10),
+		"HUB_TOKEN":    token.Secret,
 	}
 	return
 }
