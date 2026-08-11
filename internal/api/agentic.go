@@ -139,8 +139,9 @@ func (h AgenticHandler) AgentList(ctx *gin.Context) {
 	err := h.Client(ctx).List(
 		context.TODO(),
 		list,
-		&k8s.ListOptions{
-			Namespace: Settings.Hub.Namespace,
+		k8s.InNamespace(Settings.Hub.Namespace),
+		k8s.MatchingLabels{
+			ManagedLabel: "true",
 		})
 	if err != nil {
 		_ = ctx.Error(err)
@@ -165,6 +166,7 @@ func (h AgenticHandler) AgentCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	h.injectLabels(r)
 	r.Namespace = Settings.Hub.Namespace
 	err = h.Client(ctx).Create(context.TODO(), r)
 	if err != nil {
@@ -279,9 +281,7 @@ func (h AgenticHandler) SkillList(ctx *gin.Context) {
 	err := h.Client(ctx).List(
 		context.TODO(),
 		list,
-		&k8s.ListOptions{
-			Namespace: Settings.Hub.Namespace,
-		})
+		k8s.InNamespace(Settings.Hub.Namespace))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -419,9 +419,7 @@ func (h AgenticHandler) SkillCollectionList(ctx *gin.Context) {
 	err := h.Client(ctx).List(
 		context.TODO(),
 		list,
-		&k8s.ListOptions{
-			Namespace: Settings.Hub.Namespace,
-		})
+		k8s.InNamespace(Settings.Hub.Namespace))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -559,9 +557,7 @@ func (h AgenticHandler) GatewayList(ctx *gin.Context) {
 	err := h.Client(ctx).List(
 		context.TODO(),
 		list,
-		&k8s.ListOptions{
-			Namespace: Settings.Hub.Namespace,
-		})
+		k8s.InNamespace(Settings.Hub.Namespace))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -699,10 +695,7 @@ func (h AgenticHandler) AgentRunList(ctx *gin.Context) {
 	err := h.Client(ctx).List(
 		context.TODO(),
 		list,
-		k8s.InNamespace(Settings.Hub.Namespace),
-		k8s.MatchingLabels{
-			ManagedLabel: "true",
-		})
+		k8s.InNamespace(Settings.Hub.Namespace))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -744,7 +737,6 @@ func (h AgenticHandler) AgentRunCreate(ctx *gin.Context) {
 			_ = client.Delete(context.TODO(), secret)
 		}
 	}()
-	h.injectLabels(r)
 	r.Namespace = Settings.Hub.Namespace
 	r.Spec.EnvFrom = append(
 		r.Spec.EnvFrom,
@@ -864,8 +856,9 @@ func (h AgenticHandler) WorkflowList(ctx *gin.Context) {
 	err := h.Client(ctx).List(
 		context.TODO(),
 		list,
-		&k8s.ListOptions{
-			Namespace: Settings.Hub.Namespace,
+		k8s.InNamespace(Settings.Hub.Namespace),
+		k8s.MatchingLabels{
+			ManagedLabel: "true",
 		})
 	if err != nil {
 		_ = ctx.Error(err)
@@ -890,6 +883,7 @@ func (h AgenticHandler) WorkflowCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	h.injectLabels(r)
 	r.Namespace = Settings.Hub.Namespace
 	err = h.Client(ctx).Create(context.TODO(), r)
 	if err != nil {
@@ -1004,10 +998,7 @@ func (h AgenticHandler) WorkflowRunList(ctx *gin.Context) {
 	err := h.Client(ctx).List(
 		context.TODO(),
 		list,
-		k8s.InNamespace(Settings.Hub.Namespace),
-		k8s.MatchingLabels{
-			ManagedLabel: "true",
-		})
+		k8s.InNamespace(Settings.Hub.Namespace))
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -1049,7 +1040,6 @@ func (h *AgenticHandler) WorkflowRunCreate(ctx *gin.Context) {
 			_ = client.Delete(context.TODO(), secret)
 		}
 	}()
-	h.injectLabels(r)
 	r.Namespace = Settings.Hub.Namespace
 	r.Spec.EnvFrom = append(
 		r.Spec.EnvFrom,
