@@ -29,6 +29,9 @@ func (n *NonceCache) Redeem(nonce string) (err error) {
 	n.mutex.Lock()
 	defer n.mutex.Unlock()
 	n.prune()
+	if !Settings.Auth.Required {
+		return
+	}
 	expiry, found := n.issued[nonce]
 	if found {
 		delete(n.issued, nonce)
