@@ -58,23 +58,24 @@ const (
 	AddonRoute  = AddonsRoute + "/:" + Name
 )
 
-// Routes - Agent
+// Routes - Agentic
 const (
-	AgentAgentsRoute           = "/agent/agents"
-	AgentAgentRoute            = AgentAgentsRoute + "/:" + Name
-	AgentSkillsRoute           = "/agent/skills"
-	AgentSkillRoute            = AgentSkillsRoute + "/:" + Name
-	AgentSkillCollectionsRoute = "/agent/skillcollections"
-	AgentSkillCollectionRoute  = AgentSkillCollectionsRoute + "/:" + Name
-	AgentGatewaysRoute         = "/agent/gateways"
-	AgentGatewayRoute          = AgentGatewaysRoute + "/:" + Name
-	AgentRunsRoute             = "/agent/runs"
-	AgentRunRoute              = AgentRunsRoute + "/:" + Name
-	AgentRunACPRoute           = AgentRunRoute + "/acp"
-	AgentWorkflowsRoute        = "/agent/workflows"
-	AgentWorkflowRoute         = AgentWorkflowsRoute + "/:" + Name
-	AgentWorkflowRunsRoute     = "/agent/workflowruns"
-	AgentWorkflowRunRoute      = AgentWorkflowRunsRoute + "/:" + Name
+	AgenticRoot                  = "/agentic"
+	AgenticAgentsRoute           = AgenticRoot + "/agents"
+	AgenticAgentRoute            = AgenticAgentsRoute + "/:" + Name
+	AgenticSkillsRoute           = AgenticRoot + "/skills"
+	AgenticSkillRoute            = AgenticSkillsRoute + "/:" + Name
+	AgenticSkillCollectionsRoute = AgenticRoot + "/skillcollections"
+	AgenticSkillCollectionRoute  = AgenticSkillCollectionsRoute + "/:" + Name
+	AgenticGatewaysRoute         = AgenticRoot + "/gateways"
+	AgenticGatewayRoute          = AgenticGatewaysRoute + "/:" + Name
+	AgenticAgentRunsRoute        = AgenticRoot + "/runs"
+	AgenticAgentRunRoute         = AgenticAgentRunsRoute + "/:" + Name
+	AgenticAgentRunACPRoute      = AgenticAgentRunRoute + "/acp"
+	AgenticWorkflowsRoute        = AgenticRoot + "/workflows"
+	AgenticWorkflowRoute         = AgenticWorkflowsRoute + "/:" + Name
+	AgenticWorkflowRunsRoute     = AgenticRoot + "/workflowruns"
+	AgenticWorkflowRunRoute      = AgenticWorkflowRunsRoute + "/:" + Name
 )
 
 // Routes - Adoption Plans

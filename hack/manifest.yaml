@@ -73,7 +73,7 @@ metadata:
   namespace: tackle-hub
   name:  tackle-hub
 rules:
-- apiGroups: ["", "batch", "tackle.konveyor.io"]
+- apiGroups: ["", "batch", "tackle.konveyor.io", "konveyor.io"]
   resources: ["*"]
   verbs: ["*"]
 

@@ -78,7 +78,7 @@ type Ref = resource.Ref
 func All() []Handler {
 	return []Handler{
 		&AddonHandler{},
-		&AgentHandler{},
+		&AgenticHandler{},
 		&AdoptionPlanHandler{},
 		&AnalysisProfileHandler{},
 		&AnalysisHandler{},

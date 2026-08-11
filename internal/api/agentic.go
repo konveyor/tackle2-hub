@@ -27,76 +27,76 @@ const ManagedLabel = "konveyor.io/managed"
 // ACPSecretKeys are the Secret data keys tried when reading the ACP secret.
 var ACPSecretKeys = []string{"secret-key", "ACP_SECRET_KEY"}
 
-// AgentHandler handles AI agent routes.
-type AgentHandler struct {
+// AgenticHandler handles AI agent routes.
+type AgenticHandler struct {
 	BaseHandler
 }
 
 // AddRoutes adds routes.
-func (h AgentHandler) AddRoutes(e *gin.Engine) {
+func (h AgenticHandler) AddRoutes(e *gin.Engine) {
 	// Agent
 	routeGroup := e.Group("/")
-	routeGroup.Use(Required("agent.agents"))
-	routeGroup.GET(api.AgentAgentsRoute, h.AgentList)
-	routeGroup.GET(api.AgentAgentsRoute+"/", h.AgentList)
-	routeGroup.POST(api.AgentAgentsRoute, h.AgentCreate)
-	routeGroup.GET(api.AgentAgentRoute, h.AgentGet)
-	routeGroup.PUT(api.AgentAgentRoute, h.AgentUpdate)
-	routeGroup.DELETE(api.AgentAgentRoute, h.AgentDelete)
+	routeGroup.Use(Required("agentic.agents"))
+	routeGroup.GET(api.AgenticAgentsRoute, h.AgentList)
+	routeGroup.GET(api.AgenticAgentsRoute+"/", h.AgentList)
+	routeGroup.POST(api.AgenticAgentsRoute, h.AgentCreate)
+	routeGroup.GET(api.AgenticAgentRoute, h.AgentGet)
+	routeGroup.PUT(api.AgenticAgentRoute, h.AgentUpdate)
+	routeGroup.DELETE(api.AgenticAgentRoute, h.AgentDelete)
 	// SkillCard
 	routeGroup = e.Group("/")
-	routeGroup.Use(Required("agent.skills"))
-	routeGroup.GET(api.AgentSkillsRoute, h.SkillList)
-	routeGroup.GET(api.AgentSkillsRoute+"/", h.SkillList)
-	routeGroup.POST(api.AgentSkillsRoute, h.SkillCreate)
-	routeGroup.GET(api.AgentSkillRoute, h.SkillGet)
-	routeGroup.PUT(api.AgentSkillRoute, h.SkillUpdate)
-	routeGroup.DELETE(api.AgentSkillRoute, h.SkillDelete)
+	routeGroup.Use(Required("agentic.skills"))
+	routeGroup.GET(api.AgenticSkillsRoute, h.SkillList)
+	routeGroup.GET(api.AgenticSkillsRoute+"/", h.SkillList)
+	routeGroup.POST(api.AgenticSkillsRoute, h.SkillCreate)
+	routeGroup.GET(api.AgenticSkillRoute, h.SkillGet)
+	routeGroup.PUT(api.AgenticSkillRoute, h.SkillUpdate)
+	routeGroup.DELETE(api.AgenticSkillRoute, h.SkillDelete)
 	// SkillCollection
 	routeGroup = e.Group("/")
-	routeGroup.Use(Required("agent.skillcollections"))
-	routeGroup.GET(api.AgentSkillCollectionsRoute, h.SkillCollectionList)
-	routeGroup.GET(api.AgentSkillCollectionsRoute+"/", h.SkillCollectionList)
-	routeGroup.POST(api.AgentSkillCollectionsRoute, h.SkillCollectionCreate)
-	routeGroup.GET(api.AgentSkillCollectionRoute, h.SkillCollectionGet)
-	routeGroup.PUT(api.AgentSkillCollectionRoute, h.SkillCollectionUpdate)
-	routeGroup.DELETE(api.AgentSkillCollectionRoute, h.SkillCollectionDelete)
+	routeGroup.Use(Required("agentic.skillcollections"))
+	routeGroup.GET(api.AgenticSkillCollectionsRoute, h.SkillCollectionList)
+	routeGroup.GET(api.AgenticSkillCollectionsRoute+"/", h.SkillCollectionList)
+	routeGroup.POST(api.AgenticSkillCollectionsRoute, h.SkillCollectionCreate)
+	routeGroup.GET(api.AgenticSkillCollectionRoute, h.SkillCollectionGet)
+	routeGroup.PUT(api.AgenticSkillCollectionRoute, h.SkillCollectionUpdate)
+	routeGroup.DELETE(api.AgenticSkillCollectionRoute, h.SkillCollectionDelete)
 	// Gateway
 	routeGroup = e.Group("/")
-	routeGroup.Use(Required("agent.gateways"))
-	routeGroup.GET(api.AgentGatewaysRoute, h.GatewayList)
-	routeGroup.GET(api.AgentGatewaysRoute+"/", h.GatewayList)
-	routeGroup.POST(api.AgentGatewaysRoute, h.GatewayCreate)
-	routeGroup.GET(api.AgentGatewayRoute, h.GatewayGet)
-	routeGroup.PUT(api.AgentGatewayRoute, h.GatewayUpdate)
-	routeGroup.DELETE(api.AgentGatewayRoute, h.GatewayDelete)
+	routeGroup.Use(Required("agentic.gateways"))
+	routeGroup.GET(api.AgenticGatewaysRoute, h.GatewayList)
+	routeGroup.GET(api.AgenticGatewaysRoute+"/", h.GatewayList)
+	routeGroup.POST(api.AgenticGatewaysRoute, h.GatewayCreate)
+	routeGroup.GET(api.AgenticGatewayRoute, h.GatewayGet)
+	routeGroup.PUT(api.AgenticGatewayRoute, h.GatewayUpdate)
+	routeGroup.DELETE(api.AgenticGatewayRoute, h.GatewayDelete)
 	// AgentRun
 	routeGroup = e.Group("/")
-	routeGroup.Use(Required("agent.runs"))
-	routeGroup.GET(api.AgentRunsRoute, h.RunList)
-	routeGroup.GET(api.AgentRunsRoute+"/", h.RunList)
-	routeGroup.POST(api.AgentRunsRoute, h.RunCreate)
-	routeGroup.GET(api.AgentRunRoute, h.RunGet)
+	routeGroup.Use(Required("agentic.runs"))
+	routeGroup.GET(api.AgenticAgentRunsRoute, h.RunList)
+	routeGroup.GET(api.AgenticAgentRunsRoute+"/", h.RunList)
+	routeGroup.POST(api.AgenticAgentRunsRoute, h.RunCreate)
+	routeGroup.GET(api.AgenticAgentRunRoute, h.RunGet)
 	// AgentRun ACP
 	routeGroup = e.Group("/")
-	routeGroup.Use(Required("agent.runs.acp"))
-	routeGroup.GET(api.AgentRunACPRoute, h.RunACP)
+	routeGroup.Use(Required("agentic.runs.acp"))
+	routeGroup.GET(api.AgenticAgentRunACPRoute, h.RunACP)
 	// AgentWorkflow
 	routeGroup = e.Group("/")
-	routeGroup.Use(Required("agent.workflows"))
-	routeGroup.GET(api.AgentWorkflowsRoute, h.WorkflowList)
-	routeGroup.GET(api.AgentWorkflowsRoute+"/", h.WorkflowList)
-	routeGroup.POST(api.AgentWorkflowsRoute, h.WorkflowCreate)
-	routeGroup.GET(api.AgentWorkflowRoute, h.WorkflowGet)
-	routeGroup.PUT(api.AgentWorkflowRoute, h.WorkflowUpdate)
-	routeGroup.DELETE(api.AgentWorkflowRoute, h.WorkflowDelete)
+	routeGroup.Use(Required("agentic.workflows"))
+	routeGroup.GET(api.AgenticWorkflowsRoute, h.WorkflowList)
+	routeGroup.GET(api.AgenticWorkflowsRoute+"/", h.WorkflowList)
+	routeGroup.POST(api.AgenticWorkflowsRoute, h.WorkflowCreate)
+	routeGroup.GET(api.AgenticWorkflowRoute, h.WorkflowGet)
+	routeGroup.PUT(api.AgenticWorkflowRoute, h.WorkflowUpdate)
+	routeGroup.DELETE(api.AgenticWorkflowRoute, h.WorkflowDelete)
 	// AgentWorkflowRun
 	routeGroup = e.Group("/")
-	routeGroup.Use(Required("agent.workflowruns"))
-	routeGroup.GET(api.AgentWorkflowRunsRoute, h.WorkflowRunList)
-	routeGroup.GET(api.AgentWorkflowRunsRoute+"/", h.WorkflowRunList)
-	routeGroup.POST(api.AgentWorkflowRunsRoute, h.WorkflowRunCreate)
-	routeGroup.GET(api.AgentWorkflowRunRoute, h.WorkflowRunGet)
+	routeGroup.Use(Required("agentic.workflowruns"))
+	routeGroup.GET(api.AgenticWorkflowRunsRoute, h.WorkflowRunList)
+	routeGroup.GET(api.AgenticWorkflowRunsRoute+"/", h.WorkflowRunList)
+	routeGroup.POST(api.AgenticWorkflowRunsRoute, h.WorkflowRunCreate)
+	routeGroup.GET(api.AgenticWorkflowRunRoute, h.WorkflowRunGet)
 }
 
 //
@@ -109,9 +109,9 @@ func (h AgentHandler) AddRoutes(e *gin.Engine) {
 // @tags agents
 // @produce json
 // @success 200 {object} Agent
-// @router /agent/agents/{name} [get]
+// @router /agentic/agents/{name} [get]
 // @param name path string true "Agent name"
-func (h AgentHandler) AgentGet(ctx *gin.Context) {
+func (h AgenticHandler) AgentGet(ctx *gin.Context) {
 	r := &Agent{}
 	err := h.Client(ctx).Get(
 		context.TODO(),
@@ -133,8 +133,8 @@ func (h AgentHandler) AgentGet(ctx *gin.Context) {
 // @tags agents
 // @produce json
 // @success 200 {object} []Agent
-// @router /agent/agents [get]
-func (h AgentHandler) AgentList(ctx *gin.Context) {
+// @router /agentic/agents [get]
+func (h AgenticHandler) AgentList(ctx *gin.Context) {
 	list := &AgentList{}
 	err := h.Client(ctx).List(
 		context.TODO(),
@@ -156,9 +156,9 @@ func (h AgentHandler) AgentList(ctx *gin.Context) {
 // @accept json
 // @produce json
 // @success 201 {object} Agent
-// @router /agent/agents [post]
+// @router /agentic/agents [post]
 // @param agent body Agent true "Agent data"
-func (h AgentHandler) AgentCreate(ctx *gin.Context) {
+func (h AgenticHandler) AgentCreate(ctx *gin.Context) {
 	r := &Agent{}
 	err := h.Bind(ctx, r)
 	if err != nil {
@@ -180,10 +180,10 @@ func (h AgentHandler) AgentCreate(ctx *gin.Context) {
 // @tags agents
 // @accept json
 // @success 204
-// @router /agent/agents/{name} [put]
+// @router /agentic/agents/{name} [put]
 // @param name path string true "Agent name"
 // @param agent body Agent true "Agent data"
-func (h AgentHandler) AgentUpdate(ctx *gin.Context) {
+func (h AgenticHandler) AgentUpdate(ctx *gin.Context) {
 	current := &Agent{}
 	err := h.Client(ctx).Get(
 		context.TODO(),
@@ -216,9 +216,9 @@ func (h AgentHandler) AgentUpdate(ctx *gin.Context) {
 // @description Delete an agent.
 // @tags agents
 // @success 204
-// @router /agent/agents/{name} [delete]
+// @router /agentic/agents/{name} [delete]
 // @param name path string true "Agent name"
-func (h AgentHandler) AgentDelete(ctx *gin.Context) {
+func (h AgenticHandler) AgentDelete(ctx *gin.Context) {
 	r := &Agent{}
 	err := h.Client(ctx).Get(
 		context.TODO(),
@@ -249,9 +249,9 @@ func (h AgentHandler) AgentDelete(ctx *gin.Context) {
 // @tags skills
 // @produce json
 // @success 200 {object} SkillCard
-// @router /agent/skills/{name} [get]
+// @router /agentic/skills/{name} [get]
 // @param name path string true "SkillCard name"
-func (h AgentHandler) SkillGet(ctx *gin.Context) {
+func (h AgenticHandler) SkillGet(ctx *gin.Context) {
 	r := &SkillCard{}
 	err := h.Client(ctx).Get(
 		context.TODO(),
@@ -273,8 +273,8 @@ func (h AgentHandler) SkillGet(ctx *gin.Context) {
 // @tags skills
 // @produce json
 // @success 200 {object} []SkillCard
-// @router /agent/skills [get]
-func (h AgentHandler) SkillList(ctx *gin.Context) {
+// @router /agentic/skills [get]
+func (h AgenticHandler) SkillList(ctx *gin.Context) {
 	list := &SkillCardList{}
 	err := h.Client(ctx).List(
 		context.TODO(),
@@ -296,9 +296,9 @@ func (h AgentHandler) SkillList(ctx *gin.Context) {
 // @accept json
 // @produce json
 // @success 201 {object} SkillCard
-// @router /agent/skills [post]
+// @router /agentic/skills [post]
 // @param skill body SkillCard true "SkillCard data"
-func (h AgentHandler) SkillCreate(ctx *gin.Context) {
+func (h AgenticHandler) SkillCreate(ctx *gin.Context) {
 	r := &SkillCard{}
 	err := h.Bind(ctx, r)
 	if err != nil {
@@ -320,10 +320,10 @@ func (h AgentHandler) SkillCreate(ctx *gin.Context) {
 // @tags skills
 // @accept json
 // @success 204
-// @router /agent/skills/{name} [put]
+// @router /agentic/skills/{name} [put]
 // @param name path string true "SkillCard name"
 // @param skill body SkillCard true "SkillCard data"
-func (h AgentHandler) SkillUpdate(ctx *gin.Context) {
+func (h AgenticHandler) SkillUpdate(ctx *gin.Context) {
 	current := &SkillCard{}
 	err := h.Client(ctx).Get(
 		context.TODO(),
@@ -356,9 +356,9 @@ func (h AgentHandler) SkillUpdate(ctx *gin.Context) {
 // @description Delete a skill card.
 // @tags skills
 // @success 204
-// @router /agent/skills/{name} [delete]
+// @router /agentic/skills/{name} [delete]
 // @param name path string true "SkillCard name"
-func (h AgentHandler) SkillDelete(ctx *gin.Context) {
+func (h AgenticHandler) SkillDelete(ctx *gin.Context) {
 	r := &SkillCard{}
 	err := h.Client(ctx).Get(
 		context.TODO(),
@@ -389,9 +389,9 @@ func (h AgentHandler) SkillDelete(ctx *gin.Context) {
 // @tags skillcollections
 // @produce json
 // @success 200 {object} SkillCollection
-// @router /agent/skillcollections/{name} [get]
+// @router /agentic/skillcollections/{name} [get]
 // @param name path string true "SkillCollection name"
-func (h AgentHandler) SkillCollectionGet(ctx *gin.Context) {
+func (h AgenticHandler) SkillCollectionGet(ctx *gin.Context) {
 	r := &SkillCollection{}
 	err := h.Client(ctx).Get(
 		context.TODO(),
@@ -413,8 +413,8 @@ func (h AgentHandler) SkillCollectionGet(ctx *gin.Context) {
 // @tags skillcollections
 // @produce json
 // @success 200 {object} []SkillCollection
-// @router /agent/skillcollections [get]
-func (h AgentHandler) SkillCollectionList(ctx *gin.Context) {
+// @router /agentic/skillcollections [get]
+func (h AgenticHandler) SkillCollectionList(ctx *gin.Context) {
 	list := &SkillCollectionList{}
 	err := h.Client(ctx).List(
 		context.TODO(),
@@ -436,9 +436,9 @@ func (h AgentHandler) SkillCollectionList(ctx *gin.Context) {
 // @accept json
 // @produce json
 // @success 201 {object} SkillCollection
-// @router /agent/skillcollections [post]
+// @router /agentic/skillcollections [post]
 // @param collection body SkillCollection true "SkillCollection data"
-func (h AgentHandler) SkillCollectionCreate(ctx *gin.Context) {
+func (h AgenticHandler) SkillCollectionCreate(ctx *gin.Context) {
 	r := &SkillCollection{}
 	err := h.Bind(ctx, r)
 	if err != nil {
@@ -460,10 +460,10 @@ func (h AgentHandler) SkillCollectionCreate(ctx *gin.Context) {
 // @tags skillcollections
 // @accept json
 // @success 204
-// @router /agent/skillcollections/{name} [put]
+// @router /agentic/skillcollections/{name} [put]
 // @param name path string true "SkillCollection name"
 // @param collection body SkillCollection true "SkillCollection data"
-func (h AgentHandler) SkillCollectionUpdate(ctx *gin.Context) {
+func (h AgenticHandler) SkillCollectionUpdate(ctx *gin.Context) {
 	current := &SkillCollection{}
 	err := h.Client(ctx).Get(
 		context.TODO(),
@@ -496,9 +496,9 @@ func (h AgentHandler) SkillCollectionUpdate(ctx *gin.Context) {
 // @description Delete a skill collection.
 // @tags skillcollections
 // @success 204
-// @router /agent/skillcollections/{name} [delete]
+// @router /agentic/skillcollections/{name} [delete]
 // @param name path string true "SkillCollection name"
-func (h AgentHandler) SkillCollectionDelete(ctx *gin.Context) {
+func (h AgenticHandler) SkillCollectionDelete(ctx *gin.Context) {
 	r := &SkillCollection{}
 	err := h.Client(ctx).Get(
 		context.TODO(),
@@ -529,9 +529,9 @@ func (h AgentHandler) SkillCollectionDelete(ctx *gin.Context) {
 // @tags gateways
 // @produce json
 // @success 200 {object} Gateway
-// @router /agent/gateways/{name} [get]
+// @router /agentic/gateways/{name} [get]
 // @param name path string true "Gateway name"
-func (h AgentHandler) GatewayGet(ctx *gin.Context) {
+func (h AgenticHandler) GatewayGet(ctx *gin.Context) {
 	r := &Gateway{}
 	err := h.Client(ctx).Get(
 		context.TODO(),
@@ -553,8 +553,8 @@ func (h AgentHandler) GatewayGet(ctx *gin.Context) {
 // @tags gateways
 // @produce json
 // @success 200 {object} []Gateway
-// @router /agent/gateways [get]
-func (h AgentHandler) GatewayList(ctx *gin.Context) {
+// @router /agentic/gateways [get]
+func (h AgenticHandler) GatewayList(ctx *gin.Context) {
 	list := &GatewayList{}
 	err := h.Client(ctx).List(
 		context.TODO(),
@@ -576,9 +576,9 @@ func (h AgentHandler) GatewayList(ctx *gin.Context) {
 // @accept json
 // @produce json
 // @success 201 {object} Gateway
-// @router /agent/gateways [post]
+// @router /agentic/gateways [post]
 // @param gateway body Gateway true "Gateway data"
-func (h AgentHandler) GatewayCreate(ctx *gin.Context) {
+func (h AgenticHandler) GatewayCreate(ctx *gin.Context) {
 	r := &Gateway{}
 	err := h.Bind(ctx, r)
 	if err != nil {
@@ -600,10 +600,10 @@ func (h AgentHandler) GatewayCreate(ctx *gin.Context) {
 // @tags gateways
 // @accept json
 // @success 204
-// @router /agent/gateways/{name} [put]
+// @router /agentic/gateways/{name} [put]
 // @param name path string true "Gateway name"
 // @param gateway body Gateway true "Gateway data"
-func (h AgentHandler) GatewayUpdate(ctx *gin.Context) {
+func (h AgenticHandler) GatewayUpdate(ctx *gin.Context) {
 	current := &Gateway{}
 	err := h.Client(ctx).Get(
 		context.TODO(),
@@ -636,9 +636,9 @@ func (h AgentHandler) GatewayUpdate(ctx *gin.Context) {
 // @description Delete a gateway.
 // @tags gateways
 // @success 204
-// @router /agent/gateways/{name} [delete]
+// @router /agentic/gateways/{name} [delete]
 // @param name path string true "Gateway name"
-func (h AgentHandler) GatewayDelete(ctx *gin.Context) {
+func (h AgenticHandler) GatewayDelete(ctx *gin.Context) {
 	r := &Gateway{}
 	err := h.Client(ctx).Get(
 		context.TODO(),
@@ -669,9 +669,9 @@ func (h AgentHandler) GatewayDelete(ctx *gin.Context) {
 // @tags runs
 // @produce json
 // @success 200 {object} AgentRun
-// @router /agent/runs/{name} [get]
+// @router /agentic/runs/{name} [get]
 // @param name path string true "AgentRun name"
-func (h AgentHandler) RunGet(ctx *gin.Context) {
+func (h AgenticHandler) RunGet(ctx *gin.Context) {
 	r := &AgentRun{}
 	err := h.Client(ctx).Get(
 		context.TODO(),
@@ -693,8 +693,8 @@ func (h AgentHandler) RunGet(ctx *gin.Context) {
 // @tags runs
 // @produce json
 // @success 200 {object} []AgentRun
-// @router /agent/runs [get]
-func (h AgentHandler) RunList(ctx *gin.Context) {
+// @router /agentic/runs [get]
+func (h AgenticHandler) RunList(ctx *gin.Context) {
 	list := &AgentRunList{}
 	err := h.Client(ctx).List(
 		context.TODO(),
@@ -717,9 +717,9 @@ func (h AgentHandler) RunList(ctx *gin.Context) {
 // @accept json
 // @produce json
 // @success 201 {object} AgentRun
-// @router /agent/runs [post]
+// @router /agentic/runs [post]
 // @param run body AgentRun true "AgentRun data"
-func (h AgentHandler) RunCreate(ctx *gin.Context) {
+func (h AgenticHandler) RunCreate(ctx *gin.Context) {
 	r := &AgentRun{}
 	err := h.Bind(ctx, r)
 	if err != nil {
@@ -788,9 +788,9 @@ func (h AgentHandler) RunCreate(ctx *gin.Context) {
 // @description Upgrades the connection to a WebSocket and proxies frames
 // @description bidirectionally to the agent pod's ACP endpoint.
 // @tags runs
-// @router /agent/runs/{name}/acp [get]
+// @router /agentic/runs/{name}/acp [get]
 // @param name path string true "AgentRun name"
-func (h AgentHandler) RunACP(ctx *gin.Context) {
+func (h AgenticHandler) RunACP(ctx *gin.Context) {
 	r := &AgentRun{}
 	err := h.Client(ctx).Get(
 		context.TODO(),
@@ -834,9 +834,9 @@ func (h AgentHandler) RunACP(ctx *gin.Context) {
 // @tags workflows
 // @produce json
 // @success 200 {object} AgentWorkflow
-// @router /agent/workflows/{name} [get]
+// @router /agentic/workflows/{name} [get]
 // @param name path string true "AgentWorkflow name"
-func (h AgentHandler) WorkflowGet(ctx *gin.Context) {
+func (h AgenticHandler) WorkflowGet(ctx *gin.Context) {
 	r := &AgentWorkflow{}
 	err := h.Client(ctx).Get(
 		context.TODO(),
@@ -858,8 +858,8 @@ func (h AgentHandler) WorkflowGet(ctx *gin.Context) {
 // @tags workflows
 // @produce json
 // @success 200 {object} []AgentWorkflow
-// @router /agent/workflows [get]
-func (h AgentHandler) WorkflowList(ctx *gin.Context) {
+// @router /agentic/workflows [get]
+func (h AgenticHandler) WorkflowList(ctx *gin.Context) {
 	list := &AgentWorkflowList{}
 	err := h.Client(ctx).List(
 		context.TODO(),
@@ -881,9 +881,9 @@ func (h AgentHandler) WorkflowList(ctx *gin.Context) {
 // @accept json
 // @produce json
 // @success 201 {object} AgentWorkflow
-// @router /agent/workflows [post]
+// @router /agentic/workflows [post]
 // @param workflow body AgentWorkflow true "AgentWorkflow data"
-func (h AgentHandler) WorkflowCreate(ctx *gin.Context) {
+func (h AgenticHandler) WorkflowCreate(ctx *gin.Context) {
 	r := &AgentWorkflow{}
 	err := h.Bind(ctx, r)
 	if err != nil {
@@ -905,10 +905,10 @@ func (h AgentHandler) WorkflowCreate(ctx *gin.Context) {
 // @tags workflows
 // @accept json
 // @success 204
-// @router /agent/workflows/{name} [put]
+// @router /agentic/workflows/{name} [put]
 // @param name path string true "AgentWorkflow name"
 // @param workflow body AgentWorkflow true "AgentWorkflow data"
-func (h AgentHandler) WorkflowUpdate(ctx *gin.Context) {
+func (h AgenticHandler) WorkflowUpdate(ctx *gin.Context) {
 	current := &AgentWorkflow{}
 	err := h.Client(ctx).Get(
 		context.TODO(),
@@ -941,9 +941,9 @@ func (h AgentHandler) WorkflowUpdate(ctx *gin.Context) {
 // @description Delete an agent workflow.
 // @tags workflows
 // @success 204
-// @router /agent/workflows/{name} [delete]
+// @router /agentic/workflows/{name} [delete]
 // @param name path string true "AgentWorkflow name"
-func (h AgentHandler) WorkflowDelete(ctx *gin.Context) {
+func (h AgenticHandler) WorkflowDelete(ctx *gin.Context) {
 	r := &AgentWorkflow{}
 	err := h.Client(ctx).Get(
 		context.TODO(),
@@ -974,9 +974,9 @@ func (h AgentHandler) WorkflowDelete(ctx *gin.Context) {
 // @tags workflowruns
 // @produce json
 // @success 200 {object} AgentWorkflowRun
-// @router /agent/workflowruns/{name} [get]
+// @router /agentic/workflowruns/{name} [get]
 // @param name path string true "AgentWorkflowRun name"
-func (h AgentHandler) WorkflowRunGet(ctx *gin.Context) {
+func (h AgenticHandler) WorkflowRunGet(ctx *gin.Context) {
 	r := &AgentWorkflowRun{}
 	err := h.Client(ctx).Get(
 		context.TODO(),
@@ -998,8 +998,8 @@ func (h AgentHandler) WorkflowRunGet(ctx *gin.Context) {
 // @tags workflowruns
 // @produce json
 // @success 200 {object} []AgentWorkflowRun
-// @router /agent/workflowruns [get]
-func (h AgentHandler) WorkflowRunList(ctx *gin.Context) {
+// @router /agentic/workflowruns [get]
+func (h AgenticHandler) WorkflowRunList(ctx *gin.Context) {
 	list := &AgentWorkflowRunList{}
 	err := h.Client(ctx).List(
 		context.TODO(),
@@ -1022,9 +1022,9 @@ func (h AgentHandler) WorkflowRunList(ctx *gin.Context) {
 // @accept json
 // @produce json
 // @success 201 {object} AgentWorkflowRun
-// @router /agent/workflowruns [post]
+// @router /agentic/workflowruns [post]
 // @param run body AgentWorkflowRun true "AgentWorkflowRun data"
-func (h *AgentHandler) WorkflowRunCreate(ctx *gin.Context) {
+func (h *AgenticHandler) WorkflowRunCreate(ctx *gin.Context) {
 	r := &AgentWorkflowRun{}
 	err := h.Bind(ctx, r)
 	if err != nil {
@@ -1089,7 +1089,7 @@ func (h *AgentHandler) WorkflowRunCreate(ctx *gin.Context) {
 }
 
 // acpKey reads the ACP secret key from a Secret.
-func (h *AgentHandler) acpKey(ctx *gin.Context, name string) (key string, err error) {
+func (h *AgenticHandler) acpKey(ctx *gin.Context, name string) (key string, err error) {
 	secret := &core.Secret{}
 	err = h.Client(ctx).Get(
 		context.TODO(),
@@ -1118,7 +1118,7 @@ func (h *AgentHandler) acpKey(ctx *gin.Context, name string) (key string, err er
 }
 
 // injectLabels inject labels.
-func (h *AgentHandler) injectLabels(r k8s.Object) {
+func (h *AgenticHandler) injectLabels(r k8s.Object) {
 	m := r.GetLabels()
 	if m == nil {
 		m = make(map[string]string)
@@ -1128,10 +1128,10 @@ func (h *AgentHandler) injectLabels(r k8s.Object) {
 }
 
 // tokenSecret returns a token secret.
-func (h *AgentHandler) tokenSecret(owner k8s.Object) (secret *core.Secret, tokenId uint, err error) {
+func (h *AgenticHandler) tokenSecret(owner k8s.Object) (secret *core.Secret, tokenId uint, err error) {
 	idp := auth.Idp()
 	cache := idp.Cache()
-	sa, err := cache.FindSaByName("agent.harness")
+	sa, err := cache.FindSaByName("agentic.harness")
 	if err != nil {
 		return
 	}
@@ -1150,7 +1150,7 @@ func (h *AgentHandler) tokenSecret(owner k8s.Object) (secret *core.Secret, token
 	tokenId = token.ID
 	secret = &core.Secret{}
 	secret.Namespace = Settings.Namespace
-	secret.GenerateName = "agent-run-"
+	secret.GenerateName = "agentic-run-"
 	secret.StringData = map[string]string{
 		"HUB_TOKEN_ID": strconv.FormatUint(uint64(token.ID), 10),
 		"HUB_TOKEN":    token.Secret,
