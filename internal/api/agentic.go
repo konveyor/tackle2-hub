@@ -30,10 +30,12 @@ var ACPSecretKeys = []string{"secret-key", "ACP_SECRET_KEY"}
 // AgenticHandler handles AI agent routes.
 type AgenticHandler struct {
 	BaseHandler
+	nonce *auth.NonceCache
 }
 
 // AddRoutes adds routes.
-func (h AgenticHandler) AddRoutes(e *gin.Engine) {
+func (h *AgenticHandler) AddRoutes(e *gin.Engine) {
+	h.nonce = &auth.NonceCache{}
 	// Agent
 	routeGroup := e.Group("/")
 	routeGroup.Use(Required("agentic.agents"))
@@ -80,7 +82,8 @@ func (h AgenticHandler) AddRoutes(e *gin.Engine) {
 	// AgentRun ACP
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("agentic.runs.acp"))
-	routeGroup.GET(api.AgenticAgentRunACPRoute, h.AgentRunACP)
+	routeGroup.POST(api.AgenticAgentRunConnRoute, h.AgentRunConnectNonce)
+	e.GET(api.AgenticAgentRunConnRoute, h.AgentRunConnect)
 	// AgentWorkflow
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("agentic.workflows"))
@@ -775,16 +778,50 @@ func (h AgenticHandler) AgentRunCreate(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusCreated, r)
 }
 
-// AgentRunACP godoc
+// AgentRunConnectNonce godoc
+// @summary Issue a nonce for an ACP WebSocket connection.
+// @description Issues a short-lived, single-use nonce that authorizes
+// @description a subsequent WebSocket upgrade to the agent pod's ACP endpoint.
+// @tags runs
+// @produce json
+// @success 201 {object} string
+// @router /agentic/runs/{name}/acp [post]
+// @param name path string true "AgentRun name"
+func (h AgenticHandler) AgentRunConnectNonce(ctx *gin.Context) {
+	r := &AgentRun{}
+	err := h.Client(ctx).Get(
+		context.TODO(),
+		k8s.ObjectKey{
+			Namespace: Settings.Hub.Namespace,
+			Name:      ctx.Param(Name),
+		},
+		r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	nonce := h.nonce.Issue(time.Second * 30)
+	h.Respond(ctx, http.StatusCreated, nonce)
+}
+
+// AgentRunConnect godoc
 // @summary WebSocket proxy to agent pod ACP endpoint.
 // @description Upgrades the connection to a WebSocket and proxies frames
-// @description bidirectionally to the agent pod's ACP endpoint.
+// @description bidirectionally to the agent pod's ACP endpoint. Authenticated
+// @description by a nonce query parameter obtained from POST /agentic/runs/{name}/acp.
 // @tags runs
 // @router /agentic/runs/{name}/acp [get]
 // @param name path string true "AgentRun name"
-func (h AgenticHandler) AgentRunACP(ctx *gin.Context) {
+// @param nonce query string true "Single-use nonce"
+func (h AgenticHandler) AgentRunConnect(ctx *gin.Context) {
+	nonce := ctx.Query("nonce")
+	err := h.nonce.Redeem(nonce)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	r := &AgentRun{}
-	err := h.Client(ctx).Get(
+	err = h.Client(ctx).Get(
 		context.TODO(),
 		k8s.ObjectKey{
 			Namespace: Settings.Hub.Namespace,

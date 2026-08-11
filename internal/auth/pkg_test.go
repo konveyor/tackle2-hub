@@ -5153,3 +5153,73 @@ func TestSeedServiceAccountsIDPreservation(t *testing.T) {
 	g.Expect(sa2.ID).To(Equal(uint(1)))
 	g.Expect(sa2.Subject).To(Equal(subject1))
 }
+
+// TestNonceCacheIssue tests that Issue returns a unique nonce.
+func TestNonceCacheIssue(t *testing.T) {
+	g := NewGomegaWithT(t)
+	cache := &NonceCache{}
+	a := cache.Issue(time.Second * 30)
+	b := cache.Issue(time.Second * 30)
+	g.Expect(a).NotTo(BeEmpty())
+	g.Expect(b).NotTo(BeEmpty())
+	g.Expect(a).NotTo(Equal(b))
+}
+
+// TestNonceCacheRedeem tests that a valid nonce is redeemed successfully.
+func TestNonceCacheRedeem(t *testing.T) {
+	g := NewGomegaWithT(t)
+	cache := &NonceCache{}
+	nonce := cache.Issue(time.Second * 30)
+	err := cache.Redeem(nonce)
+	g.Expect(err).To(BeNil())
+}
+
+// TestNonceCacheRedeemOnce tests that a nonce cannot be redeemed twice.
+func TestNonceCacheRedeemOnce(t *testing.T) {
+	g := NewGomegaWithT(t)
+	cache := &NonceCache{}
+	nonce := cache.Issue(time.Second * 30)
+	err := cache.Redeem(nonce)
+	g.Expect(err).To(BeNil())
+	err = cache.Redeem(nonce)
+	g.Expect(err).NotTo(BeNil())
+	var notAuth *NotAuthenticated
+	g.Expect(errors.As(err, &notAuth)).To(BeTrue())
+}
+
+// TestNonceCacheRedeemExpired tests that an expired nonce is rejected.
+func TestNonceCacheRedeemExpired(t *testing.T) {
+	g := NewGomegaWithT(t)
+	cache := &NonceCache{}
+	nonce := cache.Issue(time.Millisecond)
+	time.Sleep(time.Millisecond * 5)
+	err := cache.Redeem(nonce)
+	g.Expect(err).NotTo(BeNil())
+	var notAuth *NotAuthenticated
+	g.Expect(errors.As(err, &notAuth)).To(BeTrue())
+}
+
+// TestNonceCacheRedeemUnknown tests that an unknown nonce is rejected.
+func TestNonceCacheRedeemUnknown(t *testing.T) {
+	g := NewGomegaWithT(t)
+	cache := &NonceCache{}
+	err := cache.Redeem("bogus")
+	g.Expect(err).NotTo(BeNil())
+	var notAuth *NotAuthenticated
+	g.Expect(errors.As(err, &notAuth)).To(BeTrue())
+}
+
+// TestNonceCachePrune tests that expired nonces are pruned.
+func TestNonceCachePrune(t *testing.T) {
+	g := NewGomegaWithT(t)
+	cache := &NonceCache{}
+	cache.Issue(time.Millisecond)
+	cache.Issue(time.Millisecond)
+	valid := cache.Issue(time.Minute)
+	time.Sleep(time.Millisecond * 5)
+	// Issue triggers prune; expired entries removed.
+	cache.Issue(time.Minute)
+	g.Expect(cache.issued).To(HaveLen(2))
+	err := cache.Redeem(valid)
+	g.Expect(err).To(BeNil())
+}
