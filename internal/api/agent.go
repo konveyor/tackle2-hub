@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	agent "github.com/konveyor/agentic-controller/api/v1alpha1"
+	"github.com/konveyor/tackle2-hub/internal/auth"
 	"github.com/konveyor/tackle2-hub/shared/api"
 	core "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -722,10 +725,50 @@ func (h AgentHandler) RunCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	r.Namespace = Settings.Hub.Namespace
-	h.injectLabels(r)
-	err = h.Client(ctx).Create(context.TODO(), r)
+	client := h.Client(ctx)
+	secret, tokenId, err := h.tokenSecret(r)
 	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	err = client.Create(context.TODO(), secret)
+	if err != nil {
+		_ = auth.Idp().Revoke(tokenId)
+		_ = ctx.Error(err)
+		return
+	}
+	defer func() {
+		if err != nil {
+			_ = auth.Idp().Revoke(tokenId)
+			_ = client.Delete(context.TODO(), secret)
+		}
+	}()
+	h.injectLabels(r)
+	r.Namespace = Settings.Hub.Namespace
+	r.Spec.EnvFrom = append(
+		r.Spec.EnvFrom,
+		core.EnvFromSource{
+			SecretRef: &core.SecretEnvSource{
+				LocalObjectReference: core.LocalObjectReference{
+					Name: secret.Name,
+				},
+			},
+		})
+	err = client.Create(context.TODO(), r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	secret.OwnerReferences = []v1.OwnerReference{
+		{
+			Kind: "AgentRun",
+			Name: r.Name,
+			UID:  r.UID,
+		},
+	}
+	err = client.Update(context.TODO(), r)
+	if err != nil {
+		_ = client.Delete(context.TODO(), r)
 		_ = ctx.Error(err)
 		return
 	}
@@ -973,7 +1016,7 @@ func (h AgentHandler) WorkflowRunList(ctx *gin.Context) {
 // @success 201 {object} AgentWorkflowRun
 // @router /agent/workflowruns [post]
 // @param run body AgentWorkflowRun true "AgentWorkflowRun data"
-func (h AgentHandler) WorkflowRunCreate(ctx *gin.Context) {
+func (h *AgentHandler) WorkflowRunCreate(ctx *gin.Context) {
 	r := &AgentWorkflowRun{}
 	err := h.Bind(ctx, r)
 	if err != nil {
@@ -991,7 +1034,7 @@ func (h AgentHandler) WorkflowRunCreate(ctx *gin.Context) {
 }
 
 // acpKey reads the ACP secret key from a Secret.
-func (h AgentHandler) acpKey(ctx *gin.Context, name string) (key string, err error) {
+func (h *AgentHandler) acpKey(ctx *gin.Context, name string) (key string, err error) {
 	secret := &core.Secret{}
 	err = h.Client(ctx).Get(
 		context.TODO(),
@@ -1020,13 +1063,43 @@ func (h AgentHandler) acpKey(ctx *gin.Context, name string) (key string, err err
 }
 
 // injectLabels inject labels.
-func (h AgentHandler) injectLabels(r k8s.Object) {
+func (h *AgentHandler) injectLabels(r k8s.Object) {
 	m := r.GetLabels()
 	if m == nil {
 		m = make(map[string]string)
 		r.SetLabels(m)
 	}
 	m[ManagedLabel] = "true"
+}
+
+// tokenSecret returns a token secret.
+func (h *AgentHandler) tokenSecret(owner k8s.Object) (secret *core.Secret, tokenId uint, err error) {
+	idp := auth.Idp()
+	cache := idp.Cache()
+	sa, err := cache.FindSaByName("agent.harness")
+	if err != nil {
+		return
+	}
+	token, err := idp.NewToken(
+		sa.Subject,
+		time.Hour*24,
+		func(m *auth.Token) {
+			m.Description = fmt.Sprintf(
+				"%s.%s",
+				owner.GetObjectKind().GroupVersionKind().Kind,
+				owner.GetName())
+		})
+	if err != nil {
+		return
+	}
+	tokenId = token.ID
+	secret = &core.Secret{}
+	secret.Namespace = Settings.Namespace
+	secret.GenerateName = "agent-run-"
+	secret.StringData = map[string]string{
+		"token": token.Secret,
+	}
+	return
 }
 
 //
