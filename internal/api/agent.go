@@ -768,9 +768,10 @@ func (h AgentHandler) RunCreate(ctx *gin.Context) {
 	}
 	secret.OwnerReferences = []v1.OwnerReference{
 		{
-			Kind: "AgentRun",
-			Name: r.Name,
-			UID:  r.UID,
+			APIVersion: "v1alpha1",
+			Kind:       "AgentRun",
+			Name:       r.Name,
+			UID:        r.UID,
 		},
 	}
 	err = client.Update(context.TODO(), secret)
@@ -1072,9 +1073,10 @@ func (h *AgentHandler) WorkflowRunCreate(ctx *gin.Context) {
 	}
 	secret.OwnerReferences = []v1.OwnerReference{
 		{
-			Kind: "AgentRun",
-			Name: r.Name,
-			UID:  r.UID,
+			APIVersion: "v1alpha1",
+			Kind:       "AgentWorkflowRun",
+			Name:       r.Name,
+			UID:        r.UID,
 		},
 	}
 	err = client.Update(context.TODO(), secret)
