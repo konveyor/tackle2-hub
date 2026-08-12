@@ -30,7 +30,7 @@ type SCM interface {
 	Validate() (err error)
 	Fetch() (err error)
 	Update() (err error)
-	Branch(ref string) (err error)
+	Branch(ref string, options ...Option) (err error)
 	Commit(files []string, msg string) (err error)
 	Push() (err error)
 	Head() (commit string, err error)
@@ -103,7 +103,8 @@ func New(
 		}
 	}
 	switch remote.Kind {
-	case "subversion":
+	case "svn",
+		"subversion":
 		remote.Insecure, err = client.Setting.Bool("svn.insecure.enabled")
 		if err != nil {
 			return

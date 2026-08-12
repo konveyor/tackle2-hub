@@ -80,13 +80,20 @@ func (r *Git) Update() (err error) {
 	return
 }
 
-// Branch creates a branch with the given name if not exist and switch to it.
-func (r *Git) Branch(ref string) (err error) {
+// Branch switches to a branch with the given name.
+// Created if not exists, when the CREATE option is specified.
+func (r *Git) Branch(ref string, options ...Option) (err error) {
 	err = r.initHome()
 	if err != nil {
 		return
 	}
 	err = r.checkout(ref)
+	if err == nil {
+		return
+	}
+	if HasOption(options, CREATE) {
+		err = r.createBranch(ref)
+	}
 	return
 }
 
@@ -98,7 +105,7 @@ func (r *Git) Commit(files []string, msg string) (err error) {
 	}
 	err = r.addFiles(files)
 	if err != nil {
-		return err
+		return
 	}
 	cmd := r.git()
 	cmd.Dir = r.Path
@@ -107,7 +114,7 @@ func (r *Git) Commit(files []string, msg string) (err error) {
 	cmd.Options.Add("-m", msg)
 	err = cmd.Run()
 	if err != nil {
-		return err
+		return
 	}
 	err = r.push()
 	return
@@ -266,6 +273,22 @@ func (r *Git) checkout(ref string) (err error) {
 		}
 	}
 	err = r.pull()
+	return
+}
+
+// createBranch creates a branch.
+func (r *Git) createBranch(ref string) (err error) {
+	cmd := r.git()
+	cmd.Dir = r.Path
+	cmd.Options.Add("checkout", "-b", ref)
+	err = cmd.Run()
+	if err != nil {
+		return
+	}
+	cmd = r.git()
+	cmd.Dir = r.Path
+	cmd.Options.Add("push", "-u", "origin", ref)
+	err = cmd.Run()
 	return
 }
 

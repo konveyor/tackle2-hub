@@ -14,6 +14,10 @@ var (
 	Home = ""
 )
 
+const (
+	CREATE = scm.CREATE
+)
+
 func init() {
 	Home, _ = os.Getwd()
 }
@@ -23,6 +27,7 @@ type Remote = scm.Remote
 type Identity = scm.Identity
 type Proxy = scm.Proxy
 type ProxyMap = scm.ProxyMap
+type Option = scm.Option
 
 // New SCM repository factory.
 func New(db *gorm.DB, destDir string, remote Remote) (r SCM, err error) {

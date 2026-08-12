@@ -72,7 +72,7 @@ func (r *Subversion) Update() (err error) {
 // The branch is created as needed. The `ref` may be either:
 // - fully qualified URL (includes branch and root path)
 // - branch|tag path. (branches/stable).
-func (r *Subversion) Branch(ref string) (err error) {
+func (r *Subversion) Branch(ref string, options ...Option) (err error) {
 	err = r.initHome()
 	if err != nil {
 		return
@@ -93,7 +93,10 @@ func (r *Subversion) Branch(ref string) (err error) {
 		}
 	}()
 	err = branch.checkout()
-	if err != nil {
+	if err == nil {
+		return
+	}
+	if HasOption(options, CREATE) {
 		err = branch.createBranch(r.Remote.URL)
 	}
 	return
