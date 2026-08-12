@@ -103,7 +103,8 @@ func New(
 		}
 	}
 	switch remote.Kind {
-	case "subversion":
+	case "svn",
+		"subversion":
 		remote.Insecure, err = client.Setting.Bool("svn.insecure.enabled")
 		if err != nil {
 			return
