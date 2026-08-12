@@ -51,14 +51,11 @@ identity := &api.Identity{
 Populate the `Key` field with the private key content. Use
 `Password` for the key passphrase when the key is encrypted.
 
-SSH keys are added to the agent using the `shared/ssh` package.
-An SSH agent must be running before SCM operations are called.
-Importing `shared/ssh` starts an agent automatically via `init()`.
-Alternatively, an externally started agent may be used.
+An SSH agent is started automatically — both the Git and Subversion
+implementations import `shared/ssh`, which starts an agent via
+`init()`.
 
 ```go
-import _ "github.com/konveyor/tackle2-hub/shared/ssh"
-
 identity := &api.Identity{
     Name:     "git-ssh",
     Key:      "-----BEGIN OPENSSH PRIVATE KEY-----\n...",
