@@ -24,27 +24,6 @@ func init() {
 	Dir, _ = os.Getwd()
 }
 
-// Option mask.
-type Option byte
-
-// with populates the mask with the specified options.
-func (b *Option) with(options []Option) {
-	*b = 0
-	for _, opt := range options {
-		*b = *b | opt
-	}
-}
-
-// has returns true when the option (mask) has the option bit set.
-func (b *Option) has(opt Option) (has bool) {
-	has = *b&opt == opt
-	return
-}
-
-const (
-	CREATE = Option(0x01)
-)
-
 // SCM interface.
 type SCM interface {
 	Id() string

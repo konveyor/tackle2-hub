@@ -94,9 +94,7 @@ func (r *Subversion) Branch(ref string, options ...Option) (err error) {
 	}()
 	err = branch.checkout()
 	if err != nil {
-		opt := Option(0)
-		opt.with(options)
-		if opt.has(CREATE) {
+		if HasOption(options, CREATE) {
 			err = branch.createBranch(r.Remote.URL)
 		}
 	}

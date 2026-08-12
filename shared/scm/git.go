@@ -89,9 +89,7 @@ func (r *Git) Branch(ref string, options ...Option) (err error) {
 	}
 	err = r.checkout(ref)
 	if err != nil {
-		opt := Option(0)
-		opt.with(options)
-		if opt.has(CREATE) {
+		if HasOption(options, CREATE) {
 			err = r.createBranch(ref)
 		}
 	}
