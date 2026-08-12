@@ -141,6 +141,23 @@ func TestBranch(t *testing.T) {
 	g.Expect(commit).NotTo(gomega.BeEmpty())
 }
 
+// TestBranch verifies switching to the default branch.
+func TestDefaultBranch(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	client := newClient(t)
+	r := newGit(t, client)
+
+	err := r.Fetch()
+	g.Expect(err).To(gomega.BeNil())
+
+	err = r.Branch("")
+	g.Expect(err).To(gomega.BeNil())
+
+	commit, err := r.Head()
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(commit).NotTo(gomega.BeEmpty())
+}
+
 // TestBranchNotFound verifies that Branch without CREATE returns
 // an error when the branch does not exist.
 func TestBranchNotFound(t *testing.T) {
