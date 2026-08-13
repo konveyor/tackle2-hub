@@ -58,14 +58,17 @@ func (h *BaseHandler) Client(ctx *gin.Context) (client client.Client) {
 
 // Kind returns the k8s resource kind resolved by the scheme.
 func (h *BaseHandler) Kind(ctx *gin.Context, r client.Object) (kind string, err error) {
-	gvks, _, err := h.Client(ctx).Scheme().ObjectKinds(r)
+	scheme := h.Client(ctx).Scheme()
+	gvks, _, err := scheme.ObjectKinds(r)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
 	}
-	if len(gvks) > 0 {
-		kind = gvks[0].Kind
+	if len(gvks) == 0 {
+		err = liberr.New("kind not found")
+		return
 	}
+	kind = gvks[0].Kind
 	return
 }
 
