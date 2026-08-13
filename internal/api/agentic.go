@@ -763,7 +763,7 @@ func (h AgenticHandler) AgentRunCreate(ctx *gin.Context) {
 	}
 	secret.OwnerReferences = []v1.OwnerReference{
 		{
-			APIVersion: "v1alpha1",
+			APIVersion: agent.GroupVersion.String(),
 			Kind:       "AgentRun",
 			Name:       r.Name,
 			UID:        r.UID,
@@ -1100,7 +1100,7 @@ func (h *AgenticHandler) WorkflowRunCreate(ctx *gin.Context) {
 	}
 	secret.OwnerReferences = []v1.OwnerReference{
 		{
-			APIVersion: "v1alpha1",
+			APIVersion: agent.GroupVersion.String(),
 			Kind:       "AgentWorkflowRun",
 			Name:       r.Name,
 			UID:        r.UID,
