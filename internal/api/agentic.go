@@ -722,7 +722,11 @@ func (h AgenticHandler) AgentRunCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	kind := h.Kind(ctx, r)
+	kind, err := h.Kind(ctx, r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	r.SetGroupVersionKind(agent.GroupVersion.WithKind(kind))
 	client := h.Client(ctx)
 	secret, tokenId, err := h.tokenSecret(r)
@@ -1061,7 +1065,11 @@ func (h *AgenticHandler) WorkflowRunCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
-	kind := h.Kind(ctx, r)
+	kind, err := h.Kind(ctx, r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	r.SetGroupVersionKind(agent.GroupVersion.WithKind(kind))
 	client := h.Client(ctx)
 	secret, tokenId, err := h.tokenSecret(r)
