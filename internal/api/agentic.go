@@ -722,6 +722,8 @@ func (h AgenticHandler) AgentRunCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	kind := h.Kind(ctx, r)
+	r.SetGroupVersionKind(agent.GroupVersion.WithKind(kind))
 	client := h.Client(ctx)
 	secret, tokenId, err := h.tokenSecret(r)
 	if err != nil {
@@ -764,7 +766,7 @@ func (h AgenticHandler) AgentRunCreate(ctx *gin.Context) {
 	secret.OwnerReferences = []v1.OwnerReference{
 		{
 			APIVersion: agent.GroupVersion.String(),
-			Kind:       "AgentRun",
+			Kind:       kind,
 			Name:       r.Name,
 			UID:        r.UID,
 		},
@@ -1059,6 +1061,8 @@ func (h *AgenticHandler) WorkflowRunCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	kind := h.Kind(ctx, r)
+	r.SetGroupVersionKind(agent.GroupVersion.WithKind(kind))
 	client := h.Client(ctx)
 	secret, tokenId, err := h.tokenSecret(r)
 	if err != nil {
@@ -1101,7 +1105,7 @@ func (h *AgenticHandler) WorkflowRunCreate(ctx *gin.Context) {
 	secret.OwnerReferences = []v1.OwnerReference{
 		{
 			APIVersion: agent.GroupVersion.String(),
-			Kind:       "AgentWorkflowRun",
+			Kind:       kind,
 			Name:       r.Name,
 			UID:        r.UID,
 		},

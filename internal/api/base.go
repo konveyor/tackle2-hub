@@ -56,6 +56,15 @@ func (h *BaseHandler) Client(ctx *gin.Context) (client client.Client) {
 	return
 }
 
+// Kind returns the k8s resource kind resolved by the scheme.
+func (h *BaseHandler) Kind(ctx *gin.Context, r client.Object) (kind string) {
+	gvks, _, _ := h.Client(ctx).Scheme().ObjectKinds(r)
+	if len(gvks) > 0 {
+		kind = gvks[0].Kind
+	}
+	return
+}
+
 // WithCount report count.
 // Sets the X-Total header for pagination.
 // Returns an error when count exceeds the limited and
