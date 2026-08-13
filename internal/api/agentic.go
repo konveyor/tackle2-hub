@@ -668,7 +668,7 @@ func (h AgenticHandler) GatewayDelete(ctx *gin.Context) {
 // @tags runs
 // @produce json
 // @success 200 {object} AgentRun
-// @router /agentic/runs/{name} [get]
+// @router /agentic/agentruns/{name} [get]
 // @param name path string true "AgentRun name"
 func (h AgenticHandler) AgentRunGet(ctx *gin.Context) {
 	r := &AgentRun{}
@@ -692,7 +692,7 @@ func (h AgenticHandler) AgentRunGet(ctx *gin.Context) {
 // @tags runs
 // @produce json
 // @success 200 {object} []AgentRun
-// @router /agentic/runs [get]
+// @router /agentic/agentruns [get]
 func (h AgenticHandler) AgentRunList(ctx *gin.Context) {
 	list := &AgentRunList{}
 	err := h.Client(ctx).List(
@@ -713,7 +713,7 @@ func (h AgenticHandler) AgentRunList(ctx *gin.Context) {
 // @accept json
 // @produce json
 // @success 201 {object} AgentRun
-// @router /agentic/runs [post]
+// @router /agentic/agentruns [post]
 // @param run body AgentRun true "AgentRun data"
 func (h AgenticHandler) AgentRunCreate(ctx *gin.Context) {
 	r := &AgentRun{}
@@ -785,7 +785,7 @@ func (h AgenticHandler) AgentRunCreate(ctx *gin.Context) {
 // @tags runs
 // @produce json
 // @success 201 {object} string
-// @router /agentic/runs/{name}/acp [post]
+// @router /agentic/agentruns/{name}/acp/nonce [post]
 // @param name path string true "AgentRun name"
 func (h AgenticHandler) AgentRunConnectNonce(ctx *gin.Context) {
 	r := &AgentRun{}
@@ -810,7 +810,7 @@ func (h AgenticHandler) AgentRunConnectNonce(ctx *gin.Context) {
 // @description bidirectionally to the agent pod's ACP endpoint. Authenticated
 // @description by a nonce query parameter obtained from POST /agentic/runs/{name}/acp.
 // @tags runs
-// @router /agentic/runs/{name}/acp [get]
+// @router /agentic/agentruns/{name}/acp [get]
 // @param name path string true "AgentRun name"
 // @param nonce query string true "Single-use nonce"
 func (h AgenticHandler) AgentRunConnect(ctx *gin.Context) {
