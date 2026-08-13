@@ -19,6 +19,30 @@
     - name: adoptionplans
       verbs:
         - post
+    - name: agentic.agentruns
+      verbs:
+        - '*'
+    - name: agentic.agentruns.acp
+      verbs:
+        - '*'
+    - name: agentic.agents
+      verbs:
+        - get
+    - name: agentic.gateways
+      verbs:
+        - get
+    - name: agentic.skillcollections
+      verbs:
+        - '*'
+    - name: agentic.skills
+      verbs:
+        - '*'
+    - name: agentic.workflowruns
+      verbs:
+        - '*'
+    - name: agentic.workflows
+      verbs:
+        - '*'
     - name: analysis.profiles
       verbs:
         - delete
@@ -252,6 +276,30 @@
     - name: adoptionplans
       verbs:
         - post
+    - name: agentic.agentruns
+      verbs:
+        - '*'
+    - name: agentic.agentruns.acp
+      verbs:
+        - '*'
+    - name: agentic.agents
+      verbs:
+        - get
+    - name: agentic.gateways
+      verbs:
+        - get
+    - name: agentic.skillcollections
+      verbs:
+        - get
+    - name: agentic.skills
+      verbs:
+        - get
+    - name: agentic.workflowruns
+      verbs:
+        - '*'
+    - name: agentic.workflows
+      verbs:
+        - get
     - name: analysis.profiles
       verbs:
         - get
@@ -404,6 +452,30 @@
     - name: adoptionplans
       verbs:
         - post
+    - name: agentic.agentruns
+      verbs:
+        - get
+    - name: agentic.agentruns.acp
+      verbs:
+        - get
+    - name: agentic.agents
+      verbs:
+        - get
+    - name: agentic.gateways
+      verbs:
+        - get
+    - name: agentic.skillcollections
+      verbs:
+        - get
+    - name: agentic.skills
+      verbs:
+        - get
+    - name: agentic.workflowruns
+      verbs:
+        - get
+    - name: agentic.workflows
+      verbs:
+        - get
     - name: analysis.profiles
       verbs:
         - get
