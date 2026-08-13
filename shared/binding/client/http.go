@@ -818,6 +818,10 @@ func (r *Client) restError(response *http.Response) (err error) {
 		return
 	}
 	switch status {
+	case http.StatusBadRequest:
+		restError := &BadRequestError{}
+		restError.With(response)
+		err = restError
 	case http.StatusConflict:
 		restError := &Conflict{}
 		restError.With(response)

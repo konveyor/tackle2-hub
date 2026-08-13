@@ -115,6 +115,46 @@ func TestServiceAccount(t *testing.T) {
 	g.Expect(errors.Is(err, &api.NotFound{})).To(BeTrue())
 }
 
+// TestServiceAccountZeroRoleRef verifies that a service account referencing a
+// role with a zero-valued id (id=0) is rejected with 400 (Bad Request) by the
+// binding validation before reaching the database.
+func TestServiceAccountZeroRoleRef(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// Get available scopes from the hub
+	scopes, err := client.Scope.List()
+	g.Expect(err).To(BeNil())
+	g.Expect(len(scopes)).Should(BeNumerically(">=", 1))
+
+	// Create a valid role to reference alongside the invalid one.
+	role := &api.Role{
+		Name: "sa-zero-role",
+		Scopes: []string{
+			scopes[0].Name,
+		},
+	}
+	err = client.Role.Create(role)
+	g.Expect(err).To(BeNil())
+	t.Cleanup(func() {
+		_ = client.Role.Delete(role.ID)
+	})
+
+	// CREATE: A zero-valued role ref (id=0) must be rejected.
+	sa := &api.ServiceAccount{
+		Name: "zero-role-sa",
+		Roles: []api.Ref{
+			{ID: role.ID},
+			{ID: 0},
+		},
+	}
+	err = client.ServiceAccount.Create(sa)
+	g.Expect(err).ToNot(BeNil())
+	g.Expect(errors.Is(err, &api.BadRequestError{})).To(BeTrue())
+
+	// The service account must not have been created.
+	g.Expect(sa.ID).To(BeZero())
+}
+
 func TestServiceAccountToken(t *testing.T) {
 	g := NewGomegaWithT(t)
 
