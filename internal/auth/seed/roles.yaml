@@ -455,9 +455,6 @@
     - name: agentic.agentruns
       verbs:
         - get
-    - name: agentic.agentruns.acp
-      verbs:
-        - get
     - name: agentic.agents
       verbs:
         - get
