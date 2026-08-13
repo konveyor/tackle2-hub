@@ -5168,6 +5168,8 @@ func TestNonceCacheIssue(t *testing.T) {
 // TestNonceCacheRedeem tests that a valid nonce is redeemed successfully.
 func TestNonceCacheRedeem(t *testing.T) {
 	g := NewGomegaWithT(t)
+	Settings.Auth.Required = true
+	defer func() { Settings.Auth.Required = false }()
 	cache := &NonceCache{}
 	nonce := cache.Issue(time.Second * 30)
 	err := cache.Redeem(nonce)
@@ -5177,6 +5179,8 @@ func TestNonceCacheRedeem(t *testing.T) {
 // TestNonceCacheRedeemOnce tests that a nonce cannot be redeemed twice.
 func TestNonceCacheRedeemOnce(t *testing.T) {
 	g := NewGomegaWithT(t)
+	Settings.Auth.Required = true
+	defer func() { Settings.Auth.Required = false }()
 	cache := &NonceCache{}
 	nonce := cache.Issue(time.Second * 30)
 	err := cache.Redeem(nonce)
@@ -5190,6 +5194,8 @@ func TestNonceCacheRedeemOnce(t *testing.T) {
 // TestNonceCacheRedeemExpired tests that an expired nonce is rejected.
 func TestNonceCacheRedeemExpired(t *testing.T) {
 	g := NewGomegaWithT(t)
+	Settings.Auth.Required = true
+	defer func() { Settings.Auth.Required = false }()
 	cache := &NonceCache{}
 	nonce := cache.Issue(time.Millisecond)
 	time.Sleep(time.Millisecond * 5)
@@ -5202,6 +5208,8 @@ func TestNonceCacheRedeemExpired(t *testing.T) {
 // TestNonceCacheRedeemUnknown tests that an unknown nonce is rejected.
 func TestNonceCacheRedeemUnknown(t *testing.T) {
 	g := NewGomegaWithT(t)
+	Settings.Auth.Required = true
+	defer func() { Settings.Auth.Required = false }()
 	cache := &NonceCache{}
 	err := cache.Redeem("bogus")
 	g.Expect(err).NotTo(BeNil())
