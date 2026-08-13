@@ -24,7 +24,7 @@ type Archetype struct {
 	Risk              string          `json:"risk"`
 	Confidence        int             `json:"confidence"`
 	Review            *Ref            `json:"review"`
-	Profiles          []TargetProfile `json:"profiles" yaml:",omitempty"`
+	Profiles          []TargetProfile `json:"profiles" yaml:",omitempty" binding:"dive"`
 }
 
 // Generator REST resource.
