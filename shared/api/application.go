@@ -17,16 +17,16 @@ type Application struct {
 	Coordinates     *Document     `json:"coordinates"`
 	Review          *Ref          `json:"review"`
 	Comments        string        `json:"comments"`
-	Identities      []IdentityRef `json:"identities"`
-	Tags            []TagRef      `json:"tags"`
+	Identities      []IdentityRef `json:"identities" binding:"dive"`
+	Tags            []TagRef      `json:"tags" binding:"dive"`
 	BusinessService *Ref          `json:"businessService" yaml:"businessService"`
 	Owner           *Ref          `json:"owner"`
-	Contributors    []Ref         `json:"contributors"`
+	Contributors    []Ref         `json:"contributors" binding:"dive"`
 	MigrationWave   *Ref          `json:"migrationWave" yaml:"migrationWave"`
 	Platform        *Ref          `json:"platform"`
-	Archetypes      []Ref         `json:"archetypes"`
-	Assessments     []Ref         `json:"assessments"`
-	Manifests       []Ref         `json:"manifests"`
+	Archetypes      []Ref         `json:"archetypes" binding:"dive"`
+	Assessments     []Ref         `json:"assessments" binding:"dive"`
+	Manifests       []Ref         `json:"manifests" binding:"dive"`
 	Assessed        bool          `json:"assessed"`
 	Risk            string        `json:"risk"`
 	Confidence      int           `json:"confidence"`
@@ -90,7 +90,7 @@ type IdentityRef struct {
 // Stakeholders REST resource for updating application stakeholders.
 type Stakeholders struct {
 	Owner        *Ref  `json:"owner"`
-	Contributors []Ref `json:"contributors"`
+	Contributors []Ref `json:"contributors" binding:"dive"`
 }
 
 // TagCategory REST resource.
@@ -98,7 +98,7 @@ type TagCategory struct {
 	Resource `yaml:",inline"`
 	Name     string `json:"name" binding:"required"`
 	Color    string `json:"colour" yaml:"colour"`
-	Tags     []Ref  `json:"tags"`
+	Tags     []Ref  `json:"tags" binding:"dive"`
 	// Deprecated
 	Username string `json:"username,omitempty"` // Deprecated
 	Rank     uint   `json:"rank,omitempty"`     // Deprecated
@@ -116,12 +116,12 @@ type Stakeholder struct {
 	Resource         `yaml:",inline"`
 	Name             string `json:"name" binding:"required"`
 	Email            string `json:"email" binding:"required"`
-	Groups           []Ref  `json:"stakeholderGroups" yaml:"stakeholderGroups"`
-	BusinessServices []Ref  `json:"businessServices" yaml:"businessServices"`
+	Groups           []Ref  `json:"stakeholderGroups" yaml:"stakeholderGroups" binding:"dive"`
+	BusinessServices []Ref  `json:"businessServices" yaml:"businessServices" binding:"dive"`
 	JobFunction      *Ref   `json:"jobFunction" yaml:"jobFunction"`
-	Owns             []Ref  `json:"owns"`
-	Contributes      []Ref  `json:"contributes"`
-	MigrationWaves   []Ref  `json:"migrationWaves" yaml:"migrationWaves"`
+	Owns             []Ref  `json:"owns" binding:"dive"`
+	Contributes      []Ref  `json:"contributes" binding:"dive"`
+	MigrationWaves   []Ref  `json:"migrationWaves" yaml:"migrationWaves" binding:"dive"`
 }
 
 // StakeholderGroup REST resource.
@@ -129,15 +129,15 @@ type StakeholderGroup struct {
 	Resource       `yaml:",inline"`
 	Name           string `json:"name" binding:"required"`
 	Description    string `json:"description"`
-	Stakeholders   []Ref  `json:"stakeholders"`
-	MigrationWaves []Ref  `json:"migrationWaves" yaml:"migrationWaves"`
+	Stakeholders   []Ref  `json:"stakeholders" binding:"dive"`
+	MigrationWaves []Ref  `json:"migrationWaves" yaml:"migrationWaves" binding:"dive"`
 }
 
 // JobFunction REST resource.
 type JobFunction struct {
 	Resource     `yaml:",inline"`
 	Name         string `json:"name" binding:"required"`
-	Stakeholders []Ref  `json:"stakeholders"`
+	Stakeholders []Ref  `json:"stakeholders" binding:"dive"`
 }
 
 // BusinessService REST resource.
@@ -179,9 +179,9 @@ type MigrationWave struct {
 	Name              string    `json:"name"`
 	StartDate         time.Time `json:"startDate" yaml:"startDate" binding:"required"`
 	EndDate           time.Time `json:"endDate" yaml:"endDate" binding:"required,gtfield=StartDate"`
-	Applications      []Ref     `json:"applications"`
-	Stakeholders      []Ref     `json:"stakeholders"`
-	StakeholderGroups []Ref     `json:"stakeholderGroups" yaml:"stakeholderGroups"`
+	Applications      []Ref     `json:"applications" binding:"dive"`
+	Stakeholders      []Ref     `json:"stakeholders" binding:"dive"`
+	StakeholderGroups []Ref     `json:"stakeholderGroups" yaml:"stakeholderGroups" binding:"dive"`
 }
 
 // Import REST resource.

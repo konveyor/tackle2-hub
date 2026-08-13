@@ -4,7 +4,7 @@ package api
 type TargetProfile struct {
 	Resource        `yaml:",inline"`
 	Name            string `json:"name" binding:"required"`
-	Generators      []Ref  `json:"generators"`
+	Generators      []Ref  `json:"generators" binding:"dive"`
 	AnalysisProfile *Ref   `json:"analysisProfile,omitempty" yaml:"analysisProfile,omitempty"`
 }
 
@@ -14,12 +14,12 @@ type Archetype struct {
 	Name              string          `json:"name" yaml:"name"`
 	Description       string          `json:"description" yaml:"description"`
 	Comments          string          `json:"comments" yaml:"comments"`
-	Tags              []TagRef        `json:"tags" yaml:"tags"`
-	Criteria          []TagRef        `json:"criteria" yaml:"criteria"`
-	Stakeholders      []Ref           `json:"stakeholders" yaml:"stakeholders"`
-	StakeholderGroups []Ref           `json:"stakeholderGroups" yaml:"stakeholderGroups"`
-	Applications      []Ref           `json:"applications" yaml:"applications"`
-	Assessments       []Ref           `json:"assessments" yaml:"assessments"`
+	Tags              []TagRef        `json:"tags" yaml:"tags" binding:"dive"`
+	Criteria          []TagRef        `json:"criteria" yaml:"criteria" binding:"dive"`
+	Stakeholders      []Ref           `json:"stakeholders" yaml:"stakeholders" binding:"dive"`
+	StakeholderGroups []Ref           `json:"stakeholderGroups" yaml:"stakeholderGroups" binding:"dive"`
+	Applications      []Ref           `json:"applications" yaml:"applications" binding:"dive"`
+	Assessments       []Ref           `json:"assessments" yaml:"assessments" binding:"dive"`
 	Assessed          bool            `json:"assessed"`
 	Risk              string          `json:"risk"`
 	Confidence        int             `json:"confidence"`
@@ -37,5 +37,5 @@ type Generator struct {
 	Params      Map         `json:"params"`
 	Values      Map         `json:"values"`
 	Identity    *Ref        `json:"identity,omitempty" yaml:",omitempty"`
-	Profiles    []Ref       `json:"profiles"`
+	Profiles    []Ref       `json:"profiles" binding:"dive"`
 }

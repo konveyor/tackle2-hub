@@ -732,11 +732,12 @@ func (d *Data) addTokenScopes(m *Token) {
 func (d *Data) addUserScopes(m *User) {
 	scopes := []string{}
 	for _, r := range m.Roles {
-		r, found := d.roleById[r.ID]
+		id := r.ID
+		r, found := d.roleById[id]
 		if !found {
 			err := &NotFound{
 				Resource: "role",
-				Id:       strconv.Itoa(int(r.ID)),
+				Id:       strconv.Itoa(int(id)),
 			}
 			Log.Info(err.Error())
 			continue
@@ -752,11 +753,12 @@ func (d *Data) addUserScopes(m *User) {
 func (d *Data) addSaScopes(m *ServiceAccount) {
 	scopes := []string{}
 	for _, r := range m.Roles {
-		r, found := d.roleById[r.ID]
+		id := r.ID
+		r, found := d.roleById[id]
 		if !found {
 			err := &NotFound{
 				Resource: "role",
-				Id:       strconv.Itoa(int(r.ID)),
+				Id:       strconv.Itoa(int(id)),
 			}
 			Log.Info(err.Error())
 			continue

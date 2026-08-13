@@ -7,8 +7,8 @@ type Assessment struct {
 	Archetype         *Ref         `json:"archetype,omitempty" yaml:",omitempty" binding:"excluded_with=Application"`
 	Questionnaire     Ref          `json:"questionnaire" binding:"required"`
 	Sections          []Section    `json:"sections" binding:"dive"`
-	Stakeholders      []Ref        `json:"stakeholders"`
-	StakeholderGroups []Ref        `json:"stakeholderGroups" yaml:"stakeholderGroups"`
+	Stakeholders      []Ref        `json:"stakeholders" binding:"dive"`
+	StakeholderGroups []Ref        `json:"stakeholderGroups" yaml:"stakeholderGroups" binding:"dive"`
 	Risk              string       `json:"risk"`
 	Confidence        int          `json:"confidence"`
 	Status            string       `json:"status"`
