@@ -2,7 +2,9 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -1240,6 +1242,8 @@ func (r *AgentConn) Relay() {
 			"ACP connection failed.",
 			"URL",
 			u)
+		code, reason := r.closeCode(err)
+		r.sendClose(client, code, reason)
 		return
 	}
 	defer func() {
@@ -1270,7 +1274,10 @@ func (r *AgentConn) wsURL() (u string) {
 	return
 }
 
-// relay frames until either connection closed.
+// relay copies frames from input to output until either
+// connection is closed. when the input read fails, a close
+// frame is forwarded to output so the peer receives a close
+// code rather than a bare disconnect.
 func (r *AgentConn) relay(done chan struct{}, input, output *websocket.Conn) {
 	defer func() {
 		recover()
@@ -1285,6 +1292,8 @@ func (r *AgentConn) relay(done chan struct{}, input, output *websocket.Conn) {
 	for {
 		mt, msg, err := input.ReadMessage()
 		if err != nil {
+			code, reason := r.relayCloseCode(err)
+			r.sendClose(output, code, reason)
 			return
 		}
 		err = output.WriteMessage(mt, msg)
@@ -1292,6 +1301,44 @@ func (r *AgentConn) relay(done chan struct{}, input, output *websocket.Conn) {
 			return
 		}
 	}
+}
+
+// sendClose writes a WebSocket close frame with the given code and reason.
+func (r *AgentConn) sendClose(conn *websocket.Conn, code int, reason string) {
+	_ = conn.WriteControl(
+		websocket.CloseMessage,
+		websocket.FormatCloseMessage(code, reason),
+		time.Now().Add(time.Second))
+}
+
+// closeCode maps a dial error to the proper close code.
+func (r *AgentConn) closeCode(err error) (code int, reason string) {
+	var dnsErr *net.DNSError
+	if errors.As(err, &dnsErr) {
+		code = 4404
+		reason = "run not available"
+		return
+	}
+	code = websocket.CloseTryAgainLater
+	reason = "sandbox not ready"
+	return
+}
+
+// relayCloseCode derives the close code to forward to the
+// surviving peer based on the read error from the other connection.
+func (r *AgentConn) relayCloseCode(err error) (code int, reason string) {
+	var closeErr *websocket.CloseError
+	if errors.As(err, &closeErr) {
+		code = closeErr.Code
+		reason = closeErr.Text
+	}
+	if code == 0 ||
+		code == websocket.CloseNoStatusReceived ||
+		code == websocket.CloseAbnormalClosure {
+		code = websocket.CloseGoingAway
+		reason = "peer connection lost"
+	}
+	return
 }
 
 //
