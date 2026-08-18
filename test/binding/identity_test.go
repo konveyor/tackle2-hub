@@ -233,7 +233,7 @@ func TestIdentityFind(t *testing.T) {
 	// Create application with first identity
 	application := &api.Application{
 		Name:       "Test App for Identity Find",
-		Identities: []api.IdentityRef{{ID: direct.ID}},
+		Identities: []api.IdentityRef{{ID: direct.ID, Role: "source"}},
 	}
 	err = client.Application.Create(application)
 	g.Expect(err).To(BeNil())

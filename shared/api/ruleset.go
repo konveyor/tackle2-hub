@@ -9,7 +9,7 @@ type RuleSet struct {
 	Rules       []Rule      `json:"rules"`
 	Repository  *Repository `json:"repository,omitempty"`
 	Identity    *Ref        `json:"identity,omitempty"`
-	DependsOn   []Ref       `json:"dependsOn" yaml:"dependsOn"`
+	DependsOn   []Ref       `json:"dependsOn" yaml:"dependsOn" binding:"dive"`
 }
 
 // Rule - REST Resource.

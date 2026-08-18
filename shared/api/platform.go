@@ -7,7 +7,7 @@ type Platform struct {
 	Name         string `json:"name"`
 	URL          string `json:"url"`
 	Identity     *Ref   `json:"identity,omitempty" yaml:",omitempty"`
-	Applications []Ref  `json:"applications,omitempty" yaml:",omitempty"`
+	Applications []Ref  `json:"applications,omitempty" yaml:",omitempty" binding:"dive"`
 }
 
 // Manifest REST resource.

@@ -176,9 +176,9 @@ type ApScope struct {
 
 // ApRules analysis rules.
 type ApRules struct {
-	Targets    []ApTargetRef `json:"targets"`
+	Targets    []ApTargetRef `json:"targets" binding:"dive"`
 	Labels     InExList      `json:"labels,omitempty" yaml:",omitempty"`
-	Files      []Ref         `json:"files,omitempty" yaml:",omitempty"`
+	Files      []Ref         `json:"files,omitempty" yaml:",omitempty" binding:"dive"`
 	Repository *Repository   `json:"repository,omitempty" yaml:",omitempty"`
 	Identity   *Ref          `json:"identity,omitempty" yaml:",omitempty"`
 }
