@@ -1320,10 +1320,18 @@ func (r *AgentConn) relay(id int8, done chan int8, input, output *websocket.Conn
 
 // sendClose writes a WebSocket close frame with the given code and reason.
 func (r *AgentConn) sendClose(conn *websocket.Conn, code int, reason string) {
-	_ = conn.WriteControl(
+	err := conn.WriteControl(
 		websocket.CloseMessage,
 		websocket.FormatCloseMessage(code, reason),
 		time.Now().Add(time.Second))
+	if err != nil {
+		Log.Error(
+			err,
+			"Send (CTL) failed.",
+			"URL", r.wsURL(),
+			"code", code,
+			"reason", reason)
+	}
 }
 
 // closeCode maps a dial error to the proper close code.
