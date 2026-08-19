@@ -1255,6 +1255,7 @@ func (r *AgentConn) Relay() {
 	go r.relay(1, done, remote, client)
 	go r.relay(2, done, client, remote)
 	<-done
+	<-done
 }
 
 // wsURL returns the websocket URL.
