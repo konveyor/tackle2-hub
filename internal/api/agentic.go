@@ -8,10 +8,12 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	liberr "github.com/jortel/go-utils/error"
 	agent "github.com/konveyor/agentic-controller/api/v1alpha1"
 	"github.com/konveyor/tackle2-hub/internal/auth"
 	"github.com/konveyor/tackle2-hub/shared/api"
@@ -1249,9 +1251,9 @@ func (r *AgentConn) Relay() {
 	defer func() {
 		_ = remote.Close()
 	}()
-	done := make(chan struct{})
-	go r.relay(done, remote, client)
-	go r.relay(done, client, remote)
+	done := make(chan int8, 2)
+	go r.relay(1, done, remote, client)
+	go r.relay(2, done, client, remote)
 	<-done
 }
 
@@ -1277,22 +1279,34 @@ func (r *AgentConn) wsURL() (u string) {
 // relay copies frames from input to output until either
 // connection is closed. when the input read fails, a close
 // frame is forwarded to output so the peer receives a close
-// code rather than a bare disconnect.
-func (r *AgentConn) relay(done chan struct{}, input, output *websocket.Conn) {
+// code rather than a bare disconnect. Completion is signaled on
+// the (buffered) done channel so the first goroutine to finish
+// unblocks Relay; the buffer ensures the second goroutine never
+// blocks after Relay has returned.
+func (r *AgentConn) relay(id int8, done chan int8, input, output *websocket.Conn) {
 	defer func() {
-		recover()
+		if p := recover(); p != nil {
+			err := liberr.Recovered(p)
+			log.Error(
+				err,
+				"Recovered.",
+				"id",
+				id)
+		}
 	}()
-	defer close(done)
 	defer func() {
-		_ = input.Close()
+		done <- id
 	}()
 	defer func() {
 		_ = output.Close()
 	}()
+	defer func() {
+		_ = input.Close()
+	}()
 	for {
 		mt, msg, err := input.ReadMessage()
 		if err != nil {
-			code, reason := r.relayCloseCode(err)
+			code, reason := r.relayedCloseCode(err)
 			r.sendClose(output, code, reason)
 			return
 		}
@@ -1312,6 +1326,11 @@ func (r *AgentConn) sendClose(conn *websocket.Conn, code int, reason string) {
 }
 
 // closeCode maps a dial error to the proper close code.
+// A DNS failure indicates the sandbox service does not exist and
+// is reported as not-found. A refused connection or timeout
+// indicates the sandbox is not yet accepting connections and is
+// reported as retryable. Any other failure is reported as an
+// internal error rather than misleading the client into retrying.
 func (r *AgentConn) closeCode(err error) (code int, reason string) {
 	var dnsErr *net.DNSError
 	if errors.As(err, &dnsErr) {
@@ -1319,24 +1338,49 @@ func (r *AgentConn) closeCode(err error) (code int, reason string) {
 		reason = "run not available"
 		return
 	}
-	code = websocket.CloseTryAgainLater
-	reason = "sandbox not ready"
+	var netErr net.Error
+	if errors.Is(err, syscall.ECONNREFUSED) ||
+		(errors.As(err, &netErr) && netErr.Timeout()) {
+		code = websocket.CloseTryAgainLater
+		reason = "sandbox not ready"
+		return
+	}
+	code = websocket.CloseInternalServerErr
+	reason = "sandbox connection failed"
 	return
 }
 
-// relayCloseCode derives the close code to forward to the
+// relayedCloseCode derives the close code to forward to the
 // surviving peer based on the read error from the other connection.
-func (r *AgentConn) relayCloseCode(err error) (code int, reason string) {
+// Codes that are not valid to send in a close frame are replaced
+// with CloseGoingAway.
+func (r *AgentConn) relayedCloseCode(err error) (code int, reason string) {
 	var closeErr *websocket.CloseError
-	if errors.As(err, &closeErr) {
+	if errors.As(err, &closeErr) && r.maySend(closeErr.Code) {
 		code = closeErr.Code
 		reason = closeErr.Text
+		return
 	}
-	if code == 0 ||
-		code == websocket.CloseNoStatusReceived ||
-		code == websocket.CloseAbnormalClosure {
-		code = websocket.CloseGoingAway
-		reason = "peer connection lost"
+	code = websocket.CloseGoingAway
+	reason = "peer connection lost"
+	return
+}
+
+// maySend determines whether the close code is valid to send
+// in a close frame. The reserved codes 1004, 1005, 1006, and 1015
+// must not be sent per RFC 6455.
+func (r *AgentConn) maySend(code int) (valid bool) {
+	switch {
+	case code >= 1000 && code <= 1014:
+		switch code {
+		case 1004,
+			websocket.CloseNoStatusReceived,
+			websocket.CloseAbnormalClosure:
+		default:
+			valid = true
+		}
+	case code >= 3000 && code <= 4999:
+		valid = true
 	}
 	return
 }
