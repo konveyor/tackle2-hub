@@ -1325,12 +1325,11 @@ func (r *AgentConn) sendClose(conn *websocket.Conn, code int, reason string) {
 		websocket.FormatCloseMessage(code, reason),
 		time.Now().Add(time.Second))
 	if err != nil {
-		Log.Error(
+		Log.V(1).Error(
 			err,
-			"Send (CTL) failed.",
-			"URL", r.wsURL(),
-			"code", code,
-			"reason", reason)
+			"Send (CTL) message failed.",
+			"URL",
+			r.wsURL())
 	}
 }
 
