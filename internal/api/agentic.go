@@ -1340,7 +1340,7 @@ func (r *AgentConn) sendClose(conn *websocket.Conn, code int, reason string) {
 		websocket.CloseMessage,
 		websocket.FormatCloseMessage(code, reason),
 		time.Now().Add(time.Second))
-	if err != nil {
+	if err != nil && !errors.Is(err, websocket.ErrCloseSent) {
 		Log.V(1).Error(
 			err,
 			"Send (CTL) message failed.",
