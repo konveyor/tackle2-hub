@@ -675,3 +675,8 @@
     - name: targets
       verbs:
         - get
+    - name: tokens
+      verbs:
+        - post
+        - get
+        - delete

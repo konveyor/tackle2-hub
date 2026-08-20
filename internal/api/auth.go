@@ -1299,28 +1299,13 @@ func (h AuthHandler) TokenList(ctx *gin.Context) {
 
 // TokenDelete godoc
 // @summary Delete a token.
-// @description Delete a token.
+// @description Revoke a token and its associated grant.
 // @tags tokens
 // @success 204
 // @router /auth/tokens/{id} [delete]
 // @param id path int true "Token ID"
 func (h AuthHandler) TokenDelete(ctx *gin.Context) {
-	id := h.pk(ctx)
-	m := &model.Token{}
-	err := h.DB(ctx).First(m, id).Error
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-	err = h.DB(ctx).Delete(m).Error
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-
-	auth.Idp().Cache().TokenDeleted(id)
-
-	h.Status(ctx, http.StatusNoContent)
+	h.TokenRevoke(ctx)
 }
 
 // TokenRevoke godoc
