@@ -1299,7 +1299,7 @@ func (h AuthHandler) TokenList(ctx *gin.Context) {
 
 // TokenDelete godoc
 // @summary Delete a token.
-// @description Revoke a token and its associated grant.
+// @description Delete a token and its associated grant.
 // @tags tokens
 // @success 204
 // @router /auth/tokens/{id} [delete]
