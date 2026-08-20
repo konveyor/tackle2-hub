@@ -1305,14 +1305,30 @@ func (r *AgentConn) relay(id int8, done chan int8, input, output *websocket.Conn
 		_ = input.Close()
 	}()
 	for {
+		select {
+		case <-r.ctx.Done():
+			r.sendClose(
+				output,
+				websocket.CloseGoingAway,
+				"request cancelled")
+			return
+		default:
+		}
+		_ = input.SetReadDeadline(time.Now().Add(time.Hour))
 		mt, msg, err := input.ReadMessage()
 		if err != nil {
 			code, reason := r.relayedCloseCode(err)
 			r.sendClose(output, code, reason)
 			return
 		}
+		_ = output.SetWriteDeadline(time.Now().Add(time.Minute))
 		err = output.WriteMessage(mt, msg)
 		if err != nil {
+			Log.V(1).Error(
+				err,
+				"Write failed.",
+				"URL",
+				r.wsURL())
 			return
 		}
 	}
