@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"errors"
 	"fmt"
 )
 
@@ -23,7 +22,6 @@ func (r *NotFound) Error() (s string) {
 
 // Is returns true if the error is a NotFound.
 func (r *NotFound) Is(err error) (matched bool) {
-	var target *NotFound
-	matched = errors.As(err, &target)
+	_, matched = err.(*NotFound)
 	return
 }

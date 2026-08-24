@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/konveyor/tackle2-hub/internal/auth/cache"
@@ -21,8 +20,7 @@ func (e *NotAuthenticated) Error() (s string) {
 }
 
 func (e *NotAuthenticated) Is(err error) (matched bool) {
-	notAuth := &NotAuthenticated{}
-	matched = errors.As(err, &notAuth)
+	_, matched = err.(*NotAuthenticated)
 	return
 }
 
@@ -37,8 +35,7 @@ func (e *NotValid) Error() (s string) {
 }
 
 func (e *NotValid) Is(err error) (matched bool) {
-	notValid := &NotValid{}
-	matched = errors.As(err, &notValid)
+	_, matched = err.(*NotValid)
 	return
 }
 
@@ -54,8 +51,7 @@ func (r *BadRequestError) Error() string {
 
 // Is returns true if the error is a BadRequestError.
 func (r *BadRequestError) Is(err error) (matched bool) {
-	var target *BadRequestError
-	matched = errors.As(err, &target)
+	_, matched = err.(*BadRequestError)
 	return
 }
 
@@ -68,8 +64,7 @@ func (e *ScopeNotFound) Error() string {
 }
 
 func (e *ScopeNotFound) Is(err error) (matched bool) {
-	var inst *ScopeNotFound
-	matched = errors.As(err, &inst)
+	_, matched = err.(*ScopeNotFound)
 	return
 }
 

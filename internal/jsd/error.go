@@ -1,7 +1,5 @@
 package jsd
 
-import "errors"
-
 type NotFound struct {
 }
 
@@ -10,8 +8,7 @@ func (e *NotFound) Error() string {
 }
 
 func (e *NotFound) Is(err error) (matched bool) {
-	var inst *NotFound
-	matched = errors.As(err, &inst)
+	_, matched = err.(*NotFound)
 	return
 }
 
@@ -24,7 +21,6 @@ func (e *NotValid) Error() string {
 }
 
 func (e *NotValid) Is(err error) (matched bool) {
-	var inst *NotValid
-	matched = errors.As(err, &inst)
+	_, matched = err.(*NotValid)
 	return
 }
