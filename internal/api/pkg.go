@@ -79,6 +79,7 @@ func All() []Handler {
 	return []Handler{
 		&AddonHandler{},
 		&AdoptionPlanHandler{},
+		&AgenticHandler{},
 		&AnalysisProfileHandler{},
 		&AnalysisHandler{},
 		&ApplicationHandler{},

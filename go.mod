@@ -15,6 +15,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
 	github.com/jortel/go-utils v0.1.5
+	github.com/konveyor/agentic-controller/api v0.0.0-20260810121904-72f126d1c913
 	github.com/konveyor/tackle2-hub/shared v0.0.0
 	github.com/konveyor/tackle2-seed v0.0.0-20250825214317-99de80681f88
 	github.com/mattn/go-sqlite3 v1.14.17
