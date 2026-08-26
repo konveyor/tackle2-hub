@@ -1,7 +1,6 @@
 package reflect
 
 import (
-	"errors"
 	"fmt"
 )
 
@@ -19,7 +18,6 @@ func (e *FieldNotValid) Error() string {
 }
 
 func (e *FieldNotValid) Is(err error) (matched bool) {
-	var inst *FieldNotValid
-	matched = errors.As(err, &inst)
+	_, matched = err.(*FieldNotValid)
 	return
 }

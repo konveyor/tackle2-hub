@@ -573,6 +573,17 @@ func (h *BaseHandler) pk(ctx *gin.Context) (id uint) {
 **All exported functions and methods must have docstrings** that explain what the function does. Use standard
 godoc format: start with the function/method name followed by what it does.
 
+Methods that satisfy a well-known standard-library interface or convention are exempt — their name and contract
+are already defined by that interface, so a docstring would just restate it. This includes, for example:
+
+- `error` — `Error() string`
+- error-inspection hooks — `Is(error) bool`, `As(any) bool`, `Unwrap() error` / `Unwrap() []error`
+- `fmt.Stringer` — `String() string`
+- `io.Writer` / `io.Reader` — `Write([]byte) (int, error)` / `Read([]byte) (int, error)`
+- other standard interfaces — e.g. `sort.Interface`, `json.Marshaler`/`Unmarshaler`, `http.Handler`
+
+Still add a docstring when such an implementation has non-obvious behavior worth calling out.
+
 **Godoc Format Pattern:**
 ```
 // FunctionName does something and returns something.

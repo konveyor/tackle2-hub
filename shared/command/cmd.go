@@ -6,7 +6,6 @@ package command
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"os/exec"
@@ -153,7 +152,6 @@ func (e *FailedError) Error() (s string) {
 }
 
 func (e *FailedError) Is(err error) (matched bool) {
-	inst := &FailedError{}
-	matched = errors.As(err, &inst)
+	_, matched = err.(*FailedError)
 	return
 }

@@ -1,7 +1,6 @@
 package api
 
 import (
-	"errors"
 	"io"
 	"net/http"
 	"strconv"
@@ -18,8 +17,7 @@ type RestError struct {
 }
 
 func (e *RestError) Is(err error) (matched bool) {
-	var inst *RestError
-	matched = errors.As(err, &inst)
+	_, matched = err.(*RestError)
 	return
 }
 
@@ -59,8 +57,7 @@ type BadRequestError struct {
 }
 
 func (r *BadRequestError) Is(err error) (matched bool) {
-	var target *BadRequestError
-	matched = errors.As(err, &target)
+	_, matched = err.(*BadRequestError)
 	return
 }
 
@@ -70,8 +67,7 @@ type Forbidden struct {
 }
 
 func (r *Forbidden) Is(err error) (matched bool) {
-	var target *Forbidden
-	matched = errors.As(err, &target)
+	_, matched = err.(*Forbidden)
 	return
 }
 
@@ -81,8 +77,7 @@ type Conflict struct {
 }
 
 func (e *Conflict) Is(err error) (matched bool) {
-	var inst *Conflict
-	matched = errors.As(err, &inst)
+	_, matched = err.(*Conflict)
 	return
 }
 
@@ -92,8 +87,7 @@ type NotFound struct {
 }
 
 func (e *NotFound) Is(err error) (matched bool) {
-	var inst *NotFound
-	matched = errors.As(err, &inst)
+	_, matched = err.(*NotFound)
 	return
 }
 
@@ -103,7 +97,6 @@ type EmptyBody struct {
 }
 
 func (e *EmptyBody) Is(err error) (matched bool) {
-	var inst *EmptyBody
-	matched = errors.As(err, &inst)
+	_, matched = err.(*EmptyBody)
 	return
 }

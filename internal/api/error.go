@@ -31,8 +31,7 @@ func (r *BadRequestError) Error() string {
 }
 
 func (r *BadRequestError) Is(err error) (matched bool) {
-	var target *BadRequestError
-	matched = errors.As(err, &target)
+	_, matched = err.(*BadRequestError)
 	return
 }
 
@@ -46,8 +45,7 @@ func (r *Forbidden) Error() string {
 }
 
 func (r *Forbidden) Is(err error) (matched bool) {
-	var target *Forbidden
-	matched = errors.As(err, &target)
+	_, matched = err.(*Forbidden)
 	return
 }
 
@@ -62,8 +60,7 @@ func (r *NotFound) Error() string {
 }
 
 func (r *NotFound) Is(err error) (matched bool) {
-	var target *NotFound
-	matched = errors.As(err, &target)
+	_, matched = err.(*NotFound)
 	return
 }
 
@@ -83,8 +80,7 @@ func (r *BatchError) Error() string {
 }
 
 func (r *BatchError) Is(err error) (matched bool) {
-	var target *BatchError
-	matched = errors.As(err, &target)
+	_, matched = err.(*BatchError)
 	return
 }
 
@@ -99,8 +95,7 @@ func (r *TrackerError) Error() string {
 }
 
 func (r *TrackerError) Is(err error) (matched bool) {
-	var target *TrackerError
-	matched = errors.As(err, &target)
+	_, matched = err.(*TrackerError)
 	return
 }
 
@@ -115,8 +110,7 @@ func (r *NotAvailableError) Error() string {
 }
 
 func (r *NotAvailableError) Is(err error) (matched bool) {
-	var target *NotAvailableError
-	matched = errors.As(err, &target)
+	_, matched = err.(*NotAvailableError)
 	return
 }
 

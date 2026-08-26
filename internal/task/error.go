@@ -19,8 +19,7 @@ func (e *BadRequest) Error() string {
 }
 
 func (e *BadRequest) Is(err error) (matched bool) {
-	var inst *BadRequest
-	matched = errors.As(err, &inst)
+	_, matched = err.(*BadRequest)
 	return
 }
 
@@ -61,8 +60,7 @@ func (e *KindNotFound) Error() string {
 }
 
 func (e *KindNotFound) Is(err error) (matched bool) {
-	var inst *KindNotFound
-	matched = errors.As(err, &inst)
+	_, matched = err.(*KindNotFound)
 	return
 }
 
@@ -83,8 +81,7 @@ func (e *AddonNotFound) Error() string {
 }
 
 func (e *AddonNotFound) Is(err error) (matched bool) {
-	var inst *AddonNotFound
-	matched = errors.As(err, &inst)
+	_, matched = err.(*AddonNotFound)
 	return
 }
 
@@ -101,8 +98,7 @@ func (e *AddonNotSelected) Error() string {
 }
 
 func (e *AddonNotSelected) Is(err error) (matched bool) {
-	var inst *AddonNotSelected
-	matched = errors.As(err, &inst)
+	_, matched = err.(*AddonNotSelected)
 	return
 }
 
@@ -126,8 +122,7 @@ func (e *NotReady) Error() string {
 }
 
 func (e *NotReady) Is(err error) (matched bool) {
-	var inst *NotReady
-	matched = errors.As(err, &inst)
+	_, matched = err.(*NotReady)
 	return
 }
 
@@ -146,8 +141,7 @@ func (e *NotReconciled) Error() string {
 }
 
 func (e *NotReconciled) Is(err error) (matched bool) {
-	var inst *NotReconciled
-	matched = errors.As(err, &inst)
+	_, matched = err.(*NotReconciled)
 	return
 }
 
@@ -168,8 +162,7 @@ func (e *ExtensionNotFound) Error() string {
 }
 
 func (e *ExtensionNotFound) Is(err error) (matched bool) {
-	var inst *ExtensionNotFound
-	matched = errors.As(err, &inst)
+	_, matched = err.(*ExtensionNotFound)
 	return
 }
 
@@ -192,8 +185,7 @@ func (e *ExtensionNotValid) Error() string {
 }
 
 func (e *ExtensionNotValid) Is(err error) (matched bool) {
-	var inst *ExtensionNotValid
-	matched = errors.As(err, &inst)
+	_, matched = err.(*ExtensionNotValid)
 	return
 }
 
@@ -222,8 +214,7 @@ func (e *SelectorNotValid) Error() string {
 }
 
 func (e *SelectorNotValid) Is(err error) (matched bool) {
-	var inst *SelectorNotValid
-	matched = errors.As(err, &inst)
+	_, matched = err.(*SelectorNotValid)
 	return
 }
 
@@ -245,8 +236,7 @@ func (e *ExtAddonNotValid) Error() string {
 }
 
 func (e *ExtAddonNotValid) Is(err error) (matched bool) {
-	var inst *ExtAddonNotValid
-	matched = errors.As(err, &inst)
+	_, matched = err.(*ExtAddonNotValid)
 	return
 }
 
@@ -264,8 +254,7 @@ func (e *AddonTaskNotValid) Error() string {
 }
 
 func (e *AddonTaskNotValid) Is(err error) (matched bool) {
-	var inst *AddonTaskNotValid
-	matched = errors.As(err, &inst)
+	_, matched = err.(*AddonTaskNotValid)
 	return
 }
 
@@ -288,8 +277,7 @@ func (e *PriorityNotFound) Error() string {
 }
 
 func (e *PriorityNotFound) Is(err error) (matched bool) {
-	var inst *PriorityNotFound
-	matched = errors.As(err, &inst)
+	_, matched = err.(*PriorityNotFound)
 	return
 }
 
@@ -307,8 +295,7 @@ func (e *PodRejected) Error() string {
 }
 
 func (e *PodRejected) Is(err error) (matched bool) {
-	var inst *PodRejected
-	matched = errors.As(err, &inst)
+	_, matched = err.(*PodRejected)
 	return
 }
 
@@ -356,8 +343,7 @@ func (e *QuotaExceeded) Error() string {
 }
 
 func (e *QuotaExceeded) Is(err error) (matched bool) {
-	var inst *QuotaExceeded
-	matched = errors.As(err, &inst)
+	_, matched = err.(*QuotaExceeded)
 	return
 }
 
