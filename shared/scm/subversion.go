@@ -3,7 +3,6 @@ package scm
 import (
 	"errors"
 	"fmt"
-	"io"
 	urllib "net/url"
 	"os"
 	"path/filepath"
@@ -170,10 +169,6 @@ func (r *Subversion) initHome() (err error) {
 	if err != nil {
 		return
 	}
-	err = r.writePassword()
-	if err != nil {
-		return
-	}
 	identity := r.Remote.Identity
 	if identity != nil {
 		key := ssh.Key{
@@ -199,6 +194,7 @@ func (r *Subversion) svn() (cmd *command.Command) {
 	cmd = command.New("/usr/bin/svn")
 	cmd.Env = append(os.Environ(), "HOME="+r.Home)
 	cmd.Options.Add("--non-interactive")
+	r.setBasicAuth(cmd)
 	if r.Remote.Insecure {
 		cmd.Options.Add("--trust-server-cert")
 	}
@@ -285,8 +281,8 @@ func (r *Subversion) writeConfig() (err error) {
 	return
 }
 
-// writePassword injects the password into: auth/svn.simple.
-func (r *Subversion) writePassword() (err error) {
+// setBasicAuth sets user and password options and params when defined.
+func (r *Subversion) setBasicAuth(cmd *command.Command) {
 	identity := r.Remote.Identity
 	if identity == nil {
 		return
@@ -298,79 +294,10 @@ func (r *Subversion) writePassword() (err error) {
 		fmt.Sprintf("[SVN] Using identity:(id=%d) %s",
 			identity.ID,
 			identity.Name))
-	cmd := r.svn()
-	cmd.Options.Add("--username")
-	cmd.Options.Add(identity.User)
-	cmd.Options.Add("--password")
-	cmd.Options.Add(identity.Password)
-	cmd.Options.Add("info", r.URL().String())
-	err = cmd.Run()
-	if err != nil {
-		return
-	}
-	dir := filepath.Join(
-		r.Home,
-		".subversion",
-		"auth",
-		"svn.simple")
-	files, err := os.ReadDir(dir)
-	if err != nil {
-		err = liberr.Wrap(
-			err,
-			"path",
-			dir)
-		return
-	}
-	path := filepath.Join(dir, files[0].Name())
-	f, err := os.OpenFile(path, os.O_RDWR, 0644)
-	if err != nil {
-		err = liberr.Wrap(
-			err,
-			"path",
-			path)
-		return
-	}
-	defer func() {
-		_ = f.Close()
-	}()
-	content, err := io.ReadAll(f)
-	if err != nil {
-		err = liberr.Wrap(
-			err,
-			"path",
-			path)
-		return
-	}
-	_, err = f.Seek(0, 0)
-	if err != nil {
-		err = liberr.Wrap(
-			err,
-			"path",
-			path)
-		return
-	}
-	s := "K 8\n"
-	s += "passtype\n"
-	s += "V 6\n"
-	s += "simple\n"
-	s += "K 8\n"
-	s += "username\n"
-	s += fmt.Sprintf("V %d\n", len(identity.User))
-	s += fmt.Sprintf("%s\n", identity.User)
-	s += "K 8\n"
-	s += "password\n"
-	s += fmt.Sprintf("V %d\n", len(identity.Password))
-	s += fmt.Sprintf("%s\n", identity.Password)
-	s += string(content)
-	_, err = f.Write([]byte(s))
-	if err != nil {
-		err = liberr.Wrap(
-			err,
-			"path",
-			path)
-		return
-	}
-	Log.V(1).Info("[SVN] Created: " + path)
+	cmd.Options.Add("--username", "${user}")
+	cmd.Options.Add("--password", "${password}")
+	cmd.Set("user", identity.User)
+	cmd.Set("password", identity.Password)
 	return
 }
 
