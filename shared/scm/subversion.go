@@ -77,18 +77,18 @@ func (r *Subversion) Branch(ref string, options ...Option) (err error) {
 		return
 	}
 	branch := Subversion{}
-	branch.Remote = r.Remote
-	branch.Path = r.Path
-	_, err = urllib.Parse(ref)
-	if err == nil {
-		branch.Remote = Remote{URL: ref}
+	branch.Base = r.Base
+	parsed, _ := urllib.Parse(ref)
+	if parsed.IsAbs() {
+		branch.Remote.URL = ref
+		branch.Remote.Branch = ""
+		branch.Remote.Path = ""
 	} else {
 		branch.Remote.Branch = ref
 	}
-	branch.Remote = Remote{URL: ref}
 	defer func() {
 		if err == nil {
-			r.Remote.URL = branch.Remote.URL
+			r.Remote = branch.Remote
 		}
 	}()
 	err = branch.checkout()
@@ -96,7 +96,7 @@ func (r *Subversion) Branch(ref string, options ...Option) (err error) {
 		return
 	}
 	if HasOption(options, CREATE) {
-		err = branch.createBranch(r.Remote.URL)
+		err = branch.createBranch(r.URL().String())
 	}
 	return
 }
