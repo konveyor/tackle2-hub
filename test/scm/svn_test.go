@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/scm"
 	"github.com/onsi/gomega"
 )
@@ -37,22 +36,21 @@ func newSvnBranch(t *testing.T, branch string) (r scm.SCM) {
 		t.Skip("SVN_URL, SVN_USER and SVN_PASSWORD required.")
 	}
 	destDir := t.TempDir()
-	repository := api.Repository{
+	remote := scm.Remote{
 		Kind:   "svn",
 		URL:    svnURL,
 		Branch: branch,
-	}
-	identity := &scm.Identity{
-		User:     user,
-		Password: password,
+		Identity: &scm.Identity{
+			User:     user,
+			Password: password,
+		},
 	}
 	var err error
-	r = scm.New(destDir, repository)
+	r = scm.New(destDir, remote)
 	err = r.Validate()
 	if err != nil {
 		t.Fatalf("scm.Validate() failed: %v", err)
 	}
-	r.WithIdentity(identity)
 	t.Cleanup(func() {
 		_ = r.Clean()
 	})

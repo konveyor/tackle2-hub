@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/scm"
 	"github.com/onsi/gomega"
 )
@@ -27,21 +26,20 @@ func newGit(t *testing.T) (r scm.SCM) {
 		t.Skip("GIT_URL and GIT_TOKEN required.")
 	}
 	destDir := t.TempDir()
-	repository := api.Repository{
+	remote := scm.Remote{
 		Kind: "git",
 		URL:  gitURL,
-	}
-	identity := &scm.Identity{
-		User:     "token",
-		Password: gitToken,
+		Identity: &scm.Identity{
+			User:     "token",
+			Password: gitToken,
+		},
 	}
 	var err error
-	r = scm.New(destDir, repository)
+	r = scm.New(destDir, remote)
 	err = r.Validate()
 	if err != nil {
 		t.Fatalf("scm.Validate() failed: %v", err)
 	}
-	r.WithIdentity(identity)
 	t.Cleanup(func() {
 		_ = r.Clean()
 	})

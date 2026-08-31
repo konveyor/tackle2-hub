@@ -29,8 +29,6 @@ type SCM interface {
 	Id() string
 	Validate() (err error)
 	WithProxies(p ProxyMap)
-	WithIdentity(id *Identity)
-	WithInsecure(enabled bool)
 	Fetch() (err error)
 	Update() (err error)
 	Branch(ref string, options ...Option) (err error)
@@ -84,13 +82,7 @@ func (r *Remote) Digest() (d string) {
 }
 
 // New SCM repository factory.
-func New(destDir string, repository api.Repository) (r SCM) {
-	remote := Remote{
-		Kind:   repository.Kind,
-		URL:    repository.URL,
-		Branch: repository.Branch,
-		Path:   repository.Path,
-	}
+func New(destDir string, remote Remote) (r SCM) {
 	switch remote.Kind {
 	case "svn",
 		"subversion":

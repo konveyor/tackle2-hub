@@ -44,16 +44,6 @@ func (b *Base) WithProxies(p ProxyMap) {
 	b.Proxies = p
 }
 
-// WithIdentity configure to use the identity.
-func (b *Base) WithIdentity(id *Identity) {
-	b.Remote.Identity = id
-}
-
-// WithInsecure configures the insecure setting.
-func (b *Base) WithInsecure(enabled bool) {
-	b.Remote.Insecure = enabled
-}
-
 // mustEmptyDir ensures the path either:
 // - does not exist.
 // - is an empty directory.
