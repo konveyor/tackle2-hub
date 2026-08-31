@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/konveyor/tackle2-hub/shared/api"
-	"github.com/konveyor/tackle2-hub/shared/binding"
 	"github.com/konveyor/tackle2-hub/shared/scm"
 	"github.com/onsi/gomega"
 )
@@ -21,15 +20,15 @@ const (
 )
 
 // newSvn builds an scm.SCM for the svn repo defined by env vars.
-func newSvn(t *testing.T, client *binding.RichClient) (r scm.SCM) {
+func newSvn(t *testing.T) (r scm.SCM) {
 	t.Helper()
-	r = newSvnBranch(t, client, "")
+	r = newSvnBranch(t, "")
 	return
 }
 
 // newSvnBranch builds an scm.SCM for the svn repo, checked out
 // at the given base branch (e.g. "trunk").
-func newSvnBranch(t *testing.T, client *binding.RichClient, branch string) (r scm.SCM) {
+func newSvnBranch(t *testing.T, branch string) (r scm.SCM) {
 	t.Helper()
 	svnURL := os.Getenv(EnvSvnURL)
 	user := os.Getenv(EnvSvnUser)
@@ -43,15 +42,17 @@ func newSvnBranch(t *testing.T, client *binding.RichClient, branch string) (r sc
 		URL:    svnURL,
 		Branch: branch,
 	}
-	identity := &api.Identity{
+	identity := &scm.Identity{
 		User:     user,
 		Password: password,
 	}
 	var err error
-	r, err = scm.New(destDir, repository, identity, client)
+	r = scm.New(destDir, repository)
+	err = r.Validate()
 	if err != nil {
-		t.Fatalf("scm.New() failed: %v", err)
+		t.Fatalf("scm.Validate() failed: %v", err)
 	}
+	r.WithIdentity(identity)
 	t.Cleanup(func() {
 		_ = r.Clean()
 	})
@@ -86,8 +87,7 @@ func deleteSvnBranch(r scm.SCM, branch string) (err error) {
 // TestSvnId verifies that Id returns a stable, non-empty digest.
 func TestSvnId(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	client := newClient(t)
-	r := newSvn(t, client)
+	r := newSvn(t)
 
 	id := r.Id()
 	g.Expect(id).NotTo(gomega.BeEmpty())
@@ -99,8 +99,7 @@ func TestSvnId(t *testing.T) {
 // TestSvnValidate verifies that Validate succeeds for a valid remote.
 func TestSvnValidate(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	client := newClient(t)
-	r := newSvn(t, client)
+	r := newSvn(t)
 
 	err := r.Validate()
 	g.Expect(err).To(gomega.BeNil())
@@ -109,8 +108,7 @@ func TestSvnValidate(t *testing.T) {
 // TestSvnFetch verifies that Fetch checks out the repository.
 func TestSvnFetch(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	client := newClient(t)
-	r := newSvn(t, client)
+	r := newSvn(t)
 
 	err := r.Fetch()
 	g.Expect(err).To(gomega.BeNil())
@@ -123,8 +121,7 @@ func TestSvnFetch(t *testing.T) {
 // TestSvnUpdate verifies that Update pulls the latest changes.
 func TestSvnUpdate(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	client := newClient(t)
-	r := newSvn(t, client)
+	r := newSvn(t)
 
 	err := r.Fetch()
 	g.Expect(err).To(gomega.BeNil())
@@ -140,8 +137,7 @@ func TestSvnUpdate(t *testing.T) {
 // TestSvnCommit verifies staging, committing, and pushing a file.
 func TestSvnCommit(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	client := newClient(t)
-	r := newSvn(t, client)
+	r := newSvn(t)
 
 	err := r.Fetch()
 	g.Expect(err).To(gomega.BeNil())
@@ -166,8 +162,7 @@ func TestSvnCommit(t *testing.T) {
 // TestSvnPush verifies that Push succeeds (a no-op for svn).
 func TestSvnPush(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	client := newClient(t)
-	r := newSvn(t, client)
+	r := newSvn(t)
 
 	err := r.Fetch()
 	g.Expect(err).To(gomega.BeNil())
@@ -179,8 +174,7 @@ func TestSvnPush(t *testing.T) {
 // TestSvnHead verifies that Head returns a non-empty revision.
 func TestSvnHead(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	client := newClient(t)
-	r := newSvn(t, client)
+	r := newSvn(t)
 
 	err := r.Fetch()
 	g.Expect(err).To(gomega.BeNil())
@@ -193,8 +187,7 @@ func TestSvnHead(t *testing.T) {
 // TestSvnClean verifies that Clean removes the home directory.
 func TestSvnClean(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	client := newClient(t)
-	r := newSvn(t, client)
+	r := newSvn(t)
 
 	err := r.Fetch()
 	g.Expect(err).To(gomega.BeNil())
@@ -206,8 +199,7 @@ func TestSvnClean(t *testing.T) {
 // TestSvnBranch verifies switching to an existing branch.
 func TestSvnBranch(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	client := newClient(t)
-	r := newSvnBranch(t, client, "trunk")
+	r := newSvnBranch(t, "trunk")
 
 	err := r.Fetch()
 	g.Expect(err).To(gomega.BeNil())
@@ -224,8 +216,7 @@ func TestSvnBranch(t *testing.T) {
 // an error when the branch does not exist.
 func TestSvnBranchNotFound(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	client := newClient(t)
-	r := newSvnBranch(t, client, "trunk")
+	r := newSvnBranch(t, "trunk")
 
 	err := r.Fetch()
 	g.Expect(err).To(gomega.BeNil())
@@ -237,8 +228,7 @@ func TestSvnBranchNotFound(t *testing.T) {
 // TestSvnBranchCreate verifies creating a new branch with CREATE.
 func TestSvnBranchCreate(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	client := newClient(t)
-	r := newSvnBranch(t, client, "trunk")
+	r := newSvnBranch(t, "trunk")
 
 	err := r.Fetch()
 	g.Expect(err).To(gomega.BeNil())

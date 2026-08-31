@@ -28,6 +28,9 @@ func init() {
 type SCM interface {
 	Id() string
 	Validate() (err error)
+	WithProxies(p ProxyMap)
+	WithIdentity(id *Identity)
+	WithInsecure(enabled bool)
 	Fetch() (err error)
 	Update() (err error)
 	Branch(ref string, options ...Option) (err error)
@@ -81,64 +84,47 @@ func (r *Remote) Digest() (d string) {
 }
 
 // New SCM repository factory.
-func New(
-	destDir string,
-	repository api.Repository,
-	identity *api.Identity,
-	client *binding.RichClient) (r SCM, err error) {
-	//
+func New(destDir string, repository api.Repository) (r SCM) {
 	remote := Remote{
 		Kind:   repository.Kind,
 		URL:    repository.URL,
 		Branch: repository.Branch,
 		Path:   repository.Path,
 	}
-	if identity != nil {
-		remote.Identity = &Identity{
-			ID:       identity.ID,
-			Name:     identity.Name,
-			User:     identity.User,
-			Password: identity.Password,
-			Key:      identity.Key,
-		}
-	}
 	switch remote.Kind {
 	case "svn",
 		"subversion":
-		remote.Insecure, err = client.Setting.Bool("svn.insecure.enabled")
-		if err != nil {
-			return
-		}
 		svn := &Subversion{}
 		svn.Remote = remote
 		svn.Path = destDir
 		svn.Home = filepath.Join(Dir, ".svn", svn.Id())
-		svn.Proxies, err = proxyMap(client)
-		if err != nil {
-			return
-		}
 		r = svn
 	default:
-		remote.Insecure, err = client.Setting.Bool("git.insecure.enabled")
-		if err != nil {
-			return
-		}
 		git := &Git{}
 		git.Remote = remote
 		git.Path = destDir
 		git.Home = filepath.Join(Dir, ".git", git.Id())
-		git.Proxies, err = proxyMap(client)
-		if err != nil {
-			return
-		}
 		r = git
 	}
-	err = r.Validate()
 	return
 }
 
-// proxyMap returns a map of proxies.
-func proxyMap(client *binding.RichClient) (pm ProxyMap, err error) {
+// Insecure returns the hub insecure settings.
+func Insecure(client *binding.RichClient, r api.Repository) (enabled bool, err error) {
+	var key string
+	switch r.Kind {
+	case "svn",
+		"subversion":
+		key = "svn.insecure.enabled"
+	default:
+		key = "git.insecure.enabled"
+	}
+	enabled, err = client.Setting.Bool(key)
+	return
+}
+
+// Proxies returns a map of hub proxies.
+func Proxies(client *binding.RichClient) (pm ProxyMap, err error) {
 	pm = make(ProxyMap)
 	list, err := client.Proxy.List()
 	if err != nil {

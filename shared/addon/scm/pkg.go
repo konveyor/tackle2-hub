@@ -31,10 +31,27 @@ type Option = scm.Option
 
 // New SCM repository factory.
 func New(destDir string, repository api.Repository, identity *api.Identity) (r SCM, err error) {
-	r, err = scm.New(
-		destDir,
-		repository,
-		identity,
-		addon.Client())
+	r = scm.New(destDir, repository)
+	if identity != nil {
+		r.WithIdentity(
+			&Identity{
+				ID:       identity.ID,
+				Name:     identity.Name,
+				User:     identity.User,
+				Password: identity.Password,
+				Key:      identity.Key,
+			})
+	}
+	p, err := scm.Proxies(addon.Client())
+	if err != nil {
+		return
+	}
+	r.WithProxies(p)
+	insecure, err := scm.Insecure(addon.Client(), repository)
+	if err != nil {
+		return
+	}
+	r.WithInsecure(insecure)
+	err = r.Validate()
 	return
 }

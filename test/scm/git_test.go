@@ -9,35 +9,17 @@ import (
 	"time"
 
 	"github.com/konveyor/tackle2-hub/shared/api"
-	"github.com/konveyor/tackle2-hub/shared/binding"
-	"github.com/konveyor/tackle2-hub/shared/binding/auth"
 	"github.com/konveyor/tackle2-hub/shared/scm"
 	"github.com/onsi/gomega"
 )
 
 const (
-	EnvHubBaseURL = "HUB_BASE_URL"
-	EnvToken      = "TOKEN"
-	EnvGitURL     = "GIT_URL"
-	EnvGitToken   = "GIT_TOKEN"
+	EnvGitURL   = "GIT_URL"
+	EnvGitToken = "GIT_TOKEN"
 )
 
-// newClient builds a hub RichClient from env vars.
-func newClient(t *testing.T) (client *binding.RichClient) {
-	t.Helper()
-	hubURL := os.Getenv(EnvHubBaseURL)
-	token := os.Getenv(EnvToken)
-	if hubURL == "" {
-		hubURL = "http://localhost:8080"
-	}
-	client = binding.New(hubURL)
-	client.Client.SetRetry(1)
-	client.Client.Use(auth.NewBearer(token))
-	return
-}
-
 // newGit builds an scm.SCM for the git repo defined by env vars.
-func newGit(t *testing.T, client *binding.RichClient) (r scm.SCM) {
+func newGit(t *testing.T) (r scm.SCM) {
 	t.Helper()
 	gitURL := os.Getenv(EnvGitURL)
 	gitToken := os.Getenv(EnvGitToken)
@@ -49,15 +31,17 @@ func newGit(t *testing.T, client *binding.RichClient) (r scm.SCM) {
 		Kind: "git",
 		URL:  gitURL,
 	}
-	identity := &api.Identity{
+	identity := &scm.Identity{
 		User:     "token",
 		Password: gitToken,
 	}
 	var err error
-	r, err = scm.New(destDir, repository, identity, client)
+	r = scm.New(destDir, repository)
+	err = r.Validate()
 	if err != nil {
-		t.Fatalf("scm.New() failed: %v", err)
+		t.Fatalf("scm.Validate() failed: %v", err)
 	}
+	r.WithIdentity(identity)
 	t.Cleanup(func() {
 		_ = r.Clean()
 	})
@@ -73,8 +57,7 @@ func branchName() (name string) {
 // TestId verifies that Id returns a stable, non-empty digest.
 func TestId(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	client := newClient(t)
-	r := newGit(t, client)
+	r := newGit(t)
 
 	id := r.Id()
 	g.Expect(id).NotTo(gomega.BeEmpty())
@@ -86,8 +69,7 @@ func TestId(t *testing.T) {
 // TestValidate verifies that Validate succeeds for a valid remote.
 func TestValidate(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	client := newClient(t)
-	r := newGit(t, client)
+	r := newGit(t)
 
 	err := r.Validate()
 	g.Expect(err).To(gomega.BeNil())
@@ -96,8 +78,7 @@ func TestValidate(t *testing.T) {
 // TestFetch verifies that Fetch clones the repository.
 func TestFetch(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	client := newClient(t)
-	r := newGit(t, client)
+	r := newGit(t)
 
 	err := r.Fetch()
 	g.Expect(err).To(gomega.BeNil())
@@ -110,8 +91,7 @@ func TestFetch(t *testing.T) {
 // TestUpdate verifies that Update pulls the latest changes.
 func TestUpdate(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	client := newClient(t)
-	r := newGit(t, client)
+	r := newGit(t)
 
 	err := r.Fetch()
 	g.Expect(err).To(gomega.BeNil())
@@ -127,8 +107,7 @@ func TestUpdate(t *testing.T) {
 // TestBranch verifies switching to an existing branch.
 func TestBranch(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	client := newClient(t)
-	r := newGit(t, client)
+	r := newGit(t)
 
 	err := r.Fetch()
 	g.Expect(err).To(gomega.BeNil())
@@ -144,8 +123,7 @@ func TestBranch(t *testing.T) {
 // TestBranch verifies switching to the default branch.
 func TestDefaultBranch(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	client := newClient(t)
-	r := newGit(t, client)
+	r := newGit(t)
 
 	err := r.Fetch()
 	g.Expect(err).To(gomega.BeNil())
@@ -162,8 +140,7 @@ func TestDefaultBranch(t *testing.T) {
 // an error when the branch does not exist.
 func TestBranchNotFound(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	client := newClient(t)
-	r := newGit(t, client)
+	r := newGit(t)
 
 	err := r.Fetch()
 	g.Expect(err).To(gomega.BeNil())
@@ -175,8 +152,7 @@ func TestBranchNotFound(t *testing.T) {
 // TestBranchCreate verifies creating a new branch with CREATE.
 func TestBranchCreate(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	client := newClient(t)
-	r := newGit(t, client)
+	r := newGit(t)
 
 	err := r.Fetch()
 	g.Expect(err).To(gomega.BeNil())
@@ -197,8 +173,7 @@ func TestBranchCreate(t *testing.T) {
 // TestCommit verifies staging, committing, and pushing a file.
 func TestCommit(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	client := newClient(t)
-	r := newGit(t, client)
+	r := newGit(t)
 
 	err := r.Fetch()
 	g.Expect(err).To(gomega.BeNil())
@@ -230,8 +205,7 @@ func TestCommit(t *testing.T) {
 // TestPush verifies pushing changes to the remote.
 func TestPush(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	client := newClient(t)
-	r := newGit(t, client)
+	r := newGit(t)
 
 	err := r.Fetch()
 	g.Expect(err).To(gomega.BeNil())
@@ -261,8 +235,7 @@ func TestPush(t *testing.T) {
 // TestHead verifies that Head returns a non-empty commit hash.
 func TestHead(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	client := newClient(t)
-	r := newGit(t, client)
+	r := newGit(t)
 
 	err := r.Fetch()
 	g.Expect(err).To(gomega.BeNil())
@@ -276,8 +249,7 @@ func TestHead(t *testing.T) {
 // TestClean verifies that Clean removes the home directory.
 func TestClean(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	client := newClient(t)
-	r := newGit(t, client)
+	r := newGit(t)
 
 	err := r.Fetch()
 	g.Expect(err).To(gomega.BeNil())
