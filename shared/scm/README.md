@@ -23,8 +23,12 @@ The `SCM` interface defines repository operations:
 | `Head`     | Return the current HEAD commit/revision.       |
 | `Clean`    | Delete working files created by the SCM.       |
 
-`Validate` is also on the interface but is called automatically
-by the `New()` factory — callers do not need to invoke it directly.
+`Validate` checks the remote configuration (for example, rejecting an
+`http` URL unless `Insecure` is set). It is **not** called by `New()`;
+invoke it explicitly after constructing the instance.
+
+`WithProxies` configures HTTP/HTTPS proxies after construction (see
+[Proxies](#proxies)).
 
 ## Authentication
 
@@ -32,14 +36,17 @@ Both implementations support:
 
 - **Username/password** credentials (Git credential store, SVN password injection).
 - **SSH keys** via the `Identity` attached to the `Remote`.
-- **Proxy** configuration per scheme (HTTP/HTTPS) with optional proxy authentication.
-  Proxies are configured in the hub and fetched automatically by
-  the factory — the caller does not need to configure them.
+- **Proxy** configuration per scheme (HTTP/HTTPS) with optional proxy authentication,
+  applied via `WithProxies` (see [Proxies](#proxies)).
+
+Credentials are supplied through the `Identity` field on the `Remote`.
+`Identity` is optional — leave it `nil` for public repositories that
+do not require authentication.
 
 ### Username/Password
 
 ```go
-identity := &api.Identity{
+identity := &scm.Identity{
     Name:     "git-creds",
     User:     "admin",
     Password: "changeme",
@@ -56,7 +63,7 @@ implementations import `shared/ssh`, which starts an agent via
 `init()`.
 
 ```go
-identity := &api.Identity{
+identity := &scm.Identity{
     Name:     "git-ssh",
     Key:      "-----BEGIN OPENSSH PRIVATE KEY-----\n...",
     Password: "passphrase",
@@ -65,8 +72,8 @@ identity := &api.Identity{
 
 ## Factory
 
-Use `New()` to create an SCM instance. The `repository.Kind` field
-determines the implementation:
+Use `New()` to create an SCM instance from a `Remote`. The
+`Remote.Kind` field determines the implementation:
 
 | Kind           | Implementation | Description          |
 |----------------|----------------|----------------------|
@@ -76,58 +83,126 @@ determines the implementation:
 
 Any unrecognized kind defaults to `Git`.
 
-The factory requires a `binding.RichClient` to fetch hub-managed
-configuration from the hub API. Specifically, it uses the client to:
-
-- Read the `git.insecure.enabled` or `svn.insecure.enabled` setting.
-- List configured proxies and resolve their associated identities.
-
-These settings are managed centrally in the hub and cannot be derived
-from the repository alone.
-
-The `identity` parameter is optional — pass `nil` for public
-repositories that do not require authentication.
+`New()` is self-contained: it depends only on package-native types
+(`Remote`, `Identity`) and does **not** contact the hub. This lets
+external tools use the package without hub connectivity or settings.
+`New()` only constructs the instance — call `Validate()` afterward,
+and `WithProxies()` if proxies are needed.
 
 ```go
 import (
-    "github.com/konveyor/tackle2-hub/shared/api"
-    "github.com/konveyor/tackle2-hub/shared/binding"
-    "github.com/konveyor/tackle2-hub/shared/binding/auth"
     "github.com/konveyor/tackle2-hub/shared/scm"
 )
 
-repository := api.Repository{
+remote := scm.Remote{
     Kind:   "git",
     URL:    "https://github.com/konveyor/tackle2-hub",
     Branch: "main",
+    Identity: &scm.Identity{
+        Name:     "git-creds",
+        User:     "admin",
+        Password: "changeme",
+    },
 }
 
-identity := &api.Identity{
-    Name:     "git-creds",
-    User:     "admin",
-    Password: "changeme",
-}
+repo := scm.New("/tmp/repo", remote)
+err := repo.Validate()
 
-client := binding.New("https://hub.example.com")
-bearer := auth.NewBearer("my-token")
-client.Client.Use(bearer)
-
-// With credentials.
-repo, err := scm.New("/tmp/repo", repository, identity, client)
-
-// Public repository (no credentials).
-repo, err := scm.New("/tmp/repo", repository, nil, client)
+// Public repository (no credentials): leave Identity nil.
+remote.Identity = nil
+repo = scm.New("/tmp/repo", remote)
 ```
 
-### Repository Fields
+### Remote Fields
 
-| Field    | Description                                                 |
-|----------|-------------------------------------------------------------|
-| `Kind`   | SCM type (see table above).                                 |
-| `URL`    | Remote repository URL.                                      |
-| `Branch` | Branch or tag to checkout. Tags are detected automatically. |
-| `Tag`    | Not used by this package. Use `Branch` for tags.            |
-| `Path`   | SVN-specific sub-path within the repository. Ignored by Git.|
+| Field      | Description                                                   |
+|------------|---------------------------------------------------------------|
+| `Kind`     | SCM type (see table above).                                   |
+| `URL`      | Remote repository URL.                                        |
+| `Branch`   | Branch or tag to checkout. Tags are detected automatically.   |
+| `Path`     | SVN-specific sub-path within the repository. Ignored by Git.  |
+| `Identity` | Optional credentials (see [Authentication](#authentication)). |
+| `Insecure` | Allow an `http` URL / skip server certificate verification.   |
+
+## Proxies
+
+`WithProxies` configures the HTTP/HTTPS proxies used for remote
+operations. It takes a `ProxyMap` keyed by scheme (`"http"` /
+`"https"`) and must be called after `New()` and before the operation
+that needs it. Proxies are optional — skip `WithProxies` entirely
+when none are required.
+
+```go
+proxies := scm.ProxyMap{
+    "https": {
+        Kind:     "https",
+        Host:     "proxy.example.com",
+        Port:     8080,
+        Excluded: []string{"internal.example.com"},
+        Identity: &scm.Identity{
+            User:     "proxyuser",
+            Password: "secret",
+        },
+    },
+}
+
+repo := scm.New("/tmp/repo", remote)
+repo.WithProxies(proxies)
+_ = repo.Validate()
+```
+
+### Proxy Fields
+
+| Field      | Description                                                   |
+|------------|---------------------------------------------------------------|
+| `Kind`     | Scheme the proxy serves (`"http"` or `"https"`).              |
+| `Host`     | Proxy host.                                                   |
+| `Port`     | Proxy port.                                                   |
+| `Excluded` | Hosts that bypass the proxy.                                  |
+| `Identity` | Optional proxy credentials (see [Authentication](#authentication)). |
+
+An external tool can build a `ProxyMap` itself, as above. When
+running against the hub, the `Proxies` helper builds the map from the
+hub's proxy list (see [Hub-managed configuration](#hub-managed-configuration)).
+
+## Hub-managed configuration
+
+The insecure setting and proxy list are managed centrally in the hub
+and cannot be derived from the remote alone. The package provides
+optional helpers that read them via a `binding.RichClient`. Both take
+hub types (`api.Repository`, `binding.RichClient`) rather than the
+package-native `Remote`:
+
+- `Insecure(client, repository)` — returns the `git.insecure.enabled`
+  or `svn.insecure.enabled` setting for the `repository.Kind`.
+- `Proxies(client)` — returns the enabled proxies keyed by scheme,
+  with their identities resolved.
+
+These are opt-in: an external tool that does not use the hub can skip
+them entirely and set `Remote.Insecure` (and, if needed, proxies via
+`WithProxies`) itself. Addons run inside the hub and typically use the
+`shared/addon/scm` wrapper, which maps the `api.Repository`/`api.Identity`
+to a `Remote` and applies both helpers automatically.
+
+```go
+// repository is the hub's api.Repository resource.
+insecure, err := scm.Insecure(client, repository)
+
+remote := scm.Remote{
+    Kind:     repository.Kind,
+    URL:      repository.URL,
+    Branch:   repository.Branch,
+    Path:     repository.Path,
+    Insecure: insecure,
+}
+
+repo := scm.New("/tmp/repo", remote)
+
+proxies, err := scm.Proxies(client)
+repo.WithProxies(proxies)
+
+err = repo.Validate()
+```
 
 ## Typical Workflow
 
@@ -145,7 +220,8 @@ The cloned repository at `destDir` is not removed — the caller is
 responsible for cleaning that up.
 
 ```go
-repo, _ := scm.New("/tmp/repo", repository, identity, client)
+repo := scm.New("/tmp/repo", remote)
+_ = repo.Validate()
 
 err = repo.Fetch()
 
