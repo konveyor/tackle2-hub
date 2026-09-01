@@ -78,7 +78,11 @@ func (r *Subversion) Branch(ref string, options ...Option) (err error) {
 	}
 	branch := Subversion{}
 	branch.Base = r.Base
-	parsed, _ := urllib.Parse(ref)
+	parsed, err := urllib.Parse(ref)
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
 	if parsed.IsAbs() {
 		branch.Remote.URL = ref
 		branch.Remote.Branch = ""
@@ -368,8 +372,12 @@ func (u *SvnURL) With(r Remote) (err error) {
 
 // String returns a URL with Branch and RootPath appended.
 func (u *SvnURL) String() (s string) {
-	parsed, _ := urllib.Parse(u.Raw)
-	parsed.Path = filepath.Join(parsed.Path, u.Branch, u.RootPath)
-	s = parsed.String()
+	parsed, err := urllib.Parse(u.Raw)
+	if err == nil {
+		parsed.Path = filepath.Join(parsed.Path, u.Branch, u.RootPath)
+		s = parsed.String()
+	} else {
+		s = u.Raw
+	}
 	return
 }
