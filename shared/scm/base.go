@@ -39,6 +39,11 @@ func (b *Base) Clean() (err error) {
 	return
 }
 
+// WithProxies configure to use the proxies.
+func (b *Base) WithProxies(p ProxyMap) {
+	b.Proxies = p
+}
+
 // mustEmptyDir ensures the path either:
 // - does not exist.
 // - is an empty directory.
