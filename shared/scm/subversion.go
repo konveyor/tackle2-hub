@@ -198,6 +198,8 @@ func (r *Subversion) svn() (cmd *command.Command) {
 	cmd = command.New("/usr/bin/svn")
 	cmd.Env = append(os.Environ(), "HOME="+r.Home)
 	cmd.Options.Add("--non-interactive")
+	cmd.Options.Add("--password-from-stdin")
+	cmd.Options.Add("--no-auth-cache")
 	r.setBasicAuth(cmd)
 	if r.Remote.Insecure {
 		cmd.Options.Add("--trust-server-cert")
@@ -298,10 +300,9 @@ func (r *Subversion) setBasicAuth(cmd *command.Command) {
 		fmt.Sprintf("[SVN] Using identity:(id=%d) %s",
 			identity.ID,
 			identity.Name))
+	cmd.Reader = strings.NewReader(identity.Password + "\n")
 	cmd.Options.Add("--username", "${user}")
-	cmd.Options.Add("--password", "${password}")
 	cmd.Set("user", identity.User)
-	cmd.Set("password", identity.Password)
 	return
 }
 

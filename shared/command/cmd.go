@@ -34,6 +34,7 @@ type Command struct {
 	Dir     string
 	Env     []string
 	Param   map[string]string
+	Reader  io.Reader
 	Writer  io.Writer
 	Error   error
 	Begin   func() error
@@ -68,6 +69,7 @@ func (r *Command) RunWith(ctx context.Context) (err error) {
 	cmd := exec.CommandContext(ctx, r.Path, r.options()...)
 	cmd.Dir = r.Dir
 	cmd.Env = r.Env
+	cmd.Stdin = r.Reader
 	cmd.Stdout = r.Writer
 	cmd.Stderr = r.Writer
 	err = cmd.Start()
