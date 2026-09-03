@@ -84,6 +84,9 @@ func (m *Manager) Iterate() {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 	registered := []Reaper{
+		&AgenticTokenReaper{
+			Client: m.Client,
+		},
 		&TaskReaper{
 			Client: m.Client,
 			DB:     m.DB,

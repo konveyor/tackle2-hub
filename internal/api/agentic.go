@@ -15,11 +15,13 @@ import (
 	"github.com/gorilla/websocket"
 	liberr "github.com/jortel/go-utils/error"
 	agent "github.com/konveyor/agentic-controller/api/v1alpha1"
+	agenticmeta "github.com/konveyor/tackle2-hub/internal/agentic"
 	"github.com/konveyor/tackle2-hub/internal/auth"
 	"github.com/konveyor/tackle2-hub/shared/api"
 	core "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 // ACPPort is the ACP endpoint port on the sandbox service.
@@ -747,6 +749,8 @@ func (h AgenticHandler) AgentRunCreate(ctx *gin.Context) {
 	defer func() {
 		if err != nil {
 			_ = auth.Idp().Revoke(tokenId)
+			controllerutil.RemoveFinalizer(secret, agenticmeta.TokenSecretFinalizer)
+			_ = client.Update(context.TODO(), secret)
 			_ = client.Delete(context.TODO(), secret)
 		}
 	}()
@@ -1090,6 +1094,8 @@ func (h *AgenticHandler) WorkflowRunCreate(ctx *gin.Context) {
 	defer func() {
 		if err != nil {
 			_ = auth.Idp().Revoke(tokenId)
+			controllerutil.RemoveFinalizer(secret, agenticmeta.TokenSecretFinalizer)
+			_ = client.Update(context.TODO(), secret)
 			_ = client.Delete(context.TODO(), secret)
 		}
 	}()
@@ -1194,9 +1200,11 @@ func (h *AgenticHandler) tokenSecret(owner k8s.Object) (secret *core.Secret, tok
 	secret = &core.Secret{}
 	secret.Namespace = Settings.Namespace
 	secret.GenerateName = "agentic-run-"
+	secret.Labels = map[string]string{agenticmeta.TokenSecretLabel: "true"}
+	secret.Finalizers = []string{agenticmeta.TokenSecretFinalizer}
 	secret.StringData = map[string]string{
-		"HUB_TOKEN_ID": strconv.FormatUint(uint64(token.ID), 10),
-		"HUB_TOKEN":    token.Secret,
+		agenticmeta.TokenIDKey: strconv.FormatUint(uint64(token.ID), 10),
+		agenticmeta.TokenKey:   token.Secret,
 	}
 	return
 }
