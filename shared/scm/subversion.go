@@ -19,6 +19,7 @@ import (
 var RevisionRegex = regexp.MustCompile(`(Revision\:\s+)([\d]+)`)
 
 // Subversion repository.
+// Subversion >= 1.10 required.
 type Subversion struct {
 	Base
 }
