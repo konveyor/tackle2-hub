@@ -3,6 +3,7 @@ package command
 import (
 	"errors"
 	"io"
+	"strings"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -96,6 +97,15 @@ func TestRunExpandsParams(t *testing.T) {
 	err := cmd.Run()
 	g.Expect(err).To(BeNil())
 	g.Expect(string(cmd.Output())).To(Equal("hello\n"))
+}
+
+func TestRunReaderPipedToStdin(t *testing.T) {
+	g := NewGomegaWithT(t)
+	cmd := New("/bin/cat")
+	cmd.Reader = strings.NewReader("secret\n")
+	err := cmd.Run()
+	g.Expect(err).To(BeNil())
+	g.Expect(string(cmd.Output())).To(Equal("secret\n"))
 }
 
 func TestRunFailed(t *testing.T) {
