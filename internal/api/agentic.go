@@ -83,6 +83,7 @@ func (h *AgenticHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(api.AgenticAgentRunsRoute+"/", h.AgentRunList)
 	routeGroup.POST(api.AgenticAgentRunsRoute, h.AgentRunCreate)
 	routeGroup.GET(api.AgenticAgentRunRoute, h.AgentRunGet)
+	routeGroup.DELETE(api.AgenticAgentRunRoute, h.AgentRunDelete)
 	// AgentRun ACP
 	routeGroup = e.Group("/")
 	routeGroup.Use(Required("agentic.agentruns.acp"))
@@ -104,6 +105,7 @@ func (h *AgenticHandler) AddRoutes(e *gin.Engine) {
 	routeGroup.GET(api.AgenticWorkflowRunsRoute+"/", h.WorkflowRunList)
 	routeGroup.POST(api.AgenticWorkflowRunsRoute, h.WorkflowRunCreate)
 	routeGroup.GET(api.AgenticWorkflowRunRoute, h.WorkflowRunGet)
+	routeGroup.DELETE(api.AgenticWorkflowRunRoute, h.WorkflowRunDelete)
 }
 
 //
@@ -788,6 +790,34 @@ func (h AgenticHandler) AgentRunCreate(ctx *gin.Context) {
 	h.Respond(ctx, http.StatusCreated, r)
 }
 
+// AgentRunDelete godoc
+// @summary Delete an agent run.
+// @description Delete an agent run and its owned resources.
+// @tags runs
+// @success 204
+// @router /agentic/agentruns/{name} [delete]
+// @param name path string true "AgentRun name"
+func (h AgenticHandler) AgentRunDelete(ctx *gin.Context) {
+	r := &AgentRun{}
+	err := h.Client(ctx).Get(
+		context.TODO(),
+		k8s.ObjectKey{
+			Namespace: Settings.Hub.Namespace,
+			Name:      ctx.Param(Name),
+		},
+		r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	err = h.Client(ctx).Delete(context.TODO(), r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	h.Status(ctx, http.StatusNoContent)
+}
+
 // AgentRunConnectNonce godoc
 // @summary Issue a nonce for an ACP WebSocket connection.
 // @description Issues a short-lived, single-use nonce that authorizes
@@ -1129,6 +1159,34 @@ func (h *AgenticHandler) WorkflowRunCreate(ctx *gin.Context) {
 		return
 	}
 	h.Respond(ctx, http.StatusCreated, r)
+}
+
+// WorkflowRunDelete godoc
+// @summary Delete an agent workflow run.
+// @description Delete an agent workflow run and its owned stage runs.
+// @tags workflowruns
+// @success 204
+// @router /agentic/workflowruns/{name} [delete]
+// @param name path string true "AgentWorkflowRun name"
+func (h *AgenticHandler) WorkflowRunDelete(ctx *gin.Context) {
+	r := &AgentWorkflowRun{}
+	err := h.Client(ctx).Get(
+		context.TODO(),
+		k8s.ObjectKey{
+			Namespace: Settings.Hub.Namespace,
+			Name:      ctx.Param(Name),
+		},
+		r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	err = h.Client(ctx).Delete(context.TODO(), r)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	h.Status(ctx, http.StatusNoContent)
 }
 
 // acpKey reads the ACP secret key from a Secret.
