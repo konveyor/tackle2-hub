@@ -20,14 +20,14 @@ func TestFilePutGetDelete(t *testing.T) {
 			// Create.
 			file, err := File.Put(origPath)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Get.
 			tempFilePath := fmt.Sprintf("/tmp/gotFile-%s", r.Name)
 			err = File.Get(file.ID, tempFilePath)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			defer os.Remove(tempFilePath)
 			if !assert.EqualFileContent(tempFilePath, origPath) {
@@ -37,7 +37,7 @@ func TestFilePutGetDelete(t *testing.T) {
 			// Delete.
 			err = File.Delete(file.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			err = File.Get(file.ID, "/dev/null")
@@ -55,14 +55,14 @@ func TestFileTouchPatchGetDelete(t *testing.T) {
 			name := "Patch-Test"
 			file, err := File.Touch(name)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			// Patch (append)
 			content := "This is my Test. "
 			for _, p := range strings.Fields(content) {
 				err = File.Patch(file.ID, []byte(p+" "))
 				if err != nil {
-					t.Errorf(err.Error())
+					t.Error(err)
 				}
 			}
 			// Get.
@@ -72,7 +72,7 @@ func TestFileTouchPatchGetDelete(t *testing.T) {
 				rand.Int())
 			err = File.Get(file.ID, tmp)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			defer func() {
 				_ = os.Remove(tmp)
@@ -86,11 +86,11 @@ func TestFileTouchPatchGetDelete(t *testing.T) {
 
 			f, err := os.Open(tmp)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			read, err := ioutil.ReadAll(f)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if content != string(read) {
 				t.Errorf(
@@ -101,7 +101,7 @@ func TestFileTouchPatchGetDelete(t *testing.T) {
 			// Delete.
 			err = File.Delete(file.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			err = File.Get(file.ID, "/dev/null")
 			if err == nil {

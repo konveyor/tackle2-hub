@@ -12,13 +12,13 @@ func TestJobFunctionCRUD(t *testing.T) {
 			// Create.
 			err := JobFunction.Create(&r)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Get.
 			got, err := JobFunction.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if assert.FlatEqual(got, r) {
 				t.Errorf("Different response error. Got %v, expected %v", got, r)
@@ -28,12 +28,12 @@ func TestJobFunctionCRUD(t *testing.T) {
 			r.Name = "Updated " + r.Name
 			err = JobFunction.Update(&r)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			got, err = JobFunction.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if got.Name != r.Name {
 				t.Errorf("Different response error. Got %s, expected %s", got.Name, r.Name)
@@ -42,7 +42,7 @@ func TestJobFunctionCRUD(t *testing.T) {
 			// Delete.
 			err = JobFunction.Delete(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			_, err = JobFunction.Get(r.ID)
@@ -64,7 +64,7 @@ func TestJobFunctionList(t *testing.T) {
 
 	got, err := JobFunction.List()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	if assert.FlatEqual(got, &samples) {
 		t.Errorf("Different response error. Got %v, expected %v", got, samples)
@@ -78,7 +78,7 @@ func TestJobFunctionList(t *testing.T) {
 func TestJobFunctionSeed(t *testing.T) {
 	got, err := JobFunction.List()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	if len(got) < 1 {
 		t.Errorf("Seed looks empty, but it shouldn't.")

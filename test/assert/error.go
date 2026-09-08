@@ -8,7 +8,7 @@ import (
 // Examples usage: client.Should(t, task.Create(&r))
 func Should(t *testing.T, err error) {
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 }
 
@@ -16,6 +16,6 @@ func Should(t *testing.T, err error) {
 // Examples usage: client.Must(t, task.Create(&r))
 func Must(t *testing.T, err error) {
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 }

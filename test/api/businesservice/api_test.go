@@ -12,13 +12,13 @@ func TestBusinessServiceCRUD(t *testing.T) {
 			// Create.
 			err := BusinessService.Create(&r)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Get.
 			got, err := BusinessService.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if assert.FlatEqual(got, r) {
 				t.Errorf("Different response error. Got %v, expected %v", got, r)
@@ -28,12 +28,12 @@ func TestBusinessServiceCRUD(t *testing.T) {
 			r.Name = "Updated " + r.Name
 			err = BusinessService.Update(&r)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			got, err = BusinessService.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if got.Name != r.Name {
 				t.Errorf("Different response error. Got %s, expected %s", got.Name, r.Name)
@@ -42,7 +42,7 @@ func TestBusinessServiceCRUD(t *testing.T) {
 			// Delete.
 			err = BusinessService.Delete(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			_, err = BusinessService.Get(r.ID)
@@ -64,7 +64,7 @@ func TestBusinessServiceList(t *testing.T) {
 
 	got, err := BusinessService.List()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	if assert.FlatEqual(got, &samples) {
 		t.Errorf("Different response error. Got %v, expected %v", got, samples)

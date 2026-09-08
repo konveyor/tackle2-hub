@@ -15,7 +15,7 @@ func TestTaskBucket(t *testing.T) {
 	// Get the bucket to check if it was created.
 	destDir, err := ioutil.TempDir("", "destDir")
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	defer func() {
 		_ = os.RemoveAll(destDir)
@@ -23,7 +23,7 @@ func TestTaskBucket(t *testing.T) {
 	bucket := RichClient.Task.Bucket(task.ID)
 	err = bucket.Get("", destDir)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	// Clean the application.
 	assert.Must(t, Task.Delete(task.ID))

@@ -26,7 +26,7 @@ func TestTrackerCRUD(t *testing.T) {
 			// Get.
 			got, err := Tracker.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Compare got values with expected values.
@@ -39,7 +39,7 @@ func TestTrackerCRUD(t *testing.T) {
 			// Find Tracker and check its parameters with the got(On Updation).
 			got, err = Tracker.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Check if the unchanged values remain same or not.
@@ -78,7 +78,7 @@ func TestTrackerCRUD(t *testing.T) {
 				if r.Connected == false {
 					t.Logf("Not connected to Jira(Thus passing the API Test)")
 				} else {
-					t.Errorf(err.Error())
+					t.Error(err)
 				}
 			}
 
@@ -87,7 +87,7 @@ func TestTrackerCRUD(t *testing.T) {
 				// convert project Id's to uint.
 				projectID, err := strconv.Atoi(projects.ID)
 				if err != nil {
-					t.Errorf(err.Error())
+					t.Error(err)
 				}
 
 				_, err = Tracker.GetProjects(r.ID, uint(projectID))
@@ -95,7 +95,7 @@ func TestTrackerCRUD(t *testing.T) {
 					if r.Connected == false {
 						t.Logf("Not connected to Jira(Thus passing the API Test)")
 					} else {
-						t.Errorf(err.Error())
+						t.Error(err)
 					}
 				}
 
@@ -104,7 +104,7 @@ func TestTrackerCRUD(t *testing.T) {
 					if r.Connected == false {
 						t.Logf("Not connected to Jira(Thus passing the API Test)")
 					} else {
-						t.Errorf(err.Error())
+						t.Error(err)
 					}
 				}
 			}
@@ -140,7 +140,7 @@ func TestTrackerList(t *testing.T) {
 	// List Trackers.
 	got, err := Tracker.List()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 
 	// check if created Trackers are in the list we got from Tracker.List()

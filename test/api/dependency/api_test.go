@@ -29,7 +29,7 @@ func TestDependencyCRUD(t *testing.T) {
 			// Get.
 			got, err := Dependency.Get(dependency.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if !assert.FlatEqual(got.ID, dependency.ID) {
 				t.Errorf("Different response error. Got %v, expected %v", got, dependency.ID)
@@ -77,7 +77,7 @@ func TestDependencyList(t *testing.T) {
 	// List dependencies.
 	got, err := Dependency.List()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 
 	// check if created Dependencies are in the list we got from Dependency.List()

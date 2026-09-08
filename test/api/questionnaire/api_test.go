@@ -12,13 +12,13 @@ func TestQuestionnaireCRUD(t *testing.T) {
 			// Create.
 			err := Questionnaire.Create(&r)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Get.
 			got, err := Questionnaire.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if assert.FlatEqual(got, r) {
 				t.Errorf("Different response error. Got %v, expected %v", got, r)
@@ -29,12 +29,12 @@ func TestQuestionnaireCRUD(t *testing.T) {
 			r.Required = false
 			err = Questionnaire.Update(&r)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			got, err = Questionnaire.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if got.Name != r.Name {
 				t.Errorf("Different response error. Got %s, expected %s", got.Name, r.Name)
@@ -46,7 +46,7 @@ func TestQuestionnaireCRUD(t *testing.T) {
 			// Delete.
 			err = Questionnaire.Delete(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			_, err = Questionnaire.Get(r.ID)
@@ -68,7 +68,7 @@ func TestQuestionnaireList(t *testing.T) {
 
 	got, err := Questionnaire.List()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	if assert.FlatEqual(got, &samples) {
 		t.Errorf("Different response error. Got %v, expected %v", got, samples)

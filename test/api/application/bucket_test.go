@@ -18,7 +18,7 @@ func TestApplicationBucket(t *testing.T) {
 	// Get the bucket to check if it was created.
 	destDir, err := ioutil.TempDir("", "destDir")
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	defer func() {
 		_ = os.RemoveAll(destDir)
@@ -26,7 +26,7 @@ func TestApplicationBucket(t *testing.T) {
 	bucket := RichClient.Application.Bucket(application.ID)
 	err = bucket.Get("", destDir)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 
 	// Clean the application.
@@ -43,14 +43,14 @@ func TestApplicationBucket_Select(t *testing.T) {
 	// Get the bucket to check if it was created.
 	destDir, err := ioutil.TempDir("", "destDir")
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	defer func() {
 		_ = os.RemoveAll(destDir)
 	}()
 	err = RichClient.Application.Select(application.ID).Bucket.Get("", destDir)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 
 	// Clean the application.

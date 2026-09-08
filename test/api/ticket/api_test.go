@@ -42,7 +42,7 @@ func TestTicketCRUD(t *testing.T) {
 			// Get.
 			got, err := Ticket.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Compare got values with expected values.
@@ -102,7 +102,7 @@ func TestTicketList(t *testing.T) {
 		// List Tickets.
 		got, err := Ticket.List()
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err)
 		}
 
 		for _, createdTicket := range createdTickets {

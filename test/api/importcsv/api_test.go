@@ -178,7 +178,7 @@ func TestImportCSV(t *testing.T) {
 			// Remove the CSV file created.
 			err = os.Remove(pathToGotCSV)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Delete imported summaries

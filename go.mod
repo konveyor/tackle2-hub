@@ -1,11 +1,12 @@
 module github.com/konveyor/tackle2-hub
 
-go 1.22.0
+go 1.25.0
 
 require (
 	github.com/Nerzal/gocloak/v13 v13.9.0
 	github.com/PaesslerAG/gval v1.2.2
 	github.com/andygrunwald/go-jira v1.16.0
+	github.com/davecgh/go-spew v1.1.1
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-logr/logr v1.4.1
 	github.com/go-playground/validator/v10 v10.14.0
@@ -20,7 +21,6 @@ require (
 	github.com/prometheus/client_golang v1.15.0
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
 	github.com/swaggo/swag v1.16.1
-	golang.org/x/sys v0.23.0
 	gopkg.in/op/go-logging.v1 v1.0.0-20160211212156-b2cb9fa56473
 	gopkg.in/yaml.v2 v2.4.0
 	gorm.io/driver/sqlite v1.5.2
@@ -31,6 +31,7 @@ require (
 	k8s.io/client-go v0.25.0
 	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed
 	sigs.k8s.io/controller-runtime v0.13.1
+	sigs.k8s.io/yaml v1.3.0
 )
 
 replace github.com/konveyor/tackle2-hub/shared => ./shared
@@ -43,10 +44,10 @@ require (
 	github.com/bytedance/sonic v1.9.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
 	github.com/elliotchance/orderedmap v1.5.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
+	github.com/evanphx/json-patch v4.12.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
@@ -104,13 +105,14 @@ require (
 	github.com/yuin/gopher-lua v1.1.1 // indirect
 	go.uber.org/zap v1.24.0 // indirect
 	golang.org/x/arch v0.3.0 // indirect
-	golang.org/x/crypto v0.22.0 // indirect
-	golang.org/x/net v0.24.0 // indirect
+	golang.org/x/crypto v0.51.0 // indirect
+	golang.org/x/net v0.55.0 // indirect
 	golang.org/x/oauth2 v0.5.0 // indirect
-	golang.org/x/term v0.19.0 // indirect
-	golang.org/x/text v0.15.0 // indirect
+	golang.org/x/sys v0.45.0 // indirect
+	golang.org/x/term v0.43.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
-	golang.org/x/tools v0.16.1 // indirect
+	golang.org/x/tools v0.44.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
@@ -122,5 +124,4 @@ require (
 	k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1 // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
-	sigs.k8s.io/yaml v1.3.0 // indirect
 )
