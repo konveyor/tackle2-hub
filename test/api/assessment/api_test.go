@@ -26,7 +26,7 @@ func TestAssessmentCRUD(t *testing.T) {
 				r.Application.ID = app.ID
 				err := RichClient.Application.Assessment(app.ID).Create(&r)
 				if err != nil {
-					t.Errorf(err.Error())
+					t.Error(err)
 				}
 
 			}
@@ -34,7 +34,7 @@ func TestAssessmentCRUD(t *testing.T) {
 			// Get.
 			got, err := Assessment.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if assert.FlatEqual(got, r) {
 				t.Errorf("Different response error. Got %v, expected %v", got, r)
@@ -43,7 +43,7 @@ func TestAssessmentCRUD(t *testing.T) {
 			// Get via parent object Application.
 			gotList, err := RichClient.Application.Assessment(r.Application.ID).List()
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			found := false
 			for _, gotItem := range gotList {
@@ -60,12 +60,12 @@ func TestAssessmentCRUD(t *testing.T) {
 			r.Sections[0].Questions[0].Answers[1].Selected = true  // green
 			err = Assessment.Update(&r)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			got, err = Assessment.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if got.Sections[0].Questions[0].Answers[2].Selected { // blue not selected
 				t.Errorf("Different response error. Blue should not be selected.")
@@ -77,7 +77,7 @@ func TestAssessmentCRUD(t *testing.T) {
 			// Delete.
 			err = Assessment.Delete(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			_, err = Assessment.Get(r.ID)

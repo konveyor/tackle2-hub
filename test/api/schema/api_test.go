@@ -15,7 +15,7 @@ func TestGetSchema(t *testing.T) {
 	api := api.RestAPI{}
 	err := RichClient.Client.Get("/schema", &api)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	if len(api.Routes) < 1 {
 		t.Errorf("Got empty Paths from /schema.")
@@ -25,7 +25,7 @@ func TestGetSchema(t *testing.T) {
 func TestGet(t *testing.T) {
 	r, err := RichClient.Schema.Get(name)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 	if r.Name != name {
 		t.Errorf("Name: '%s' expected.", name)
@@ -35,7 +35,7 @@ func TestGet(t *testing.T) {
 func TestFind(t *testing.T) {
 	r, err := RichClient.Schema.Find("platform", "cloudfoundry", "coordinates")
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 	if r.Name != name {
 		t.Errorf("Name: '%s' expected.", name)

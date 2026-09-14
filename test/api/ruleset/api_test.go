@@ -33,13 +33,13 @@ func TestRuleSetCRUD(t *testing.T) {
 			// Create.
 			err := RuleSet.Create(&r)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Get.
 			got, err := RuleSet.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if assert.FlatEqual(got, r) {
 				t.Errorf("Different response error. Got %v, expected %v", got, r)
@@ -64,11 +64,11 @@ func TestRuleSetCRUD(t *testing.T) {
 			// update
 			err = RuleSet.Update(&r)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			got, err = RuleSet.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if got.Name != r.Name {
 				t.Errorf("Different response error. Got %s, expected %s", got.Name, r.Name)
@@ -77,7 +77,7 @@ func TestRuleSetCRUD(t *testing.T) {
 			// Delete.
 			err = RuleSet.Delete(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			_, err = RuleSet.Get(r.ID)
 			if err == nil {

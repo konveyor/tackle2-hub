@@ -50,13 +50,13 @@ func TestArchetypeCRUD(t *testing.T) {
 			}
 			err = Archetype.Create(&r)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Get.
 			got, err := Archetype.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if !assert.Eq(r, got) {
 				t.Errorf("Different response error.\nGot:\n%+v\nExpected:\n%+v", got, &r)
@@ -78,12 +78,12 @@ func TestArchetypeCRUD(t *testing.T) {
 						}}})
 			err = Archetype.Update(&r)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			got, err = Archetype.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if !assert.Eq(r.Name, got.Name) {
 				t.Errorf("Different error.\nGot:\n%+v\nExpected:\n%+v", got, &r)
@@ -103,11 +103,11 @@ func TestArchetypeCRUD(t *testing.T) {
 			}
 			err = Archetype.Update(&r)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			got, err = Archetype.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			for i := range got.Profiles {
 				p := &got.Profiles[i]
@@ -128,7 +128,7 @@ func TestArchetypeCRUD(t *testing.T) {
 			// Delete.
 			err = Archetype.Delete(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			_, err = Archetype.Get(r.ID)
@@ -150,7 +150,7 @@ func TestArchetypeList(t *testing.T) {
 
 	got, err := Archetype.List()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	if assert.FlatEqual(got, &samples) {
 		t.Errorf("Different response error. Got %v, expected %v", got, samples)

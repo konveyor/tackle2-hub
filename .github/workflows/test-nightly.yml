@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
         with:
-          go-version: '1.21'
+          go-version: '1.26'
       - run: make test
 
   test-binding:
@@ -26,7 +26,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v3
         with:
-          go-version: '1.21'
+          go-version: '1.26'
       - run: |
           make vet
           DISCONNECTED=1 make run &
@@ -39,7 +39,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
         with:
-          go-version: '1.21'
+          go-version: '1.26'
       - run: |
           make vet
           DISCONNECTED=1 make run &

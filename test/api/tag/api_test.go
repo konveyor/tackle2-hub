@@ -13,13 +13,13 @@ func TestTagCRUD(t *testing.T) {
 			// Create.
 			err = Tag.Create(&r)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Get.
 			got, err := Tag.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if assert.FlatEqual(got, r) {
 				t.Errorf("Different response error. Got %v, expected %v", got, r)
@@ -29,12 +29,12 @@ func TestTagCRUD(t *testing.T) {
 			r.Name = "Updated " + r.Name
 			err = Tag.Update(&r)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			got, err = Tag.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if got.Name != r.Name {
 				t.Errorf("Different response error. Got %s, expected %s", got.Name, r.Name)
@@ -43,7 +43,7 @@ func TestTagCRUD(t *testing.T) {
 			// Delete.
 			err = Tag.Delete(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			_, err = Tag.Get(r.ID)
 			if err == nil {
@@ -53,11 +53,11 @@ func TestTagCRUD(t *testing.T) {
 			r.ID = 0
 			err = Tag.Ensure(&r)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			got, err = Tag.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if got.ID == 0 {
 				t.Errorf("Ensured resource has no id.")
@@ -67,7 +67,7 @@ func TestTagCRUD(t *testing.T) {
 			}
 			err = Tag.Delete(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 		})
 	}
@@ -84,7 +84,7 @@ func TestTagList(t *testing.T) {
 
 	got, err := Tag.List()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	if assert.FlatEqual(got, &samples) {
 		t.Errorf("Different response error. Got %v, expected %v", got, samples)
@@ -98,7 +98,7 @@ func TestTagList(t *testing.T) {
 func TestTagSeed(t *testing.T) {
 	got, err := Tag.List()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	if len(got) < 1 {
 		t.Errorf("Seed looks empty, but it shouldn't.")

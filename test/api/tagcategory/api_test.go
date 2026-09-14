@@ -13,13 +13,13 @@ func TestTagCategoryCRUD(t *testing.T) {
 			// Create.
 			err = TagCategory.Create(&r)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Get.
 			got, err := TagCategory.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if assert.FlatEqual(got, r) {
 				t.Errorf("Different response error. Got %v, expected %v", got, r)
@@ -29,12 +29,12 @@ func TestTagCategoryCRUD(t *testing.T) {
 			r.Name = "Updated " + r.Name
 			err = TagCategory.Update(&r)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			got, err = TagCategory.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if got.Name != r.Name {
 				t.Errorf("Different response error. Got %s, expected %s", got.Name, r.Name)
@@ -43,7 +43,7 @@ func TestTagCategoryCRUD(t *testing.T) {
 			// Delete.
 			err = TagCategory.Delete(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			_, err = TagCategory.Get(r.ID)
 			if err == nil {
@@ -54,11 +54,11 @@ func TestTagCategoryCRUD(t *testing.T) {
 			r.ID = 0
 			err = TagCategory.Ensure(&r)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			got, err = TagCategory.Get(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			if got.ID == 0 {
 				t.Errorf("Ensured resource has no id.")
@@ -68,7 +68,7 @@ func TestTagCategoryCRUD(t *testing.T) {
 			}
 			err = TagCategory.Delete(r.ID)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 		})
 	}
@@ -85,7 +85,7 @@ func TestTagCategoryList(t *testing.T) {
 
 	got, err := TagCategory.List()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	if assert.FlatEqual(got, &samples) {
 		t.Errorf("Different response error. Got %v, expected %v", got, samples)
@@ -99,7 +99,7 @@ func TestTagCategoryList(t *testing.T) {
 func TestTagCategorySeed(t *testing.T) {
 	got, err := TagCategory.List()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	if len(got) < 1 {
 		t.Errorf("Seed looks empty, but it shouldn't.")

@@ -20,7 +20,7 @@ func TestBucketCRUD(t *testing.T) {
 			// Get all the buckets.
 			gotBuckets, err := Bucket.List()
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Find for the specific bucket and compare Paths as it is a unique value.
@@ -35,7 +35,7 @@ func TestBucketCRUD(t *testing.T) {
 			// Get specific bucket.
 			gotBucket, err := Bucket.Get(uint(bucket.ID))
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Compare bucket Paths.
@@ -49,21 +49,21 @@ func TestBucketCRUD(t *testing.T) {
 
 			expectedFile, err := ioutil.TempFile("", "a")
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			defer os.Remove(expectedFile.Name())
 
 			data := []byte("Hello World")
 			_, err = expectedFile.Write(data)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			assert.Should(t, expectedBucket.Put(expectedFile.Name(), expectedFile.Name()))
 
 			gotFile, err := ioutil.TempFile("", "b")
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			defer os.Remove(gotFile.Name())
 
@@ -71,12 +71,12 @@ func TestBucketCRUD(t *testing.T) {
 
 			expected, err := ioutil.ReadFile(expectedFile.Name())
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			got, err := ioutil.ReadFile(gotFile.Name())
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			if len(expected) != len(got) {
@@ -89,7 +89,7 @@ func TestBucketCRUD(t *testing.T) {
 
 			gotDir, err := ioutil.TempDir("", "b")
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 			defer os.RemoveAll(gotDir)
 
@@ -97,12 +97,12 @@ func TestBucketCRUD(t *testing.T) {
 
 			expectedDirContent, err := ioutil.ReadDir("sample")
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			gotDirContent, err := ioutil.ReadDir(gotDir)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Error(err)
 			}
 
 			// Compare length of expected and got Directory content
