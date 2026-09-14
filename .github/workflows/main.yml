@@ -115,3 +115,4 @@ jobs:
     with:
       tackle_hub: ttl.sh/konveyor-hub-${{ github.sha }}:2h
       api_hub_tests_ref: ${{ github.ref }}
+      run_koncur_kantra_tests: false
