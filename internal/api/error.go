@@ -99,6 +99,20 @@ func (r *TrackerError) Is(err error) (matched bool) {
 	return
 }
 
+// Conflict reports a request that conflicts with the resource's state.
+type Conflict struct {
+	Reason string
+}
+
+func (r *Conflict) Error() string {
+	return r.Reason
+}
+
+func (r *Conflict) Is(err error) (matched bool) {
+	_, matched = err.(*Conflict)
+	return
+}
+
 // NotAvailableError reports resource not available.
 type NotAvailableError struct {
 	Name   string
@@ -198,6 +212,15 @@ func ErrorHandler() gin.HandlerFunc {
 			errors.Is(err, &auth.NotValid{}) {
 			rtx.Respond(
 				http.StatusUnauthorized,
+				gin.H{
+					"error": err.Error(),
+				})
+			return
+		}
+
+		if errors.Is(err, &Conflict{}) {
+			rtx.Respond(
+				http.StatusConflict,
 				gin.H{
 					"error": err.Error(),
 				})

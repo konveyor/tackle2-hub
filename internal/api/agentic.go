@@ -28,6 +28,17 @@ const ACPPort = 4000
 // ManagedLabel is the label used to identify resources managed by the hub.
 const ManagedLabel = "konveyor.io/managed"
 
+// OperatorManagedByLabel names the manager of operator-installed content.
+// The operator applies its curated defaults with a forced server-side apply on
+// every reconcile, and prunes by this label, so a change Hub accepts on one of
+// those objects is reverted and a delete is re-created. This is distinct from
+// ManagedLabel, which marks an object as needing Hub context and is carried by
+// user-created and operator-installed content alike.
+const (
+	OperatorManagedByLabel  = "app.kubernetes.io/managed-by"
+	OperatorDefaultsManager = "agentic-controller-defaults"
+)
+
 // ACPSecretKeys are the Secret data keys tried when reading the ACP secret.
 var ACPSecretKeys = []string{"secret-key", "ACP_SECRET_KEY"}
 
@@ -207,6 +218,10 @@ func (h AgenticHandler) AgentUpdate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	if err = h.operatorManaged("agent", current); err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	r := &Agent{}
 	err = h.Bind(ctx, r)
 	if err != nil {
@@ -239,6 +254,10 @@ func (h AgenticHandler) AgentDelete(ctx *gin.Context) {
 		},
 		r)
 	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	if err = h.operatorManaged("agent", r); err != nil {
 		_ = ctx.Error(err)
 		return
 	}
@@ -345,6 +364,10 @@ func (h AgenticHandler) SkillUpdate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	if err = h.operatorManaged("skill card", current); err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	r := &SkillCard{}
 	err = h.Bind(ctx, r)
 	if err != nil {
@@ -377,6 +400,10 @@ func (h AgenticHandler) SkillDelete(ctx *gin.Context) {
 		},
 		r)
 	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	if err = h.operatorManaged("skill card", r); err != nil {
 		_ = ctx.Error(err)
 		return
 	}
@@ -483,6 +510,10 @@ func (h AgenticHandler) SkillCollectionUpdate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	if err = h.operatorManaged("skill collection", current); err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	r := &SkillCollection{}
 	err = h.Bind(ctx, r)
 	if err != nil {
@@ -515,6 +546,10 @@ func (h AgenticHandler) SkillCollectionDelete(ctx *gin.Context) {
 		},
 		r)
 	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	if err = h.operatorManaged("skill collection", r); err != nil {
 		_ = ctx.Error(err)
 		return
 	}
@@ -992,6 +1027,10 @@ func (h AgenticHandler) WorkflowUpdate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	if err = h.operatorManaged("workflow", current); err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	r := &AgentWorkflow{}
 	err = h.Bind(ctx, r)
 	if err != nil {
@@ -1024,6 +1063,10 @@ func (h AgenticHandler) WorkflowDelete(ctx *gin.Context) {
 		},
 		r)
 	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	if err = h.operatorManaged("workflow", r); err != nil {
 		_ = ctx.Error(err)
 		return
 	}
@@ -1215,6 +1258,26 @@ func (h *AgenticHandler) acpKey(ctx *gin.Context, name string) (key string, err 
 		}
 	}
 	err = &BadRequestError{Reason: "ACP secret key not found."}
+	return
+}
+
+// operatorManaged reports operator-installed content as a conflict.
+// Hub must not accept a write it knows the operator will revert: returning
+// success and letting the change disappear on the next reconcile gives the
+// caller no way to tell an applied change from a discarded one.
+func (h *AgenticHandler) operatorManaged(kind string, r k8s.Object) (err error) {
+	if r.GetLabels()[OperatorManagedByLabel] != OperatorDefaultsManager {
+		return
+	}
+	err = &Conflict{
+		Reason: fmt.Sprintf(
+			"%s '%s' is default content installed by the operator, which"+
+				" re-applies it on every reconcile. A change here would be"+
+				" reverted. Create your own %s to customize it.",
+			kind,
+			r.GetName(),
+			kind),
+	}
 	return
 }
 
