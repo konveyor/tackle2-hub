@@ -16,7 +16,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
 	github.com/jortel/go-utils v0.1.5
-	github.com/konveyor/agentic-controller/api v0.0.0-20260826225318-22fee4931905
+	github.com/konveyor/agentic-controller/api v0.0.0-20260918023138-38046470091c
 	github.com/konveyor/tackle2-hub/shared v0.0.0
 	github.com/konveyor/tackle2-seed v0.0.0-20250825214317-99de80681f88
 	github.com/mattn/go-sqlite3 v1.14.17
