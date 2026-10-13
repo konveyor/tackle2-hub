@@ -19,6 +19,7 @@ func (r *Identity) With(m *model.Identity) {
 	r.Password = m.Password
 	r.Key = m.Key
 	r.Settings = m.Settings
+	r.CaCert = m.CaCert
 }
 
 // Model builds a model.
@@ -32,6 +33,7 @@ func (r *Identity) Model() (m *model.Identity) {
 		Password:    r.Password,
 		Key:         r.Key,
 		Settings:    r.Settings,
+		CaCert:      r.CaCert,
 	}
 	m.ID = r.ID
 

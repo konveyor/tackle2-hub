@@ -854,6 +854,8 @@ func TestIdentity_With(t *testing.T) {
 		Description: "Test credentials",
 		User:        "testuser",
 		Password:    "encrypted-password",
+		Key:         "testkey",
+		CaCert:      "testcacert",
 	}
 
 	r := &Identity{}
@@ -865,6 +867,8 @@ func TestIdentity_With(t *testing.T) {
 	g.Expect(r.Description).To(gomega.Equal("Test credentials"))
 	g.Expect(r.User).To(gomega.Equal("testuser"))
 	g.Expect(r.Password).To(gomega.Equal("encrypted-password"))
+	g.Expect(r.Key).To(gomega.Equal("testkey"))
+	g.Expect(r.CaCert).To(gomega.Equal("testcacert"))
 }
 
 // TestIdentity_Model tests the Identity.Model() method
@@ -878,6 +882,8 @@ func TestIdentity_Model(t *testing.T) {
 		Description: "Test credentials",
 		User:        "testuser",
 		Password:    "encrypted-password",
+		Key:         "testkey",
+		CaCert:      "testcacert",
 	}
 
 	m := r.Model()
@@ -888,6 +894,8 @@ func TestIdentity_Model(t *testing.T) {
 	g.Expect(m.Description).To(gomega.Equal("Test credentials"))
 	g.Expect(m.User).To(gomega.Equal("testuser"))
 	g.Expect(m.Password).To(gomega.Equal("encrypted-password"))
+	g.Expect(m.Key).To(gomega.Equal("testkey"))
+	g.Expect(m.CaCert).To(gomega.Equal("testcacert"))
 }
 
 // TestApplication_With tests the Application.With() method

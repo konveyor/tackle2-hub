@@ -1,0 +1,94 @@
+diff -urN '--exclude=mod.patch' v22/model/core.go v23/model/core.go
+--- v22/model/core.go	2026-07-16 17:40:00.800184521 -0500
++++ v23/model/core.go	2026-07-26 10:22:03.046356443 -0500
+@@ -213,7 +213,7 @@
+ 
+ type User struct {
+ 	Model
+-	Subject  string  `gorm:"<-:create;index;not null"`
++	Subject  string  `gorm:"<-:create;uniqueIndex;not null"`
+ 	Login    string  `gorm:"<-:create;uniqueIndex;not null"`
+ 	Name     string  `gorm:""`
+ 	Password string  `gorm:"not null" secret:"hashed"`
+@@ -222,9 +222,17 @@
+ 	Tokens   []Token `gorm:"constraint:OnDelete:CASCADE"`
+ }
+ 
++type ServiceAccount struct {
++	Model
++	Subject string  `gorm:"<-:create;uniqueIndex;not null"`
++	Name    string  `gorm:"<-:create;uniqueIndex;not null"`
++	Roles   []Role  `gorm:"many2many:ServiceAccountRole;constraint:OnDelete:CASCADE"`
++	Tokens  []Token `gorm:"constraint:OnDelete:CASCADE"`
++}
++
+ type Role struct {
+ 	Model
+-	Name   string   `gorm:"index;not null"`
++	Name   string   `gorm:"uniqueIndex;not null"`
+ 	Scopes []string `gorm:"type:json;serializer:json"`
+ }
+ 
+@@ -234,7 +242,7 @@
+ 
+ type IdpClient struct {
+ 	Model
+-	Subject         string   `gorm:"<-:create;index;not null"`
++	Subject         string   `gorm:"<-:create;uniqueIndex;not null"`
+ 	ClientId        string   `gorm:"<-:create;uniqueIndex;not null"`
+ 	Secret          string   `gorm:"" secret:"hashed"`
+ 	ApplicationType string   `gorm:"not null"`
+@@ -285,23 +293,25 @@
+ 
+ type Token struct {
+ 	Model
+-	Kind          string       `gorm:"<-:create;not null"`
+-	AuthId        string       `gorm:"<-:create;uniqueIndex;not null"`
+-	Subject       string       `gorm:"<-:create;index"`
+-	Digest        string       `gorm:"<-:create;index"`
+-	Issued        time.Time    `gorm:"<-:create;not null"`
+-	Scopes        []string     `gorm:"type:json;serializer:json"`
+-	Expiration    time.Time    `gorm:"index"`
+-	GrantID       *uint        `gorm:"index"`
+-	Grant         *Grant       `gorm:"constraint:OnDelete:CASCADE"`
+-	UserID        *uint        `gorm:"index"`
+-	User          *User        `gorm:"constraint:OnDelete:CASCADE"`
+-	IdpIdentityID *uint        `gorm:"index"`
+-	IdpIdentity   *IdpIdentity `gorm:"constraint:OnDelete:CASCADE"`
+-	IdpClientID   *uint        `gorm:"index"`
+-	IdpClient     *IdpClient   `gorm:"constraint:OnDelete:CASCADE"`
+-	TaskID        *uint        `gorm:"index"`
+-	Task          *Task        `gorm:"constraint:OnDelete:CASCADE"`
++	Kind             string          `gorm:"<-:create;not null"`
++	AuthId           string          `gorm:"<-:create;uniqueIndex;not null"`
++	Subject          string          `gorm:"<-:create;index"`
++	Digest           string          `gorm:"<-:create;index"`
++	Issued           time.Time       `gorm:"<-:create;not null"`
++	Scopes           []string        `gorm:"type:json;serializer:json"`
++	Expiration       time.Time       `gorm:"index"`
++	GrantID          *uint           `gorm:"index"`
++	Grant            *Grant          `gorm:"constraint:OnDelete:CASCADE"`
++	UserID           *uint           `gorm:"index"`
++	User             *User           `gorm:"constraint:OnDelete:CASCADE"`
++	ServiceAccountID *uint           `gorm:"index"`
++	ServiceAccount   *ServiceAccount `gorm:"constraint:OnDelete:CASCADE"`
++	IdpIdentityID    *uint           `gorm:"index"`
++	IdpIdentity      *IdpIdentity    `gorm:"constraint:OnDelete:CASCADE"`
++	IdpClientID      *uint           `gorm:"index"`
++	IdpClient        *IdpClient      `gorm:"constraint:OnDelete:CASCADE"`
++	TaskID           *uint           `gorm:"index"`
++	Task             *Task           `gorm:"constraint:OnDelete:CASCADE"`
+ }
+ 
+ //
+diff -urN '--exclude=mod.patch' v22/model/pkg.go v23/model/pkg.go
+--- v22/model/pkg.go	2026-07-06 10:40:29.300718805 -0500
++++ v23/model/pkg.go	2026-07-24 13:53:36.191647998 -0500
+@@ -63,6 +63,7 @@
+ 		IdpIdentity{},
+ 		Role{},
+ 		User{},
++		ServiceAccount{},
+ 		Token{},
+ 		RsaKey{},
+ 		Grant{},
