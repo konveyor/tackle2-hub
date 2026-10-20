@@ -1,0 +1,16 @@
+--- v23/model/core.go	2026-09-21 12:05:22.179582003 -0500
++++ v24/model/core.go	2026-10-12 15:55:22.396000000 -0500
+@@ -203,9 +203,10 @@
+ 	Default      bool
+ 	Description  string
+ 	User         string
+-	Password     string            `secret:""`
+-	Key          string            `secret:""`
+-	Settings     string            `secret:""`
++	Password     string `secret:""`
++	Key          string `secret:""`
++	Settings     string `secret:""`
++	CaCert       string
+ 	Proxies      []Proxy           `gorm:"constraint:OnDelete:SET NULL"`
+ 	Applications []Application     `gorm:"many2many:ApplicationIdentity;constraint:OnDelete:CASCADE"`
+ 	Profiles     []AnalysisProfile `gorm:"constraint:OnDelete:SET NULL"`

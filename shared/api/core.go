@@ -103,6 +103,7 @@ type Identity struct {
 	Password    string `json:"password"`
 	Key         string `json:"key"`
 	Settings    string `json:"settings"`
+	CaCert      string `json:"caCert" yaml:"caCert"`
 }
 
 // Proxy REST resource.
