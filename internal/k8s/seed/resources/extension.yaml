@@ -72,6 +72,7 @@ spec:
             disableMavenSearch: false
             lspServerPath: /jdtls/bin/jdtls
             mavenCacheDir: /cache/m2
+            mavenCaFile: $(maven.ca.path)
             mavenIndexPath: /usr/local/etc/maven-index.txt
             mavenInsecure: $(maven.insecure)
             mavenSettingsFile: $(maven.settings.path)
@@ -81,6 +82,9 @@ spec:
           - key: maven.settings.path
             name: settings
             path: /shared/creds/maven/settings.xml
+          - key: maven.ca.path
+            name: caCert
+            path: /shared/creds/maven/ca.pem
         selector: identity:kind=maven
       - fields:
           - key: maven.insecure
