@@ -27,7 +27,7 @@ require (
 	github.com/swaggo/swag v1.16.1
 	github.com/vfaronov/httpheader v0.1.0
 	github.com/zitadel/oidc/v3 v3.47.2
-	golang.org/x/crypto v0.55.0
+	golang.org/x/crypto v0.56.0
 	golang.org/x/oauth2 v0.36.0
 	gopkg.in/op/go-logging.v1 v1.0.0-20160211212156-b2cb9fa56473
 	gopkg.in/yaml.v2 v2.4.0
