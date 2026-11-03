@@ -25,6 +25,8 @@ jobs:
       extra-args: |
         --build-arg
         VERSION=${{ github.tag}}-${{ github.ref }}
+        --build-arg
+        SEED_BRANCH=${{ github.ref_name }}
     secrets:
       registry_username: ${{ secrets.QUAY_PUBLISH_ROBOT }}
       registry_password: ${{ secrets.QUAY_PUBLISH_TOKEN }}
