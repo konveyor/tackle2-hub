@@ -26,7 +26,19 @@ import (
 const ACPPort = 4000
 
 // ManagedLabel is the label used to identify resources managed by the hub.
+//
+// AgentCreate() and WorkflowCreate() label the resources they create; their
+// list handlers select on the label. So an Agent or AgentWorkflow created any
+// other way (kubectl apply, a kustomize overlay, an operator that does not set
+// the label) is omitted from those lists. Callers needing to see everything in
+// the namespace pass ?all=true. The other kinds (SkillCard, SkillCollection,
+// Gateway, AgentRun, AgentWorkflowRun) are neither labelled on create nor
+// selected on when listed.
 const ManagedLabel = "konveyor.io/managed"
+
+// AllParam is the query parameter used to request that a list not be
+// restricted to hub-managed resources. See: ManagedLabel.
+const AllParam = "all"
 
 // ACPSecretKeys are the Secret data keys tried when reading the ACP secret.
 var ACPSecretKeys = []string{"secret-key", "ACP_SECRET_KEY"}
@@ -138,20 +150,24 @@ func (h AgenticHandler) AgentGet(ctx *gin.Context) {
 
 // AgentList godoc
 // @summary List all agents.
-// @description List all agents.
+// @description List all agents. Restricted to agents labelled
+// @description konveyor.io/managed=true unless (all) is true.
 // @tags agents
 // @produce json
 // @success 200 {object} []Agent
 // @router /agentic/agents [get]
+// @param all query bool false "Include agents not managed by the hub"
 func (h AgenticHandler) AgentList(ctx *gin.Context) {
+	options, err := h.listOptions(ctx)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	list := &AgentList{}
-	err := h.Client(ctx).List(
+	err = h.Client(ctx).List(
 		context.TODO(),
 		list,
-		k8s.InNamespace(Settings.Hub.Namespace),
-		k8s.MatchingLabels{
-			ManagedLabel: "true",
-		})
+		options...)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -923,20 +939,24 @@ func (h AgenticHandler) WorkflowGet(ctx *gin.Context) {
 
 // WorkflowList godoc
 // @summary List all agent workflows.
-// @description List all agent workflows.
+// @description List all agent workflows. Restricted to workflows labelled
+// @description konveyor.io/managed=true unless (all) is true.
 // @tags workflows
 // @produce json
 // @success 200 {object} []AgentWorkflow
 // @router /agentic/workflows [get]
+// @param all query bool false "Include workflows not managed by the hub"
 func (h AgenticHandler) WorkflowList(ctx *gin.Context) {
+	options, err := h.listOptions(ctx)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	list := &AgentWorkflowList{}
-	err := h.Client(ctx).List(
+	err = h.Client(ctx).List(
 		context.TODO(),
 		list,
-		k8s.InNamespace(Settings.Hub.Namespace),
-		k8s.MatchingLabels{
-			ManagedLabel: "true",
-		})
+		options...)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -1215,6 +1235,45 @@ func (h *AgenticHandler) acpKey(ctx *gin.Context, name string) (key string, err 
 		}
 	}
 	err = &BadRequestError{Reason: "ACP secret key not found."}
+	return
+}
+
+// listOptions returns the options for label-filtered list handlers.
+// The namespace is always applied. The ManagedLabel selector is applied
+// unless the caller has requested everything with ?all=true.
+func (h AgenticHandler) listOptions(ctx *gin.Context) (options []k8s.ListOption, err error) {
+	options = []k8s.ListOption{
+		k8s.InNamespace(Settings.Hub.Namespace),
+	}
+	all, err := h.listAll(ctx)
+	if err != nil {
+		return
+	}
+	if !all {
+		options = append(
+			options,
+			k8s.MatchingLabels{
+				ManagedLabel: "true",
+			})
+	}
+	return
+}
+
+// listAll returns the (all) query parameter.
+// Omitted is false. An unparsable value is reported rather than
+// ignored; silently returning a filtered list is the problem the
+// parameter exists to solve.
+func (h AgenticHandler) listAll(ctx *gin.Context) (all bool, err error) {
+	q := ctx.Query(AllParam)
+	if q == "" {
+		return
+	}
+	all, err = strconv.ParseBool(q)
+	if err != nil {
+		err = &BadRequestError{
+			Reason: fmt.Sprintf("(%s) parameter must be a boolean.", AllParam),
+		}
+	}
 	return
 }
 
