@@ -34,6 +34,15 @@ const ACPPort = 4000
 // the namespace pass ?all=true. The other kinds (SkillCard, SkillCollection,
 // Gateway, AgentRun, AgentWorkflowRun) are neither labelled on create nor
 // selected on when listed.
+//
+// The single-resource methods (get, update, delete) are intentionally not
+// filtered by the label. The label records how a resource was created, not
+// whether it may be addressed: a resource named in a request exists or it does
+// not, and the hub reports 404 only for the latter. Filtering them would also
+// break callers that fetch by name today, including those following a
+// reference held by a resource the hub did not create. So the asymmetry is
+// deliberate: an unlabelled resource is absent from the Agent and
+// AgentWorkflow lists (unless ?all=true) and still addressable by name.
 const ManagedLabel = "konveyor.io/managed"
 
 // AllParam is the query parameter used to request that a list not be
@@ -133,6 +142,7 @@ func (h *AgenticHandler) AddRoutes(e *gin.Engine) {
 // @router /agentic/agents/{name} [get]
 // @param name path string true "Agent name"
 func (h AgenticHandler) AgentGet(ctx *gin.Context) {
+	// Not filtered by ManagedLabel. See: ManagedLabel.
 	r := &Agent{}
 	err := h.Client(ctx).Get(
 		context.TODO(),
@@ -922,6 +932,7 @@ func (h AgenticHandler) AgentRunConnect(ctx *gin.Context) {
 // @router /agentic/workflows/{name} [get]
 // @param name path string true "AgentWorkflow name"
 func (h AgenticHandler) WorkflowGet(ctx *gin.Context) {
+	// Not filtered by ManagedLabel. See: ManagedLabel.
 	r := &AgentWorkflow{}
 	err := h.Client(ctx).Get(
 		context.TODO(),
