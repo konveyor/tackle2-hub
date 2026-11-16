@@ -55,13 +55,19 @@ func (r *Filter) Exclude(patterns ...string) {
 type FilterSet struct {
 	root     string
 	patterns []string
-	cache    map[string]bool
 }
 
 // Match returns true when the path matches.
+// Patterns are matched lexically (rooted) which matches
+// paths that have not been created.
 func (r *FilterSet) Match(path string) (match bool) {
-	r.build()
-	_, match = r.cache[path]
+	for i := range r.patterns {
+		pattern := pathlib.Join(r.root, r.patterns[i])
+		match, _ = filepath.Match(pattern, path)
+		if match {
+			return
+		}
+	}
 	return
 }
 
@@ -72,7 +78,6 @@ func (r *FilterSet) Add(patterns ...string) {
 		if p == "" {
 			continue
 		}
-		r.cache = nil
 		r.patterns = append(
 			r.patterns,
 			p)
@@ -82,18 +87,4 @@ func (r *FilterSet) Add(patterns ...string) {
 // Len returns number of patterns.
 func (r *FilterSet) Len() (n int) {
 	return len(r.patterns)
-}
-
-// build populates the cache as needed.
-func (r *FilterSet) build() {
-	if r.cache != nil {
-		return
-	}
-	r.cache = make(map[string]bool)
-	for i := range r.patterns {
-		matches, _ := filepath.Glob(pathlib.Join(r.root, r.patterns[i]))
-		for _, p := range matches {
-			r.cache[p] = true
-		}
-	}
 }
