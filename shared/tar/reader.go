@@ -50,7 +50,7 @@ func (r *Reader) Extract(outDir string, reader io.Reader) (err error) {
 		}
 		path := pathlib.Join(outDir, header.Name)
 		if !r.Filter.Match(path) {
-			return
+			continue
 		}
 		switch header.Typeflag {
 		case tar.TypeDir:
