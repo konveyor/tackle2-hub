@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	pathlib "path"
 	"strconv"
 	"strings"
 
@@ -114,6 +115,28 @@ func (h *BaseHandler) pk(ctx *gin.Context) (id uint) {
 	s := ctx.Param(ID)
 	n, _ := strconv.Atoi(s)
 	id = uint(n)
+	return
+}
+
+// wildcardPath returns the wildcard parameter resolved against the root.
+// The returned path is cleaned and verified to be contained by the root.
+// The root itself is a valid path and returned when the parameter is
+// empty or (/).
+// Returns BadRequestError when the path is not contained by the root.
+// Containment is determined lexically and does not account for symlinks.
+func (h *BaseHandler) wildcardPath(ctx *gin.Context, root string) (path string, err error) {
+	wildcard := ctx.Param(Wildcard)
+	root = pathlib.Clean(root)
+	resolved := pathlib.Join(root, wildcard)
+	contained := resolved == root ||
+		strings.HasPrefix(resolved, strings.TrimSuffix(root, "/")+"/")
+	if !contained {
+		err = &BadRequestError{
+			Reason: fmt.Sprintf("Path (%s) not permitted.", wildcard),
+		}
+		return
+	}
+	path = resolved
 	return
 }
 

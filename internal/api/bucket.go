@@ -201,14 +201,17 @@ type BucketOwner struct {
 //
 //	Streams FILE content.
 func (h *BucketOwner) bucketGet(ctx *gin.Context, id uint) {
-	var err error
 	m := &model.Bucket{}
 	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	path := pathlib.Join(m.Path, ctx.Param(Wildcard))
+	path, err := h.wildcardPath(ctx, m.Path)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	st, err := os.Stat(path)
 	if os.IsNotExist(err) {
 		h.Status(ctx, http.StatusNotFound)
@@ -218,12 +221,12 @@ func (h *BucketOwner) bucketGet(ctx *gin.Context, id uint) {
 		filter := tar.NewFilter(path)
 		filter.Include(ctx.Query(Filter))
 		if h.Accepted(ctx, binding.MIMEHTML) {
-			h.getFile(ctx, m)
+			h.getFile(ctx, path)
 		} else {
 			h.getDir(ctx, path, filter)
 		}
 	} else {
-		h.getFile(ctx, m)
+		h.getFile(ctx, path)
 	}
 }
 
@@ -232,17 +235,21 @@ func (h *BucketOwner) bucketGet(ctx *gin.Context, id uint) {
 // When `Directory`=Expand, the file (TARBALL) is extracted into the bucket.
 // Else the file is stored.
 func (h *BucketOwner) bucketPut(ctx *gin.Context, id uint) {
-	var err error
 	m := &model.Bucket{}
 	result := h.DB(ctx).First(m, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
 	}
+	path, err := h.wildcardPath(ctx, m.Path)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	if ctx.Request.Header.Get(Directory) == DirectoryExpand {
-		err = h.putDir(ctx, pathlib.Join(m.Path, ctx.Param(Wildcard)))
+		err = h.putDir(ctx, path)
 	} else {
-		err = h.putFile(ctx, m)
+		err = h.putFile(ctx, path)
 	}
 	if err != nil {
 		_ = ctx.Error(err)
@@ -259,9 +266,12 @@ func (h *BucketOwner) bucketDelete(ctx *gin.Context, id uint) {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	rPath := ctx.Param(Wildcard)
-	path := pathlib.Join(m.Path, rPath)
-	err := nas.RmDir(path)
+	path, err := h.wildcardPath(ctx, m.Path)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	err = nas.RmDir(path)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -314,15 +324,12 @@ func (h *BucketOwner) getDir(ctx *gin.Context, input string, filter tar.Filter) 
 }
 
 // getFile reads a file from the bucket.
-func (h *BucketOwner) getFile(ctx *gin.Context, m *model.Bucket) {
-	rPath := ctx.Param(Wildcard)
-	path := pathlib.Join(m.Path, rPath)
+func (h *BucketOwner) getFile(ctx *gin.Context, path string) {
 	ctx.File(path)
 }
 
 // putFile writes a file to the bucket.
-func (h *BucketOwner) putFile(ctx *gin.Context, m *model.Bucket) (err error) {
-	path := pathlib.Join(m.Path, ctx.Param(Wildcard))
+func (h *BucketOwner) putFile(ctx *gin.Context, path string) (err error) {
 	input, err := ctx.FormFile(FileField)
 	if err != nil {
 		err = &BadRequestError{Reason: err.Error()}

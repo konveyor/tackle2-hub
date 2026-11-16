@@ -37,8 +37,12 @@ func (h CacheHandler) AddRoutes(e *gin.Engine) {
 // @router /caches/{wildcard} [get]
 // @param wildcard path string true "Cache DIR"
 func (h CacheHandler) Get(ctx *gin.Context) {
-	dir := ctx.Param(Wildcard)
-	r, err := h.cache(dir)
+	path, err := h.wildcardPath(ctx, Settings.Addon.CacheDir)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	r, err := h.cache(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			h.Status(ctx, http.StatusNotFound)
@@ -64,10 +68,12 @@ func (h CacheHandler) Delete(ctx *gin.Context) {
 		h.Status(ctx, http.StatusForbidden)
 		return
 	}
-	path := pathlib.Join(
-		Settings.Addon.CacheDir,
-		dir)
-	_, err := os.Stat(path)
+	path, err := h.wildcardPath(ctx, Settings.Addon.CacheDir)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	_, err = os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			h.Status(ctx, http.StatusNoContent)
@@ -86,11 +92,9 @@ func (h CacheHandler) Delete(ctx *gin.Context) {
 }
 
 // cache builds the resource.
-func (h *CacheHandler) cache(dir string) (cache *Cache, err error) {
+func (h *CacheHandler) cache(path string) (cache *Cache, err error) {
 	cache = &Cache{}
-	cache.Path = pathlib.Join(
-		Settings.Addon.CacheDir,
-		dir)
+	cache.Path = path
 	_, err = os.Stat(Settings.Addon.CacheDir)
 	if err != nil {
 		return
@@ -111,7 +115,7 @@ func (h *CacheHandler) cache(dir string) (cache *Cache, err error) {
 	cache.Capacity = fields[1]
 	cache.Used = fields[2]
 	cache.Exists = true
-	if dir == "" {
+	if cache.Path == pathlib.Clean(Settings.Addon.CacheDir) {
 		return
 	}
 	_, err = os.Stat(cache.Path)

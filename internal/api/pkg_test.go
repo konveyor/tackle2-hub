@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -37,6 +38,70 @@ func TestAccepted(t *testing.T) {
 	// Multiple and parameters.
 	ctx.Request.Header[Accept] = []string{"x/y,a/b;q=1.0"}
 	g.Expect(h.Accepted(ctx, "a/b")).To(gomega.BeTrue())
+}
+
+func TestWildcardPath(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	h := BaseHandler{}
+	root := "/bucket/8a1f"
+	wildcardPath := func(wildcard string) (path string, err error) {
+		ctx := &gin.Context{
+			Params: gin.Params{{Key: Wildcard, Value: wildcard}},
+		}
+		path, err = h.wildcardPath(ctx, root)
+		return
+	}
+
+	// Contained.
+	for wildcard, expected := range map[string]string{
+		"":              root,
+		"/":             root,
+		"/file":         root + "/file",
+		"/dir/file":     root + "/dir/file",
+		"/dir//file":    root + "/dir/file",
+		"/dir/./file":   root + "/dir/file",
+		"/dir/../file":  root + "/file",
+		"/..file":       root + "/..file",
+		"/dir/file..":   root + "/dir/file..",
+		"/etc/passwd":   root + "/etc/passwd",
+		"/dir/sub/../.": root + "/dir",
+	} {
+		path, err := wildcardPath(wildcard)
+		g.Expect(err).To(gomega.BeNil(), wildcard)
+		g.Expect(path).To(gomega.Equal(expected), wildcard)
+	}
+
+	// Not contained.
+	for _, wildcard := range []string{
+		"/..",
+		"/../",
+		"/../etc/passwd",
+		"/../../etc/passwd",
+		"/dir/../../etc/passwd",
+		"/dir/../..",
+		"/../8a1f-evil/file",
+	} {
+		path, err := wildcardPath(wildcard)
+		g.Expect(err).ToNot(gomega.BeNil(), wildcard)
+		g.Expect(errors.Is(err, &BadRequestError{})).To(gomega.BeTrue(), wildcard)
+		g.Expect(path).To(gomega.Equal(""), wildcard)
+	}
+
+	// Sibling root not treated as contained.
+	ctx := &gin.Context{
+		Params: gin.Params{{Key: Wildcard, Value: "/../bucket-evil/file"}},
+	}
+	path, err := h.wildcardPath(ctx, "/bucket")
+	g.Expect(err).ToNot(gomega.BeNil())
+	g.Expect(path).To(gomega.Equal(""))
+
+	// Filesystem root contains everything.
+	ctx = &gin.Context{
+		Params: gin.Params{{Key: Wildcard, Value: "/../../etc/passwd"}},
+	}
+	path, err = h.wildcardPath(ctx, "/")
+	g.Expect(err).To(gomega.BeNil())
+	g.Expect(path).To(gomega.Equal("/etc/passwd"))
 }
 
 func TestFactKey(t *testing.T) {
