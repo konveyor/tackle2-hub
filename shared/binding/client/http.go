@@ -648,6 +648,7 @@ func (r *Client) FileSend(path, method string, fields []Field, object any) (err 
 // getDir downloads and expands a directory.
 func (r *Client) getDir(body io.Reader, output string) (err error) {
 	tarReader := tar.NewReader()
+	tarReader.Accept = tar.Contained(output)
 	err = tarReader.Extract(output, body)
 	return
 }

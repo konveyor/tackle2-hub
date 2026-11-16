@@ -93,8 +93,6 @@ func (r *Reader) Extract(outDir string, reader io.Reader) (err error) {
 				return
 			}
 		}
-		// Symlink (and hardlink) entries are not extracted.
-		// When added, Accept must also be applied to the link target.
 		switch header.Typeflag {
 		case tar.TypeDir:
 			err = nas.MkDir(path, os.FileMode(header.Mode))
@@ -103,6 +101,10 @@ func (r *Reader) Extract(outDir string, reader io.Reader) (err error) {
 				return
 			}
 		case tar.TypeReg:
+			err = nas.MkDir(pathlib.Dir(path), 0777)
+			if err != nil {
+				return
+			}
 			file, nErr := os.Create(path)
 			if nErr != nil {
 				err = liberr.Wrap(nErr)

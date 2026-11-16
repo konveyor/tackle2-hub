@@ -129,11 +129,9 @@ func TestReaderFilter(t *testing.T) {
 	_ = file.Close()
 
 	// Extract only data/pet.
-	// The enclosing DIRECTORY entries must be included because
-	// Extract creates directories only from (TypeDir) entries.
 	outDir := path.Join(tmpDir, "out")
 	filter := NewFilter(outDir)
-	filter.Include("data", "data/pet", "data/pet/*")
+	filter.Include("data/pet/*")
 	reader := NewReader()
 	reader.Filter = filter
 	file, err = os.Open(outPath)
@@ -221,6 +219,40 @@ func TestAcceptNotAssigned(t *testing.T) {
 	g.Expect(err).To(gomega.BeNil())
 	_, err = os.Stat(path.Join(tmpDir, "bucket", "escaped"))
 	g.Expect(err).To(gomega.BeNil())
+}
+
+func TestExtractParentDir(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	// The parent directory is created as needed. The archive is
+	// not required to contain a (TypeDir) entry for the parent or
+	// to report it before the files it contains.
+	for _, entries := range [][]entry{
+		{
+			{name: "sub", flag: tar.TypeDir},
+			{name: "sub/file", flag: tar.TypeReg},
+		},
+		{
+			{name: "sub/file", flag: tar.TypeReg},
+		},
+		{
+			{name: "sub/file", flag: tar.TypeReg},
+			{name: "sub", flag: tar.TypeDir},
+		},
+		{
+			{name: "sub/deep/nested/file", flag: tar.TypeReg},
+		},
+	} {
+		tmpDir, err := os.MkdirTemp("", "tar-*")
+		g.Expect(err).To(gomega.BeNil())
+		reader := NewReader()
+		reader.Accept = Contained(tmpDir)
+		err = reader.Extract(tmpDir, tarball(entries...))
+		g.Expect(err).To(gomega.BeNil(), entries[0].name)
+		_, err = os.Stat(path.Join(tmpDir, entries[0].name))
+		g.Expect(err).To(gomega.BeNil(), entries[0].name)
+		_ = nas.RmDir(tmpDir)
+	}
 }
 
 type entry struct {
