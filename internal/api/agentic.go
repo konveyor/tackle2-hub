@@ -15,10 +15,13 @@ import (
 	"github.com/gorilla/websocket"
 	liberr "github.com/jortel/go-utils/error"
 	agent "github.com/konveyor/agentic-controller/api/v1alpha1"
+	qf "github.com/konveyor/tackle2-hub/internal/api/filter"
 	"github.com/konveyor/tackle2-hub/internal/auth"
 	"github.com/konveyor/tackle2-hub/shared/api"
 	core "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	k8s "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -26,7 +29,15 @@ import (
 const ACPPort = 4000
 
 // ManagedLabel is the label used to identify resources managed by the hub.
+// AgentCreate() and WorkflowCreate() label the resources they create. Resources
+// created another way (kubectl apply, a kustomize overlay, an operator that
+// does not set the label) are not labelled. The label is not applied as a list
+// selector by default; it is reported by the (managed) filter field.
+// See: listOptions().
 const ManagedLabel = "konveyor.io/managed"
+
+// Managed is the list filter field matched to ManagedLabel.
+const Managed = "managed"
 
 // ACPSecretKeys are the Secret data keys tried when reading the ACP secret.
 var ACPSecretKeys = []string{"secret-key", "ACP_SECRET_KEY"}
@@ -143,15 +154,18 @@ func (h AgenticHandler) AgentGet(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} []Agent
 // @router /agentic/agents [get]
+// @param filter query string false "Filter: managed:(true|false)"
 func (h AgenticHandler) AgentList(ctx *gin.Context) {
+	options, err := h.listOptions(ctx)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	list := &AgentList{}
-	err := h.Client(ctx).List(
+	err = h.Client(ctx).List(
 		context.TODO(),
 		list,
-		k8s.InNamespace(Settings.Hub.Namespace),
-		k8s.MatchingLabels{
-			ManagedLabel: "true",
-		})
+		options...)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -928,15 +942,18 @@ func (h AgenticHandler) WorkflowGet(ctx *gin.Context) {
 // @produce json
 // @success 200 {object} []AgentWorkflow
 // @router /agentic/workflows [get]
+// @param filter query string false "Filter: managed:(true|false)"
 func (h AgenticHandler) WorkflowList(ctx *gin.Context) {
+	options, err := h.listOptions(ctx)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	list := &AgentWorkflowList{}
-	err := h.Client(ctx).List(
+	err = h.Client(ctx).List(
 		context.TODO(),
 		list,
-		k8s.InNamespace(Settings.Hub.Namespace),
-		k8s.MatchingLabels{
-			ManagedLabel: "true",
-		})
+		options...)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -1215,6 +1232,79 @@ func (h *AgenticHandler) acpKey(ctx *gin.Context, name string) (key string, err 
 		}
 	}
 	err = &BadRequestError{Reason: "ACP secret key not found."}
+	return
+}
+
+// listOptions returns the list options.
+// The (managed) filter field is matched to the ManagedLabel label:
+//   - omitted: the namespace is listed.
+//   - true: labelled konveyor.io/managed=true.
+//   - false: not labelled konveyor.io/managed=true.
+//
+// Omitted lists the namespace because a GET on a collection returns everything
+// unless filtered. Resources applied directly (not created through this API)
+// are unlabelled and must still be listed.
+func (h AgenticHandler) listOptions(ctx *gin.Context) (options []k8s.ListOption, err error) {
+	options = []k8s.ListOption{
+		k8s.InNamespace(Settings.Hub.Namespace),
+	}
+	filter, err := qf.New(
+		ctx,
+		[]qf.Assert{
+			{Field: Managed, Kind: qf.LITERAL},
+		})
+	if err != nil {
+		return
+	}
+	field, found := filter.Field(Managed)
+	if !found {
+		return
+	}
+	managed, err := h.managed(&field)
+	if err != nil {
+		return
+	}
+	selector, err := h.managedSelector(managed)
+	if err != nil {
+		return
+	}
+	options = append(options, selector)
+	return
+}
+
+// managed returns the (managed) filter field as a boolean.
+func (h AgenticHandler) managed(field *qf.Field) (managed bool, err error) {
+	values := []string{}
+	field.Value.Into(&values)
+	if len(values) == 1 {
+		managed, err = strconv.ParseBool(values[0])
+		if err == nil {
+			return
+		}
+	}
+	err = &BadRequestError{
+		Reason: fmt.Sprintf("(%s) filter must be a boolean.", Managed),
+	}
+	return
+}
+
+// managedSelector returns the ManagedLabel selector.
+// The (!=) operator also matches resources without the label, which is
+// how resources not created through this API are selected.
+func (h AgenticHandler) managedSelector(managed bool) (selector k8s.MatchingLabelsSelector, err error) {
+	operator := selection.Equals
+	if !managed {
+		operator = selection.NotEquals
+	}
+	requirement, err := labels.NewRequirement(
+		ManagedLabel,
+		operator,
+		[]string{"true"})
+	if err != nil {
+		err = liberr.Wrap(err)
+		return
+	}
+	selector.Selector = labels.NewSelector().Add(*requirement)
 	return
 }
 
