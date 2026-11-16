@@ -104,6 +104,33 @@ func TestWildcardPath(t *testing.T) {
 	g.Expect(path).To(gomega.Equal("/etc/passwd"))
 }
 
+func TestWildcardPathRelativeRoot(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	h := BaseHandler{}
+	wildcardPath := func(root, wildcard string) (path string, err error) {
+		ctx := &gin.Context{
+			Params: gin.Params{{Key: Wildcard, Value: wildcard}},
+		}
+		path, err = h.wildcardPath(ctx, root)
+		return
+	}
+
+	// A relative root is not a traversal prefix. Containment is
+	// relative to the root and not matched on the (..) in the root.
+	for _, root := range []string{".", "..", "../cache"} {
+		for _, wildcard := range []string{"", "/", "/file", "/dir/../file"} {
+			path, err := wildcardPath(root, wildcard)
+			g.Expect(err).To(gomega.BeNil(), root+":"+wildcard)
+			g.Expect(path).ToNot(gomega.Equal(""), root+":"+wildcard)
+		}
+		for _, wildcard := range []string{"/..", "/../x", "/../../etc/passwd", "/dir/../../../x"} {
+			path, err := wildcardPath(root, wildcard)
+			g.Expect(errors.Is(err, &BadRequestError{})).To(gomega.BeTrue(), root+":"+wildcard)
+			g.Expect(path).To(gomega.Equal(""), root+":"+wildcard)
+		}
+	}
+}
+
 func TestFactKey(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 

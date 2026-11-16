@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	pathlib "path"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -128,8 +129,10 @@ func (h *BaseHandler) wildcardPath(ctx *gin.Context, root string) (path string, 
 	wildcard := ctx.Param(Wildcard)
 	root = pathlib.Clean(root)
 	resolved := pathlib.Join(root, wildcard)
-	contained := resolved == root ||
-		strings.HasPrefix(resolved, strings.TrimSuffix(root, "/")+"/")
+	p, nErr := filepath.Rel(root, resolved)
+	contained := nErr == nil &&
+		p != ".." &&
+		!strings.HasPrefix(p, ".."+string(filepath.Separator))
 	if !contained {
 		err = &BadRequestError{
 			Reason: fmt.Sprintf("Path (%s) not permitted.", wildcard),
