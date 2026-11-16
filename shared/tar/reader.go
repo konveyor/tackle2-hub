@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	pathlib "path"
+	"path/filepath"
 	"strings"
 
 	liberr "github.com/jortel/go-utils/error"
@@ -24,7 +25,10 @@ type Accept func(path string, header *tar.Header) (err error)
 func Contained(root string) (accept Accept) {
 	root = pathlib.Clean(root)
 	accept = func(path string, header *tar.Header) (err error) {
-		if path == root || strings.HasPrefix(path, strings.TrimSuffix(root, "/")+"/") {
+		p, nErr := filepath.Rel(root, path)
+		if nErr == nil &&
+			p != ".." &&
+			!strings.HasPrefix(p, ".."+string(filepath.Separator)) {
 			return
 		}
 		err = liberr.New(

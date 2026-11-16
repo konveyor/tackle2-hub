@@ -204,6 +204,25 @@ func TestContained(t *testing.T) {
 	}
 }
 
+func TestContainedRelativeRoot(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	// A relative root (the current directory) contains its entries.
+	for _, root := range []string{".", "./"} {
+		accept := Contained(root)
+		for _, name := range []string{"", "file", "sub/file", "sub/../file", "/rooted"} {
+			header := &tar.Header{Name: name}
+			err := accept(path.Join(root, name), header)
+			g.Expect(err).To(gomega.BeNil(), root+":"+name)
+		}
+		for _, name := range []string{"..", "../escaped", "sub/../../escaped"} {
+			header := &tar.Header{Name: name}
+			err := accept(path.Join(root, name), header)
+			g.Expect(err).ToNot(gomega.BeNil(), root+":"+name)
+		}
+	}
+}
+
 func TestAcceptNotAssigned(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	tmpDir, err := os.MkdirTemp("", "tar-*")
