@@ -304,6 +304,7 @@ func (h *BucketOwner) putDir(ctx *gin.Context, output string) (err error) {
 		return
 	}
 	tarReader := tar.NewReader()
+	tarReader.Accept = tar.Contained(output)
 	err = tarReader.Extract(output, fileReader)
 	return
 }

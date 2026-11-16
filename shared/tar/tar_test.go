@@ -1,6 +1,9 @@
 package tar
 
 import (
+	"archive/tar"
+	"bytes"
+	"compress/gzip"
 	"crypto/sha256"
 	"fmt"
 	"io"
@@ -152,6 +155,102 @@ func TestReaderFilter(t *testing.T) {
 		_, err = os.Stat(path.Join(outDir, name))
 		g.Expect(os.IsNotExist(err)).To(gomega.BeTrue(), name)
 	}
+}
+
+func TestContained(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	// Entries resolving outside of the outDir are rejected.
+	// Both (TypeReg) and (TypeDir) entries are validated.
+	for _, flag := range []byte{tar.TypeReg, tar.TypeDir} {
+		for _, name := range []string{
+			"../escaped",
+			"../../escaped",
+			"sub/../../escaped",
+			"..",
+		} {
+			tmpDir, err := os.MkdirTemp("", "tar-*")
+			g.Expect(err).To(gomega.BeNil())
+			outDir := path.Join(tmpDir, "bucket", "sub")
+			reader := NewReader()
+			reader.Accept = Contained(outDir)
+			err = reader.Extract(outDir, tarball(entry{name: name, flag: flag}))
+			g.Expect(err).ToNot(gomega.BeNil(), name)
+			// Nothing written outside of the outDir.
+			_, err = os.Stat(path.Join(tmpDir, "escaped"))
+			g.Expect(os.IsNotExist(err)).To(gomega.BeTrue(), name)
+			_ = nas.RmDir(tmpDir)
+		}
+	}
+
+	// Contained entries are extracted.
+	// An absolute name is rooted at the outDir and not an escape.
+	tmpDir, err := os.MkdirTemp("", "tar-*")
+	g.Expect(err).To(gomega.BeNil())
+	defer func() {
+		_ = nas.RmDir(tmpDir)
+	}()
+	outDir := path.Join(tmpDir, "bucket")
+	reader := NewReader()
+	reader.Accept = Contained(outDir)
+	err = reader.Extract(
+		outDir,
+		tarball(
+			entry{name: "sub", flag: tar.TypeDir},
+			entry{name: "sub/file", flag: tar.TypeReg},
+			entry{name: "/rooted", flag: tar.TypeReg}))
+	g.Expect(err).To(gomega.BeNil())
+	for _, name := range []string{"sub/file", "rooted"} {
+		_, err = os.Stat(path.Join(outDir, name))
+		g.Expect(err).To(gomega.BeNil(), name)
+	}
+}
+
+func TestAcceptNotAssigned(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	tmpDir, err := os.MkdirTemp("", "tar-*")
+	g.Expect(err).To(gomega.BeNil())
+	defer func() {
+		_ = nas.RmDir(tmpDir)
+	}()
+
+	// Not assigned (default) accepts all entries.
+	outDir := path.Join(tmpDir, "bucket", "sub")
+	reader := NewReader()
+	err = reader.Extract(outDir, tarball(entry{name: "../escaped", flag: tar.TypeReg}))
+	g.Expect(err).To(gomega.BeNil())
+	_, err = os.Stat(path.Join(tmpDir, "bucket", "escaped"))
+	g.Expect(err).To(gomega.BeNil())
+}
+
+type entry struct {
+	name string
+	flag byte
+}
+
+// tarball builds an archive containing the entries.
+func tarball(entries ...entry) (buf *bytes.Buffer) {
+	buf = &bytes.Buffer{}
+	zipWriter := gzip.NewWriter(buf)
+	tarWriter := tar.NewWriter(zipWriter)
+	for _, ent := range entries {
+		body := []byte("content\n")
+		header := &tar.Header{
+			Name:     ent.name,
+			Mode:     0777,
+			Typeflag: ent.flag,
+		}
+		if ent.flag == tar.TypeReg {
+			header.Size = int64(len(body))
+		}
+		_ = tarWriter.WriteHeader(header)
+		if ent.flag == tar.TypeReg {
+			_, _ = tarWriter.Write(body)
+		}
+	}
+	_ = tarWriter.Close()
+	_ = zipWriter.Close()
+	return
 }
 
 func equalFileContent(gotPath, expectedPath string) bool {
