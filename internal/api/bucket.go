@@ -213,8 +213,12 @@ func (h *BucketOwner) bucketGet(ctx *gin.Context, id uint) {
 		return
 	}
 	st, err := os.Stat(path)
-	if os.IsNotExist(err) {
-		h.Status(ctx, http.StatusNotFound)
+	if err != nil {
+		if os.IsNotExist(err) {
+			h.Status(ctx, http.StatusNotFound)
+		} else {
+			_ = ctx.Error(err)
+		}
 		return
 	}
 	if st.IsDir() {

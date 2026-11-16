@@ -34,10 +34,10 @@ func (h CacheHandler) AddRoutes(e *gin.Engine) {
 // @tags cache
 // @produce json
 // @success 200 {object} api.Cache
-// @router /caches/{wildcard} [get]
+// @router /cache/{wildcard} [get]
 // @param wildcard path string true "Cache DIR"
 func (h CacheHandler) Get(ctx *gin.Context) {
-	path, err := h.wildcardPath(ctx, Settings.Addon.CacheDir)
+	path, err := h.wildcardPath(ctx, h.root())
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -61,15 +61,16 @@ func (h CacheHandler) Get(ctx *gin.Context) {
 // @tags cache
 // @produce json
 // @success 204
-// @router /cache [delete]
+// @router /cache/{wildcard} [delete]
+// @param wildcard path string true "Cache DIR"
 func (h CacheHandler) Delete(ctx *gin.Context) {
-	dir := ctx.Param(Wildcard)
-	if dir == "" {
-		h.Status(ctx, http.StatusForbidden)
+	path, err := h.wildcardPath(ctx, h.root())
+	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
-	path, err := h.wildcardPath(ctx, Settings.Addon.CacheDir)
-	if err != nil {
+	if path == h.root() {
+		err = &BadRequestError{Reason: "Cache root cannot be deleted."}
 		_ = ctx.Error(err)
 		return
 	}
@@ -89,6 +90,12 @@ func (h CacheHandler) Delete(ctx *gin.Context) {
 	}
 
 	h.Status(ctx, http.StatusNoContent)
+}
+
+// root returns the (cleaned) cache root path.
+func (h *CacheHandler) root() (path string) {
+	path = pathlib.Clean(Settings.Addon.CacheDir)
+	return
 }
 
 // cache builds the resource.
@@ -115,7 +122,7 @@ func (h *CacheHandler) cache(path string) (cache *Cache, err error) {
 	cache.Capacity = fields[1]
 	cache.Used = fields[2]
 	cache.Exists = true
-	if cache.Path == pathlib.Clean(Settings.Addon.CacheDir) {
+	if cache.Path == h.root() {
 		return
 	}
 	_, err = os.Stat(cache.Path)
