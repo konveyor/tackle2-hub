@@ -1,8 +1,10 @@
 package jsd
 
 import (
+	"errors"
 	"testing"
 
+	"github.com/konveyor/tackle2-hub/internal/jsd"
 	"github.com/konveyor/tackle2-hub/internal/k8s/simulator"
 	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/onsi/gomega"
@@ -45,6 +47,10 @@ func TestValidatorFields(t *testing.T) {
 
 func TestValidatorValidate(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
+	namespace := Settings.Namespace
+	t.Cleanup(func() {
+		Settings.Namespace = namespace
+	})
 	Settings.Namespace = "konveyor-tackle"
 	type Resource struct {
 		Coordinates *api.Document
@@ -72,6 +78,15 @@ func TestValidatorValidate(t *testing.T) {
 	}
 	err = v.Validate(invalid)
 	g.Expect(err).ToNot(gomega.BeNil())
+	g.Expect(errors.Is(err, &jsd.NotFound{})).To(gomega.BeFalse())
+	unknown := &Resource{
+		Coordinates: &api.Document{
+			Schema:  "unknown",
+			Content: api.Map{},
+		},
+	}
+	err = v.Validate(unknown)
+	g.Expect(errors.Is(err, &jsd.NotFound{})).To(gomega.BeTrue())
 	err = v.Validate(&Resource{})
 	g.Expect(err).To(gomega.BeNil())
 }

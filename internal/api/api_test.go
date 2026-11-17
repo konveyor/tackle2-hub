@@ -3,12 +3,16 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/konveyor/tackle2-hub/internal/jsd"
+	"github.com/konveyor/tackle2-hub/internal/k8s/simulator"
+	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/onsi/gomega"
 	"gopkg.in/yaml.v2"
 )
@@ -329,4 +333,48 @@ func TestRequiredMiddleware(t *testing.T) {
 
 	// Should still be aborted
 	g.Expect(ctx.IsAborted()).To(gomega.BeTrue())
+}
+
+func TestValidateDocument(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	namespace := Settings.Namespace
+	t.Cleanup(func() {
+		Settings.Namespace = namespace
+	})
+	Settings.Namespace = "konveyor-tackle"
+	type Resource struct {
+		Coordinates *api.Document
+	}
+	h := BaseHandler{}
+	ctx := &gin.Context{}
+	RichContext(ctx).Client = simulator.New()
+	// valid.
+	err := h.Validate(ctx, &Resource{
+		Coordinates: &api.Document{
+			Schema: "cloudfoundry-coordinates",
+			Content: api.Map{
+				"organization": "org",
+				"space":        "space",
+				"name":         "app",
+			},
+		},
+	})
+	g.Expect(err).To(gomega.BeNil())
+	// schema violation.
+	err = h.Validate(ctx, &Resource{
+		Coordinates: &api.Document{
+			Schema:  "cloudfoundry-coordinates",
+			Content: api.Map{"name": "app"},
+		},
+	})
+	g.Expect(errors.Is(err, &BadRequestError{})).To(gomega.BeTrue())
+	// unknown schema.
+	err = h.Validate(ctx, &Resource{
+		Coordinates: &api.Document{
+			Schema:  "unknown",
+			Content: api.Map{},
+		},
+	})
+	g.Expect(errors.Is(err, &BadRequestError{})).To(gomega.BeTrue())
+	g.Expect(errors.Is(err, &jsd.NotFound{})).To(gomega.BeFalse())
 }
