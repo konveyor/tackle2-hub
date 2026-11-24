@@ -4,7 +4,9 @@ import (
 	"os"
 	"path/filepath"
 
+	liberr "github.com/jortel/go-utils/error"
 	"github.com/konveyor/tackle2-hub/internal/model"
+	"github.com/konveyor/tackle2-hub/internal/secret"
 	"github.com/konveyor/tackle2-hub/shared/scm"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -99,6 +101,11 @@ func proxyMap(db *gorm.DB) (pm ProxyMap, err error) {
 			Excluded: p.Excluded,
 		}
 		if p.Identity != nil {
+			err = secret.Decrypt(p.Identity)
+			if err != nil {
+				err = liberr.Wrap(err)
+				return
+			}
 			proxy.Identity = &Identity{
 				ID:       p.Identity.ID,
 				Name:     p.Identity.Name,
