@@ -260,6 +260,9 @@ func (h *BaseHandler) Validate(ctx *gin.Context, r any) (err error) {
 	rtx := RichContext(ctx)
 	jsdValidator := jsd.New(rtx.Client)
 	err = jsdValidator.Validate(r)
+	if err != nil {
+		err = &BadRequestError{Reason: err.Error()}
+	}
 	return
 }
 

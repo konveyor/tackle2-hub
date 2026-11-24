@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/konveyor/tackle2-hub/internal/jsd"
+	"github.com/konveyor/tackle2-hub/shared/api"
 	"github.com/konveyor/tackle2-hub/shared/settings"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -38,6 +39,8 @@ func (v *Validator) Validate(r any) (err error) {
 }
 
 // fields returns resource `Document` fields.
+// Only top-level fields are inspected; documents nested in structs
+// or slices are not found.
 func (v *Validator) fields(r any) (fields []*Document) {
 	rt := reflect.TypeOf(r)
 	rv := reflect.ValueOf(r)
@@ -60,7 +63,24 @@ func (v *Validator) fields(r any) (fields []*Document) {
 			fields = append(fields, d)
 		case Document:
 			fields = append(fields, &d)
+		case *api.Document:
+			if d != nil {
+				fields = append(fields, v.document(d))
+			}
+		case api.Document:
+			fields = append(fields, v.document(&d))
 		}
+	}
+	return
+}
+
+// document returns a validatable Document for the shared api Document.
+// The Content map is shared with the original, which is safe only
+// while validation does not modify the document.
+func (v *Validator) document(d *api.Document) (document *Document) {
+	document = &Document{
+		Content: Map(d.Content),
+		Schema:  d.Schema,
 	}
 	return
 }
