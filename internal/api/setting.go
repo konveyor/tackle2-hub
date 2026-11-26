@@ -101,6 +101,11 @@ func (h SettingHandler) Create(ctx *gin.Context) {
 
 		return
 	}
+	err = validKey("Setting key", setting.Key)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 
 	m := setting.Model()
 	m.CreateUser = h.BaseHandler.CurrentUser(ctx)
@@ -135,9 +140,14 @@ func (h SettingHandler) CreateByKey(ctx *gin.Context) {
 		return
 	}
 
+	err := validKey("Setting key", key)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	setting := Setting{}
 	setting.Key = key
-	err := h.Bind(ctx, &setting.Value)
+	err = h.Bind(ctx, &setting.Value)
 	if err != nil {
 		_ = ctx.Error(err)
 		return

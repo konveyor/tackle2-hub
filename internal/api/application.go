@@ -946,6 +946,11 @@ func (h ApplicationHandler) FactCreate(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	err = h.factKeyValid(r.Source, r.Key)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	app := &model.Application{}
 	result := h.DB(ctx).First(app, id)
 	if result.Error != nil {
@@ -978,19 +983,24 @@ func (h ApplicationHandler) FactCreate(ctx *gin.Context) {
 // @param fact body object true "Fact value"
 func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 	id := h.pk(ctx)
+	key := FactKey(ctx.Param(Key))
+	err := h.factKeyValid(key.Source(), key.Name())
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
 	app := &model.Application{}
 	result := h.DB(ctx).First(app, id)
 	if result.Error != nil {
 		_ = ctx.Error(result.Error)
 		return
 	}
-	key := FactKey(ctx.Param(Key))
 	if key.Name() == "" {
 		h.FactReplace(ctx, key)
 		return
 	}
 	f := Fact{}
-	err := h.Bind(ctx, &f.Value)
+	err = h.Bind(ctx, &f.Value)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -1009,6 +1019,16 @@ func (h ApplicationHandler) FactPut(ctx *gin.Context) {
 		return
 	}
 	h.Status(ctx, http.StatusNoContent)
+}
+
+// factKeyValid validates a fact source and name.
+func (h ApplicationHandler) factKeyValid(source, name string) (err error) {
+	err = validKey("Fact source", source)
+	if err != nil {
+		return
+	}
+	err = validKey("Fact key", name)
+	return
 }
 
 // FactDelete godoc
@@ -1060,6 +1080,18 @@ func (h ApplicationHandler) FactReplace(ctx *gin.Context, key FactKey) {
 	if err != nil {
 		_ = ctx.Error(err)
 		return
+	}
+	err = validKey("Fact source", key.Source())
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+	for k := range facts {
+		err = validKey("Fact key", FactKey(k).Name())
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
 	}
 	// Delete all the existing facts with that source and application id.
 	db := h.DB(ctx)
